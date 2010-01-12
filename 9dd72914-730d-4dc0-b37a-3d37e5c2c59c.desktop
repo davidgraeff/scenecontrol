@@ -1,0 +1,569 @@
+[Desktop Entry]
+Version=1.0
+X-Version=1.0
+Encoding=UTF-8
+Type=LiriApplicationProfile
+Authors=David Gräff <david.graeff@cs.udo.edu>
+Name=RoomControlServerV2
+Comment=For controlling the room
+Icon=gnome-computer
+
+[busservices]
+session://org.roomcontrol=
+
+[group]
+Key=*TV
+
+[changemode]
+NewMode=roomcontrol
+
+[bus]
+Bus=session://org.roomcontrol /Controller org.roomcontrol.Controller changeMode
+Arg=mode in s roomcontrol
+
+[group]
+Key=*MUSIC
+
+[changemode]
+NewMode=music
+
+[bus]
+Bus=session://org.roomcontrol /Controller org.roomcontrol.Controller changeMode
+Arg=mode in s music
+
+[group]
+Key=*RECTV
+
+[changemode]
+NewMode=video_mpris
+
+[bus]
+Bus=session://org.roomcontrol /Controller org.roomcontrol.Controller changeMode
+Arg=mode in s video_mpris
+
+[group]
+Key=*PHOTO
+
+[changemode]
+NewMode=channelset
+
+[bus]
+Bus=session://org.roomcontrol /Controller org.roomcontrol.Controller changeMode
+Arg=mode in s channelset
+
+[group]
+Key=#RECORD
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EventController org.roomcontrol.EventController stop
+
+[group]
+Key=#SETUP
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EventController org.roomcontrol.EventController snooze
+Arg=time in i 300
+
+[group]
+Key=#PREVIOUS
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController previous
+
+[group]
+Key=#NEXT
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController next
+
+[group]
+Key=#PLAY
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController play
+
+[group]
+Key=#PAUSE
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController pause
+
+[group]
+Key=#STOP
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController stop
+
+[group]
+Key=#FORWARD
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController forward
+
+[group]
+Key=#REWIND
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController rewind
+
+[group]
+Key=#VOL+
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController volup
+
+[group]
+Key=#VOL-
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController voldown
+
+
+[group]
+Key=#0
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 0
+
+[group]
+Key=#1
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 1
+
+[group]
+Key=#2
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 2
+
+[group]
+Key=#3
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 3
+
+[group]
+Key=#4
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 4
+
+[group]
+Key=#5
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 5
+
+[group]
+Key=#6
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 6
+
+[group]
+Key=#7
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 7
+
+[group]
+Key=#8
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 8
+
+[group]
+Key=#9
+Mode=music
+[bus]
+Bus=session://org.roomcontrol /PlaylistController org.roomcontrol.PlaylistController activateByIndex
+Arg=id in i 9
+
+
+[group]
+Key=#1
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {c148d6c2-f74a-497b-b91d-bfb8dcb0aab7}
+
+[group]
+Key=#2
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {6f5f2755-e740-44d0-a0d1-ee52e17f5fab}
+
+[group]
+Key=#3
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {ed372218-bcbf-4db8-994c-35397aa4b918}
+
+[group]
+Key=#4
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {6dc2d6e4-5adb-4872-a3f9-a065ca425de8}
+
+[group]
+Key=#5
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {c8c470fc-75c9-49d5-96d4-ba44e675d6ac}
+
+[group]
+Key=#6
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {5da94ec3-9cff-4473-a9e6-bc7a6fdb1834}
+
+[group]
+Key=#7
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {c5b31359-c186-400d-a15e-c56bc4ec420c}
+
+[group]
+Key=#8
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {1d00e94d-e6df-48e7-b8b4-74b7d3853131}
+
+[group]
+Key=#9
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {c148d6c2-f74a-497b-b91d-bfb8dcb0aab7}
+
+[group]
+Key=#0
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /ProfileController org.roomcontrol.ProfileController activateByID
+Arg=id in s {2eaa03ef-949b-4cc8-a64a-faf413fdefff}
+
+[group]
+Key=#LEFT
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController togglePin
+Arg=name in u 2
+
+[group]
+Key=#UP
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController togglePin
+Arg=name in u 7
+
+[group]
+Key=#RIGHT
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController togglePin
+Arg=name in u 8
+
+[group]
+Key=#OK
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController togglePin
+Arg=name in u 3
+
+[group]
+Key=#DOWN
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController togglePin
+Arg=name in u 4
+
+[group]
+Key=#TEXT
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController togglePin
+Arg=name in u 0
+
+[group]
+Key=#*
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setCurtain
+Arg=position in u 7
+
+[group]
+Key=##
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setCurtain
+Arg=position in u 0
+
+[group]
+Key=#RED
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelToggle
+Arg=channel in u 0
+
+[group]
+Key=#GREEN
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelToggle
+Arg=channel in u 1
+
+[group]
+Key=#BLUE
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelToggle
+Arg=channel in u 2
+
+[group]
+Key=#YELLOW
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelToggle
+Arg=channel in u 3
+
+[group]
+Key=*DISC
+Mode=roomcontrol
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelToggle
+Arg=channel in u 4
+
+[group]
+Key=#1
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 0
+Arg=value in i 1000
+
+[group]
+Key=#4
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 0
+Arg=value in i -1000
+
+[group]
+Key=#2
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 1
+Arg=value in i 1000
+
+[group]
+Key=#5
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 1
+Arg=value in i -1000
+
+[group]
+Key=#3
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 2
+Arg=value in i 1000
+
+[group]
+Key=#6
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 2
+Arg=value in i -1000
+
+[group]
+Key=#7
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 6
+Arg=value in i 1000
+
+[group]
+Key=#*
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 6
+Arg=value in i -1000
+
+[group]
+Key=#8
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 4
+Arg=value in i 1000
+
+[group]
+Key=#0
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 4
+Arg=value in i -1000
+
+[group]
+Key=#9
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 3
+Arg=value in i 1000
+
+[group]
+Key=##
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 3
+Arg=value in i -1000
+
+[group]
+Key=#REWIND
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 10
+Arg=value in i 1000
+
+[group]
+Key=#PREVIOUS
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 10
+Arg=value in i -1000
+
+[group]
+Key=#PLAY
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 7
+Arg=value in i 1000
+
+[group]
+Key=#NEXT
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 7
+Arg=value in i -1000
+
+[group]
+Key=#FORWARD
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 8
+Arg=value in i 1000
+
+[group]
+Key=#STOP
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 8
+Arg=value in i -1000
+
+[group]
+Key=#PAUSE
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 9
+Arg=value in i 1000
+
+[group]
+Key=#RECORD
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 9
+Arg=value in i -1000
+
+[group]
+Key=#BACK
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 5
+Arg=value in i 1000
+
+[group]
+Key=#INFO
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 5
+Arg=value in i -1000
+
+[group]
+Key=#CH+
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 11
+Arg=value in i 1000
+
+[group]
+Key=#CH-
+Repeat=500 100
+Mode=channelset
+[bus]
+Bus=session://org.roomcontrol /EcmdController org.roomcontrol.EcmdController setChannelRelative
+Arg=channel in u 11
+Arg=value in i -1000
+

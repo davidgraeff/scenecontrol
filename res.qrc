@@ -1,0 +1,24 @@
+<RCC>
+  <qresource prefix="/">
+    <file>images/remove.png</file>
+    <file>images/add.png</file>
+    <file>images/media-playback-pause.png</file>
+    <file>images/media-seek-backward.png</file>
+    <file>images/media-seek-forward.png</file>
+    <file>images/media-playback-stop.png</file>
+    <file>images/media-skip-backward.png</file>
+    <file>images/media-skip-forward.png</file>
+    <file>images/media-playback-start.png</file>
+    <file>images/menu_alarms.svg</file>
+    <file>images/menu_music.svg</file>
+    <file>images/menu_cinema.svg</file>
+    <file>images/menu_profiles.svg</file>
+    <file>images/menu_roomcontrol.svg</file>
+    <file>images/button.svg</file>
+    <file>images/viewitem.svg</file>
+    <file>images/panel.svg</file>
+    <file>images/round.svg</file>
+    <file>images/display.png</file>
+    <file>images/background.jpg</file>
+  </qresource>
+</RCC>

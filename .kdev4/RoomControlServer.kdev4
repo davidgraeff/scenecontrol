@@ -1,0 +1,39 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00"\x00R\x00o\x00o\x00m\x00C\x00o\x00n\x00t\x00r\x00o\x00l\x00S\x00e\x00r\x00v\x00e\x00r)
+
+[CMake]
+BuildDirs[$e]=$HOME/Entwicklung/roomcontrol
+CMakeDir=/usr/share/cmake/Modules
+Current CMake Binary=file:///usr/bin/cmake
+CurrentBuildDir=file:///home/david/Entwicklung/roomcontrol
+CurrentBuildType=Release
+CurrentInstallDir=file:///usr
+ProjectRootRelative=./
+
+[Launch]
+Launch Configurations=Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=Server
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Arguments=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+Dependency Action=Build
+EnvironmentGroup=
+Executable=file:///home/david/Entwicklung/roomcontrol/RoomControlServer
+Use External Terminal=false
+Working Directory=
+isExecutable=true
+
+[MakeBuilder]
+Install As Root=true
+Number Of Jobs=4
+Run Multiple Jobs=true
+Su Command=1
+
+[Project]
+VersionControlSupport=kdevgit
