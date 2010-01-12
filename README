@@ -1,0 +1,12 @@
+RoomcontrolClient:
+------------------
+
+Speziell an mein Zimmer angepasstes Serverprogramm zur Raumautomatisierung.
+Kontrolliert Steckdosen, Vorhang und Led Beleuchtung über
+- eine Touchscreen GUI
+- ein Fernbedienungsinterface zu liri (für X10 433Mhz Funkfernbedienungen)
+- Zeitprofile
+- per Netzwerkprotokoll (für ein RoomcontrolClient genanntes Programm).
+
+Die Touchscreen GUI ist mit dem Animations-Framework und
+der GraphicsView Canvas von qt 4.6 realisiert.

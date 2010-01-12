@@ -1,0 +1,14 @@
+<RCC>
+  <qresource prefix="/">
+    <file>images/preferences-desktop-icons.png</file>
+    <file>images/save.png</file>
+    <file>images/list-remove.png</file>
+    <file>images/list-add.png</file>
+    <file>images/view-refresh.png</file>
+    <file>images/dialog-ok.png</file>
+    <file alias="absolute">images/view-calendar-day.png</file>
+    <file alias="days">images/view-calendar-week.png</file>
+    <file>images/flag-green.png</file>
+    <file>images/flag-red.png</file>
+  </qresource>
+</RCC>
