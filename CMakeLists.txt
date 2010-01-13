@@ -39,6 +39,7 @@ src/widgets/pinbutton.h
 src/widgets/svgbutton.h
 src/widgets/touchwindow.h
 src/widgets/jumpbarwidget.h
+src/widgets/qgraphicsitemobject.h
 
 src/media/videocontroller.h
 src/media/playlist.h
@@ -79,6 +80,7 @@ src/widgets/pinbutton.cpp
 src/widgets/svgbutton.cpp
 src/widgets/touchwindow.cpp
 src/widgets/jumpbarwidget.cpp
+src/widgets/qgraphicsitemobject.cpp
 
 src/media/videocontroller.cpp
 src/media/playlist.cpp

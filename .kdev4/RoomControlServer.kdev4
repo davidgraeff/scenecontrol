@@ -2,12 +2,9 @@
 BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00"\x00R\x00o\x00o\x00m\x00C\x00o\x00n\x00t\x00r\x00o\x00l\x00S\x00e\x00r\x00v\x00e\x00r)
 
 [CMake]
-BuildDirs[$e]=$HOME/Entwicklung/roomcontrol
+BuildDirs[$e]=$HOME/Entwicklung/roomcontrol-server
 CMakeDir=/usr/share/cmake/Modules
-Current CMake Binary=file:///usr/bin/cmake
-CurrentBuildDir=file:///home/david/Entwicklung/roomcontrol
-CurrentBuildType=Release
-CurrentInstallDir=file:///usr
+CurrentBuildDir=file:///home/david/Entwicklung/roomcontrol-server
 ProjectRootRelative=./
 
 [Launch]
@@ -24,7 +21,7 @@ Arguments=
 Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
 Dependency Action=Build
 EnvironmentGroup=
-Executable=file:///home/david/Entwicklung/roomcontrol/RoomControlServer
+Executable=file:///home/david/Entwicklung/roomcontrol-server/RoomControlServer
 Use External Terminal=false
 Working Directory=
 isExecutable=true
