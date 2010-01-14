@@ -32,7 +32,7 @@ src/flickcharm.h
 src/widgets/abstractcontrolbutton.h
 src/widgets/channelbutton.h
 src/widgets/menubutton.h
-src/widgets/musicplaybutton.h
+src/widgets/numberwidget.h
 src/widgets/musictrackbutton.h
 src/widgets/alarmboxwidget.h
 src/widgets/pinbutton.h
@@ -72,7 +72,7 @@ src/flickcharm.cpp
 
 src/widgets/abstractcontrolbutton.cpp
 src/widgets/menubutton.cpp
-src/widgets/musicplaybutton.cpp
+src/widgets/numberwidget.cpp
 src/widgets/musictrackbutton.cpp
 src/widgets/alarmboxwidget.cpp
 src/widgets/channelbutton.cpp
