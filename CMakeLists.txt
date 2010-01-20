@@ -19,7 +19,7 @@ include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} src/ src/Transfer
 
 set(RoomControlServer_SRCS_H
 src/Transferables/transferablefactory.h src/Transferables/transferablecontroller.h
-src/Transferables/executableaudio.h  
+src/Transferables/executableaudio.h src/Transferables/executableplaylist.h
 src/Transferables/timeablerepeating.h src/Transferables/timeableabsolute.h
 src/Transferables/timeable.h src/Transferables/transferable.h 
 
@@ -59,6 +59,7 @@ set(RoomControlServer_SRCS
 src/Transferables/transferablefactory.cpp src/Transferables/transferablecontroller.cpp
 src/Transferables/executableaudio.cpp  src/Transferables/executablechannel.cpp 
 src/Transferables/executablepin.cpp src/Transferables/executablempris.cpp
+src/Transferables/executableplaylist.cpp
 src/Transferables/executableprojector.cpp src/Transferables/executablecurtain.cpp
 src/Transferables/executable.cpp src/Transferables/executablecollection.cpp
 src/Transferables/timeablerepeating.cpp src/Transferables/timeableabsolute.cpp
