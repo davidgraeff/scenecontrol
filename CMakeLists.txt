@@ -13,6 +13,7 @@ set(roomcontrolClient_SRCS
     ../RoomControlServer/src/Transferables/executableaudio.cpp
     ../RoomControlServer/src/Transferables/executablechannel.cpp 
     ../RoomControlServer/src/Transferables/executablepin.cpp
+    ../RoomControlServer/src/Transferables/executableplaylist.cpp
     ../RoomControlServer/src/Transferables/executablecurtain.cpp
     ../RoomControlServer/src/Transferables/executableprojector.cpp
     ../RoomControlServer/src/Transferables/executablempris.cpp
@@ -47,6 +48,7 @@ set(roomcontrolClient_SRCS
 
 set(roomcontrolClient_H
     ../RoomControlServer/src/Transferables/executableaudio.h
+    ../RoomControlServer/src/Transferables/executableplaylist.h
     ../RoomControlServer/src/Transferables/timeablerepeating.h
     ../RoomControlServer/src/Transferables/timeableabsolute.h
     ../RoomControlServer/src/Transferables/timeable.h
