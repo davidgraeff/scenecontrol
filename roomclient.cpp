@@ -158,9 +158,10 @@ void RoomClient::readyRead()
         buffer += socket.readLine();
         if ( buffer.rightRef ( 1 ) != "\n" )
         {
-            if ( buffer.size() >1024 ) buffer.clear();
+            if ( buffer.size() >1024*1000 ) buffer.clear();
             continue;
         }
+
         QStringList items = buffer.replace ( '\n', "" ).replace ( '\r', "" ).split ( '\t' );
         buffer.clear();
         if ( !items.size() ) continue;
@@ -286,8 +287,8 @@ void RoomClient::readyRead()
             }
             else if ( cmd=="music.changed" )
             {
-                if ( items.size() <4 ) continue;
-                emit musicChanged ( items[0], items[1], items[2].toUInt(), items[3] );
+                if ( items.size() <2 ) continue;
+                emit musicChanged ( items[0], items[1].toUInt());
             }
     }
 }

@@ -115,8 +115,7 @@ Q_SIGNALS:
     void removed ( int type, QStringList& );
     void alarmsArmed ( int distance, QStringList ids );
     
-    void musicChanged(const QUuid& playlist_id, const QString& playlist_name,
-		      uint track_no, const QString& track_name);
+    void musicChanged(const QUuid& playlist_id, uint track_no);
     void musicVolume(qreal volume);
     void musicPosition(quint64 current, quint64 total);
 };
