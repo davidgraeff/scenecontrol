@@ -2,11 +2,21 @@ RoomcontrolServer:
 ------------------
 
 Speziell an mein Zimmer angepasstes Serverprogramm zur Raumautomatisierung.
-Kontrolliert Steckdosen, Vorhang und Led Beleuchtung über
-- eine Touchscreen GUI
-- ein Fernbedienungsinterface zu liri (für X10 433Mhz Funkfernbedienungen)
-- Zeitprofile
-- per Netzwerkprotokoll (für ein RoomcontrolClient genanntes Programm).
+Kontrolliert Steckdosen, Rollo und Led Beleuchtung. Arbeitet ähnlich StateCharts.
 
+In Profilen sind Events, Bedingungen und Aktionen definiert. Events können
+Profile aktivieren (z.B. das Drücken einer Fernbedienungstaste, das Eintretten eines
+bestimmten Zeitpunktes). Wenn alle Bedingungen zutreffen
+(z.B. das Rollo ist offen) werden die Aktionen ausgeführt.
+
+Das Projekt wurde ursprünglich als Wecker Applikation gedacht.
+
+Der Server ist über Netzwerk Clients konfigurierbar. JSon Objekte sorgen über
+das Netzwerk für die Synchronisierung zwischen Clients und Server.
+
+Fernbedienungseingaben werden von liri (für X10 433Mhz Funkfernbedienungen)
+entgegengenommen.
+
+Clients liegen in separaten Repositories.
 Die Touchscreen GUI ist mit dem Animations-Framework und
 der GraphicsView Canvas von qt 4.6 realisiert.
