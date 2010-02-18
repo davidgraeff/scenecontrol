@@ -1,10 +1,8 @@
 <RCC>
   <qresource prefix="/">
     <file>images/editname.png</file>
-    <file>images/remove2.png</file>
     <file>images/add.png</file>
     <file>images/remove.png</file>
-    <file>images/edit.png</file>
     <file>images/wifi.png</file>
     <file>images/router.png</file>
     <file>images/action.png</file>
@@ -17,13 +15,8 @@
     <file>images/media-skip-forward.png</file>
     <file>images/preferences-desktop-icons.png</file>
     <file>images/save.png</file>
-    <file>images/list-remove.png</file>
-    <file>images/list-add.png</file>
     <file>images/view-refresh.png</file>
     <file>images/run-build.png</file>
-    <file alias="absolute">images/view-calendar-day.png</file>
-    <file alias="days">images/view-calendar-week.png</file>
-    <file alias="template">images/task-new.png</file>
     <file>images/flag-green.png</file>
     <file>images/flag-red.png</file>
   </qresource>
