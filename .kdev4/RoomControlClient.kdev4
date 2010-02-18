@@ -2,33 +2,28 @@
 BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00"\x00R\x00o\x00o\x00m\x00C\x00o\x00n\x00t\x00r\x00o\x00l\x00C\x00l\x00i\x00e\x00n\x00t)
 
 [CMake]
-BuildDirs[$e]=$HOME/Entwicklung/roomcontrol-client
+BuildDirs[$e]=$HOME/Entwicklung/roomControl/RoomControlClient/build
 CMakeDir=/usr/share/cmake/Modules
-Current CMake Binary=file:///usr/bin/cmake
-CurrentBuildDir=file:///home/david/Entwicklung/roomcontrol-client
-CurrentBuildType=Release
-CurrentInstallDir=file:///usr
+CurrentBuildDir=file:///home/david/Entwicklung/roomControl/RoomControlClient/build
 ProjectRootRelative=./
 
 [Launch]
-Launch Configurations=Launch Configuration 0
+Launch Configurations=Launch Configuration 1
 
-[Launch][Launch Configuration 0]
+[Launch][Launch Configuration 1]
 Configured Launch Modes=execute
 Configured Launchers=nativeAppLauncher
-Name=Client
+Name=roomclient
 Type=Native Application
 
-[Launch][Launch Configuration 0][Data]
-Arguments=
-Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
-Dependency Action=Nothing
-EnvironmentGroup=
-Executable=file:///home/david/Entwicklung/roomcontrol-client/roomclient
-Use External Terminal=false
-Working Directory=
-isExecutable=true
+[Launch][Launch Configuration 1][Data]
+Project Target=RoomControlClient,src,roomclient
+Working Directory=file:///home/david/Entwicklung/roomControl/RoomControlClient/build/src/
+isExecutable=false
 
 [MakeBuilder]
 Number Of Jobs=3
 Run Multiple Jobs=true
+
+[Project]
+VersionControlSupport=kdevgit
