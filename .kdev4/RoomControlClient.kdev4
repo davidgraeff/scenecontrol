@@ -8,7 +8,18 @@ CurrentBuildDir=file:///home/david/Entwicklung/roomControl/RoomControlClient/bui
 ProjectRootRelative=./
 
 [Launch]
-Launch Configurations=Launch Configuration 1
+Launch Configurations=Launch Configuration 1,Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=roomtouch
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Project Target=RoomControlClient,touchgui,roomtouch
+Working Directory=file:///home/david/Entwicklung/roomControl/RoomControlClient/build/touchgui/
+isExecutable=false
 
 [Launch][Launch Configuration 1]
 Configured Launch Modes=execute
@@ -17,7 +28,11 @@ Name=roomclient
 Type=Native Application
 
 [Launch][Launch Configuration 1][Data]
-Project Target=RoomControlClient,src,roomclient
+Arguments=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+Dependency Action=Nothing
+EnvironmentGroup=default
+Project Target=RoomControlClient,desktopgui,roomclient
 Working Directory=file:///home/david/Entwicklung/roomControl/RoomControlClient/build/src/
 isExecutable=false
 

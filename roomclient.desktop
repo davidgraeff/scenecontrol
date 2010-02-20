@@ -1,9 +1,0 @@
-#!/usr/bin/env xdg-open
-[Desktop Entry]
-Name=RoomClient
-Comment=To control the roomcontrol server
-Exec=roomclient
-Icon=package_edutainment_art
-Type=Application
-Categories=System
-Terminal=false 

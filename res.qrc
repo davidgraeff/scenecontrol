@@ -1,23 +1,33 @@
 <RCC>
-  <qresource prefix="/">
-    <file>images/editname.png</file>
-    <file>images/add.png</file>
-    <file>images/remove.png</file>
-    <file>images/wifi.png</file>
-    <file>images/router.png</file>
-    <file>images/action.png</file>
-    <file>images/media-playback-pause.png</file>
-    <file>images/media-playback-start.png</file>
-    <file>images/media-playback-stop.png</file>
-    <file>images/media-seek-backward.png</file>
-    <file>images/media-seek-forward.png</file>
-    <file>images/media-skip-backward.png</file>
-    <file>images/media-skip-forward.png</file>
-    <file>images/preferences-desktop-icons.png</file>
-    <file>images/save.png</file>
-    <file>images/view-refresh.png</file>
-    <file>images/run-build.png</file>
-    <file>images/flag-green.png</file>
-    <file>images/flag-red.png</file>
-  </qresource>
+    <qresource prefix="/">
+        <file alias="panelback">images/panelback.png</file>
+        <file alias="serviceprovider">images/serviceprovider.png</file>
+        <file alias="dialog-question">images/dialog-question.png</file>
+        <file alias="dialog-information">images/dialog-information.png</file>
+        <file alias="add">images/actions/add.png</file>
+        <file alias="editname">images/actions/editname.png</file>
+        <file alias="down">images/actions/go-down.png</file>
+        <file alias="up">images/actions/go-up.png</file>
+        <file alias="pause">images/actions/media-playback-pause.png</file>
+        <file alias="play">images/actions/media-playback-start.png</file>
+        <file alias="stop">images/actions/media-playback-stop.png</file>
+        <file alias="previous">images/actions/media-skip-backward.png</file>
+        <file alias="next">images/actions/media-skip-forward.png</file>
+        <file alias="remove">images/actions/remove.png</file>
+        <file alias="run">images/actions/run-build.png</file>
+        <file alias="close">images/actions/window-close.png</file>
+        <file alias="fullscreen">images/actions/view-fullscreen.png</file>
+        <file alias="volume-high">images/status/audio-volume-high.png</file>
+        <file alias="volume-low">images/status/audio-volume-low.png</file>
+        <file alias="volume-medium">images/status/audio-volume-medium.png</file>
+        <file alias="volume-muted">images/status/audio-volume-muted.png</file>
+        <file alias="green">images/status/flag-green.png</file>
+        <file alias="red">images/status/flag-red.png</file>
+        <file alias="alarmsmode">images/modes/alarms.png</file>
+        <file alias="ledsmode">images/modes/leds.png</file>
+        <file alias="pinsmode">images/modes/pins.png</file>
+        <file alias="playlistsmode">images/modes/playlists.png</file>
+        <file alias="tracksmode">images/modes/tracks.png</file>
+        <file alias="background">images/background.jpg</file>
+    </qresource>
 </RCC>
