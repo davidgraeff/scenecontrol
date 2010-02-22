@@ -27,6 +27,7 @@ class AbstractServiceProvider : public QObject
     Q_OBJECT
     Q_PROPERTY(QString id READ id WRITE setId);
     Q_PROPERTY(QString type READ type);
+    Q_PROPERTY(QString parentid READ parentid WRITE setParentid)
 public:
     AbstractServiceProvider(QObject* parent = 0);
     virtual void sync();
@@ -36,9 +37,18 @@ public:
     QString id() const;
     void setId(const QString& id);
     QString type() const;
+    
+    const QString& parentid() const {
+        return m_parentid;
+    }
+    
+    void setParentid( const QString& p ) {
+        m_parentid = p;
+    }
 protected:
     QString m_id;
     QString m_string;
+    QString m_parentid;
   Q_SIGNALS:
     void objectChanged(AbstractServiceProvider*);
     void objectSync(QObject*);

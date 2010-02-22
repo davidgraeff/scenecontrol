@@ -17,25 +17,26 @@
 
 */
 
-#ifndef ACTORMPRISSERVICEPROVIDER_H
-#define ACTORMPRISSERVICEPROVIDER_H
+#ifndef ActorCinemaPosition_h
+#define ActorCinemaPosition_h
 
 #include "abstractactor.h"
 
-class ActorMpris : public AbstractActor
+class ActorCinemaPosition : public AbstractActor
 {
     Q_OBJECT
-    Q_PROPERTY(int cmd READ cmd WRITE setCmd);
-    Q_PROPERTY(QString mprisid READ mprisid WRITE setMprisid);
+    Q_PROPERTY(qreal value READ value WRITE setValue);
+    Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
-    ActorMpris(QObject* parent = 0);
-    int cmd() const ;
-    void setCmd(int value) ;
-    QString mprisid() const ;
-    void setMprisid(const QString& value) ;
+    ActorCinemaPosition(QObject* parent = 0);
+    qreal value() const ;
+    void setValue(qreal value) ;
+    bool relative() const { return m_relative; }
+    void setRelative(bool value) { m_relative = value; }
     virtual void changed() ;
 private:
-    QString m_mprisid;
-    int m_cmd;
+    qreal m_volume;
+    bool m_relative;
 };
-#endif // ACTORMPRISSERVICEPROVIDER_H
+
+#endif // ActorCinemaPosition_h

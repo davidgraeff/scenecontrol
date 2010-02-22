@@ -21,12 +21,11 @@
 #include <QUuid>
 #include <QVariant>
 #include <QDebug>
+#include <RoomControlClient.h>
+#include "profile/serviceproviderprofile.h"
 
 AbstractServiceProvider::AbstractServiceProvider(QObject* parent)
-        : QObject(parent)
-{
-    m_id = QUuid::createUuid().toString().remove(QLatin1Char('{')).remove(QLatin1Char('}'));
-}
+        : QObject(parent) {}
 
 void AbstractServiceProvider::sync()
 {
@@ -42,6 +41,11 @@ void AbstractServiceProvider::sync()
 
 void AbstractServiceProvider::changed()
 {
+    if (m_parentid.isEmpty()) return;
+    ProfileCollection* parent = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(m_parentid));
+    if (parent)
+        parent->addChild(this);
+
     emit objectChanged(this);
 }
 

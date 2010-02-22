@@ -17,35 +17,20 @@
 
 */
 
-#include "actormprisvolume.h"
+#include "actorcinemaposition.h"
 
-ActorMprisVolume::ActorMprisVolume(QObject* parent)
+ActorCinemaPosition::ActorCinemaPosition(QObject* parent)
         : AbstractActor(parent)
 {}
 
-qreal ActorMprisVolume::value() const {
+qreal ActorCinemaPosition::value() const {
     return m_volume;
 }
-void ActorMprisVolume::setValue(qreal value) {
+void ActorCinemaPosition::setValue(qreal value) {
     m_volume = value;
 }
-QString ActorMprisVolume::mprisid() const {
-    return m_mprisid;
-}
-void ActorMprisVolume::setMprisid(const QString& value) {
-    m_mprisid = value;
-}
-bool ActorMprisVolume::relative() const {
-    return m_relative;
-}
-void ActorMprisVolume::setRelative(bool value) {
-    m_relative = value;
-}
-void ActorMprisVolume::changed() {
-    if (m_relative)
-        m_string = tr("Mpris Volume verändern um %1").arg(m_volume);
-    else
-        m_string = tr("Mpris Volume setzten auf %1").arg(m_volume);
+void ActorCinemaPosition::changed() {
+    m_string = tr("Cinema Position setzen auf %1").arg(m_volume);
     AbstractServiceProvider::changed();
 }
 

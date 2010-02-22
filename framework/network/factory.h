@@ -36,7 +36,6 @@ public:
     Factory(QObject* parent = 0);
     virtual ~Factory();
     void examine(const QVariantMap& json);
-    bool generate ( const QVariantMap& args );
     /**
       * Add service provider to the managed list
       */
@@ -56,10 +55,12 @@ public:
     // all actors, conditions, events, profiles
     AbstractServiceProvider* get(const QString& id);
     void syncComplete();
+    void syncStarted();
 private:
     QMap<QString, AbstractServiceProvider*> m_provider;
     QList<AbstractServiceProvider*> m_providerList;
-//    QList<AbstractStateTracker*> m_tracker;
+    AbstractServiceProvider* generate ( const QVariantMap& args );
+    bool m_sync;
 private Q_SLOTS:
     void slotdisconnected();
 Q_SIGNALS:

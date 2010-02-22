@@ -17,25 +17,25 @@
 
 */
 
-#ifndef MPRISSTATETRACKER_H
-#define MPRISSTATETRACKER_H
+#ifndef CINEMASTATETRACKER_H
+#define CINEMASTATETRACKER_H
 #include "abstractstatetracker.h"
 #include "media/mediacmds.h"
 
 class OrgFreedesktopMediaPlayerInterface;
-class MprisStateTracker : public AbstractStateTracker
+class CinemaStateTracker : public AbstractStateTracker
 {
     Q_OBJECT
-    Q_PROPERTY(QString mprisid READ mprisid WRITE setMprisid)
+    Q_PROPERTY(QString cinemaid READ cinemaid WRITE setCinemaid)
     Q_PROPERTY(QString url READ url WRITE setUrl)
     Q_PROPERTY(int position READ position WRITE setPosition)
     Q_PROPERTY(int volume READ volume WRITE setVolume)
     Q_PROPERTY(int state READ state WRITE setState)
 public:
-    MprisStateTracker(QObject* parent = 0);
+    CinemaStateTracker(QObject* parent = 0);
 
-    const QString& mprisid() const ;
-    void setMprisid( const QString& m ) ;
+    const QString& cinemaid() const ;
+    void setCinemaid( const QString& m ) ;
     const QString& url() const ;
     void setUrl( const QString& u ) ;
     int position() const ;
@@ -46,11 +46,11 @@ public:
     void setState( int s ) ;
     
 private:
-    QString m_mprisid;
+    QString m_cinemaid;
     QString m_url;
     int m_position;
     int m_volume;
     int m_state;
 };
 
-#endif // MPRISSTATETRACKER_H
+#endif // CINEMASTATETRACKER_H

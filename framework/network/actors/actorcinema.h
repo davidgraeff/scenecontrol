@@ -17,21 +17,22 @@
 
 */
 
-#include "actorplaylistcmd.h"
+#ifndef ACTORCINEMASERVICEPROVIDER_H
+#define ACTORCINEMASERVICEPROVIDER_H
+
+#include "abstractactor.h"
 #include "media/mediacmds.h"
-#include <RoomControlClient.h>
-#include <QMetaProperty>
 
-ActorPlaylistCmd::ActorPlaylistCmd(QObject* parent)
-        : AbstractActor(parent)
+class ActorCinema : public AbstractActor
 {
-}
-void ActorPlaylistCmd::changed() {
-    QMetaEnum e = RoomControlClient::staticMetaObject.enumerator(RoomControlClient::staticMetaObject.indexOfEnumerator("EnumMediaCmd"));
-    QString name = QString::number(m_cmd);
-    if (e.isValid())
-        name = e.valueToKey(m_cmd);
-
-    m_string = tr("Musik Kommando %1").arg(name);
-    AbstractServiceProvider::changed();
-}
+    Q_OBJECT
+    Q_PROPERTY(int cmd READ cmd WRITE setCmd);
+public:
+    ActorCinema(QObject* parent = 0);
+    int cmd() const ;
+    void setCmd(int value) ;
+    virtual void changed() ;
+private:
+    int m_cmd;
+};
+#endif // ACTORCINEMASERVICEPROVIDER_H

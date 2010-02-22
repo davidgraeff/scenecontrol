@@ -27,7 +27,7 @@ NetworkController::NetworkController()
     m_bufferBrakes=0;
     connect(&serverTimeout,SIGNAL(timeout()),SLOT(timeout()));
     serverTimeout.setSingleShot(true);
-    serverTimeout.setInterval(1500);
+    serverTimeout.setInterval(5000);
 
     connect ( this, SIGNAL ( readyRead() ), SLOT ( slotreadyRead() ) );
     connect ( this, SIGNAL ( connected() ), SLOT( slotconnected()) );
@@ -99,6 +99,7 @@ void NetworkController::objectSync(QObject* p)
     QJson::Serializer serializer;
     QByteArray cmdbytes = serializer.serialize(variant);
     write ( cmdbytes );
+    qDebug() << __FUNCTION__ << cmdbytes;
 }
 
 void NetworkController::slotreadyRead()
@@ -117,7 +118,7 @@ void NetworkController::slotreadyRead()
         }
     } else return;
 
-
+    
     QByteArray cmdstring;
     while (1) {
         cmdstring = getNextJson();
@@ -144,6 +145,7 @@ void NetworkController::slotreadyRead()
             {
                 serverTimeout.stop();
                 emit connectedToValidServer();
+		RoomControlClient::getFactory()->syncStarted();
             }
             continue;
         }

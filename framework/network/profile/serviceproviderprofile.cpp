@@ -28,87 +28,53 @@
 ProfileCollection::ProfileCollection(QObject* parent)
         : AbstractServiceProvider(parent), m_enabled(true)
 {
-    Factory* f = RoomControlClient::getFactory();
-    connect(f,SIGNAL(addedProvider(AbstractServiceProvider*)),SLOT(addedProvider(AbstractServiceProvider*)));
-    connect(f,SIGNAL(removedProvider(AbstractServiceProvider*)),SLOT(removedProvider(AbstractServiceProvider*)));
     m_events_model = new ServiceProviderModel(tr("Ereignisse"), this);
     m_conditions_model = new ServiceProviderModel(tr("Bedingungen"),this);
     m_events_and_conditions_model = new ServiceProviderModel(tr("Ereignisse/Bedingungen"),this);
     m_actors_model = new ServiceProviderModel(tr("Aktionen"),this);
 }
 
-void ProfileCollection::addedProvider(AbstractServiceProvider* provider)
+void ProfileCollection::addChild(AbstractServiceProvider* provider)
 {
-    if (m_actors.contains(provider->id())) {
-        AbstractActor* p = (AbstractActor*)provider;
-        m_actors_linked.insert(p->delay(), p);
-        m_actors_model->addedProvider(provider);
-    } else if (m_conditions.contains(provider->id())) {
-        m_conditions_linked.insert((AbstractCondition*)provider);
+    AbstractActor* a = qobject_cast<AbstractActor*>(provider);
+    AbstractCondition* c = qobject_cast<AbstractCondition*>(provider);
+    AbstractEvent* e = qobject_cast<AbstractEvent*>(provider);
+    if (a) {
+        m_actors_linked.insert(a->delay(), a);
+	m_actors_model->addedProvider(provider);
+    }
+    if (c) {
+        m_conditions_linked.insert(c);
         m_conditions_model->addedProvider(provider);
-	m_events_and_conditions_model->addedProvider(provider);
-    } else if (m_events.contains(provider->id())) {
-        AbstractEvent* p = (AbstractEvent*)provider;
-        m_events_linked.insert(p);
+        m_events_and_conditions_model->addedProvider(provider);
+    }
+    if (e) {
+        m_events_linked.insert(e);
         m_events_model->addedProvider(provider);
-	m_events_and_conditions_model->addedProvider(provider);
+        m_events_and_conditions_model->addedProvider(provider);
     }
 }
 
-void ProfileCollection::removedProvider(AbstractServiceProvider* provider)
+void ProfileCollection::removedChild(AbstractServiceProvider* provider)
 {
-    if (m_actors.contains(provider->id())) {
-        AbstractActor* p = (AbstractActor*)provider;
-        m_actors_linked.remove(p->delay(),p);
-        m_actors.removeAll(p->id());
-        m_actors_model->removedProvider(provider);
-    } else if (m_conditions.contains(provider->id())) {
-        AbstractCondition* p = (AbstractCondition*)provider;
-        m_conditions_linked.remove(p);
-        m_conditions.removeAll(p->id());
+    AbstractActor* a = qobject_cast<AbstractActor*>(provider);
+    AbstractCondition* c = qobject_cast<AbstractCondition*>(provider);
+    AbstractEvent* e = qobject_cast<AbstractEvent*>(provider);
+    if (a) {
+        m_actors_linked.remove(a->delay(), a);
+	m_actors_model->removedProvider(provider);
+    }
+    if (c) {
+        m_conditions_linked.remove(c);
         m_conditions_model->removedProvider(provider);
-	m_events_and_conditions_model->removedProvider(provider);
-    } else if (m_events.contains(provider->id())) {
-        AbstractEvent* p = (AbstractEvent*)provider;
-        m_events_linked.remove(p);
-        m_events.removeAll(p->id());
+        m_events_and_conditions_model->removedProvider(provider);
+    }
+    if (e) {
+        m_events_linked.remove(e);
         m_events_model->removedProvider(provider);
-	m_events_and_conditions_model->removedProvider(provider);
-    } else return;
-
-    sync();
+        m_events_and_conditions_model->removedProvider(provider);
+    }
 }
-
-QString ProfileCollection::name() const {
-    return m_name;
-}
-void ProfileCollection::setName(const QString& cmd) {
-    m_name = cmd;
-}
-QStringList ProfileCollection::actors() const {
-    return m_actors;
-}
-void ProfileCollection::setActors(const QStringList& cmd) {
-    m_actors = cmd;
-}
-QStringList ProfileCollection::conditions() const {
-    return m_conditions;
-}
-void ProfileCollection::setConditions(const QStringList& cmd) {
-    m_conditions = cmd;
-}
-QStringList ProfileCollection::events() const {
-    return m_events;
-}
-void ProfileCollection::setEvents(const QStringList& cmd) {
-    m_events = cmd;
-}
-void ProfileCollection::changed() {
-    m_string = m_name;
-    if (!m_enabled) m_string.append(tr(" <Disabled>"));
-    AbstractServiceProvider::changed();
-}
-
 ServiceProviderModel* ProfileCollection::actors_model() const {
     return m_actors_model;
 }
@@ -124,13 +90,13 @@ ServiceProviderModel* ProfileCollection::events_model() const {
 ServiceProviderModel* ProfileCollection::events_and_conditions_model() const {
     return m_events_and_conditions_model;
 }
-
-void ProfileCollection::addChild(AbstractServiceProvider* provider)
+QString ProfileCollection::name() const {
+    return m_name;
+}
+void ProfileCollection::setName(const QString& cmd) {
+    m_name = cmd;
+}
+void ProfileCollection::changed() 
 {
-    if (qobject_cast<AbstractActor*>(provider))
-        m_actors.append(provider->id());
-    else if (qobject_cast<AbstractCondition*>(provider))
-        m_conditions.append(provider->id());
-    else if (qobject_cast<AbstractEvent*>(provider))
-        m_events.append(provider->id());
+  m_string = m_name;
 }

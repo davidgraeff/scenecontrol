@@ -63,13 +63,21 @@ void ActorLed::setAssignment(int value)
     m_assignment = value;
 }
 void ActorLed::changed() {
+    QString h;
+    if (m_fadetype==0)
+        h = tr("Setze");
+    else if (m_fadetype==1)
+        h = tr("Fade");
+    else if (m_fadetype==2)
+        h = tr("Flashy Fade");
+
     if (m_assignment==ValueAbsolute)
-        m_string = tr("Led %1 auf %2").arg(m_channel).arg(m_value);
+        m_string = tr("%1 Led %2 auf %3").arg(h).arg(m_channel).arg(m_value);
     else if (m_assignment==ValueRelative)
-        m_string = tr("Led %1 verändern um %2").arg(m_channel).arg(m_value);
+        m_string = tr("%1 Led %2 um %3").arg(h).arg(m_channel).arg(m_value);
     else if (m_assignment==ValueMultiplikator)
-        m_string = tr("Led %1 verändern um Faktor %2").arg(m_channel).arg(m_value);
+        m_string = tr("%1 Led %2 um Faktor %3").arg(h).arg(m_channel).arg(m_value);
     else if (m_assignment==ValueInverse)
-        m_string = tr("Led %1 Wert invertieren").arg(m_channel);
+        m_string = tr("%1 Led %2 (invertieren)").arg(h).arg(m_channel);
     AbstractServiceProvider::changed();
 }

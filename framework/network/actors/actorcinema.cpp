@@ -17,30 +17,29 @@
 
 */
 
-#ifndef ActorMprisPosition_h
-#define ActorMprisPosition_h
+#include "actorcinema.h"
+#include <QMetaProperty>
+#include <QDebug>
+#include <RoomControlClient.h>
 
-#include "abstractactor.h"
-
-class ActorMprisPosition : public AbstractActor
+ActorCinema::ActorCinema(QObject* parent)
+        : AbstractActor(parent)
 {
-    Q_OBJECT
-    Q_PROPERTY(qreal value READ value WRITE setValue);
-    Q_PROPERTY(QString mprisid READ mprisid WRITE setMprisid);
-    Q_PROPERTY(bool relative READ relative WRITE setRelative);
-public:
-    ActorMprisPosition(QObject* parent = 0);
-    qreal value() const ;
-    void setValue(qreal value) ;
-    QString mprisid() const ;
-    void setMprisid(const QString& value) ;
-    bool relative() const { return m_relative; }
-    void setRelative(bool value) { m_relative = value; }
-    virtual void changed() ;
-private:
-    qreal m_volume;
-    QString m_mprisid;
-    bool m_relative;
-};
+}
 
-#endif // ActorMprisPosition_h
+int ActorCinema::cmd() const {
+    return m_cmd;
+}
+void ActorCinema::setCmd(int value) {
+    m_cmd = value;
+}
+
+void ActorCinema::changed() {
+    QMetaEnum e = RoomControlClient::staticMetaObject.enumerator(RoomControlClient::staticMetaObject.indexOfEnumerator("EnumMediaCmd"));
+    QString name = QString::number(m_cmd);
+    if (e.isValid())
+        name = e.valueToKey(m_cmd);
+
+    m_string = tr("Cinema Kommando %1").arg(name);
+    AbstractServiceProvider::changed();
+}

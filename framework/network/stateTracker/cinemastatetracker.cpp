@@ -17,26 +17,40 @@
 
 */
 
-#include "actormprisposition.h"
+#include "cinemastatetracker.h"
 
-ActorMprisPosition::ActorMprisPosition(QObject* parent)
-        : AbstractActor(parent)
-{}
+CinemaStateTracker::CinemaStateTracker(QObject* parent)
+        : AbstractStateTracker(parent)
+{
+}
 
-qreal ActorMprisPosition::value() const {
+void CinemaStateTracker::setState(int s) {
+    m_state = s;
+}
+int CinemaStateTracker::state() const {
+    return m_state;
+}
+void CinemaStateTracker::setVolume(int v) {
+    m_volume = v;
+}
+void CinemaStateTracker::setPosition(int p) {
+    m_position = p;
+}
+int CinemaStateTracker::volume() const {
     return m_volume;
 }
-void ActorMprisPosition::setValue(qreal value) {
-    m_volume = value;
+int CinemaStateTracker::position() const {
+    return m_position;
 }
-QString ActorMprisPosition::mprisid() const {
-    return m_mprisid;
+void CinemaStateTracker::setUrl(const QString& u) {
+    m_url = u;
 }
-void ActorMprisPosition::setMprisid(const QString& value) {
-    m_mprisid = value;
+const QString& CinemaStateTracker::url() const {
+    return m_url;
 }
-void ActorMprisPosition::changed() {
-    m_string = tr("Mpris Position setzen auf %1").arg(m_volume);
-    AbstractServiceProvider::changed();
+void CinemaStateTracker::setCinemaid(const QString& m) {
+    m_cinemaid = m;
 }
-
+const QString& CinemaStateTracker::cinemaid() const {
+    return m_cinemaid;
+}

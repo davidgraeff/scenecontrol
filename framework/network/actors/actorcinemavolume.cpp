@@ -17,27 +17,29 @@
 
 */
 
-#include "actormpris.h"
-#include "media/mediacmds.h"
+#include "actorcinemavolume.h"
 
-ActorMpris::ActorMpris(QObject* parent)
+ActorCinemaVolume::ActorCinemaVolume(QObject* parent)
         : AbstractActor(parent)
-{
-}
+{}
 
-int ActorMpris::cmd() const {
-    return m_cmd;
+qreal ActorCinemaVolume::value() const {
+    return m_volume;
 }
-void ActorMpris::setCmd(int value) {
-    m_cmd = value;
+void ActorCinemaVolume::setValue(qreal value) {
+    m_volume = value;
 }
-QString ActorMpris::mprisid() const {
-    return m_mprisid;
+bool ActorCinemaVolume::relative() const {
+    return m_relative;
 }
-void ActorMpris::setMprisid(const QString& value) {
-    m_mprisid = value;
+void ActorCinemaVolume::setRelative(bool value) {
+    m_relative = value;
 }
-void ActorMpris::changed() {
-    m_string = tr("Mpris Kommando").arg(m_cmd);
+void ActorCinemaVolume::changed() {
+    if (m_relative)
+        m_string = tr("Cinema Volume verändern um %1").arg(m_volume);
+    else
+        m_string = tr("Cinema Volume setzten auf %1").arg(m_volume);
     AbstractServiceProvider::changed();
 }
+

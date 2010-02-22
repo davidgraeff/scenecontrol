@@ -17,31 +17,27 @@
 
 */
 
-#ifndef ACTORMPRISVOLUMESERVICEPROVIDER_H
-#define ACTORMPRISVOLUMESERVICEPROVIDER_H
+#ifndef ACTORCINEMAVOLUMESERVICEPROVIDER_H
+#define ACTORCINEMAVOLUMESERVICEPROVIDER_H
 
 #include "abstractactor.h"
 
-class ActorMprisVolume : public AbstractActor
+class ActorCinemaVolume : public AbstractActor
 {
     Q_OBJECT
     Q_PROPERTY(qreal value READ value WRITE setValue);
-    Q_PROPERTY(QString mprisid READ mprisid WRITE setMprisid);
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
-    ActorMprisVolume(QObject* parent = 0);
+    ActorCinemaVolume(QObject* parent = 0);
     qreal value() const ;
     void setValue(qreal value) ;
-    QString mprisid() const ;
-    void setMprisid(const QString& value) ;
     bool relative() const ;
     void setRelative(bool value) ;
     virtual void changed() ;
 
 private:
     qreal m_volume;
-    QString m_mprisid;
     bool m_relative;
 };
 
-#endif // ACTORMPRISVOLUMESERVICEPROVIDER_H
+#endif // ACTORCINEMAVOLUMESERVICEPROVIDER_H

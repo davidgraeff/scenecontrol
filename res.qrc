@@ -29,5 +29,10 @@
         <file alias="playlistsmode">images/modes/playlists.png</file>
         <file alias="tracksmode">images/modes/tracks.png</file>
         <file alias="background">images/background.jpg</file>
+        <file>images/button.svg</file>
+        <file>images/viewitem.svg</file>
+        <file alias="radio">images/actions/radio.png</file>
+        <file alias="headset">images/actions/headset.png</file>
+        <file alias="refresh">images/actions/view-refresh.png</file>
     </qresource>
 </RCC>

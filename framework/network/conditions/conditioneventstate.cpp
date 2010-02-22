@@ -19,6 +19,7 @@
 
 #include "conditioneventstate.h"
 #include "media/mediacmds.h"
+#include <RoomControlClient.h>
 
 ConditionEventState::ConditionEventState(QObject* parent)
 : AbstractCondition(parent)
@@ -35,9 +36,9 @@ void ConditionEventState::setValue(int value)
     m_value = (int)value;
 }
 void ConditionEventState::changed() {
-    if (m_value==PlayState)
+    if (m_value==RoomControlClient::PlayState)
         m_string = tr("Wenn Eventsound abgespielt wird");
-    else if (m_value==StopState)
+    else if (m_value==RoomControlClient::StopState)
         m_string = tr("Wenn Eventsound gestoppt");
     AbstractServiceProvider::changed();
 }

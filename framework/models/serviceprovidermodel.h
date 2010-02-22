@@ -49,7 +49,6 @@ public Q_SLOTS:
 private:
     QList< AbstractServiceProvider* > m_items;
     QString m_title;
-    QMap<QString,int> m_assignment; // service provider id -> list id
 };
 
 #endif // ServiceProviderModel_h

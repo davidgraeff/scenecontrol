@@ -18,6 +18,7 @@
 */
 
 #include "conditionmusicstate.h"
+#include <RoomControlClient.h>
 
 ConditionMusicState::ConditionMusicState(QObject* parent)
 : AbstractCondition(parent)
@@ -34,11 +35,11 @@ void ConditionMusicState::setValue(int value)
     m_value = (int)value;
 }
 void ConditionMusicState::changed() {
-    if (m_value==PlayState)
+    if (m_value==RoomControlClient::PlayState)
         m_string = tr("Wenn Musik abgespielt wird");
-    else if (m_value==StopState)
+    else if (m_value==RoomControlClient::StopState)
         m_string = tr("Wenn Musik gestoppt");
-    else if (m_value==PauseState)
+    else if (m_value==RoomControlClient::PauseState)
         m_string = tr("Wenn Musik pausiert");
     AbstractServiceProvider::changed();
 }

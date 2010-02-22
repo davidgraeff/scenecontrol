@@ -33,9 +33,9 @@
 #include "actors/actorcurtain.h"
 #include "actors/actorled.h"
 #include "actors/actorledname.h"
-#include "actors/actormpris.h"
-#include "actors/actormprisposition.h"
-#include "actors/actormprisvolume.h"
+#include "actors/actorcinema.h"
+#include "actors/actorcinemaposition.h"
+#include "actors/actorcinemavolume.h"
 #include "actors/actorpin.h"
 #include "actors/actorpinname.h"
 #include "actors/actorplaylistcmd.h"
@@ -64,7 +64,7 @@
 #include "stateTracker/curtainstatetracker.h"
 #include "stateTracker/eventstatetracker.h"
 #include "stateTracker/mediastatetracker.h"
-#include "stateTracker/mprisstatetracker.h"
+#include "stateTracker/cinemastatetracker.h"
 #include "stateTracker/programstatetracker.h"
 #include "stateTracker/remotecontrolstatetracker.h"
 #include "stateTracker/remotecontrolkeystatetracker.h"
@@ -72,8 +72,8 @@
 
 Factory::Factory(QObject* parent) : QObject(parent)
 {
-  connect(RoomControlClient::getNetworkController(),SIGNAL(disconnected()),
-	  SLOT(slotdisconnected()));
+    connect(RoomControlClient::getNetworkController(),SIGNAL(disconnected()),
+            SLOT(slotdisconnected()));
 }
 
 Factory::~Factory()
@@ -83,12 +83,11 @@ Factory::~Factory()
 
 AbstractServiceProvider* Factory::get(const QString& id)
 {
-    return m_provider.value(id);
+    return m_provider.value(id, 0);
 }
 
-bool Factory::generate ( const QVariantMap& args )
+AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
 {
-
     AbstractServiceProvider* provider = 0;
     AbstractStateTracker* tracker = 0;
     const QByteArray type = args.value(QLatin1String("type"), QString()).toString().toAscii();
@@ -107,12 +106,12 @@ bool Factory::generate ( const QVariantMap& args )
         provider = new ActorLed();
     } else if (type == ActorLedName::staticMetaObject.className()) {
         provider = new ActorLedName();
-    } else if (type == ActorMpris::staticMetaObject.className()) {
-        provider = new ActorMpris();
-    } else if (type == ActorMprisPosition::staticMetaObject.className()) {
-        provider = new ActorMprisPosition();
-    } else if (type == ActorMprisVolume::staticMetaObject.className()) {
-        provider = new ActorMprisVolume();
+    } else if (type == ActorCinema::staticMetaObject.className()) {
+        provider = new ActorCinema();
+    } else if (type == ActorCinemaPosition::staticMetaObject.className()) {
+        provider = new ActorCinemaPosition();
+    } else if (type == ActorCinemaVolume::staticMetaObject.className()) {
+        provider = new ActorCinemaVolume();
     } else if (type == ActorPin::staticMetaObject.className()) {
         provider = new ActorPin();
     } else if (type == ActorPinName::staticMetaObject.className()) {
@@ -167,39 +166,25 @@ bool Factory::generate ( const QVariantMap& args )
         tracker = new EventStateTracker();
     } else if (type == MediaStateTracker::staticMetaObject.className()) {
         tracker = new MediaStateTracker();
-    } else if (type == MprisStateTracker::staticMetaObject.className()) {
-        tracker = new MprisStateTracker();
+    } else if (type == CinemaStateTracker::staticMetaObject.className()) {
+        tracker = new CinemaStateTracker();
     } else if (type == ProgramStateTracker::staticMetaObject.className()) {
         tracker = new ProgramStateTracker();
     } else if (type == RemoteControlStateTracker::staticMetaObject.className()) {
         tracker = new RemoteControlStateTracker();
     } else if (type == RemoteControlKeyStateTracker::staticMetaObject.className()) {
         tracker = new RemoteControlKeyStateTracker();
+    } else {
+	qWarning() << "command not supported" << type;
     }
-
-    if (provider)
-    {
-        QJson::QObjectHelper::qvariant2qobject(args, provider);
-	// init (e.g. set human readable toString)
-	ProfileCollection* pc = qobject_cast<ProfileCollection*>(provider);
-	if (pc) {
-	    // Also inform the profile about already loaded provider
-	    foreach (AbstractServiceProvider* p, m_providerList) {
-		pc->addedProvider(p);
-	    }
-	}
-	provider->changed();
-        addServiceProvider(provider);
-    } else if (tracker)
+    if (tracker)
     {
         QJson::QObjectHelper::qvariant2qobject(args, tracker);
         emit stateChanged(tracker);
         if (tracker->property("managed").isNull())
             delete tracker;
-    } else
-        return false;
-
-    return true;
+    }
+    return provider;
 }
 
 void Factory::addServiceProvider(AbstractServiceProvider* provider)
@@ -232,22 +217,33 @@ void Factory::examine(const QVariantMap& json)
     if (id.size() && m_provider.contains(id))
     {
         AbstractServiceProvider* service = m_provider.value(id);
-        // remove object if the json request contains a variable with the name "remove"
         if (json.contains(QLatin1String("remove"))) {
+            // remove object if the json request contains a variable with the name "remove"
+            // first remove object from the parent profile (if !profile)
+            const QString parentid = service->parentid();
+            ProfileCollection* profile = qobject_cast<ProfileCollection*>(get(parentid));
+            if (profile)
+                profile->removedChild(service);
+            // remove object
             emit removedProvider(service);
             m_provider.remove(id);
-	    m_providerList.removeAll(service);
+            m_providerList.removeAll(service);
             delete service;
-        } else { // update object with values from the json request
+        } else {
+            // update object with values from the json request
             QJson::QObjectHelper::qvariant2qobject(json, service);
             service->changed();
         }
     } else if (!json.contains(QLatin1String("remove")))
-    { // Object with id not known. Create new object
-        if (!generate(json))
-        {
-            qWarning() << "command not supported" << json.value(QLatin1String("type"));
-        }
+    {
+        // Object with id not known. Create new object
+        AbstractServiceProvider* service = generate(json);
+        if (!service)
+            return;
+        QJson::QObjectHelper::qvariant2qobject(json, service);
+        // init (e.g. set human readable toString)
+        service->changed();
+        addServiceProvider(service);
     }
 }
 
@@ -264,5 +260,14 @@ void Factory::slotdisconnected()
 
 void Factory::syncComplete()
 {
-  
+    m_sync = false;
+    // Sync is completed, Link provider together and init them
+    foreach (AbstractServiceProvider* p, m_providerList)
+    {
+        p->changed();
+    }
+}
+
+void Factory::syncStarted() {
+    m_sync=true;
 }

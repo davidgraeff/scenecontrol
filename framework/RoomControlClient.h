@@ -18,6 +18,40 @@ class RoomControlClient: public QObject
 {
     Q_OBJECT
 public:
+    enum EnumMediaState
+    {
+        PlayState,
+        PauseState,
+        StopState
+    };
+
+    enum EnumMediaCmd
+    {
+        PlayCmd,
+        StopCmd,
+        PauseCmd,
+        NextCmd,
+        PrevCmd,
+        NextPlaylistCmd,
+        PrevPlaylistCmd,
+        InfoCmd,
+        AspectRatioCmd,
+        NextSubtitleCmd,
+        NextLanguageCmd,
+        NavigationUpCmd,
+        NavigationDownCmd,
+        NavigationLeftCmd,
+        NavigationRightCmd,
+        NavigationBackCmd,
+        NavigationOKCmd,
+        NavigationHomeCmd,
+        NavigationCloseCmd,
+        NavigationContextMenuCmd,
+        FastForwardCmd,
+        FastRewindCmd
+    };
+    Q_ENUMS(EnumMediaCmd EnumMediaState);
+
     virtual ~RoomControlClient();
     static RoomControlClient* createInstance ();
     static inline RoomControlClient* getRoomControlClient ()
@@ -36,23 +70,23 @@ public:
     }
     static inline ChannelsModel* getChannelsModel()
     {
-      return instance->m_ChannelsModel;
+        return instance->m_ChannelsModel;
     }
     static inline PinsModel* getPinsModel()
     {
-      return instance->m_PinsModel;
+        return instance->m_PinsModel;
     }
     static inline PlaylistModel* getPlaylistModel()
     {
-      return instance->m_PlaylistModel;
+        return instance->m_PlaylistModel;
     }
     static inline ServiceProviderModel* getProfilesModel()
     {
-      return instance->m_profilesModel;
+        return instance->m_profilesModel;
     }
     static inline ServiceProviderModel* getProfilesWithAlarmsModel()
     {
-      return instance->m_profilesWithAlarmsModel;
+        return instance->m_profilesWithAlarmsModel;
     }
 private:
     static RoomControlClient* instance;
@@ -65,7 +99,7 @@ private:
     PlaylistModel* m_PlaylistModel;
     ServiceProviderModel* m_profilesModel;
     ServiceProviderModel* m_profilesWithAlarmsModel;
-  private Q_SLOTS:
+private Q_SLOTS:
     void addedProvider(AbstractServiceProvider* p) ;
     void removedProvider(AbstractServiceProvider* p) ;
 protected:

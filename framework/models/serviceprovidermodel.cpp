@@ -21,6 +21,7 @@
 #include <QStringList>
 #include <QDebug>
 #include <RoomControlClient.h>
+#include <profile/serviceproviderprofile.h>
 
 ServiceProviderModel::ServiceProviderModel ( const QString& title, QObject* parent )
         : QAbstractListModel ( parent ), m_title(title)
@@ -38,7 +39,6 @@ void ServiceProviderModel::slotdisconnected()
 {
     // Do not delete playlist objects, they are managed through the factory
     m_items.clear();
-    m_assignment.clear();
     reset();
 }
 
@@ -72,6 +72,15 @@ QVariant ServiceProviderModel::data ( const QModelIndex & index, int role ) cons
     {
         return m_items.at ( index.row() )->metaObject()->className();
     }
+    else if ( role==Qt::ToolTipRole )
+    {
+        AbstractServiceProvider* p = m_items.at ( index.row());
+        ProfileCollection* pc = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(p->parentid()));
+        QString parentname;
+        if (pc) parentname = pc->name();
+        return tr("%1\nZugeteilt: %2 (%3)").arg(p->id())
+               .arg(p->parentid()).arg(parentname);
+    }
 
     return QVariant();
 }
@@ -91,23 +100,26 @@ bool ServiceProviderModel::removeRows ( int row, int count, const QModelIndex & 
 
 void ServiceProviderModel::addedProvider ( AbstractServiceProvider* provider )
 {
-    const int listpos = m_assignment.value ( provider->id(),-1 );
+
+    const int listpos = indexOf ( provider->id());
     if ( listpos!=-1 ) return;
 
     connect ( provider, SIGNAL ( objectChanged ( AbstractServiceProvider* ) ),
               SLOT ( objectChanged ( AbstractServiceProvider* ) ) );
-    const int row = m_items.size();
-    m_assignment.insert ( provider->id(), row );
+    int row;
+    for (row=0;row<m_items.size();++row)
+        if (m_items[row]->toString().toLower() >= provider->toString().toLower())
+            break;
+
     beginInsertRows ( QModelIndex(),row,row );
-    m_items.append ( provider );
+    m_items.insert (row, provider );
     endInsertRows();
 }
 
 void ServiceProviderModel::removedProvider ( AbstractServiceProvider* provider )
 {
-    const int listpos = m_assignment.value ( provider->id(),-1 );
+    const int listpos = indexOf ( provider->id() );
     if ( listpos==-1 ) return;
-    m_assignment.remove ( provider->id() );
     beginRemoveRows ( QModelIndex(), listpos, listpos );
     m_items.removeAt ( listpos );
     endRemoveRows();
@@ -115,11 +127,31 @@ void ServiceProviderModel::removedProvider ( AbstractServiceProvider* provider )
 
 void ServiceProviderModel::objectChanged ( AbstractServiceProvider* provider )
 {
-    const int listpos = m_assignment.value ( provider->id(),-1 );
+    const int listpos = indexOf ( provider->id());
     if ( listpos==-1 ) return;
-    QModelIndex index = createIndex ( listpos,0,0 );
-    emit dataChanged ( index,index );
-    return;
+    int row;
+    bool skip = false;
+    for (row=0;row<m_items.size();++row)
+    {
+        if (listpos==row) skip =true;
+        if (listpos!=row && m_items[row]->toString().toLower() >= provider->toString().toLower())
+        {
+            break;
+        }
+    }
+    if (skip) row--;
+
+    if (row!=listpos) {
+        beginRemoveRows ( QModelIndex(), listpos, listpos );
+        m_items.removeAt ( listpos );
+        endRemoveRows();
+        beginInsertRows ( QModelIndex(),row,row );
+        m_items.insert (row, provider );
+        endInsertRows();
+    } else {
+        QModelIndex index = createIndex ( listpos,0,0 );
+        emit dataChanged ( index,index );
+    }
 }
 
 QString ServiceProviderModel::getName ( int i ) const
@@ -129,5 +161,7 @@ QString ServiceProviderModel::getName ( int i ) const
 
 int ServiceProviderModel::indexOf ( const QString& id )
 {
-    return m_assignment.value ( id,-1 );
+    for (int i=0;i<m_items.size();++i)
+        if (m_items[i]->id() == id) return i;
+    return -1;
 }

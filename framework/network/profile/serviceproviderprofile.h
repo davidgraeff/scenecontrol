@@ -32,24 +32,16 @@ class AbstractCondition;
 class ProfileCollection : public AbstractServiceProvider
 {
   Q_OBJECT
-  Q_PROPERTY(QStringList actors READ actors WRITE setActors);
-  Q_PROPERTY(QStringList conditions READ conditions WRITE setConditions);
-  Q_PROPERTY(QStringList events READ events WRITE setEvents);
   Q_PROPERTY(QString name READ name WRITE setName);
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled)
   public:
     ProfileCollection(QObject* parent = 0);
+    void removedChild(AbstractServiceProvider*);
+    void addChild(AbstractServiceProvider* provider);
     
     QString name() const ;
     void setName(const QString& cmd) ;
-    QStringList actors() const ;
-    void setActors(const QStringList& cmd) ;
-    QStringList conditions() const ;
-    void setConditions(const QStringList& cmd) ;
-    QStringList events() const ;
-    void setEvents(const QStringList& cmd) ;
 
-    void addChild(AbstractServiceProvider* provider);
 
     virtual void changed() ;
     ServiceProviderModel* events_model() const ;
@@ -66,9 +58,6 @@ class ProfileCollection : public AbstractServiceProvider
         m_enabled = e;
     }
   private:
-    QStringList m_actors;
-    QStringList m_conditions;
-    QStringList m_events;
     QString m_name;
     bool m_enabled;
     
@@ -79,10 +68,6 @@ class ProfileCollection : public AbstractServiceProvider
     ServiceProviderModel* m_events_and_conditions_model;
     ServiceProviderModel* m_conditions_model;
     ServiceProviderModel* m_actors_model;
-    
-  public Q_SLOTS:
-    void addedProvider(AbstractServiceProvider*);
-    void removedProvider(AbstractServiceProvider*);
 };
 
 #endif // SERVICEPROVIDERPROFILE_H
