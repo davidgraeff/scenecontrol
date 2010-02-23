@@ -66,6 +66,11 @@ void NetworkController::start(const QString& ip, int port)
     connectToHost ( ip, port );
 }
 
+void NetworkController::start()
+{
+    connectToHost(peerAddress(),peerPort());
+}
+
 QByteArray NetworkController::getNextJson()
 {
     for (; m_bufferpos<m_buffer.size(); ++m_bufferpos)

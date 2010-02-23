@@ -251,7 +251,7 @@ void Factory::slotdisconnected()
 {
     foreach (AbstractServiceProvider* p, m_providerList)
     {
-        emit removedProvider(p);
+        //emit removedProvider(p);
         delete p;
     }
     m_providerList.clear();

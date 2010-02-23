@@ -28,6 +28,7 @@ public:
     NetworkController();
     virtual ~NetworkController();
     void start(const QString& ip, int port);
+    void start();
     void resync();
     void refresh();
     void restart();
