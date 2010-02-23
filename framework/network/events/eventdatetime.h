@@ -31,8 +31,9 @@ public:
     QString datetime() const;
     void setDatetime(QString value);
     virtual void changed() ;
+    virtual void link() ;
 
-  private:
+private:
     QDateTime m_datetime;
 };
 

@@ -20,7 +20,6 @@
 #ifndef ConditionEventState_h
 #define ConditionEventState_h
 #include "abstractcondition.h"
-#include "media/mediacmds.h"
 
 class ConditionEventState : public AbstractCondition
 {

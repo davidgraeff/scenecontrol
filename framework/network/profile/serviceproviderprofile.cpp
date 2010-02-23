@@ -53,6 +53,7 @@ void ProfileCollection::addChild(AbstractServiceProvider* provider)
         m_events_model->addedProvider(provider);
         m_events_and_conditions_model->addedProvider(provider);
     }
+    emit childsChanged(this);
 }
 
 void ProfileCollection::removedChild(AbstractServiceProvider* provider)
@@ -74,6 +75,7 @@ void ProfileCollection::removedChild(AbstractServiceProvider* provider)
         m_events_model->removedProvider(provider);
         m_events_and_conditions_model->removedProvider(provider);
     }
+    emit childsChanged(this);
 }
 ServiceProviderModel* ProfileCollection::actors_model() const {
     return m_actors_model;

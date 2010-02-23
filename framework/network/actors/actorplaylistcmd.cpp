@@ -18,7 +18,6 @@
 */
 
 #include "actorplaylistcmd.h"
-#include "media/mediacmds.h"
 #include <RoomControlClient.h>
 #include <QMetaProperty>
 

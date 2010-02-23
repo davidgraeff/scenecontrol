@@ -106,6 +106,11 @@ void ServiceProviderModel::addedProvider ( AbstractServiceProvider* provider )
 
     connect ( provider, SIGNAL ( objectChanged ( AbstractServiceProvider* ) ),
               SLOT ( objectChanged ( AbstractServiceProvider* ) ) );
+    
+    ProfileCollection* pc = qobject_cast<ProfileCollection*>(provider);
+    if (pc)
+        connect(pc,SIGNAL(childsChanged(ProfileCollection*)),SLOT(childsChanged(ProfileCollection*)));
+    
     int row;
     for (row=0;row<m_items.size();++row)
         if (m_items[row]->toString().toLower() >= provider->toString().toLower())
@@ -164,4 +169,10 @@ int ServiceProviderModel::indexOf ( const QString& id )
     for (int i=0;i<m_items.size();++i)
         if (m_items[i]->id() == id) return i;
     return -1;
+}
+void ServiceProviderModel::childsChanged(ProfileCollection* provider) {
+    const int listpos = indexOf ( provider->id());
+    QModelIndex index = createIndex ( listpos,0,0 );
+    //qDebug() << m_title << "changed";
+    emit dataChanged ( index,index );
 }

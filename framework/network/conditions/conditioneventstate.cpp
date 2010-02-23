@@ -18,7 +18,6 @@
 */
 
 #include "conditioneventstate.h"
-#include "media/mediacmds.h"
 #include <RoomControlClient.h>
 
 ConditionEventState::ConditionEventState(QObject* parent)

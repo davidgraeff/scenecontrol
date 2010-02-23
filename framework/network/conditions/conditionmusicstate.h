@@ -20,7 +20,6 @@
 #ifndef ConditionMusicState_h
 #define ConditionMusicState_h
 #include "abstractcondition.h"
-#include "media/mediacmds.h"
 
 class ConditionMusicState : public AbstractCondition
 {

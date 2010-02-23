@@ -41,11 +41,6 @@ void AbstractServiceProvider::sync()
 
 void AbstractServiceProvider::changed()
 {
-    if (m_parentid.isEmpty()) return;
-    ProfileCollection* parent = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(m_parentid));
-    if (parent)
-        parent->addChild(this);
-
     emit objectChanged(this);
 }
 
@@ -60,4 +55,11 @@ void AbstractServiceProvider::setId(const QString& id) {
 QString AbstractServiceProvider::type() const {
     const QString type = QString::fromAscii(metaObject()->className());
     return type;
+}
+
+void AbstractServiceProvider::link() {
+    if (m_parentid.isEmpty()) return;
+    ProfileCollection* parent = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(m_parentid));
+    if (parent)
+        parent->addChild(this);
 }

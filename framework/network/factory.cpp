@@ -178,7 +178,7 @@ AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
     } else if (type == RemoteControlKeyStateTracker::staticMetaObject.className()) {
         tracker = new RemoteControlKeyStateTracker();
     } else {
-	qWarning() << "command not supported" << type;
+        qWarning() << "command not supported" << type;
     }
     if (tracker)
     {
@@ -236,6 +236,7 @@ void Factory::examine(const QVariantMap& json)
             // update object with values from the json request
             QJson::QObjectHelper::qvariant2qobject(json, service);
             service->changed();
+	    service->link();
         }
     } else if (!json.contains(QLatin1String("remove")))
     {
@@ -246,6 +247,7 @@ void Factory::examine(const QVariantMap& json)
         QJson::QObjectHelper::qvariant2qobject(json, service);
         // init (e.g. set human readable toString)
         service->changed();
+	if (!m_sync) service->link();
         addServiceProvider(service);
     }
 }
@@ -267,7 +269,7 @@ void Factory::syncComplete()
     // Sync is completed, Link provider together and init them
     foreach (AbstractServiceProvider* p, m_providerList)
     {
-        p->changed();
+        p->link();
     }
 }
 

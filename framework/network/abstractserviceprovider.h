@@ -30,8 +30,13 @@ class AbstractServiceProvider : public QObject
     Q_PROPERTY(QString parentid READ parentid WRITE setParentid)
 public:
     AbstractServiceProvider(QObject* parent = 0);
+    /** Sync this service to clients */
     virtual void sync();
+    /** Called after json changed properies */
     virtual void changed();
+    /** Called after all objects have been loaded to link
+      * childs with parents together. */
+    virtual void link();
     inline QString toString() { return m_string; }
 
     QString id() const;

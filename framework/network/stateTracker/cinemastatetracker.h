@@ -20,7 +20,6 @@
 #ifndef CINEMASTATETRACKER_H
 #define CINEMASTATETRACKER_H
 #include "abstractstatetracker.h"
-#include "media/mediacmds.h"
 
 class OrgFreedesktopMediaPlayerInterface;
 class CinemaStateTracker : public AbstractStateTracker

@@ -18,6 +18,8 @@
 */
 
 #include "eventdatetime.h"
+#include <profile/serviceproviderprofile.h>
+#include <RoomControlClient.h>
 
 EventDateTime::EventDateTime(QObject* parent)
         : AbstractEvent(parent)
@@ -36,4 +38,11 @@ void EventDateTime::setDatetime(QString value)
 void EventDateTime::changed() {
     m_string = tr("Auslösen um/am: %1").arg(datetime());
     AbstractServiceProvider::changed();
+}
+
+void EventDateTime::link() {
+    AbstractEvent::link();
+    ProfileCollection* c = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(parentid()));
+    if (!c) return;
+    RoomControlClient::getProfilesWithAlarmsModel()->addedProvider(c);
 }

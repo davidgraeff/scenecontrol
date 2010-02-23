@@ -21,7 +21,6 @@
 #define ACTORCINEMASERVICEPROVIDER_H
 
 #include "abstractactor.h"
-#include "media/mediacmds.h"
 
 class ActorCinema : public AbstractActor
 {

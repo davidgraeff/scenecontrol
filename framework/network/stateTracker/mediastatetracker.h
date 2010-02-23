@@ -20,7 +20,6 @@
 #ifndef MediaStateTracker_h
 #define MediaStateTracker_h
 #include "abstractstatetracker.h"
-#include "media/mediacmds.h"
 
 class MediaStateTracker : public AbstractStateTracker
 {

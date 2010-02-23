@@ -13,14 +13,11 @@
     This is not well-optimised, requires compilation with "-rdynamic" on linux
     and doesn't do a great job of demangling the symbol names. It is sufficient
     though to work out call trace. */
-QStringList getBackTrace()
+QStringList getBackTrace(int maxdepth=25)
 {
     //now get the backtrace of the code at this point
     //(we can only do this if we have 'execinfo.h'
 #ifdef _HAVE_EXECINFO_H_
-    
-    //create a void* array to hold the function addresses. We will only go at most 25 deep
-    const int maxdepth(25);
     
     void *func_addresses[maxdepth];
     int nfuncs = backtrace(func_addresses, maxdepth);

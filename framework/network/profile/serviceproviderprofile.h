@@ -31,14 +31,14 @@ class AbstractCondition;
 
 class ProfileCollection : public AbstractServiceProvider
 {
-  Q_OBJECT
-  Q_PROPERTY(QString name READ name WRITE setName);
+    Q_OBJECT
+    Q_PROPERTY(QString name READ name WRITE setName);
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled)
-  public:
+public:
     ProfileCollection(QObject* parent = 0);
     void removedChild(AbstractServiceProvider*);
     void addChild(AbstractServiceProvider* provider);
-    
+
     QString name() const ;
     void setName(const QString& cmd) ;
 
@@ -46,19 +46,19 @@ class ProfileCollection : public AbstractServiceProvider
     ServiceProviderModel* events_and_conditions_model() const ;
     ServiceProviderModel* conditions_model() const ;
     ServiceProviderModel* actors_model() const ;
-    
-    
+
+
     bool enabled() const {
         return m_enabled;
     }
-    
+
     void setEnabled( bool e ) {
         m_enabled = e;
     }
-  private:
+private:
     QString m_name;
     bool m_enabled;
-    
+
     QMultiMap<int, AbstractActor*> m_actors_linked;
     QSet<AbstractCondition*> m_conditions_linked;
     QSet<AbstractEvent*> m_events_linked;
@@ -66,6 +66,8 @@ class ProfileCollection : public AbstractServiceProvider
     ServiceProviderModel* m_events_and_conditions_model;
     ServiceProviderModel* m_conditions_model;
     ServiceProviderModel* m_actors_model;
+    Q_SIGNALS:
+    void childsChanged(ProfileCollection*);
 };
 
 #endif // SERVICEPROVIDERPROFILE_H

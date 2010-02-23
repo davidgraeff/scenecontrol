@@ -18,7 +18,6 @@
 */
 
 #include "actoreventcmd.h"
-#include "media/mediacmds.h"
 
 ActorEventCmd::ActorEventCmd(QObject* parent)
         :AbstractActor(parent)

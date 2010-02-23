@@ -6,7 +6,7 @@ BuildDirs[$e]=$HOME/Entwicklung/roomControl/RoomControlClient/build
 CMakeDir=/usr/share/cmake/Modules
 Current CMake Binary=file:///usr/bin/cmake
 CurrentBuildDir=file:///home/david/Entwicklung/roomControl/RoomControlClient/build
-CurrentBuildType=RelWithDebInfo
+CurrentBuildType=Debug
 CurrentInstallDir=file:///usr
 ProjectRootRelative=./
 

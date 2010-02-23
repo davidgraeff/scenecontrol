@@ -29,7 +29,7 @@ void RoomControlClient::init()
     m_PinsModel = new PinsModel(this);
     m_PlaylistModel = new PlaylistModel(this);
     m_profilesModel = new ServiceProviderModel(tr("Profile"),this);
-    m_profilesWithAlarmsModel = new ServiceProviderModel(tr("Alarm profiles"),this);
+    m_profilesWithAlarmsModel = new ServiceProviderModel(tr("Alarm Profile"),this);
     connect(RoomControlClient::getFactory(),SIGNAL(addedProvider(AbstractServiceProvider*)),
             SLOT(addedProvider(AbstractServiceProvider*)));
     connect(RoomControlClient::getFactory(),SIGNAL(removedProvider(AbstractServiceProvider*)),
@@ -51,13 +51,6 @@ void RoomControlClient::addedProvider(AbstractServiceProvider* p) {
     ProfileCollection* c = qobject_cast<ProfileCollection*>(p);
     if (!c) return;
     m_profilesModel->addedProvider(p);
-    const int events = c->events_model()->rowCount();
-    for (int i=0; i<events;++i)
-        if (c->events_model()->get(i)->type()==EventPeriodic::staticMetaObject.className() ||
-                c->events_model()->get(i)->type()==EventDateTime::staticMetaObject.className()) {
-            m_profilesWithAlarmsModel->addedProvider(p);
-            return;
-        }
 }
 
 void RoomControlClient::removedProvider(AbstractServiceProvider* p) {

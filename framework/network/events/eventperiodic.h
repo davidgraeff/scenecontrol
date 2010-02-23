@@ -37,6 +37,7 @@ public:
     void setDays(int value);
     QVector<bool> daysvector() const { return m_days; }
     virtual void changed() ;
+    virtual void link() ;
   private:
     void nextWeekday(int &day);
     QTime m_time;

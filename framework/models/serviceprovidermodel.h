@@ -26,6 +26,7 @@
 #include <QStringList>
 #include <QIcon>
 
+class ProfileCollection;
 class AbstractServiceProvider;
 class ServiceProviderModel : public QAbstractListModel
 {
@@ -46,6 +47,7 @@ public:
 public Q_SLOTS:
     void objectChanged(AbstractServiceProvider*);
     void slotdisconnected();
+    void childsChanged(ProfileCollection*);
 private:
     QList< AbstractServiceProvider* > m_items;
     QString m_title;

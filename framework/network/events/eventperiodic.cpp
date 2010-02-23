@@ -18,6 +18,8 @@
 */
 
 #include "eventperiodic.h"
+#include <profile/serviceproviderprofile.h>
+#include <RoomControlClient.h>
 
 EventPeriodic::EventPeriodic(QObject* parent)
         : AbstractEvent(parent)
@@ -66,4 +68,11 @@ void EventPeriodic::changed() {
     days.chop(1);
     m_string = tr("Auslösen um %1 am %2").arg(time()).arg(days);
     AbstractServiceProvider::changed();
+}
+
+void EventPeriodic::link() {
+    AbstractEvent::link();
+    ProfileCollection* c = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(parentid()));
+    if (!c) return;
+    RoomControlClient::getProfilesWithAlarmsModel()->addedProvider(c);
 }
