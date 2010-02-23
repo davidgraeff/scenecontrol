@@ -42,7 +42,8 @@ void ActorPinName::setPinname(const QString& value)
 {
     m_pinname = value;
 }
+
 void ActorPinName::changed() {
     m_string = tr("Setze Pin 1 Namen auf %2").arg(m_pin).arg(m_pinname);
-    AbstractServiceProvider::changed();
+    AbstractActor::changed();
 }
