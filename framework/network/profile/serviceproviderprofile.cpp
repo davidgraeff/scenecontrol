@@ -95,8 +95,6 @@ QString ProfileCollection::name() const {
 }
 void ProfileCollection::setName(const QString& cmd) {
     m_name = cmd;
+    m_string = cmd;
 }
-void ProfileCollection::changed() 
-{
-  m_string = m_name;
-}
+  

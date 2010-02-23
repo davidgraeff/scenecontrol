@@ -99,7 +99,6 @@ void NetworkController::objectSync(QObject* p)
     QJson::Serializer serializer;
     QByteArray cmdbytes = serializer.serialize(variant);
     write ( cmdbytes );
-    qDebug() << __FUNCTION__ << cmdbytes;
 }
 
 void NetworkController::slotreadyRead()

@@ -40,6 +40,7 @@ public:
     void setProfileid(const QString& value);
     int action() const;
     void setAction(int value);
+    virtual void changed() ;
 private:
     QString m_id;
     int m_action;

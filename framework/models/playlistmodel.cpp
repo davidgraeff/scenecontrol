@@ -42,7 +42,6 @@ void PlaylistModel::slotdisconnected()
 {
     // Do not delete playlist objects, they are managed through the factory
     m_items.clear();
-    m_assignment.clear();
     reset();
 }
 
@@ -123,13 +122,11 @@ void PlaylistModel::addedProvider(AbstractServiceProvider* provider)
 {
     Playlist* p = qobject_cast<Playlist*>(provider);
     if (!p) return;
-    const int listpos = m_assignment.value(provider->id(),-1);
-    if ( listpos!=-1 ) return;
+    if ( getPositionByID(provider->id()) !=-1 ) return;
 
     connect(p, SIGNAL(objectChanged(AbstractServiceProvider*)),
             SLOT(objectChanged(AbstractServiceProvider*)));
     const int row = m_items.size();
-    m_assignment.insert(p->id(), row);
     beginInsertRows ( QModelIndex(),row,row );
     m_items.append(p);
     endInsertRows();
@@ -137,9 +134,8 @@ void PlaylistModel::addedProvider(AbstractServiceProvider* provider)
 
 void PlaylistModel::removedProvider(AbstractServiceProvider* provider)
 {
-    const int listpos = m_assignment.value(provider->id(),-1);
+    const int listpos = getPositionByID(provider->id());
     if ( listpos==-1 ) return;
-    m_assignment.remove(provider->id());
     beginRemoveRows ( QModelIndex(), listpos, listpos );
     m_items.removeAt(listpos);
     endRemoveRows();
@@ -147,7 +143,7 @@ void PlaylistModel::removedProvider(AbstractServiceProvider* provider)
 
 void PlaylistModel::objectChanged(AbstractServiceProvider* provider)
 {
-    const int listpos = m_assignment.value(provider->id(),-1);
+    const int listpos = getPositionByID(provider->id());
     if ( listpos==-1 ) return;
     QModelIndex index = createIndex ( listpos,0,0 );
     emit dataChanged ( index,index );

@@ -19,6 +19,8 @@
 
 #include "actorplaylisttrack.h"
 #include "media/mediacmds.h"
+#include <RoomControlClient.h>
+#include <QMetaProperty>
 
 ActorPlaylistTrack::ActorPlaylistTrack(QObject* parent)
         : AbstractActor(parent)
@@ -46,6 +48,15 @@ void ActorPlaylistTrack::setState(int value) {
     m_state = value;
 }
 void ActorPlaylistTrack::changed() {
-    m_string = tr("Musik von %1 abspielen").arg(m_playlistid);
+    QString profilname = m_playlistid;
+    AbstractServiceProvider* p = RoomControlClient::getFactory()->get(m_playlistid);
+    if (p) profilname = p->toString();
+
+    QMetaEnum e = RoomControlClient::staticMetaObject.enumerator(RoomControlClient::staticMetaObject.indexOfEnumerator("EnumMediaCmd"));
+    QString enumname = QString::number(m_state);
+    if (e.isValid())
+        enumname = e.valueToKey(m_state);
+    
+    m_string = tr("Track %1 von %2: %3").arg(m_track).arg(profilname).arg(enumname);
     AbstractServiceProvider::changed();
 }

@@ -77,6 +77,18 @@ public:
             }
         return 0;
     }
+    /**
+      * Get the playlist position with the id id
+      * Used to get the file models.
+      */
+    inline int getPositionByID ( const QString& id) const
+    {
+        for (int i=0;i<m_items.size();++i)
+            if (m_items[i]->id()==id) {
+                return i;
+            }
+        return -1;
+    }
 
     /**
       * Request the server to add a playlist.
@@ -92,7 +104,6 @@ private Q_SLOTS:
     void slotdisconnected();
 private:
     QList< Playlist* > m_items;
-    QMap<QString,int> m_assignment; // playlist id -> list id
 };
 
 #endif // PLAYLISTMODEL_H

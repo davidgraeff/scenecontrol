@@ -18,6 +18,7 @@
 */
 
 #include "actorprofile.h"
+#include <RoomControlClient.h>
 
 ActorProfile::ActorProfile(QObject* parent)
         : AbstractActor(parent) {}
@@ -36,4 +37,16 @@ int ActorProfile::action() const {
 
 void ActorProfile::setAction(int value) {
     m_action = value;
+}
+
+void ActorProfile::changed() {
+    QString profilname = m_id;
+    AbstractServiceProvider* p = RoomControlClient::getFactory()->get(m_id);
+    if (p) profilname = p->toString();
+
+    if (m_action==0)
+        m_string = tr("Starte Profil %1").arg(profilname);
+    else
+        m_string = tr("Beende Profil %1").arg(profilname);
+    AbstractActor::changed();
 }

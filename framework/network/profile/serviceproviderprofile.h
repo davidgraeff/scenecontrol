@@ -42,8 +42,6 @@ class ProfileCollection : public AbstractServiceProvider
     QString name() const ;
     void setName(const QString& cmd) ;
 
-
-    virtual void changed() ;
     ServiceProviderModel* events_model() const ;
     ServiceProviderModel* events_and_conditions_model() const ;
     ServiceProviderModel* conditions_model() const ;

@@ -45,6 +45,7 @@ void Playlist::changed()
 void Playlist::setName ( QString name )
 {
     m_name = name;
+    m_string = name;
 }
 
 QString Playlist::name() const
