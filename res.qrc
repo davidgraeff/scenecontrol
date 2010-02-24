@@ -8,12 +8,15 @@
         <file alias="editname">images/actions/editname.png</file>
         <file alias="down">images/actions/go-down.png</file>
         <file alias="up">images/actions/go-up.png</file>
+        <file alias="left">images/actions/go-previous.png</file>
+        <file alias="right">images/actions/go-next.png</file>
         <file alias="pause">images/actions/media-playback-pause.png</file>
         <file alias="play">images/actions/media-playback-start.png</file>
         <file alias="stop">images/actions/media-playback-stop.png</file>
         <file alias="previous">images/actions/media-skip-backward.png</file>
         <file alias="next">images/actions/media-skip-forward.png</file>
         <file alias="remove">images/actions/remove.png</file>
+	<file alias="remove2">images/actions/list-remove.png</file>
         <file alias="run">images/actions/run-build.png</file>
         <file alias="close">images/actions/window-close.png</file>
         <file alias="fullscreen">images/actions/view-fullscreen.png</file>

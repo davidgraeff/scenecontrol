@@ -35,6 +35,7 @@ public:
     void setTime(QString value);
     int days() const;
     void setDays(int value);
+    void setDay(int day, bool value) { m_days[day] = value; }
     QVector<bool> daysvector() const { return m_days; }
     virtual void changed() ;
     virtual void link() ;
