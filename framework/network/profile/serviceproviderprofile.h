@@ -36,6 +36,7 @@ class ProfileCollection : public AbstractServiceProvider
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled)
 public:
     ProfileCollection(QObject* parent = 0);
+    virtual void changed() ;
     void removedChild(AbstractServiceProvider*);
     void addChild(AbstractServiceProvider* provider);
 
@@ -43,7 +44,7 @@ public:
     void setName(const QString& cmd) ;
 
     ServiceProviderModel* events_model() const ;
-    ServiceProviderModel* events_and_conditions_model() const ;
+    ServiceProviderModel* combined_model() const ;
     ServiceProviderModel* conditions_model() const ;
     ServiceProviderModel* actors_model() const ;
 
@@ -63,7 +64,7 @@ private:
     QSet<AbstractCondition*> m_conditions_linked;
     QSet<AbstractEvent*> m_events_linked;
     ServiceProviderModel* m_events_model;
-    ServiceProviderModel* m_events_and_conditions_model;
+    ServiceProviderModel* m_combined_model;
     ServiceProviderModel* m_conditions_model;
     ServiceProviderModel* m_actors_model;
     Q_SIGNALS:

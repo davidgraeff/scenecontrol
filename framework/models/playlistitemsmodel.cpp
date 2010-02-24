@@ -158,7 +158,7 @@ bool PlaylistItemsModel::addFile(QUrl url, int row)
     {
         path = path.replace ( 0, localbase.length(), remotebase );
         m_playlist->m_files.insert(row, path);
-        m_playlist->m_titles.insert(row, info.baseName());
+        m_playlist->m_titles.insert(row, info.completeBaseName());
         return true;
     }
     return false;

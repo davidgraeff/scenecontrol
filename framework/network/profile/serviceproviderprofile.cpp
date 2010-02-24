@@ -30,7 +30,7 @@ ProfileCollection::ProfileCollection(QObject* parent)
 {
     m_events_model = new ServiceProviderModel(tr("Ereignisse"), this);
     m_conditions_model = new ServiceProviderModel(tr("Bedingungen"),this);
-    m_events_and_conditions_model = new ServiceProviderModel(tr("Ereignisse/Bedingungen"),this);
+    m_combined_model = new ServiceProviderModel(tr("Ereignisse/Bedingungen"),this);
     m_actors_model = new ServiceProviderModel(tr("Aktionen"),this);
 }
 
@@ -41,17 +41,18 @@ void ProfileCollection::addChild(AbstractServiceProvider* provider)
     AbstractEvent* e = qobject_cast<AbstractEvent*>(provider);
     if (a) {
         m_actors_linked.insert(a->delay(), a);
-	m_actors_model->addedProvider(provider);
+        m_actors_model->addedProvider(provider);
+        m_combined_model->addedProvider(provider);
     }
     if (c) {
         m_conditions_linked.insert(c);
         m_conditions_model->addedProvider(provider);
-        m_events_and_conditions_model->addedProvider(provider);
+        m_combined_model->addedProvider(provider);
     }
     if (e) {
         m_events_linked.insert(e);
         m_events_model->addedProvider(provider);
-        m_events_and_conditions_model->addedProvider(provider);
+        m_combined_model->addedProvider(provider);
     }
     emit childsChanged(this);
 }
@@ -63,17 +64,18 @@ void ProfileCollection::removedChild(AbstractServiceProvider* provider)
     AbstractEvent* e = qobject_cast<AbstractEvent*>(provider);
     if (a) {
         m_actors_linked.remove(a->delay(), a);
-	m_actors_model->removedProvider(provider);
+        m_actors_model->removedProvider(provider);
+        m_combined_model->removedProvider(provider);
     }
     if (c) {
         m_conditions_linked.remove(c);
         m_conditions_model->removedProvider(provider);
-        m_events_and_conditions_model->removedProvider(provider);
+        m_combined_model->removedProvider(provider);
     }
     if (e) {
         m_events_linked.remove(e);
         m_events_model->removedProvider(provider);
-        m_events_and_conditions_model->removedProvider(provider);
+        m_combined_model->removedProvider(provider);
     }
     emit childsChanged(this);
 }
@@ -89,8 +91,8 @@ ServiceProviderModel* ProfileCollection::events_model() const {
     return m_events_model;
 }
 
-ServiceProviderModel* ProfileCollection::events_and_conditions_model() const {
-    return m_events_and_conditions_model;
+ServiceProviderModel* ProfileCollection::combined_model() const {
+    return m_combined_model;
 }
 QString ProfileCollection::name() const {
     return m_name;
@@ -99,4 +101,9 @@ void ProfileCollection::setName(const QString& cmd) {
     m_name = cmd;
     m_string = cmd;
 }
-  
+
+void ProfileCollection::changed() {
+    m_string = m_name;
+    if (!m_enabled) m_string = tr("%1 <Inaktiv>").arg(m_string);
+    AbstractServiceProvider::changed();
+}
