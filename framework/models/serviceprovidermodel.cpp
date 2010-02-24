@@ -22,6 +22,10 @@
 #include <QDebug>
 #include <RoomControlClient.h>
 #include <profile/serviceproviderprofile.h>
+#include "kcategorizedsortfilterproxymodel.h"
+#include <actors/abstractactor.h>
+#include <conditions/abstractcondition.h>
+#include <events/abstractevent.h>
 
 ServiceProviderModel::ServiceProviderModel ( const QString& title, QObject* parent )
         : QAbstractListModel ( parent ), m_title(title)
@@ -63,23 +67,36 @@ QVariant ServiceProviderModel::headerData ( int section, Qt::Orientation orienta
 QVariant ServiceProviderModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
+    AbstractServiceProvider* p = m_items.at ( index.row());
 
     if ( role==Qt::DisplayRole )
     {
-        return m_items.at ( index.row() )->toString();
+        return p->toString();
     }
     else if ( role==Qt::UserRole )
     {
-        return m_items.at ( index.row() )->metaObject()->className();
+        return p->metaObject()->className();
     }
     else if ( role==Qt::ToolTipRole )
     {
-        AbstractServiceProvider* p = m_items.at ( index.row());
         ProfileCollection* pc = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(p->parentid()));
         QString parentname;
         if (pc) parentname = pc->name();
         return tr("%1\nZugeteilt: %2 (%3)").arg(p->id())
                .arg(p->parentid()).arg(parentname);
+    }
+    else if ( role== KCategorizedSortFilterProxyModel::CategorySortRole )
+    {
+        if (qobject_cast<AbstractActor*>(p)) return 3;
+        else if (qobject_cast<AbstractCondition*>(p)) return 2;
+        else if (qobject_cast<AbstractEvent*>(p)) return 1;
+        else return 0;
+    }
+    else if ( role== KCategorizedSortFilterProxyModel::CategoryDisplayRole )
+    {
+        if (qobject_cast<AbstractActor*>(p)) return tr("Aktionen");
+        else if (qobject_cast<AbstractCondition*>(p)) return tr("Bedingungen");
+        else if (qobject_cast<AbstractEvent*>(p)) return tr("Ereignisse");
     }
 
     return QVariant();
@@ -106,11 +123,11 @@ void ServiceProviderModel::addedProvider ( AbstractServiceProvider* provider )
 
     connect ( provider, SIGNAL ( objectChanged ( AbstractServiceProvider* ) ),
               SLOT ( objectChanged ( AbstractServiceProvider* ) ) );
-    
+
     ProfileCollection* pc = qobject_cast<ProfileCollection*>(provider);
     if (pc)
         connect(pc,SIGNAL(childsChanged(ProfileCollection*)),SLOT(childsChanged(ProfileCollection*)));
-    
+
     int row;
     for (row=0;row<m_items.size();++row)
         if (m_items[row]->toString().toLower() >= provider->toString().toLower())
