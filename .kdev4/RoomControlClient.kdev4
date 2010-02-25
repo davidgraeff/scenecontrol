@@ -40,7 +40,7 @@ Working Directory=file:///home/david/Entwicklung/roomControl/RoomControlClient/b
 isExecutable=false
 
 [MakeBuilder]
-Number Of Jobs=3
+Number Of Jobs=8
 Run Multiple Jobs=true
 
 [Project]
