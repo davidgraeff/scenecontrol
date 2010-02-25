@@ -236,7 +236,7 @@ void Factory::examine(const QVariantMap& json)
             // update object with values from the json request
             QJson::QObjectHelper::qvariant2qobject(json, service);
             service->changed();
-	    service->link();
+            service->link();
         }
     } else if (!json.contains(QLatin1String("remove")))
     {
@@ -246,8 +246,10 @@ void Factory::examine(const QVariantMap& json)
             return;
         QJson::QObjectHelper::qvariant2qobject(json, service);
         // init (e.g. set human readable toString)
-        service->changed();
-	if (!m_sync) service->link();
+        if (!m_sync) {
+            service->changed();
+            service->link();
+        }
         addServiceProvider(service);
     }
 }
@@ -269,6 +271,7 @@ void Factory::syncComplete()
     // Sync is completed, Link provider together and init them
     foreach (AbstractServiceProvider* p, m_providerList)
     {
+        p->changed();
         p->link();
     }
 }

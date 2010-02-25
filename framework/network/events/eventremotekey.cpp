@@ -26,22 +26,22 @@ EventRemoteKey::EventRemoteKey(QObject* parent)
 
 bool EventRemoteKey::pressed()
 {
-  return m_pressed;
+    return m_pressed;
 }
 
 void EventRemoteKey::setPressed(bool value)
 {
-  m_pressed = value;
+    m_pressed = value;
 }
 
 int EventRemoteKey::channel()
 {
-   return m_channel;
+    return m_channel;
 }
 
 void EventRemoteKey::setChannel(int value)
 {
-  m_channel = value;
+    m_channel = value;
 }
 
 QString EventRemoteKey::key()
@@ -54,6 +54,9 @@ void EventRemoteKey::setKey(QString value)
     m_key = value;
 }
 void EventRemoteKey::changed() {
-    m_string = tr("Remote Taste: %1").arg(m_key);
+    if (m_pressed)
+        m_string = tr("Fernbedienung: %1 gedrückt").arg(m_key);
+    else
+        m_string = tr("Fernbedienung: %1 losgelassen").arg(m_key);
     AbstractServiceProvider::changed();
 }

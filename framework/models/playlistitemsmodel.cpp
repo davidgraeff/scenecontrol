@@ -91,7 +91,7 @@ Qt::ItemFlags PlaylistItemsModel::flags ( const QModelIndex& index ) const
     if (m_waitforsync)
         return QAbstractTableModel::flags ( index );
     else
-        return QAbstractTableModel::flags ( index ) | Qt::ItemIsDropEnabled | Qt::ItemIsDragEnabled; // | Qt::ItemIsEditable;
+        return QAbstractTableModel::flags ( index ) | Qt::ItemIsDropEnabled | Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
 }
 
 QMimeData *PlaylistItemsModel::mimeData( const QModelIndexList & indexes ) const

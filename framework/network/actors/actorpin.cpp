@@ -46,8 +46,10 @@ void ActorPin::setValue(int value)
 void ActorPin::changed() {
     PinsModel* m = RoomControlClient::getPinsModel();
     QString pinname;
-    if (m)
+    if (m) {
         pinname = m->getName(m_pin);
+    }
+    
     if (pinname.isEmpty())
         pinname = tr("Pin %1").arg(m_pin);
 
