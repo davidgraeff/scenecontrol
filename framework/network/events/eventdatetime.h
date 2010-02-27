@@ -29,6 +29,7 @@ class EventDateTime : public AbstractEvent
 public:
     EventDateTime(QObject* parent = 0);
     QString datetime() const;
+    QDateTime datetimeRaw() const ;
     void setDatetime(QString value);
     virtual void changed() ;
     virtual void link() ;

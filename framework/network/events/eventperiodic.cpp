@@ -66,7 +66,7 @@ void EventPeriodic::changed() {
             days += QDate::shortDayName(i+1) + QLatin1String(",");
     }
     days.chop(1);
-    m_string = tr("Auslösen um %1 am %2").arg(time()).arg(days);
+    m_string = tr("Auslösen um %1 am %2").arg(m_time.toString(QLatin1String("hh:mm"))).arg(days);
     AbstractServiceProvider::changed();
 }
 

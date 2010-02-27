@@ -36,7 +36,8 @@ void EventDateTime::setDatetime(QString value)
     m_datetime = QDateTime::fromString(value, Qt::ISODate);
 }
 void EventDateTime::changed() {
-    m_string = tr("Auslösen um/am: %1").arg(datetime());
+    m_string = tr("Auslösen am %1 um %2").arg(m_datetime.date().toString(QLatin1String("dd.mm.yy")))
+               .arg(m_datetime.time().toString(QLatin1String("hh:mm")));
     AbstractServiceProvider::changed();
 }
 
@@ -45,4 +46,7 @@ void EventDateTime::link() {
     ProfileCollection* c = qobject_cast<ProfileCollection*>(RoomControlClient::getFactory()->get(parentid()));
     if (!c) return;
     RoomControlClient::getProfilesWithAlarmsModel()->addedProvider(c);
+}
+QDateTime EventDateTime::datetimeRaw() const {
+    return m_datetime;
 }
