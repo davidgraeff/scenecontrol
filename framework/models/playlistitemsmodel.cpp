@@ -33,7 +33,7 @@ PlaylistItemsModel::PlaylistItemsModel (Playlist* playlist, QObject* parent)
 
 Qt::DropActions PlaylistItemsModel::supportedDropActions() const
 {
-    return Qt::CopyAction | Qt::MoveAction;
+    return Qt::MoveAction | Qt::CopyAction;
 }
 
 int PlaylistItemsModel::rowCount ( const QModelIndex & ) const
@@ -91,7 +91,7 @@ Qt::ItemFlags PlaylistItemsModel::flags ( const QModelIndex& index ) const
     if (m_waitforsync)
         return QAbstractTableModel::flags ( index );
     else
-        return QAbstractTableModel::flags ( index ) | Qt::ItemIsDropEnabled | Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
+        return QAbstractTableModel::flags ( index ) | Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
 }
 
 QMimeData *PlaylistItemsModel::mimeData( const QModelIndexList & indexes ) const
@@ -99,7 +99,7 @@ QMimeData *PlaylistItemsModel::mimeData( const QModelIndexList & indexes ) const
     if (m_playlist->m_files.isEmpty())
         return 0;
 
-    QMimeData *mimeData = new QMimeData();
+    QMimeData *mimeData = QAbstractTableModel::mimeData(indexes);
     QByteArray encodedData;
 
     QDataStream stream(&encodedData, QIODevice::WriteOnly);
@@ -118,7 +118,7 @@ QMimeData *PlaylistItemsModel::mimeData( const QModelIndexList & indexes ) const
 
 QStringList PlaylistItemsModel::mimeTypes() const
 {
-    QStringList types;
+    QStringList types = QAbstractTableModel::mimeTypes();
     types << "text/uri-list";
     return types;
 }
@@ -149,10 +149,22 @@ bool PlaylistItemsModel::addFile(QUrl url, int row)
                 return addFile(QUrl(suburl), row);
             }
         }
+    } if (suffix == "m3u")
+    {
+        QFile f(path);
+        if (!f.open(QIODevice::ReadOnly))
+            return false;
+        QList<QByteArray> filecontent = f.readAll().split('\n');
+        f.close();
+        foreach (QByteArray line, filecontent) {
+	  line = line.trimmed().replace('\r',"").replace('\n',"");
+	  if (line.size() && line[0] == '#') continue;
+          return addFile(QUrl(line), row);
+        }
     } else if (url.scheme().startsWith("http"))
     {
         m_playlist->m_files.insert(row, url.toString());
-        m_playlist->m_titles.insert(row, info.baseName());
+        m_playlist->m_titles.insert(row, url.authority());
         return true;
     } else if (path.startsWith ( localbase ) && (suffix == "mp3" || suffix == "ogg"))
     {
@@ -173,11 +185,37 @@ bool PlaylistItemsModel::dropMimeData(const QMimeData *data,
     if (action == Qt::IgnoreAction)
         return true;
 
+    QByteArray itemData = data->data("application/x-qabstractitemmodeldatalist");
+    if (itemData.size() && row!=-1) {
+      QDataStream stream(&itemData, QIODevice::ReadOnly);
+
+      while (!stream.atEnd()) {
+	int r, c;
+	QMap<int, QVariant> v;
+	stream >> r >> c >> v;
+	qDebug()<< r << row << m_playlist->m_files.size();
+	
+	QString title = m_playlist->m_titles[r];
+	QString filename = m_playlist->m_files[r];
+	if (action == Qt::MoveAction) {
+	  m_playlist->m_files.removeAt ( r );
+	  m_playlist->m_titles.removeAt( r );
+	  if (r<row) --row;
+	}
+	m_playlist->m_files.insert(row,filename);
+        m_playlist->m_titles.insert(row,title);
+/*	const QModelIndex index = createIndex(qMin(r,row), 0);
+	const QModelIndex index2 = createIndex(qMax(r,row), 1);
+	emit dataChanged(index, index2);*/
+      }
+      m_playlist->sync();
+      return false;
+    }
+    
     if (!data->hasUrls())
         return false;
 
     QList<QUrl> urls = data->urls();
-
     int count = -1;
     foreach (QUrl url, urls)
     {
@@ -226,6 +264,17 @@ bool PlaylistItemsModel::removeRows ( int row, int count, const QModelIndex & )
     }
 
     if (count) m_playlist->sync();
+    return true;
+}
+
+bool PlaylistItemsModel::removeRows ( QModelIndexList list )
+{
+    for (int i = list.size()-1; i >= 0; i--)
+    {
+        m_playlist->m_files.removeAt ( list[i].row() );
+        m_playlist->m_titles.removeAt( list[i].row() );
+    }
+    if (list.size()) m_playlist->sync();
     return true;
 }
 

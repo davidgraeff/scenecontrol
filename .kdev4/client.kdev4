@@ -1,0 +1,31 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x0c\x00c\x00l\x00i\x00e\x00n\x00t)
+
+[CMake]
+BuildDirs=/home/david/Entwicklung/roomControl/client/build
+CMakeDir=/usr/share/cmake-2.8/Modules
+Current CMake Binary=file:///usr/bin/cmake
+CurrentBuildDir=file:///home/david/Entwicklung/roomControl/client/build
+CurrentBuildType=
+CurrentInstallDir=
+ProjectRootRelative=./
+
+[Launch]
+Launch Configurations=Launch Configuration 0
+
+[Launch][Launch Configuration 0]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=roomclient
+Type=Native Application
+
+[Launch][Launch Configuration 0][Data]
+Project Target=client,desktopgui,roomclient
+Working Directory=file:///home/david/Entwicklung/roomControl/client/build/desktopgui/
+isExecutable=false
+
+[MakeBuilder]
+Install As Root=true
+Number Of Jobs=8
+Run Multiple Jobs=true
+Su Command=1
