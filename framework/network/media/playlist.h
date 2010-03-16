@@ -33,7 +33,7 @@ class Playlist : public AbstractServiceProvider
   Q_PROPERTY(QString name READ name WRITE setName);
   Q_PROPERTY(QStringList files READ files WRITE setFiles);
   Q_PROPERTY(QStringList titles READ titles WRITE setTitles);
-  Q_PROPERTY(bool currentTrack READ currentTrack WRITE setCurrentTrack);
+  Q_PROPERTY(int currentTrack READ currentTrack WRITE setCurrentTrack);
   friend class PlaylistItemsModel;
   public:
     Playlist(QObject* parent = 0);
@@ -60,7 +60,7 @@ class Playlist : public AbstractServiceProvider
     QString m_name;
     QStringList m_files;
     QStringList m_titles;
-    int m_currentposition;
+    int m_currenttrack;
     PlaylistItemsModel* m_itemmodel;
 };
 

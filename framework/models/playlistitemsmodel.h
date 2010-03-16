@@ -48,15 +48,10 @@ public:
     QStringList mimeTypes() const;
     QMimeData *mimeData( const QModelIndexList & indexes ) const;
     bool m_waitforsync;
-    
-    inline int currenttrack() const {
-        return m_currenttrack;
-    }
-    
-    void setCurrenttrack( int c ) ;
+    void updateCurrenttrack( int old ) ;
   private:
     Playlist* m_playlist;
-    int m_currenttrack;
+    
     bool addFile(QUrl url, int row);
 };
 

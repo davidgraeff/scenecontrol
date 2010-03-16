@@ -248,7 +248,7 @@ QVariant PlaylistItemsModel::data ( const QModelIndex & index, int role ) const
     {
         if (m_waitforsync)
             return Qt::lightGray;
-        return (m_currenttrack==index.row()?QColor(Qt::darkGreen):QApplication::palette().color(QPalette::Base));
+        return (m_playlist->currentTrack()==index.row()?QColor(Qt::darkGreen):QApplication::palette().color(QPalette::Base));
     }
 
     return QVariant();
@@ -295,10 +295,8 @@ int PlaylistItemsModel::columnCount ( const QModelIndex & ) const
 {
     return 1;//2;
 }
-void PlaylistItemsModel::setCurrenttrack(int c) {
-  const int old = m_currenttrack;
-    m_currenttrack = c;
-    const QModelIndex index = createIndex(c, 0);
+void PlaylistItemsModel::updateCurrenttrack(int old) {
+    const QModelIndex index = createIndex(m_playlist->currentTrack(), 0);
     emit dataChanged(index, index);
     const QModelIndex index2 = createIndex(old, 0);
     emit dataChanged(index2, index2);

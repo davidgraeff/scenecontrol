@@ -23,7 +23,7 @@
 
 
 Playlist::Playlist(QObject* parent) :
-        AbstractServiceProvider(parent), m_currentposition(0)
+        AbstractServiceProvider(parent), m_currenttrack(0)
 {
     m_itemmodel = new PlaylistItemsModel(this, this);
 }
@@ -78,18 +78,19 @@ void Playlist::setTitles ( const QStringList& titles )
 
 void Playlist::setCurrentTrack ( int index )
 {
-    m_currentposition = index;
-    m_itemmodel->setCurrenttrack(m_currentposition);
+  const int old = m_currenttrack;
+    m_currenttrack = index;
+    m_itemmodel->updateCurrenttrack(old);
 }
 
 int Playlist::currentTrack() const
 {
-    return m_currentposition;
+    return m_currenttrack;
 }
 
 QString Playlist::currentFilename() const
 {
-    return getFilename(m_currentposition);
+    return getFilename(m_currenttrack);
 }
 
 QString Playlist::getFilename(int index) const
