@@ -44,6 +44,11 @@ public:
     virtual bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
     /**
+      * Set playlist, that is currently beeing played
+      */
+    void setCurrentPlaylist ( int pos ) ;
+
+    /**
       * Get the name of the playlist with the index i.
       * Used by the rename dialog
       */
@@ -104,6 +109,7 @@ private Q_SLOTS:
     void slotdisconnected();
 private:
     QList< Playlist* > m_items;
+    int m_current;
 };
 
 #endif // PLAYLISTMODEL_H

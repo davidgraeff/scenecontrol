@@ -101,7 +101,8 @@ void NetworkController::objectSync(QObject* p)
     QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
     if (p->dynamicPropertyNames().contains("remove"))
       variant.insert(QLatin1String("remove"), true);
-    QJson::Serializer serializer;
+
+	QJson::Serializer serializer;
     QByteArray cmdbytes = serializer.serialize(variant);
     write ( cmdbytes );
 }
