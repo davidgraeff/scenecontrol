@@ -1,7 +1,7 @@
 project(RoomControlServer)
 cmake_minimum_required(VERSION 2.6)
 find_package(Qt4 REQUIRED)
-find_package(QJSON REQUIRED)
+#find_package(QJSON REQUIRED)
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   SET(CMAKE_INSTALL_PREFIX
