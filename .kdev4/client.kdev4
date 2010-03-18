@@ -6,12 +6,12 @@ BuildDirs=/home/david/Entwicklung/roomControl/client/build
 CMakeDir=/usr/share/cmake-2.8/Modules
 Current CMake Binary=file:///usr/bin/cmake
 CurrentBuildDir=file:///home/david/Entwicklung/roomControl/client/build
-CurrentBuildType=
-CurrentInstallDir=
+CurrentBuildType=Debug
+CurrentInstallDir=file:///usr
 ProjectRootRelative=./
 
 [Launch]
-Launch Configurations=Launch Configuration 0
+Launch Configurations=Launch Configuration 0,Launch Configuration 1
 
 [Launch][Launch Configuration 0]
 Configured Launch Modes=execute
@@ -22,6 +22,17 @@ Type=Native Application
 [Launch][Launch Configuration 0][Data]
 Project Target=client,desktopgui,roomclient
 Working Directory=file:///home/david/Entwicklung/roomControl/client/build/desktopgui/
+isExecutable=false
+
+[Launch][Launch Configuration 1]
+Configured Launch Modes=execute
+Configured Launchers=nativeAppLauncher
+Name=roomtouch
+Type=Native Application
+
+[Launch][Launch Configuration 1][Data]
+Project Target=client,touchgui,roomtouch
+Working Directory=file:///home/david/Entwicklung/roomControl/client/build/touchgui/
 isExecutable=false
 
 [MakeBuilder]

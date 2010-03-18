@@ -19,8 +19,6 @@
 
 #include "playlist.h"
 #include <QDebug>
-#include <backtrace.h>
-
 
 Playlist::Playlist(QObject* parent) :
         AbstractServiceProvider(parent), m_currenttrack(0)

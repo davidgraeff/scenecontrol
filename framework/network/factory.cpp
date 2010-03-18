@@ -68,6 +68,7 @@
 #include "stateTracker/programstatetracker.h"
 #include "stateTracker/remotecontrolstatetracker.h"
 #include "stateTracker/remotecontrolkeystatetracker.h"
+#include "stateTracker/volumestatetracker.h"
 #include "actors/actormute.h"
 
 
@@ -177,6 +178,8 @@ AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
         tracker = new RemoteControlStateTracker();
     } else if (type == RemoteControlKeyStateTracker::staticMetaObject.className()) {
         tracker = new RemoteControlKeyStateTracker();
+    } else if (type == VolumeStateTracker::staticMetaObject.className()) {
+        tracker = new VolumeStateTracker();
     } else {
         qWarning() << "command not supported" << type;
     }
@@ -271,9 +274,13 @@ void Factory::syncComplete()
     // Sync is completed, Link provider together and init them
     foreach (AbstractServiceProvider* p, m_providerList)
     {
-        p->changed();
+        // Playlists will reset the model, set by the state tracker already
+        // => don't emit their change signal
+        if (p->metaObject()->className()!= Playlist::staticMetaObject.className())
+            p->changed();
         p->link();
     }
+    emit syncCompleted();
 }
 
 void Factory::syncStarted() {

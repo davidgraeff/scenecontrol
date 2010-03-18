@@ -67,6 +67,7 @@ Q_SIGNALS:
     void addedProvider(AbstractServiceProvider*);
     void removedProvider(AbstractServiceProvider*);
     void stateChanged(AbstractStateTracker*);
+	void syncCompleted();
 };
 
 #endif // FACTORY_H

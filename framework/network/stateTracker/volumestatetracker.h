@@ -17,30 +17,28 @@
 
 */
 
-#ifndef EventStateTracker_h
-#define EventStateTracker_h
+#ifndef VOLUMESTATETRACKER_H
+#define VOLUMESTATETRACKER_H
 #include "abstractstatetracker.h"
 
-class EventStateTracker : public AbstractStateTracker
+#define EVENTVOLUME_ID 1
+#define MEDIAVOLUME_ID 2
+#define CINEMAVOLUME_ID 3
+
+class VolumeStateTracker : public AbstractStateTracker
 {
     Q_OBJECT
-    Q_PROPERTY(QString title READ title WRITE setTitle)
-    Q_PROPERTY(QString filename READ filename WRITE setFilename)
-    Q_PROPERTY(int state READ state WRITE setState)
+    Q_PROPERTY(int track READ track WRITE setTrack);
+    Q_PROPERTY(int volume READ volume WRITE setVolume);
 public:
-    EventStateTracker(QObject* parent = 0);
-    const QString& title() const ;
-    void setTitle( const QString& t ) ;
-    const QString& filename() const ;
-    void setFilename( const QString& f ) ;
-    int state() const ;
-    void setState( int s ) ;
-    
-  private:
-    QString m_title;
-    QString m_filename;
-    int m_state;
+    VolumeStateTracker(QObject* parent = 0);
+    int volume() const;
+    int track() const;
+	void setTrack(int track) { m_track = track; }
+	void setVolume(int vol) { m_volume = vol; }
+private:
+	int m_track;
+	int m_volume;
 };
 
-#endif // EventStateTracker_h
-
+#endif // VOLUMESTATETRACKER_H

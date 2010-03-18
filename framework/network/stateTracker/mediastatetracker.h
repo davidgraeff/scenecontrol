@@ -27,7 +27,6 @@ class MediaStateTracker : public AbstractStateTracker
     Q_PROPERTY(QString playlistid READ playlistid WRITE setPlaylistid)
     Q_PROPERTY(qint64 position READ position WRITE setPosition)
     Q_PROPERTY(qint64 total READ total WRITE setTotal)
-    Q_PROPERTY(qreal volume READ volume WRITE setVolume)
     Q_PROPERTY(int state READ state WRITE setState)
     Q_PROPERTY(int track READ track WRITE setTrack)
 public:
@@ -39,8 +38,6 @@ public:
     void setPosition( qint64 p ) ;
     qint64 total() const ;
     void setTotal( qint64 t ) ;
-    qreal volume() const ;
-    void setVolume( qreal v ) ;
     int state() const ;
     void setState( int s ) ;
     int track() const ;
@@ -50,7 +47,6 @@ public:
     QString m_playlistid;
     qint64 m_position;
     qint64 m_total;
-    qreal m_volume;
     int m_state;
     int m_track;
 

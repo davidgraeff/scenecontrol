@@ -26,12 +26,6 @@ EventStateTracker::EventStateTracker(QObject* parent)
 void EventStateTracker::setState(int s) {
     m_state = s;
 }
-qreal EventStateTracker::volume() const {
-    return m_volume;
-}
-void EventStateTracker::setVolume(qreal v) {
-    m_volume = v;
-}
 const QString& EventStateTracker::title() const {
     return m_title;
 }

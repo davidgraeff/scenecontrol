@@ -41,6 +41,8 @@ private:
     int m_bufferBrakes;
     ProgramStateTracker m_serverstate;
     QTimer serverTimeout;
+    int m_port;
+    QString m_ip;
 
 private Q_SLOTS:
     void slotreadyRead ();

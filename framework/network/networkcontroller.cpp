@@ -63,12 +63,14 @@ void NetworkController::sloterror(QAbstractSocket::SocketError e)
 
 void NetworkController::start(const QString& ip, int port)
 {
+	m_ip = ip;
+	m_port = port;
     connectToHost ( ip, port );
 }
 
 void NetworkController::start()
 {
-    connectToHost(peerAddress(),peerPort());
+    start(m_ip,m_port);
 }
 
 QByteArray NetworkController::getNextJson()

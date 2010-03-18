@@ -17,41 +17,19 @@
 
 */
 
-#include "mediastatetracker.h"
+#include "volumestatetracker.h"
 
-MediaStateTracker::MediaStateTracker(QObject* parent)
+VolumeStateTracker::VolumeStateTracker(QObject* parent)
         : AbstractStateTracker(parent)
 {
 }
 
-const QString& MediaStateTracker::playlistid() const {
-    return m_playlistid;
-}
-void MediaStateTracker::setPlaylistid(const QString& p) {
-    m_playlistid = p;
-}
-qint64 MediaStateTracker::position() const {
-    return m_position;
-}
-void MediaStateTracker::setPosition(qint64 p) {
-    m_position = p;
-}
-qint64 MediaStateTracker::total() const {
-    return m_total;
-}
-void MediaStateTracker::setTotal(qint64 t) {
-    m_total = t;
-}
-int MediaStateTracker::state() const {
-    return m_state;
-}
-void MediaStateTracker::setState(int s) {
-    m_state = s;
-}
-int MediaStateTracker::track() const {
-    return m_track;
-}
-void MediaStateTracker::setTrack(int t) {
-    m_track = t;
+int VolumeStateTracker::volume() const
+{
+    return m_volume;
 }
 
+int VolumeStateTracker::track() const
+{
+    return m_track;
+}
