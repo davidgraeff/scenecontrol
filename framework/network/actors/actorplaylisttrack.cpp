@@ -22,7 +22,7 @@
 #include <QMetaProperty>
 
 ActorPlaylistTrack::ActorPlaylistTrack(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractActor(parent), m_track(-1)
 {
 }
 
