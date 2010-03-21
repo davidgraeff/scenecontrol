@@ -24,6 +24,7 @@
 #include <QTimer>
 #include <QMap>
 
+class ServiceProviderTreeModel;
 class ServiceProviderModel;
 class AbstractActor;
 class AbstractEvent;
@@ -44,7 +45,7 @@ public:
     void setName(const QString& cmd) ;
 
     ServiceProviderModel* events_model() const ;
-    ServiceProviderModel* combined_model() const ;
+    ServiceProviderTreeModel* combined_model() const ;
     ServiceProviderModel* conditions_model() const ;
     ServiceProviderModel* actors_model() const ;
 
@@ -64,7 +65,7 @@ private:
     QSet<AbstractCondition*> m_conditions_linked;
     QSet<AbstractEvent*> m_events_linked;
     ServiceProviderModel* m_events_model;
-    ServiceProviderModel* m_combined_model;
+    ServiceProviderTreeModel* m_combined_model;
     ServiceProviderModel* m_conditions_model;
     ServiceProviderModel* m_actors_model;
     Q_SIGNALS:

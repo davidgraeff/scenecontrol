@@ -24,13 +24,14 @@
 #include "conditions/abstractcondition.h"
 #include "events/abstractevent.h"
 #include <models/serviceprovidermodel.h>
+#include <models/serviceprovidertreemodel.h>
 
 ProfileCollection::ProfileCollection(QObject* parent)
         : AbstractServiceProvider(parent), m_enabled(true)
 {
     m_events_model = new ServiceProviderModel(tr("Ereignisse"), this);
     m_conditions_model = new ServiceProviderModel(tr("Bedingungen"),this);
-    m_combined_model = new ServiceProviderModel(tr("Ereignisse/Bedingungen"),this);
+    m_combined_model = new ServiceProviderTreeModel(tr("Ereignisse/Bedingungen"),this);
     m_actors_model = new ServiceProviderModel(tr("Aktionen"),this);
 }
 
@@ -91,7 +92,7 @@ ServiceProviderModel* ProfileCollection::events_model() const {
     return m_events_model;
 }
 
-ServiceProviderModel* ProfileCollection::combined_model() const {
+ServiceProviderTreeModel* ProfileCollection::combined_model() const {
     return m_combined_model;
 }
 QString ProfileCollection::name() const {
