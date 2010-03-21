@@ -126,7 +126,7 @@ static void selectTrack(int track) {
     play();
 	
     GstFormat fmt = GST_FORMAT_TIME;
-    long int len;
+    gint64 len;
     if (gst_element_query_duration (pipeline, &fmt, &len))
         g_print("total %ld\n",len/1000000);
 }
