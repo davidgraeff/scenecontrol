@@ -27,7 +27,8 @@ Playlist::Playlist(QObject* parent) :
 }
 
 Playlist::~Playlist()
-{}
+{
+}
 
 void Playlist::sync()
 {
@@ -76,7 +77,7 @@ void Playlist::setTitles ( const QStringList& titles )
 
 void Playlist::setCurrentTrack ( int index )
 {
-  const int old = m_currenttrack;
+    const int old = m_currenttrack;
     m_currenttrack = index;
     m_itemmodel->updateCurrenttrack(old);
 }

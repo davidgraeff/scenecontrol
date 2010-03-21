@@ -24,7 +24,7 @@ VolumeStateTracker::VolumeStateTracker(QObject* parent)
 {
 }
 
-int VolumeStateTracker::volume() const
+double VolumeStateTracker::volume() const
 {
     return m_volume;
 }

@@ -29,16 +29,16 @@ class VolumeStateTracker : public AbstractStateTracker
 {
     Q_OBJECT
     Q_PROPERTY(int track READ track WRITE setTrack);
-    Q_PROPERTY(int volume READ volume WRITE setVolume);
+    Q_PROPERTY(double volume READ volume WRITE setVolume);
 public:
     VolumeStateTracker(QObject* parent = 0);
-    int volume() const;
+    double volume() const;
     int track() const;
 	void setTrack(int track) { m_track = track; }
-	void setVolume(int vol) { m_volume = vol; }
+	void setVolume(double vol) { m_volume = vol; }
 private:
 	int m_track;
-	int m_volume;
+	double m_volume;
 };
 
 #endif // VOLUMESTATETRACKER_H

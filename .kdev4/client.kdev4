@@ -31,9 +31,13 @@ Name=roomtouch
 Type=Native Application
 
 [Launch][Launch Configuration 1][Data]
-Project Target=client,touchgui,roomtouch
+Arguments=
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+Dependency Action=Nothing
+EnvironmentGroup=default
+Executable=file:///home/david/Entwicklung/roomControl/client/build/touchgui/roomtouch
 Working Directory=file:///home/david/Entwicklung/roomControl/client/build/touchgui/
-isExecutable=false
+isExecutable=true
 
 [MakeBuilder]
 Install As Root=true
