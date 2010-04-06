@@ -28,6 +28,7 @@ class EventRemoteKey : public AbstractEvent
     Q_PROPERTY(bool pressed READ pressed WRITE setPressed);
     Q_PROPERTY(int channel READ channel WRITE setChannel);
     Q_PROPERTY(int repeat READ repeat WRITE setRepeat)
+    Q_PROPERTY(int repeatinit READ repeatinit WRITE setRepeatinit)
 public:
     EventRemoteKey(QObject* parent = 0);
     QString key();
@@ -39,10 +40,19 @@ public:
     virtual void changed() ;
     int repeat() const ;
     void setRepeat( int r ) ;
+    
+    int repeatinit() const {
+        return m_repeatinit;
+    }
+    
+    void setRepeatinit( int r ) {
+        m_repeatinit = r;
+    }
 private:
     QString m_key;
     bool m_pressed;
 	int m_repeat;
+	int m_repeatinit;
     int m_channel;
 };
 

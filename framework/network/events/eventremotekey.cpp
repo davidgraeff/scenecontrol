@@ -20,7 +20,7 @@
 #include "eventremotekey.h"
 
 EventRemoteKey::EventRemoteKey(QObject* parent)
-        : AbstractEvent(parent), m_pressed(false), m_repeat(0), m_channel(-1)
+        : AbstractEvent(parent), m_pressed(false), m_repeat(0), m_repeatinit(0), m_channel(-1)
 {
 }
 
