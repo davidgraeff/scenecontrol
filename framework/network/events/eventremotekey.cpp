@@ -20,7 +20,7 @@
 #include "eventremotekey.h"
 
 EventRemoteKey::EventRemoteKey(QObject* parent)
-        : AbstractEvent(parent)
+        : AbstractEvent(parent), m_pressed(false), m_repeat(0), m_channel(-1)
 {
 }
 
@@ -59,4 +59,10 @@ void EventRemoteKey::changed() {
     else
         m_string = tr("Fernbedienung: %1 losgelassen").arg(m_key);
     AbstractServiceProvider::changed();
+}
+int EventRemoteKey::repeat() const {
+    return m_repeat;
+}
+void EventRemoteKey::setRepeat(int r) {
+    m_repeat = r;
 }
