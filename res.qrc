@@ -36,6 +36,9 @@
         <file>images/viewitem.svg</file>
         <file alias="radio">images/actions/radio.png</file>
         <file alias="headset">images/actions/headset.png</file>
+        <file alias="noradio">images/actions/noradio.png</file>
+        <file alias="noheadset">images/actions/noheadset.png</file>
         <file alias="refresh">images/actions/view-refresh.png</file>
+		<file alias="appicon">images/preferences-desktop-icons.png</file>
     </qresource>
 </RCC>
