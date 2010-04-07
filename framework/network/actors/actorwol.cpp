@@ -29,5 +29,5 @@ ActorWOL::ActorWOL(QObject* parent)
 
 void ActorWOL::changed() {
     m_string = tr("Rechner aufwecken: %1").arg(m_mac);
-    AbstractServiceProvider::changed();
+    AbstractActor::changed();
 }

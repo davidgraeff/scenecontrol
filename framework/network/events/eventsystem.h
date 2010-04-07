@@ -25,6 +25,7 @@
 class EventSystem : public AbstractEvent
 {
     Q_OBJECT
+    Q_PROPERTY(int system READ system WRITE setSystem)
 public:
     EventSystem(QObject* parent = 0);
     virtual void changed() ;

@@ -25,6 +25,7 @@
 class ActorWOL : public AbstractActor
 {
     Q_OBJECT
+    Q_PROPERTY(QString mac READ mac WRITE setMac)
 public:
     ActorWOL(QObject* parent = 0);
     virtual void changed() ;
