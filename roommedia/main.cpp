@@ -135,6 +135,7 @@ static void volume(gdouble volume) {
     //get: g_object_get (G_OBJECT(playbin), "volume", &vol, NULL);
     gdouble vol = volume;
     g_object_set (G_OBJECT(pipeline), "volume", vol, NULL);
+	
 }
 
 static void position(int position) {
