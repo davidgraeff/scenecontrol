@@ -70,6 +70,8 @@
 #include "stateTracker/remotecontrolkeystatetracker.h"
 #include "stateTracker/volumestatetracker.h"
 #include "actors/actormute.h"
+#include "events/eventsystem.h"
+#include "actors/actorwol.h"
 
 
 Factory::Factory(QObject* parent) : QObject(parent)
@@ -136,12 +138,16 @@ AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
         provider = new ActorEventVolume();
     } else if (type == ActorMute::staticMetaObject.className()) {
         provider = new ActorMute();
+    } else if (type == ActorWOL::staticMetaObject.className()) {
+        provider = new ActorWOL();
     } else if (type == EventDateTime::staticMetaObject.className()) {
         provider = new EventDateTime();
     } else if (type == EventPeriodic::staticMetaObject.className()) {
         provider = new EventPeriodic();
     } else if (type == EventRemoteKey::staticMetaObject.className()) {
         provider = new EventRemoteKey();
+    } else if (type == EventSystem::staticMetaObject.className()) {
+        provider = new EventSystem();
     } else if (type == ConditionPin::staticMetaObject.className()) {
         provider = new ConditionPin();
     } else if (type == ConditionLed::staticMetaObject.className()) {
