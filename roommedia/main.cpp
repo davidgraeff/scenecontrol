@@ -125,6 +125,12 @@ static void pulse_sink_input_info_callback(pa_context *c, const pa_sink_input_in
     }
 }
 
+void output_volume(sink_info *value) {
+	pa_volume_t vol = pa_cvolume_avg(&value->volume);
+	gdouble volume_percent = ((gdouble) vol * 100) / PA_VOLUME_NORM;
+	printf("pa_sink %s %i %f\n", value->name, value->mute, volume_percent);
+}
+
 static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, void *)
 {
     if (eol > 0 || !info) {
@@ -159,9 +165,7 @@ static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, vo
     
     // output volume
 	if (output) {
-		pa_volume_t vol = pa_cvolume_avg(&value->volume);
-		gdouble volume_percent = ((gdouble) vol * 100) / PA_VOLUME_NORM;
-		printf("pa_sink %s %i %f\n", value->name, value->mute, volume_percent);
+		output_volume(value);
 	}
 }
 
@@ -309,7 +313,26 @@ void set_sink_volume(const char* sinkname, gdouble percent)
     pa_cvolume_set(&dev_vol, s->volume.channels, new_volume);
     s->volume = dev_vol;
     pa_operation_unref(pa_context_set_sink_volume_by_name(pulse_context, sinkname, &dev_vol, NULL, NULL));
+	output_volume(s);
+}
 
+void set_sink_volume_relative(const char* sinkname, gdouble percent) {
+	if(pa_server_available == FALSE)
+        return;   
+
+    sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
+	if (!s) {
+		printf("pa_setvolume_error sink_not_available\n");
+		return;
+	}
+	
+	pa_volume_t v = pa_cvolume_avg(&s->volume);
+	pa_volume_t new_volume = (pa_volume_t) ((percent* PA_VOLUME_NORM) / 100) + v;
+    pa_cvolume dev_vol;
+    pa_cvolume_set(&dev_vol, s->volume.channels, new_volume);
+    s->volume = dev_vol;
+    pa_operation_unref(pa_context_set_sink_volume_by_name(pulse_context, sinkname, &dev_vol, NULL, NULL));
+	output_volume(s);
 }
 
 static gdouble get_sink_volume(const char* sinkname)
@@ -320,7 +343,10 @@ static gdouble get_sink_volume(const char* sinkname)
     return ((gdouble) vol * 100) / PA_VOLUME_NORM;
 }
 
-void set_sink_muted(const char* sinkname, gboolean muted)
+/**
+  Mute the sink @sinkname. muted>1: toggle mute
+  */
+void set_sink_muted(const char* sinkname, int muted)
 {
 	if(pa_server_available == FALSE)
         return;   
@@ -331,14 +357,13 @@ void set_sink_muted(const char* sinkname, gboolean muted)
 		return;
 	}
 
+	if (muted>1) muted = !s->mute;
     pa_operation_unref(pa_context_set_sink_mute_by_name(pulse_context, sinkname, muted, NULL, NULL));
 
 }
 
 static gboolean get_sink_muted(const char* sinkname)
 {
-    if (g_hash_table_size(sink_hash) < 1)
-        return FALSE;
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
 	if (!s) return FALSE;
     return s->mute;
@@ -641,17 +666,25 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
 				} else {
 					printf("pa_volume %f\n", get_sink_volume(before));
 				}
-            } else if (!strcmp(var,"pa_muted")) {
+            } else if (!strcmp(var,"pa_volume_relative")) {
 				before = val;
                 val = strchr(before,' ');
-				var = strtok(before," ");
-				val += 1; // Ignore whitespace
+				if (val) {
+					var = strtok(before," ");
+					val += 1; // Ignore whitespace
+					set_sink_volume_relative(var, atof(val));
+				} else {
+					printf("pa_volume %f\n", get_sink_volume(before));
+				}
+            } else if (!strcmp(var,"pa_mute")) {
+				before = val;
+				val = strchr(before,' ');
 				if (val) {
 					var = strtok(before," ");
 					val += 1; // Ignore whitespace
 					set_sink_muted(var, atoi(val));
 				} else {
-					printf("pa_muted %i\n", get_sink_muted(before));
+					printf("pa_mute %i\n", get_sink_muted(before));
 				}
             } else
                 fprintf(stderr,"unknown_option %s\n",var);
