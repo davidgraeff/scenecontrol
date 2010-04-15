@@ -17,21 +17,9 @@
 
 */
 
-#include "actormute.h"
+#include "pastatetracker.h"
 
-ActorMute::ActorMute(QObject* parent)
-        : AbstractActor(parent),m_mute(-1),m_volume(-1.0), m_relative(false)
-{}
-
-void ActorMute::changed() {
-		m_string = tr("PA Sink %1: ").arg(m_value);
-    if (m_mute==1)
-        m_string += tr("Mute");
-    else if (m_mute==0)
-        m_string += tr("Unmute");
-    else if (m_mute==2)
-        m_string += tr("Toggle mute");
-	else if (m_volume>=0.0)
-		m_string += tr("Volume %1").arg(m_volume);
-    AbstractActor::changed();
+PAStateTracker::PAStateTracker(QObject* parent)
+        : AbstractStateTracker(parent), m_mute(false)
+{
 }

@@ -17,56 +17,46 @@
 
 */
 
-#ifndef ActorMute_h
-#define ActorMute_h
+#ifndef PASTATETRACKER_H
+#define PASTATETRACKER_H
+#include "abstractstatetracker.h"
 
-#include "abstractactor.h"
-
-
-class ActorMute : public AbstractActor
+class PAStateTracker : public AbstractStateTracker
 {
     Q_OBJECT
-    Q_PROPERTY(QString value READ value WRITE setValue)
-	Q_PROPERTY(int mute READ mute WRITE setMute)
+	Q_PROPERTY(QString sinkname READ sinkname WRITE setSinkname)
 	Q_PROPERTY(double volume READ volume WRITE setVolume)
-	Q_PROPERTY(bool relative READ relative WRITE setRelative)
+	Q_PROPERTY(bool mute READ mute WRITE setMute)
 public:
-    ActorMute(QObject* parent = 0);
-    virtual void changed() ;
-    const QString& value() const {
-        return m_value;
-    }
-    void setValue( const QString& v ) {
-        m_value = v;
-    }
-	int mute() const {
-	    return m_mute;
+    PAStateTracker(QObject* parent = 0);
+	
+	const QString& sinkname() const {
+	    return m_sinkname;
 	}
 	
-	void setMute( int m ) {
-	    m_mute = m;
+	void setSinkname( const QString& s ) {
+	    m_sinkname = s;
 	}
 	
-	qreal volume() const {
+	double volume() const {
 	    return m_volume;
 	}
 	
-	void setVolume( qreal v ) {
+	void setVolume( double v ) {
 	    m_volume = v;
 	}
 	
-	bool relative() const {
-	    return m_relative;
+	bool mute() const {
+	    return m_mute;
 	}
 	
-	void setRelative( bool r ) {
-	    m_relative = r;
+	void setMute( bool m ) {
+	    m_mute = m;
 	}
 private:
-    QString m_value;
-    int m_mute;
-	qreal m_volume;
-	bool m_relative;
+	QString m_sinkname;
+	double m_volume;
+	bool m_mute;
 };
 
-#endif // ActorMute_h
+#endif // PASTATETRACKER_H

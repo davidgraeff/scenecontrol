@@ -72,6 +72,7 @@
 #include "actors/actormute.h"
 #include "events/eventsystem.h"
 #include "actors/actorwol.h"
+#include "stateTracker/pastatetracker.h"
 
 
 Factory::Factory(QObject* parent) : QObject(parent)
@@ -186,6 +187,8 @@ AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
         tracker = new RemoteControlKeyStateTracker();
     } else if (type == VolumeStateTracker::staticMetaObject.className()) {
         tracker = new VolumeStateTracker();
+    } else if (type == PAStateTracker::staticMetaObject.className()) {
+        tracker = new PAStateTracker();
     } else {
         qWarning() << "command not supported" << type;
     }
