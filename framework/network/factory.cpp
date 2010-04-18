@@ -73,6 +73,7 @@
 #include "events/eventsystem.h"
 #include "actors/actorwol.h"
 #include "stateTracker/pastatetracker.h"
+#include "actors/actorprojector.h"
 
 
 Factory::Factory(QObject* parent) : QObject(parent)
@@ -141,6 +142,8 @@ AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
         provider = new ActorMute();
     } else if (type == ActorWOL::staticMetaObject.className()) {
         provider = new ActorWOL();
+    } else if (type == ActorProjector::staticMetaObject.className()) {
+        provider = new ActorProjector();
     } else if (type == EventDateTime::staticMetaObject.className()) {
         provider = new EventDateTime();
     } else if (type == EventPeriodic::staticMetaObject.className()) {
