@@ -5,6 +5,7 @@
 #include <unistd.h>    /* standard unix functions, like getpid()         */
 #include <sys/types.h> /* various type definitions, like pid_t           */
 #include <signal.h>    /* signal name macros, and the signal() prototype */
+#include <sys/prctl.h> /* to get informed when parent dies               */
 #include <string.h>
 #include <time.h>
 #include <pulse/pulseaudio.h>
@@ -440,7 +441,6 @@ static void print(const char* msg) {
     fflush(stdout);
 }
 
-/* first, here is the signal handler */
 static void catch_int(int )
 {
     /* re-set the signal handler again to catch_int, for next time */
@@ -717,6 +717,8 @@ int main (int argc, char *argv[])
     gst_init (&argc, &argv);
     signal(SIGINT, catch_int);
     signal(SIGTERM, catch_int);
+	signal(SIGHUP, catch_int);
+	prctl(PR_SET_PDEATHSIG, SIGHUP); // quit if parent dies
     srand(time(0));
 
     /* für Daten auf stdin einen Event-Handler einrichten  */
