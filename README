@@ -11,12 +11,18 @@ bestimmten Zeitpunktes). Wenn alle Bedingungen zutreffen
 
 Das Projekt wurde ursprünglich als Wecker Applikation gedacht.
 
-Der Server ist über Netzwerk Clients konfigurierbar. JSon Objekte sorgen über
-das Netzwerk für die Synchronisierung zwischen Clients und Server.
+Der Server ist über Netzwerk Clients konfigurierbar. JSon Objekte, im Quellcode
+als StateTracker benannte Klassen, sorgen über
+das Netzwerk für die Synchronisierung zwischen Clients und Server, falls sich am
+Zustand der überwachten Controller Klassen etwas ändert.
+Clients werden beim Verbinden mit allen Objekten
+(Events, Conditions, Actions, StateTrackers) synchronisiert.
 
-Fernbedienungseingaben werden von liri (für X10 433Mhz Funkfernbedienungen)
+Fernbedienungseingaben werden vom liri daemon (für X10 433Mhz Funkfernbedienungen)
 entgegengenommen.
 
+Clients:
+--------
 Clients liegen in separaten Repositories.
 Die Touchscreen GUI ist mit dem Animations-Framework und
 der GraphicsView Canvas von qt 4.6 realisiert.
