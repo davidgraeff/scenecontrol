@@ -20,7 +20,7 @@
 #include "projectorstatetracker.h"
 
 ProjectorStateTracker::ProjectorStateTracker(QObject* parent)
-: AbstractStateTracker(parent)
+: AbstractStateTracker(parent), m_state(0)
 {}
 
 unsigned int ProjectorStateTracker::state() const

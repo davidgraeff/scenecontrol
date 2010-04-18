@@ -29,6 +29,11 @@ class AbstractStateTracker : public QObject
 public:
     AbstractStateTracker(QObject* parent = 0);
     QString type() const;
+	/**
+	 Make this StateTracker user managed. It will not be deleted by the factory anymore
+	 after propagation, so you have to care about freeing the object.
+	 */
+	void setManaged() ;
 };
 
 #endif // ABSTRACTSTATETRACKER_H

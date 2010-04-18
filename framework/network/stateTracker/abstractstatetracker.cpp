@@ -29,3 +29,6 @@ AbstractStateTracker::AbstractStateTracker(QObject* parent)
 QString AbstractStateTracker::type() const {
     return QString::fromAscii(metaObject()->className());
 }
+void AbstractStateTracker::setManaged() {
+    this->setProperty("managed",true);
+}

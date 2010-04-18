@@ -215,12 +215,6 @@ void Factory::addServiceProvider(AbstractServiceProvider* provider)
     emit addedProvider(provider);
 }
 
-void Factory::requestRemoveProvider(AbstractServiceProvider* provider)
-{
-    provider->setProperty("remove",true);
-    provider->sync();
-}
-
 void Factory::executeActor(AbstractActor* actor)
 {
     actor->setiExecute(true);

@@ -58,7 +58,7 @@ void PinsModel::stateChanged(AbstractStateTracker* tracker)
             PinValueStateTracker::staticMetaObject.className())
     {
         PinValueStateTracker* p = (PinValueStateTracker*)tracker;
-        p->setProperty("managed",true);
+        p->setManaged();
         if (!m_assignment.contains(p->pin())) {
             beginInsertRows(QModelIndex(), p->pin(), p->pin());
             m_assignment.insert(p->pin(), m_itemvalues.size());
@@ -77,7 +77,7 @@ void PinsModel::stateChanged(AbstractStateTracker* tracker)
                PinNameStateTracker::staticMetaObject.className())
     {
         PinNameStateTracker* p = (PinNameStateTracker*)tracker;
-        p->setProperty("managed",true);
+        p->setManaged();
         if (!m_assignment.contains(p->pin())) {
         } else {
             const int listpos = m_assignment.value(p->pin());

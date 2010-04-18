@@ -37,6 +37,9 @@ public:
     /** Called after all objects have been loaded to link
       * childs with parents together. */
     virtual void link();
+    /** Request the server to remove this provider */
+    void requestRemove() ;
+    /** Return the translated string associated with this provider for showing it in gui. */
     inline QString toString() { return m_string; }
 
     QString id() const;

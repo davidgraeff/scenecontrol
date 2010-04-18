@@ -46,12 +46,6 @@ public:
       */
     void executeActor(AbstractActor* actor);
 
-    /**
-      * Ask the server to remove this provider. The answer is propagated with
-      * the @removedProvider Signal.
-      */
-    void requestRemoveProvider(AbstractServiceProvider* provider);
-
     // all actors, conditions, events, profiles
     AbstractServiceProvider* get(const QString& id);
     void syncComplete();

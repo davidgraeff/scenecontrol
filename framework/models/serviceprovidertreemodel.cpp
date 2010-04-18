@@ -110,7 +110,7 @@ bool ServiceProviderTreeModel::removeRows ( int row, int count, const QModelInde
         if (!p) {
             qWarning()<<__PRETTY_FUNCTION__<<"Failed to remove"<<row<<parent.internalId();
         } else
-            RoomControlClient::getFactory()->requestRemoveProvider ( p );
+            p->requestRemove();
     }
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );

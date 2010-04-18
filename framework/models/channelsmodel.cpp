@@ -55,7 +55,7 @@ void ChannelsModel::stateChanged(AbstractStateTracker* tracker)
             ChannelValueStateTracker::staticMetaObject.className())
     {
         ChannelValueStateTracker* p = (ChannelValueStateTracker*)tracker;
-        p->setProperty("managed",true);
+        p->setManaged();
         if (!m_assignment.contains(p->channel())) {
             beginInsertRows(QModelIndex(), p->channel(), p->channel());
             m_assignment.insert(p->channel(), m_itemvalues.size());
@@ -74,7 +74,7 @@ void ChannelsModel::stateChanged(AbstractStateTracker* tracker)
                ChannelNameStateTracker::staticMetaObject.className())
     {
         ChannelNameStateTracker* p = (ChannelNameStateTracker*)tracker;
-        p->setProperty("managed",true);
+        p->setManaged();
         if (!m_assignment.contains(p->channel())) {
         } else {
             const int listpos = m_assignment.value(p->channel());

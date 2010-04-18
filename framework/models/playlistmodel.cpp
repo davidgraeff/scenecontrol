@@ -94,7 +94,7 @@ bool PlaylistModel::removeRows ( int row, int count, const QModelIndex & )
 {
         QString str;
         for ( int i=row+count-1;i>=row;--i ) {
-               RoomControlClient::getFactory()->requestRemoveProvider ( m_items[i] );
+			m_items[i]->requestRemove();
         }
         QModelIndex ifrom = createIndex ( row,0 );
         QModelIndex ito = createIndex ( row+count-1,1 );
