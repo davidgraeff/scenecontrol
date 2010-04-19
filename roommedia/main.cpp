@@ -291,6 +291,7 @@ static void context_state_callback(pa_context *c, void *userdata) {
 
         break;
     }
+    fflush( stdout );
 }
 
 /*
@@ -305,6 +306,7 @@ void set_sink_volume(const char* sinkname, gdouble percent)
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
 	if (!s) {
 		printf("pa_setvolume_error sink_not_available\n");
+		fflush( stdout );
 		return;
 	}
 
@@ -323,6 +325,7 @@ void set_sink_volume_relative(const char* sinkname, gdouble percent) {
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
 	if (!s) {
 		printf("pa_setvolume_error sink_not_available\n");
+		fflush( stdout );
 		return;
 	}
 	
@@ -354,6 +357,7 @@ void set_sink_muted(const char* sinkname, int muted)
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
 	if (!s) {
 		printf("pa_setmuted_error sink_not_available\n");
+		fflush( stdout );
 		return;
 	}
 
