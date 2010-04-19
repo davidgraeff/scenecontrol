@@ -11,6 +11,7 @@
 #include <pulse/pulseaudio.h>
 #include <pulse/glib-mainloop.h>
 #include <glib.h>
+#include <locale.h>
 
 /* PA: http://bazaar.launchpad.net/~indicator-applet-developers/indicator-sound/trunk/annotate/head%3A/src/pulse-manager.c*/
 typedef struct {
@@ -714,6 +715,7 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
 
 int main (int argc, char *argv[])
 {
+	setlocale(LC_ALL, "C");
     gst_init (&argc, &argv);
     signal(SIGINT, catch_int);
     signal(SIGTERM, catch_int);
