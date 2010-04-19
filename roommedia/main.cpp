@@ -130,6 +130,7 @@ void output_volume(sink_info *value) {
 	pa_volume_t vol = pa_cvolume_avg(&value->volume);
 	uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
 	printf("pa_sink %s %i %u\n", value->name, value->mute, volume);
+	fflush( stdin );
 }
 
 static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, void *)
@@ -334,13 +335,13 @@ void set_sink_volume_relative(const char* sinkname, gdouble percent) {
 	output_volume(s);
 }
 
-static gdouble get_sink_volume(const char* sinkname)
-{
-    sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
-	if (!s) return 0;
-    pa_volume_t vol = pa_cvolume_avg(&s->volume);
-    return ((gdouble) vol * 100) / PA_VOLUME_NORM;
-}
+// static gdouble get_sink_volume(const char* sinkname)
+// {
+//     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
+// 	if (!s) return 0;
+//     pa_volume_t vol = pa_cvolume_avg(&s->volume);
+//     return ((gdouble) vol * 100) / PA_VOLUME_NORM;
+// }
 
 /**
   Mute the sink @sinkname. muted>1: toggle mute
@@ -361,12 +362,12 @@ void set_sink_muted(const char* sinkname, int muted)
 
 }
 
-static gboolean get_sink_muted(const char* sinkname)
-{
-    sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
-	if (!s) return FALSE;
-    return s->mute;
-}
+// static gboolean get_sink_muted(const char* sinkname)
+// {
+//     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
+// 	if (!s) return FALSE;
+//     return s->mute;
+// }
 
 static void destroy_sink_info(void *value)
 {
