@@ -74,6 +74,7 @@
 #include "actors/actorwol.h"
 #include "stateTracker/pastatetracker.h"
 #include "actors/actorprojector.h"
+#include "stateTracker/projectorstatetracker.h"
 
 
 Factory::Factory(QObject* parent) : QObject(parent)
@@ -192,6 +193,8 @@ AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
         tracker = new VolumeStateTracker();
     } else if (type == PAStateTracker::staticMetaObject.className()) {
         tracker = new PAStateTracker();
+    } else if (type == ProjectorStateTracker::staticMetaObject.className()) {
+        tracker = new ProjectorStateTracker();
     } else {
         qWarning() << "command not supported" << type;
     }
