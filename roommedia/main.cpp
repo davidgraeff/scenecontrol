@@ -128,8 +128,8 @@ static void pulse_sink_input_info_callback(pa_context *c, const pa_sink_input_in
 
 void output_volume(sink_info *value) {
 	pa_volume_t vol = pa_cvolume_avg(&value->volume);
-	gdouble volume_percent = ((gdouble) vol * 100) / PA_VOLUME_NORM;
-	printf("pa_sink %s %i %f\n", value->name, value->mute, volume_percent);
+	uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
+	printf("pa_sink %s %i %u\n", value->name, value->mute, volume);
 }
 
 static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, void *)
@@ -308,8 +308,6 @@ void set_sink_volume(const char* sinkname, gdouble percent)
 	}
 
     pa_volume_t new_volume = (pa_volume_t) ((percent * PA_VOLUME_NORM) / 100);
-    //g_debug("new_volume double check :%f", pa_sw_volume_to_linear(new_volume));
-    //g_debug("new volume calculated :%f", (gdouble)new_volume);
     pa_cvolume dev_vol;
     pa_cvolume_set(&dev_vol, s->volume.channels, new_volume);
     s->volume = dev_vol;
@@ -664,7 +662,9 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
 					val += 1; // Ignore whitespace
 					set_sink_volume(var, atof(val));
 				} else {
-					printf("pa_volume %f\n", get_sink_volume(before));
+					sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
+					if (!s) continue;
+					output_volume(s);
 				}
             } else if (!strcmp(var,"pa_volume_relative")) {
 				before = val;
@@ -674,7 +674,9 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
 					val += 1; // Ignore whitespace
 					set_sink_volume_relative(var, atof(val));
 				} else {
-					printf("pa_volume %f\n", get_sink_volume(before));
+					sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
+					if (!s) continue;
+					output_volume(s);
 				}
             } else if (!strcmp(var,"pa_mute")) {
 				before = val;
@@ -684,7 +686,9 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
 					val += 1; // Ignore whitespace
 					set_sink_muted(var, atoi(val));
 				} else {
-					printf("pa_mute %i\n", get_sink_muted(before));
+					sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
+					if (!s) continue;
+					output_volume(s);
 				}
             } else
                 fprintf(stderr,"unknown_option %s\n",var);
