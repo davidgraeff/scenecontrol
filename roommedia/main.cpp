@@ -40,6 +40,7 @@ static void pulse_server_info_callback(pa_context *c, const pa_server_info *info
 static void update_sink_info(pa_context *c, const pa_sink_info *info, int eol, void *userdata);
 static void destroy_sink_info(void *value);
 static void reconnect_to_pulse();
+void output_volume(sink_info *value);
 
 // This is where we'll store the output device list
 static GHashTable *sink_hash = NULL;
@@ -83,9 +84,7 @@ static void pulse_sink_info_callback(pa_context *, const pa_sink_info *sink, int
         value->base_volume = sink->base_volume;
         value->channel_map = sink->channel_map;
         g_hash_table_insert(sink_hash, value->name, value);
-		pa_volume_t vol = pa_cvolume_avg(&value->volume);
-		gdouble volume_percent = ((gdouble) vol * 100) / PA_VOLUME_NORM;
-        printf("pa_sink %s %i %f\n", value->name, value->mute, volume_percent);
+		output_volume(value);
     }
 }
 
