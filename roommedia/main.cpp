@@ -40,7 +40,7 @@ static void pulse_server_info_callback(pa_context *c, const pa_server_info *info
 static void update_sink_info(pa_context *c, const pa_sink_info *info, int eol, void *userdata);
 static void destroy_sink_info(void *value);
 static void reconnect_to_pulse();
-void output_volume(sink_info *value);
+static void output_volume(sink_info *value);
 
 // This is where we'll store the output device list
 static GHashTable *sink_hash = NULL;
@@ -126,11 +126,11 @@ static void pulse_sink_input_info_callback(pa_context *c, const pa_sink_input_in
     }
 }
 
-void output_volume(sink_info *value) {
+static void output_volume(sink_info *value) {
 	pa_volume_t vol = pa_cvolume_avg(&value->volume);
 	uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
 	printf("pa_sink %s %i %u\n", value->name, value->mute, volume);
-	fflush( stdin );
+	fflush( stdout );
 }
 
 static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, void *)
