@@ -12,6 +12,10 @@
 #include <pulse/glib-mainloop.h>
 #include <glib.h>
 #include <locale.h>
+#include <gst/interfaces/streamvolume.h>
+
+static void play();
+static bool next();
 
 /* PA: http://bazaar.launchpad.net/~indicator-applet-developers/indicator-sound/trunk/annotate/head%3A/src/pulse-manager.c*/
 typedef struct {
@@ -84,7 +88,7 @@ static void pulse_sink_info_callback(pa_context *, const pa_sink_info *sink, int
         value->base_volume = sink->base_volume;
         value->channel_map = sink->channel_map;
         g_hash_table_insert(sink_hash, value->name, value);
-		output_volume(value);
+        output_volume(value);
     }
 }
 
@@ -127,10 +131,9 @@ static void pulse_sink_input_info_callback(pa_context *c, const pa_sink_input_in
 }
 
 static void output_volume(sink_info *value) {
-	pa_volume_t vol = pa_cvolume_avg(&value->volume);
-	uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
-	printf("pa_sink %s %i %u\n", value->name, value->mute, volume);
-	fflush( stdout );
+    pa_volume_t vol = pa_cvolume_avg(&value->volume);
+    uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
+    g_print("pa_sink %s %i %u\n", value->name, value->mute, volume);
 }
 
 static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, void *)
@@ -138,9 +141,9 @@ static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, vo
     if (eol > 0 || !info) {
         return;
     }
-	
-	sink_info *value = (sink_info *)g_hash_table_lookup(sink_hash, info->name);
-	gboolean output = TRUE;
+
+    sink_info *value = (sink_info *)g_hash_table_lookup(sink_hash, info->name);
+    gboolean output = TRUE;
     if (value)
     {
         value->name = g_strdup(info->name);
@@ -164,11 +167,11 @@ static void update_sink_info(pa_context *, const pa_sink_info *info, int eol, vo
         value->base_volume = info->base_volume;
         g_hash_table_insert(sink_hash, value->name, value);
     }
-    
+
     // output volume
-	if (output) {
-		output_volume(value);
-	}
+    if (output) {
+        output_volume(value);
+    }
 }
 
 
@@ -202,27 +205,27 @@ static void pulse_server_info_callback(pa_context *c, const pa_server_info *info
 
 gboolean find_index_in_hash_table (gpointer /*key*/, gpointer value, gpointer user_data)
 {
-	sink_info *s = (sink_info *)value;
-	return (s->index == GPOINTER_TO_INT(user_data));
+    sink_info *s = (sink_info *)value;
+    return (s->index == GPOINTER_TO_INT(user_data));
 }
-														 
+
 static void subscribed_events_callback(pa_context *c, enum pa_subscription_event_type t, uint32_t index, void *userdata)
 {
     switch (t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK)
     {
     case PA_SUBSCRIPTION_EVENT_SINK:
-		if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE) 
-		{
-			g_hash_table_remove(sink_hash, g_hash_table_find(sink_hash, find_index_in_hash_table,GINT_TO_POINTER(index))); 
-			if((int)index == DEFAULT_SINK_INDEX){
-				DEFAULT_SINK_INDEX = -1;    
-			}
-		} 
-		else 
-		{
-			pa_operation_unref(pa_context_get_sink_info_by_index(c, index, update_sink_info, userdata));
-		}            
-		break;
+        if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
+        {
+            g_hash_table_remove(sink_hash, g_hash_table_find(sink_hash, find_index_in_hash_table,GINT_TO_POINTER(index)));
+            if ((int)index == DEFAULT_SINK_INDEX) {
+                DEFAULT_SINK_INDEX = -1;
+            }
+        }
+        else
+        {
+            pa_operation_unref(pa_context_get_sink_info_by_index(c, index, update_sink_info, userdata));
+        }
+        break;
     case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
 //         g_debug("PA_SUBSCRIPTION_EVENT_SINK_INPUT event triggered!!");
         if ((t & PA_SUBSCRIPTION_EVENT_TYPE_MASK) == PA_SUBSCRIPTION_EVENT_REMOVE)
@@ -262,15 +265,14 @@ static void context_state_callback(pa_context *c, void *userdata) {
 //         g_debug("context setting name");
         break;
     case PA_CONTEXT_FAILED:
-        printf("pa_notready\n");
-		pa_server_available = FALSE;
+        fprintf (stderr, "pa_notready\n");
+        pa_server_available = FALSE;
         reconnect_to_pulse();
         break;
     case PA_CONTEXT_TERMINATED:
 //         g_debug("context terminated");
         break;
     case PA_CONTEXT_READY:
-        printf("pa_ready\n");
         pa_operation *o;
 
         pa_context_set_subscribe_callback(c, subscribed_events_callback, userdata);
@@ -300,42 +302,40 @@ Use the base volume stored in the sink struct to calculate actual linear volumes
 */
 void set_sink_volume(const char* sinkname, gdouble percent)
 {
-	if(pa_server_available == FALSE)
-        return;   
+    if (pa_server_available == FALSE)
+        return;
 
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
-	if (!s) {
-		printf("pa_setvolume_error sink_not_available\n");
-		fflush( stdout );
-		return;
-	}
+    if (!s) {
+        fprintf (stderr, "pa_setvolume_error sink_not_available\n");
+        return;
+    }
 
     pa_volume_t new_volume = (pa_volume_t) ((percent * PA_VOLUME_NORM) / 100);
     pa_cvolume dev_vol;
     pa_cvolume_set(&dev_vol, s->volume.channels, new_volume);
     s->volume = dev_vol;
     pa_operation_unref(pa_context_set_sink_volume_by_name(pulse_context, sinkname, &dev_vol, NULL, NULL));
-	output_volume(s);
+    output_volume(s);
 }
 
 void set_sink_volume_relative(const char* sinkname, gdouble percent) {
-	if(pa_server_available == FALSE)
-        return;   
+    if (pa_server_available == FALSE)
+        return;
 
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
-	if (!s) {
-		printf("pa_setvolume_error sink_not_available\n");
-		fflush( stdout );
-		return;
-	}
-	
-	pa_volume_t v = pa_cvolume_avg(&s->volume);
-	pa_volume_t new_volume = (pa_volume_t) ((percent* PA_VOLUME_NORM) / 100) + v;
+    if (!s) {
+        fprintf (stderr, "pa_setvolume_error sink_not_available\n");
+        return;
+    }
+
+    pa_volume_t v = pa_cvolume_avg(&s->volume);
+    pa_volume_t new_volume = (pa_volume_t) ((percent* PA_VOLUME_NORM) / 100) + v;
     pa_cvolume dev_vol;
     pa_cvolume_set(&dev_vol, s->volume.channels, new_volume);
     s->volume = dev_vol;
     pa_operation_unref(pa_context_set_sink_volume_by_name(pulse_context, sinkname, &dev_vol, NULL, NULL));
-	output_volume(s);
+    output_volume(s);
 }
 
 // static gdouble get_sink_volume(const char* sinkname)
@@ -351,17 +351,16 @@ void set_sink_volume_relative(const char* sinkname, gdouble percent) {
   */
 void set_sink_muted(const char* sinkname, int muted)
 {
-	if(pa_server_available == FALSE)
-        return;   
+    if (pa_server_available == FALSE)
+        return;
 
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
-	if (!s) {
-		printf("pa_setmuted_error sink_not_available\n");
-		fflush( stdout );
-		return;
-	}
+    if (!s) {
+        fprintf (stderr, "pa_setmuted_error sink_not_available\n");
+        return;
+    }
 
-	if (muted>1) muted = !s->mute;
+    if (muted>1) muted = !s->mute;
     pa_operation_unref(pa_context_set_sink_mute_by_name(pulse_context, sinkname, muted, NULL, NULL));
 
 }
@@ -382,7 +381,7 @@ static void destroy_sink_info(void *value)
     g_free(sink);
 }
 
-/** 
+/**
 reconnect_to_pulse()
 In the event of Pulseaudio flapping in the wind handle gracefully without
 memory leaks !
@@ -390,29 +389,29 @@ memory leaks !
 static void reconnect_to_pulse()
 {
     // reset
-    if (pulse_context != NULL){
- 	    pa_context_unref(pulse_context);
+    if (pulse_context != NULL) {
+        pa_context_unref(pulse_context);
         pulse_context = NULL;
-   	}
-    
-    if(sink_hash != NULL){
+    }
+
+    if (sink_hash != NULL) {
         g_hash_table_destroy(sink_hash);
         sink_hash = NULL;
     }
 
     // reconnect
     pulse_context = pa_context_new(pa_glib_mainloop_get_api(pa_main_loop), "roommedia_pulse");
-	g_assert(pulse_context);   
+    g_assert(pulse_context);
     sink_hash = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, destroy_sink_info);
     // Establish event callback registration
-	pa_context_set_state_callback(pulse_context, context_state_callback, NULL);
-	pa_context_connect(pulse_context, NULL, PA_CONTEXT_NOFAIL, NULL);        
+    pa_context_set_state_callback(pulse_context, context_state_callback, NULL);
+    pa_context_connect(pulse_context, NULL, PA_CONTEXT_NOFAIL, NULL);
 }
 
 
 void init_pulseaudio() {
     pa_main_loop = pa_glib_mainloop_new(g_main_context_default());
-	reconnect_to_pulse();
+    reconnect_to_pulse();
 }
 
 void close_pulseaudio()
@@ -439,12 +438,7 @@ GPtrArray* items;
 
 static void selectTrack(int track);
 
-static void print(const char* msg) {
-    puts(msg);
-    fflush(stdout);
-}
-
-static void catch_int(int )
+static void catch_int(int)
 {
     /* re-set the signal handler again to catch_int, for next time */
     signal(SIGINT, catch_int);
@@ -453,24 +447,25 @@ static void catch_int(int )
 }
 
 static void play() {
+	if (m_currenttrack==-1 && !next()) return;
     gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
     GstState state;
     gst_element_get_state(pipeline, &state, 0, 0);
-    print("state playing");
+    g_print("state playing\n");
 }
 
 static void pausemedia() {
     gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PAUSED);
     GstState state;
     gst_element_get_state(pipeline, &state, 0, 0);
-    print("state paused");
+    g_print("state paused\n");
 }
 
 static void stop() {
     gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_READY);
     GstState state;
     gst_element_get_state(pipeline, &state, 0, 0);
-    print("state stopped");
+    g_print("state stopped\n");
 }
 
 static bool next() {
@@ -522,7 +517,7 @@ static void queue(GString* entry) {
     if (entry->len && entry->str[0] == '/') {
         g_string_prepend(entry, "file://");
     }
-    g_print("queued %s", entry->str);
+    g_print("queued %s\n", entry->str);
     g_ptr_array_add (items, entry);
 }
 
@@ -551,17 +546,17 @@ static void selectTrack(int track) {
 }
 
 static void volume(gdouble volume) {
-    //get: g_object_get (G_OBJECT(playbin), "volume", &vol, NULL);
-    gdouble vol = volume;
-    g_object_set (G_OBJECT(pipeline), "volume", vol, NULL);
-
+    volume = CLAMP (volume, 0.0, 1.0);
+    gst_stream_volume_set_volume(GST_STREAM_VOLUME (G_OBJECT(pipeline)),
+                                 GST_STREAM_VOLUME_FORMAT_CUBIC,
+                                 volume);
 }
 
 static void position(int position) {
     if (!gst_element_seek (pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH,
                            GST_SEEK_TYPE_SET, 1000000*(gint64)position,
                            GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
-        g_print ("seek_failed\n");
+        fprintf (stderr, "seek_failed\n");
     }
 
 }
@@ -592,6 +587,7 @@ static gboolean getduration(gpointer) {
 }
 static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
 {
+	int trySkip = 0;
     switch (GST_MESSAGE_TYPE (msg))
     {
     case GST_MESSAGE_DURATION:
@@ -601,31 +597,33 @@ static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
     }
     case GST_MESSAGE_EOS:
     {
-        if (!next()) stop();
+        trySkip=1;
         break;
     }
     case GST_MESSAGE_ERROR:
     {
         gchar *debug;
         GError *err;
+        GString* uri = 0;
 
         gst_message_parse_error (msg, &err, &debug);
         g_free (debug);
-
-        if (m_currenttrack<(int)items->len || m_currenttrack>=0) {
-            GString* uri = (GString*)g_ptr_array_index (items, m_currenttrack);
-            g_error ("GST_MESSAGE_ERROR %s %s", err->message, uri->str);
-        } else
-            g_error ("GST_MESSAGE_ERROR %s", err->message);
+        if (m_currenttrack<(int)items->len && m_currenttrack>=0) {
+            uri = (GString*)g_ptr_array_index (items, m_currenttrack);
+        }
+        // Try to skip to the next track if uri is wrong for this one
+		if (err->code==3) trySkip = 1;
+        fprintf (stderr, "gst_error %i %s %s\n", err->code, err->message, ((uri)?uri->str:""));
         g_error_free (err);
-
-        //g_main_loop_quit (loop);
         break;
     }
     default:
         break;
     }
 
+	if (trySkip) {
+		if (!next()) stop();
+	}
     return true;
 }
 
@@ -634,12 +632,14 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
     char *line = 0;
     gsize len;
     gchar* var, *val, *before;
+	int unknown_option=0;
 
     /* Read the data into our buffer */
     //if (!(condition & G_IO_IN)) return true;
     while (g_io_channel_read_line (source, &line, &len, NULL, &error) == G_IO_STATUS_NORMAL)
     {
         if (len==1) continue;
+        unknown_option = 0;
         line[len-1] = 0;
         val = strchr(line,' ');
         if (val) {
@@ -660,43 +660,43 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
             } else if (!strcmp(var,"position")) {
                 position(atoi(val));
             } else if (!strcmp(var,"pa_volume")) {
-				before = val;
+                before = val;
                 val = strchr(before,' ');
-				if (val) {
-					var = strtok(before," ");
-					val += 1; // Ignore whitespace
-					set_sink_volume(var, atof(val));
-				} else {
-					sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
-					if (!s) continue;
-					output_volume(s);
-				}
+                if (val) {
+                    var = strtok(before," ");
+                    val += 1; // Ignore whitespace
+                    set_sink_volume(var, atof(val));
+                } else {
+                    sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
+                    if (!s) continue;
+                    output_volume(s);
+                }
             } else if (!strcmp(var,"pa_volume_relative")) {
-				before = val;
+                before = val;
                 val = strchr(before,' ');
-				if (val) {
-					var = strtok(before," ");
-					val += 1; // Ignore whitespace
-					set_sink_volume_relative(var, atof(val));
-				} else {
-					sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
-					if (!s) continue;
-					output_volume(s);
-				}
+                if (val) {
+                    var = strtok(before," ");
+                    val += 1; // Ignore whitespace
+                    set_sink_volume_relative(var, atof(val));
+                } else {
+                    sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
+                    if (!s) continue;
+                    output_volume(s);
+                }
             } else if (!strcmp(var,"pa_mute")) {
-				before = val;
-				val = strchr(before,' ');
-				if (val) {
-					var = strtok(before," ");
-					val += 1; // Ignore whitespace
-					set_sink_muted(var, atoi(val));
-				} else {
-					sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
-					if (!s) continue;
-					output_volume(s);
-				}
+                before = val;
+                val = strchr(before,' ');
+                if (val) {
+                    var = strtok(before," ");
+                    val += 1; // Ignore whitespace
+                    set_sink_muted(var, atoi(val));
+                } else {
+                    sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, before);
+                    if (!s) continue;
+                    output_volume(s);
+                }
             } else
-                fprintf(stderr,"unknown_option %s\n",var);
+				unknown_option=1;
         } else if (!strcmp(line,"clear")) {
             clear();
         } else if (!strcmp(line,"play")) {
@@ -714,8 +714,11 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
         } else if (!strcmp(line,"quit")) {
             g_main_loop_quit (mloop);
         } else
-            fprintf(stderr,"unknown_option %s\n",line);
+            unknown_option=1;
         if (line) g_free(line);
+		
+		if (unknown_option)
+			fprintf(stderr,"unknown_option\n");
         break;
     }
     return true;
@@ -723,12 +726,12 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
 
 int main (int argc, char *argv[])
 {
-	setlocale(LC_ALL, "C");
+    setlocale(LC_ALL, "C");
     gst_init (&argc, &argv);
     signal(SIGINT, catch_int);
     signal(SIGTERM, catch_int);
-	signal(SIGHUP, catch_int);
-	prctl(PR_SET_PDEATHSIG, SIGHUP); // quit if parent dies
+    signal(SIGHUP, catch_int);
+    prctl(PR_SET_PDEATHSIG, SIGHUP); // quit if parent dies
     srand(time(0));
 
     /* für Daten auf stdin einen Event-Handler einrichten  */
@@ -751,8 +754,7 @@ int main (int argc, char *argv[])
     items = g_ptr_array_new();
 
     /* Print status information */
-    /*    queue(g_string_new("file:///media/roomserver/daten/Musik/VA-incoming/01_psyko_punkz_-_after_mf.mp3"));
-        queue(g_string_new("file:///media/roomserver/daten/Musik/VA-incoming/02-the_raiders-a_feeling_(tuneboy_remix).mp3"));*/
+    queue(g_string_new("file:///home/david/Desktop/{HARDSTYLE} Dj Zany - Science  Religion (Qlimax Anthem 2005).mp3"));
     g_print("version %s\n", gst_version_string());
 
     init_pulseaudio();
@@ -769,7 +771,7 @@ int main (int argc, char *argv[])
     gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_NULL);
     gst_object_unref (GST_OBJECT (pipeline));
 
-    print("exit");
+    g_print("exit\n");
 
     return 0;
 }
