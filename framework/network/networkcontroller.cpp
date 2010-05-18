@@ -21,6 +21,8 @@
 #include "factory.h"
 #include "stateTracker/abstractstatetracker.h"
 
+#include <solid/networking.h>
+
 NetworkController::NetworkController()
 {
     m_bufferpos=0;
@@ -33,6 +35,8 @@ NetworkController::NetworkController()
     connect ( this, SIGNAL ( connected() ), SLOT( slotconnected()) );
     connect ( this, SIGNAL ( disconnected() ), SLOT( slotdisconnected()) );
     connect ( this, SIGNAL ( error(QAbstractSocket::SocketError) ), SLOT( sloterror(QAbstractSocket::SocketError) ));
+	
+	connect( Solid::Networking::notifier(), SIGNAL(shouldDisconnect()), SLOT(timeout()) );
 }
 
 NetworkController::~NetworkController()
@@ -48,6 +52,7 @@ void NetworkController::slotconnected()
 
 void NetworkController::slotdisconnected()
 {
+	
 }
 
 void NetworkController::timeout()

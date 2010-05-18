@@ -35,9 +35,9 @@ Arguments=
 Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
 Dependency Action=Nothing
 EnvironmentGroup=default
-Executable=file:///home/david/Entwicklung/roomControl/client/build/touchgui/roomtouch
+Project Target=client,touchgui,roomtouch
 Working Directory=file:///home/david/Entwicklung/roomControl/client/build/touchgui/
-isExecutable=true
+isExecutable=false
 
 [MakeBuilder]
 Install As Root=true
