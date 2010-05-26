@@ -32,6 +32,7 @@ public:
     void resync();
     void refresh();
     void restart();
+    void backup(const QString& path);
     QString serverversion();
 
 private:

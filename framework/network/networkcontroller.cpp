@@ -188,3 +188,9 @@ void NetworkController::restart()
     const QByteArray cmd = "{\"type\" : \"restart\"}";
     write(cmd);
 }
+
+void NetworkController::backup(const QString& path)
+{
+    const QByteArray cmd = "{\"type\" : \"restart\"; \"path\" : \"" + path.toUtf8() +"\"}";
+    write(cmd);
+}
