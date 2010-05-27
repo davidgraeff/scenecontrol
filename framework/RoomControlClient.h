@@ -1,3 +1,4 @@
+
 #ifndef RoomControlClient_H
 #define RoomControlClient_H
 
@@ -9,6 +10,7 @@
 #include "models/pinsmodel.h"
 #include "models/playlistmodel.h"
 #include "models/serviceprovidermodel.h"
+#include "models/profilesmodel.h"
 
 /**
  * Used as singleton to access all other controllers.
@@ -80,7 +82,11 @@ public:
     {
         return instance->m_PlaylistModel;
     }
-    static inline ServiceProviderModel* getProfilesModel()
+    static inline ServiceProviderModel* getCategoriesModel()
+    {
+        return instance->m_categoriesModel;
+    }
+    static inline ProfilesModel* getProfilesModel()
     {
         return instance->m_profilesModel;
     }
@@ -97,13 +103,14 @@ private:
     ChannelsModel* m_ChannelsModel;
     PinsModel* m_PinsModel;
     PlaylistModel* m_PlaylistModel;
-    ServiceProviderModel* m_profilesModel;
+    ProfilesModel* m_profilesModel;
     ServiceProviderModel* m_profilesWithAlarmsModel;
+	ServiceProviderModel* m_categoriesModel;
 private Q_SLOTS:
-    void addedProvider(AbstractServiceProvider* p) ;
-    void removedProvider(AbstractServiceProvider* p) ;
 protected:
     RoomControlClient ();
+public slots:
+    void addFilterCategories(AbstractServiceProvider*);
 };
 
 #endif // RoomControlClient_H

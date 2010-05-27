@@ -3,6 +3,7 @@
 #include "profile/serviceproviderprofile.h"
 #include <events/eventperiodic.h>
 #include <events/eventdatetime.h>
+#include <profile/category.h>
 
 RoomControlClient* RoomControlClient::instance = 0;
 
@@ -28,12 +29,18 @@ void RoomControlClient::init()
     m_ChannelsModel = new ChannelsModel(this);
     m_PinsModel = new PinsModel(this);
     m_PlaylistModel = new PlaylistModel(this);
-    m_profilesModel = new ServiceProviderModel(tr("Profile"),this);
+    m_profilesModel = new ProfilesModel(this);
+    m_categoriesModel = new ServiceProviderModel(tr("Kategorien"), this);
     m_profilesWithAlarmsModel = new ServiceProviderModel(tr("Alarm Profile"),this);
-    connect(RoomControlClient::getFactory(),SIGNAL(addedProvider(AbstractServiceProvider*)),
-            SLOT(addedProvider(AbstractServiceProvider*)));
     connect(RoomControlClient::getFactory(),SIGNAL(removedProvider(AbstractServiceProvider*)),
-            SLOT(removedProvider(AbstractServiceProvider*)));
+            m_profilesModel, SLOT(removedProvider(AbstractServiceProvider*)));
+    connect(RoomControlClient::getFactory(),SIGNAL(removedProvider(AbstractServiceProvider*)),
+            m_profilesWithAlarmsModel, SLOT(removedProvider(AbstractServiceProvider*)));
+
+    connect(RoomControlClient::getFactory(),SIGNAL(addedProvider(AbstractServiceProvider*)),
+            SLOT(addFilterCategories(AbstractServiceProvider*)));
+    connect(RoomControlClient::getFactory(),SIGNAL(removedProvider(AbstractServiceProvider*)),
+            m_categoriesModel, SLOT(removedProvider(AbstractServiceProvider*)));
 
 }
 
@@ -47,15 +54,8 @@ RoomControlClient* RoomControlClient::createInstance ()
     return instance;
 }
 
-void RoomControlClient::addedProvider(AbstractServiceProvider* p) {
-    ProfileCollection* c = qobject_cast<ProfileCollection*>(p);
-    if (!c) return;
-    m_profilesModel->addedProvider(p);
-}
-
-void RoomControlClient::removedProvider(AbstractServiceProvider* p) {
-    ProfileCollection* c = qobject_cast<ProfileCollection*>(p);
-    if (!c) return;
-    m_profilesModel->removedProvider(p);
-    m_profilesWithAlarmsModel->removedProvider(p);
+void RoomControlClient::addFilterCategories(AbstractServiceProvider* p) {
+	CategoryProvider* cat = qobject_cast<CategoryProvider*>(p);
+	if (!cat) return;
+	m_categoriesModel->addedProvider(p);
 }

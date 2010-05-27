@@ -63,6 +63,7 @@ void AbstractServiceProvider::link() {
     if (parent)
         parent->addChild(this);
 }
+
 void AbstractServiceProvider::requestRemove() {
     setProperty("remove",true);
     sync();

@@ -75,6 +75,7 @@
 #include "stateTracker/pastatetracker.h"
 #include "actors/actorprojector.h"
 #include "stateTracker/projectorstatetracker.h"
+#include "profile/category.h"
 
 
 Factory::Factory(QObject* parent) : QObject(parent)
@@ -107,6 +108,8 @@ AbstractServiceProvider* Factory::generate ( const QVariantMap& args )
         provider = new Playlist();
     } else if (type == ProfileCollection::staticMetaObject.className()) {
         provider = new ProfileCollection();
+    } else if (type == CategoryProvider::staticMetaObject.className()) {
+        provider = new CategoryProvider();
     } else if (type == ActorCurtain::staticMetaObject.className()) {
         provider = new ActorCurtain();
     } else if (type == ActorLed::staticMetaObject.className()) {
@@ -283,7 +286,7 @@ void Factory::syncComplete()
     // Sync is completed, Link provider together and init them
     foreach (AbstractServiceProvider* p, m_providerList)
     {
-        // Playlists will reset the model, set by the state tracker already
+        // Playlists would reset the model already set by the state tracker
         // => don't emit their change signal
         if (p->metaObject()->className()!= Playlist::staticMetaObject.className())
             p->changed();

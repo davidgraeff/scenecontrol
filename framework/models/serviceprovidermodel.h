@@ -43,11 +43,11 @@ public:
     inline AbstractServiceProvider* get(int index) { return m_items.at(index);}
     int indexOf ( const QString& id ) ;
     void addedProvider(AbstractServiceProvider*);
-    void removedProvider(AbstractServiceProvider*);
 public Q_SLOTS:
     void objectChanged(AbstractServiceProvider*);
     void slotdisconnected();
     void childsChanged(ProfileCollection*);
+    void removedProvider(AbstractServiceProvider*);
 private:
     QList< AbstractServiceProvider* > m_items;
     QString m_title;

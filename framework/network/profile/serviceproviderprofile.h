@@ -34,10 +34,12 @@ class ProfileCollection : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString name READ name WRITE setName);
+	Q_PROPERTY(QString category_id READ category_id WRITE setCategory_id);
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled)
 public:
     ProfileCollection(QObject* parent = 0);
     virtual void changed() ;
+	virtual void link();
     void removedChild(AbstractServiceProvider*);
     void addChild(AbstractServiceProvider* provider);
 
@@ -57,8 +59,18 @@ public:
     void setEnabled( bool e ) {
         m_enabled = e;
     }
+
+    QString category_id() const {
+        return m_category_id;
+    }
+
+    void setCategory_id( const QString& id ) {
+        m_category_id = id;
+    }
+
 private:
     QString m_name;
+    QString m_category_id;
     bool m_enabled;
 
     QMultiMap<int, AbstractActor*> m_actors_linked;
@@ -68,7 +80,7 @@ private:
     ServiceProviderTreeModel* m_combined_model;
     ServiceProviderModel* m_conditions_model;
     ServiceProviderModel* m_actors_model;
-    Q_SIGNALS:
+Q_SIGNALS:
     void childsChanged(ProfileCollection*);
 };
 

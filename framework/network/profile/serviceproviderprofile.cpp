@@ -108,3 +108,8 @@ void ProfileCollection::changed() {
     if (!m_enabled) m_string = tr("%1 <Inaktiv>").arg(m_string);
     AbstractServiceProvider::changed();
 }
+
+void ProfileCollection::link() {
+    RoomControlClient::getProfilesModel()->addedProfile(this);
+}
+

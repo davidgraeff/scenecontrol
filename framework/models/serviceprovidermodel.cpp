@@ -41,7 +41,6 @@ ServiceProviderModel::~ServiceProviderModel()
 
 void ServiceProviderModel::slotdisconnected()
 {
-    // Do not delete playlist objects, they are managed through the factory
     m_items.clear();
     reset();
 }
