@@ -138,7 +138,7 @@ void ProfilesModel::addedCategory(CategoryProvider* category)
 {
     QModelIndex index = indexOf ( category->id());
     if ( index.isValid() ) return;
-    
+
     // Find alphabetic position amoung categories
     int row;
     for (row=0;row<m_catitems.size();++row)
@@ -146,7 +146,7 @@ void ProfilesModel::addedCategory(CategoryProvider* category)
             break;
 
     beginInsertRows ( QModelIndex(),row,row );
-	m_catitems.insert(row, new CategoryItem(category));
+    m_catitems.insert(row, new CategoryItem(category));
     endInsertRows();
 }
 
@@ -178,7 +178,7 @@ void ProfilesModel::addedProfile(ProfileCollection* profile)
             break;
 
     beginInsertRows ( createIndex(catpos,0,cat),row,row );
-	cat->insertProfile(profile, row);
+    cat->insertProfile(profile, row);
     endInsertRows();
 }
 
@@ -186,50 +186,79 @@ void ProfilesModel::removedProvider ( AbstractServiceProvider* provider )
 {
     QModelIndex index = indexOf ( provider->id() );
     if ( !index.isValid() ) return;
+
     beginRemoveRows ( index.parent(), index.row(), index.row() );
 
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
+    ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
     if (cat) {
         delete m_catitems.takeAt(index.row());
     }
-    ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
-    if (p) {
+    else if (p) {
         cat = p->category;
         if (p != cat->m_profiles[index.row()]) qWarning() << "EPIC FAIL" << p << index.row();
-		p = 0;
-		cat->removeProfile(index.row());
+        p = 0;
+        cat->removeProfile(index.row());
     }
+
     endRemoveRows();
 }
 
 void ProfilesModel::objectChanged ( AbstractServiceProvider* provider )
 {
-    //TODO
-    /*    const int listpos = indexOf ( provider->id());
-        if ( listpos==-1 ) return;
-        int row;
-        bool skip = false;
-        for (row=0;row<m_items.size();++row)
+    QModelIndex index = indexOf ( provider->id());
+    if ( !index.isValid() ) return;
+
+    CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
+    ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
+
+    int row=-1;
+    bool skip = false;
+    if (cat) {
+        for (row=0;row<m_catitems.size();++row)
         {
-            if (listpos==row) skip =true;
-            if (listpos!=row && m_items[row]->toString().toLower() >= provider->toString().toLower())
+            if (index.row() == row) skip = true;
+            if (index.row() != row &&
+				m_catitems[row]->category->toString().toLower() >= provider->toString().toLower())
             {
                 break;
             }
         }
-        if (skip) row--;
+    } else if (p) {
+		CategoryItem* parentItem = p->category;
+        for (row=0;row<parentItem->m_profiles.size();++row)
+        {
+            if (index.row() == row) skip = true;
+            if (index.row() != row &&
+				parentItem->m_profiles[row]->profile->toString().toLower() >= provider->toString().toLower())
+            {
+                break;
+            }
+        }
+    }
+    if (skip) row--;
 
-        if (row!=listpos) {
-            beginRemoveRows ( QModelIndex(), listpos, listpos );
-            m_items.removeAt ( listpos );
+    if (row != -1 && row!=index.row()) {
+        const QModelIndex parent = index.parent();
+        if (cat) {
+            beginRemoveRows ( parent, index.row(), index.row() );
+            CategoryItem* item = m_catitems.takeAt(index.row());
             endRemoveRows();
-            beginInsertRows ( QModelIndex(),row,row );
-            m_items.insert (row, provider );
+            beginInsertRows ( parent,row,row );
+            m_catitems.insert(row, item);
             endInsertRows();
-        } else {
-            QModelIndex index = createIndex ( listpos,0,0 );
-            emit dataChanged ( index,index );
-        }*/
+        } else if (p) {
+            CategoryItem* parentItem = p->category;
+            beginRemoveRows ( parent, index.row(), index.row() );
+            ProfileItem* item = parentItem->m_profiles.takeAt(index.row());
+            endRemoveRows();
+            beginInsertRows ( parent,row,row );
+            parentItem->m_profiles.insert(row, item);
+            endInsertRows();
+        }
+    } else {
+        emit dataChanged ( index,index );
+    }
 }
 
 QModelIndex ProfilesModel::indexOf ( const QString& id )
