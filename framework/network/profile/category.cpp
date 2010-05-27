@@ -27,7 +27,7 @@ CategoryProvider::CategoryProvider(QObject* parent)
 
 void CategoryProvider::changed() {
     m_string = m_name;
-    if (!m_flagAlarm) m_string = tr("%1 <Alarm>").arg(m_string);
+    if (m_flagAlarm) m_string = tr("%1 <Alarm>").arg(m_string);
     AbstractServiceProvider::changed();
 }
 

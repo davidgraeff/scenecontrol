@@ -121,9 +121,15 @@ QModelIndex ProfilesModel::index(int row, int column, const QModelIndex& parent)
 bool ProfilesModel::removeRows ( int row, int count, const QModelIndex &parent )
 {
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
-    if (cat) return false;
+    if (cat) {
+        for ( int i=row+count-1;i>=row;--i )
+        {
+            if (m_catitems[row]->category)
+                m_catitems[row]->category->requestRemove();
+        }
+        return true;
+    }
 
-    QString str;
     for ( int i=row+count-1;i>=row;--i )
     {
         cat->m_profiles[i]->profile->requestRemove();
@@ -140,8 +146,8 @@ void ProfilesModel::addedCategory(CategoryProvider* category)
     if ( index.isValid() ) return;
 
     // Find alphabetic position amoung categories
-    int row;
-    for (row=0;row<m_catitems.size();++row)
+    int row=1;
+    for (row=1;row<m_catitems.size();++row)
         if (m_catitems[row]->category->toString().toLower() >= category->toString().toLower())
             break;
 
@@ -163,9 +169,9 @@ void ProfilesModel::addedProfile(ProfileCollection* profile)
 
     // Find right category
     int catpos = 0;
-    CategoryItem* cat = m_catitems[catpos];
-    for (int i=0;i<m_catitems.size();++i)
-        if (m_catitems[i]->category && m_catitems[i]->category->id()==profile->category_id()) {
+    CategoryItem* cat = m_catitems[0];
+    for (int i=1;i<m_catitems.size();++i)
+        if (m_catitems[i]->category->id()==profile->category_id()) {
             cat = m_catitems[i];
             catpos = i;
             break;
@@ -218,19 +224,19 @@ void ProfilesModel::objectChanged ( AbstractServiceProvider* provider )
         for (row=0;row<m_catitems.size();++row)
         {
             if (index.row() == row) skip = true;
-            if (index.row() != row &&
-				m_catitems[row]->category->toString().toLower() >= provider->toString().toLower())
+            if (index.row() != row && m_catitems[row]->category &&
+                    m_catitems[row]->category->toString().toLower() >= provider->toString().toLower())
             {
                 break;
             }
         }
     } else if (p) {
-		CategoryItem* parentItem = p->category;
+        CategoryItem* parentItem = p->category;
         for (row=0;row<parentItem->m_profiles.size();++row)
         {
             if (index.row() == row) skip = true;
             if (index.row() != row &&
-				parentItem->m_profiles[row]->profile->toString().toLower() >= provider->toString().toLower())
+                    parentItem->m_profiles[row]->profile->toString().toLower() >= provider->toString().toLower())
             {
                 break;
             }
@@ -248,12 +254,24 @@ void ProfilesModel::objectChanged ( AbstractServiceProvider* provider )
             m_catitems.insert(row, item);
             endInsertRows();
         } else if (p) {
-            CategoryItem* parentItem = p->category;
+            // Remove from old category
+            CategoryItem* oldCategory = p->category;
             beginRemoveRows ( parent, index.row(), index.row() );
-            ProfileItem* item = parentItem->m_profiles.takeAt(index.row());
+            ProfileItem* item = oldCategory->m_profiles.takeAt(index.row());
             endRemoveRows();
-            beginInsertRows ( parent,row,row );
-            parentItem->m_profiles.insert(row, item);
+
+            // determine new category
+            int newCategoryRow = 0; // default is the unassigned-category
+            for (int i=1;i<m_catitems.size();++i)
+                if (m_catitems[i]->category->id() == ((ProfileCollection*)provider)->category_id()) {
+                    newCategoryRow = i;
+                    break;
+                }
+
+            // add to new category
+            CategoryItem* newCategory = m_catitems[newCategoryRow];
+            beginInsertRows ( createIndex(newCategoryRow,0,newCategory),row,row );
+            newCategory->m_profiles.insert(row, item);
             endInsertRows();
         }
     } else {
