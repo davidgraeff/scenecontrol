@@ -52,21 +52,25 @@ public:
 class CategoryItem : public QObject {
     Q_OBJECT
 public:
+    int pos;
     CategoryProvider* category;
     QList< ProfileItem* > m_profiles;
-    void insertProfile(ProfileCollection* profile, int row)
+    ProfileItem* insertProfile(ProfileCollection* profile, int row)
     {
-        m_profiles.insert(row, new ProfileItem(profile,this,row));
+		ProfileItem* p = new ProfileItem(profile,this,row);
+        m_profiles.insert(row, p);
         for (int i=row+1;i<m_profiles.size();++i)
             m_profiles[i]->pos = i;
+		return p;
     }
     void removeProfile(int pos) {
         delete m_profiles.takeAt(pos);
         for (int i=pos;i<m_profiles.size();++i)
             m_profiles[i]->pos = i;
     }
-    CategoryItem(CategoryProvider* c=0) {
-        category=c;
+    CategoryItem(CategoryProvider* c, int p) {
+        category = c;
+        pos = p;
     }
     ~CategoryItem() {
         qDeleteAll(m_profiles.begin(),m_profiles.end());
@@ -98,14 +102,18 @@ public:
     QModelIndex indexOf ( const QString& id ) ;
     void addedProfile(ProfileCollection* profile);
     void addedCategory(CategoryProvider* category);
+	void focusAsSoonAsAvailable(const QString& id) {m_focusid=id;}
 public Q_SLOTS:
-    void objectChanged(AbstractServiceProvider*);
+    void objectChanged(AbstractServiceProvider* provider, bool indicateMovement=true);
     void slotdisconnected();
     void childsChanged(ProfileCollection*);
     void removedProvider(AbstractServiceProvider*);
+Q_SIGNALS:
+    void itemMoved(const QModelIndex& newindex);
 private:
     //QList< AbstractServiceProvider* > m_items;
     QList< CategoryItem* > m_catitems;
+	QString m_focusid;
 };
 
 #endif // ProfilesModel_h

@@ -20,6 +20,10 @@ Name=roomclient
 Type=Native Application
 
 [Launch][Launch Configuration 0][Data]
+Arguments=--nofork
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+Dependency Action=Nothing
+EnvironmentGroup=default
 Project Target=client,desktopgui,roomclient
 Working Directory=file:///home/david/Entwicklung/roomControl/client/build/desktopgui/
 isExecutable=false

@@ -34,7 +34,7 @@ ProfilesModel::ProfilesModel ( QObject* parent )
     connect ( RoomControlClient::getNetworkController(),SIGNAL ( disconnected() ),
               SLOT ( slotdisconnected() ) );
 
-    m_catitems.append(new CategoryItem());
+    slotdisconnected();
 }
 
 ProfilesModel::~ProfilesModel()
@@ -46,6 +46,7 @@ void ProfilesModel::slotdisconnected()
 {
     qDeleteAll(m_catitems.begin(),m_catitems.end());
     m_catitems.clear();
+    m_catitems.append(new CategoryItem(0,0));
     reset();
 }
 
@@ -53,7 +54,9 @@ int ProfilesModel::rowCount ( const QModelIndex & parent) const
 {
     if (!parent.isValid()) return m_catitems.size();
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
-    if (cat) return cat->m_profiles.size();
+    if (cat) {
+        return cat->m_profiles.size();
+    }
     return 0;
 }
 
@@ -102,7 +105,7 @@ QModelIndex ProfilesModel::parent(const QModelIndex& child) const {
         qWarning()<<__PRETTY_FUNCTION__<<"No parent found!";
         return QModelIndex();
     }
-    return createIndex(p->pos,0,p->category);
+    return createIndex(p->category->pos,0,p->category);
 }
 
 QModelIndex ProfilesModel::index(int row, int column, const QModelIndex& parent) const {
@@ -113,7 +116,14 @@ QModelIndex ProfilesModel::index(int row, int column, const QModelIndex& parent)
 
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
     if (!cat) {
-        qWarning()<<__PRETTY_FUNCTION__<<"Category not found";
+        qWarning()<<__PRETTY_FUNCTION__<<"Category not found"<<row;
+    }
+    else if (cat->m_profiles.size()<=row) {
+        qWarning()<<row<<"maximum categories:" << cat->m_profiles.size();
+        /*			for( int i=0; i < cat->m_profiles.size();++i) {
+        				qWarning()<< "position" << i << cat->m_profiles[i]->pos;
+        			}*/
+        return QModelIndex();
     }
     return createIndex(row, column, cat->m_profiles[row]);
 }
@@ -152,8 +162,24 @@ void ProfilesModel::addedCategory(CategoryProvider* category)
             break;
 
     beginInsertRows ( QModelIndex(),row,row );
-    m_catitems.insert(row, new CategoryItem(category));
+    CategoryItem* newitem = new CategoryItem(category, row);
+    m_catitems.insert(row, newitem);
+    for (int i=row+1;i<m_catitems.size();++i)
+        m_catitems[i]->pos = i;
     endInsertRows();
+
+    // There may already exist profiles assigned to this category that are
+    // currently visible at the unassigned-category. Reassign now
+    for (int i=m_catitems[0]->m_profiles.size()-1;i>=0;--i) {
+        if (m_catitems[0]->m_profiles[i]->profile->category_id()==category->id()) {
+            objectChanged(m_catitems[0]->m_profiles[i]->profile, false);
+        }
+    }
+
+    if (m_focusid == category->name()) {
+        emit itemMoved(createIndex(row,0,newitem));
+        m_focusid = QString();
+    }
 }
 
 void ProfilesModel::addedProfile(ProfileCollection* profile)
@@ -170,12 +196,13 @@ void ProfilesModel::addedProfile(ProfileCollection* profile)
     // Find right category
     int catpos = 0;
     CategoryItem* cat = m_catitems[0];
-    for (int i=1;i<m_catitems.size();++i)
+    for (int i=1;i<m_catitems.size();++i) {
         if (m_catitems[i]->category->id()==profile->category_id()) {
             cat = m_catitems[i];
             catpos = i;
             break;
         }
+    }
 
     // Find alphabetic position amoung profiles in the same category
     int row;
@@ -184,8 +211,14 @@ void ProfilesModel::addedProfile(ProfileCollection* profile)
             break;
 
     beginInsertRows ( createIndex(catpos,0,cat),row,row );
-    cat->insertProfile(profile, row);
+    ProfileItem* newitem = cat->insertProfile(profile, row);
     endInsertRows();
+
+    if (m_focusid == profile->name()) {
+        emit itemMoved(createIndex(row,0,newitem));
+        m_focusid = QString();
+    }
+
 }
 
 void ProfilesModel::removedProvider ( AbstractServiceProvider* provider )
@@ -199,6 +232,8 @@ void ProfilesModel::removedProvider ( AbstractServiceProvider* provider )
     ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
     if (cat) {
         delete m_catitems.takeAt(index.row());
+        for (int i=index.row();i<m_catitems.size();++i)
+            m_catitems[i]->pos = i;
     }
     else if (p) {
         cat = p->category;
@@ -210,10 +245,13 @@ void ProfilesModel::removedProvider ( AbstractServiceProvider* provider )
     endRemoveRows();
 }
 
-void ProfilesModel::objectChanged ( AbstractServiceProvider* provider )
+void ProfilesModel::objectChanged ( AbstractServiceProvider* provider, bool indicateMovement )
 {
     QModelIndex index = indexOf ( provider->id());
     if ( !index.isValid() ) return;
+
+    const int oldrow = index.row();
+    int newCategoryRow = 0; // default is the unassigned-category
 
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
     ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
@@ -231,48 +269,51 @@ void ProfilesModel::objectChanged ( AbstractServiceProvider* provider )
             }
         }
     } else if (p) {
-        CategoryItem* parentItem = p->category;
-        for (row=0;row<parentItem->m_profiles.size();++row)
-        {
-            if (index.row() == row) skip = true;
-            if (index.row() != row &&
-                    parentItem->m_profiles[row]->profile->toString().toLower() >= provider->toString().toLower())
-            {
+        // determine new category
+        for (int i=1;i<m_catitems.size();++i)
+            if (m_catitems[i]->category->id() == ((ProfileCollection*)provider)->category_id()) {
+                newCategoryRow = i;
                 break;
             }
+
+        CategoryItem* newCategory = m_catitems[newCategoryRow];
+        for (row=0;row<newCategory->m_profiles.size();++row)
+        {
+            if (index.row() == row)
+                skip = true;
+            else if (newCategory->m_profiles[row]->profile->toString().toLower() >= provider->toString().toLower())
+                break;
         }
     }
     if (skip) row--;
 
-    if (row != -1 && row!=index.row()) {
+    if (row != -1) {
         const QModelIndex parent = index.parent();
         if (cat) {
-            beginRemoveRows ( parent, index.row(), index.row() );
-            CategoryItem* item = m_catitems.takeAt(index.row());
+            beginRemoveRows ( parent, oldrow, oldrow );
+            CategoryItem* item = m_catitems.takeAt(oldrow);
             endRemoveRows();
             beginInsertRows ( parent,row,row );
             m_catitems.insert(row, item);
+            for (int i=0;i<m_catitems.size();++i)
+                m_catitems[i]->pos = i;
             endInsertRows();
+            if (indicateMovement) emit itemMoved(createIndex(row, 0, item));
         } else if (p) {
             // Remove from old category
             CategoryItem* oldCategory = p->category;
-            beginRemoveRows ( parent, index.row(), index.row() );
-            ProfileItem* item = oldCategory->m_profiles.takeAt(index.row());
+            beginRemoveRows (parent, oldrow, oldrow );
+            ProfileCollection* item = oldCategory->m_profiles[oldrow]->profile;
+            oldCategory->removeProfile(oldrow);
             endRemoveRows();
-
-            // determine new category
-            int newCategoryRow = 0; // default is the unassigned-category
-            for (int i=1;i<m_catitems.size();++i)
-                if (m_catitems[i]->category->id() == ((ProfileCollection*)provider)->category_id()) {
-                    newCategoryRow = i;
-                    break;
-                }
 
             // add to new category
             CategoryItem* newCategory = m_catitems[newCategoryRow];
             beginInsertRows ( createIndex(newCategoryRow,0,newCategory),row,row );
-            newCategory->m_profiles.insert(row, item);
+            ProfileItem* newProfileItem = newCategory->insertProfile(item, row);
             endInsertRows();
+
+			if (indicateMovement) emit itemMoved(createIndex(row, 0, newProfileItem));
         }
     } else {
         emit dataChanged ( index,index );

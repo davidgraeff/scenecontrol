@@ -35,8 +35,8 @@ NetworkController::NetworkController()
     connect ( this, SIGNAL ( connected() ), SLOT( slotconnected()) );
     connect ( this, SIGNAL ( disconnected() ), SLOT( slotdisconnected()) );
     connect ( this, SIGNAL ( error(QAbstractSocket::SocketError) ), SLOT( sloterror(QAbstractSocket::SocketError) ));
-	
-	connect( Solid::Networking::notifier(), SIGNAL(shouldDisconnect()), SLOT(timeout()) );
+
+    connect( Solid::Networking::notifier(), SIGNAL(shouldDisconnect()), SLOT(timeout()) );
 }
 
 NetworkController::~NetworkController()
@@ -52,7 +52,7 @@ void NetworkController::slotconnected()
 
 void NetworkController::slotdisconnected()
 {
-	
+
 }
 
 void NetworkController::timeout()
@@ -68,8 +68,8 @@ void NetworkController::sloterror(QAbstractSocket::SocketError e)
 
 void NetworkController::start(const QString& ip, int port)
 {
-	m_ip = ip;
-	m_port = port;
+    m_ip = ip;
+    m_port = port;
     connectToHost ( ip, port );
 }
 
@@ -95,7 +95,7 @@ QByteArray NetworkController::getNextJson()
             return res;
         }
     }
-    
+
     // no paragraph {..} found
     return QByteArray();
 }
@@ -107,9 +107,9 @@ void NetworkController::objectSync(QObject* p)
 
     QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
     if (p->dynamicPropertyNames().contains("remove"))
-      variant.insert(QLatin1String("remove"), true);
+        variant.insert(QLatin1String("remove"), true);
 
-	QJson::Serializer serializer;
+    QJson::Serializer serializer;
     QByteArray cmdbytes = serializer.serialize(variant);
     write ( cmdbytes );
 }
@@ -130,7 +130,7 @@ void NetworkController::slotreadyRead()
         }
     } else return;
 
-    
+
     QByteArray cmdstring;
     while (1) {
         cmdstring = getNextJson();
@@ -142,27 +142,22 @@ void NetworkController::slotreadyRead()
         QVariantMap result = parser.parse (cmdstring, &ok).toMap();
         if (!ok || !result.contains(QLatin1String("type"))) {
             qWarning() << "could not parse cmd" << cmdstring;
-            continue;
-        }
-
-	if (result.value(QLatin1String("type"))=="complete") {
-	    RoomControlClient::getFactory()->syncComplete();
-	    continue;
-	}
-        else if (result.value(QLatin1String("type"))==ProgramStateTracker::staticMetaObject.className())
-        {
+        } else if (result.value(QLatin1String("type"))=="complete") {
+            RoomControlClient::getFactory()->syncComplete();
+        } else if (result.value(QLatin1String("type"))=="log") {
+            emit logmsg(result.value(QLatin1String("data")).toString());
+        } else if (result.value(QLatin1String("type"))==ProgramStateTracker::staticMetaObject.className()) {
             QJson::QObjectHelper::qvariant2qobject(result, &m_serverstate);
             if (m_serverstate.minversion().toAscii()>=NETWORK_MIN_APIVERSION &&
                     m_serverstate.maxversion().toAscii()<=NETWORK_MAX_APIVERSION)
             {
                 serverTimeout.stop();
                 emit connectedToValidServer();
-		RoomControlClient::getFactory()->syncStarted();
+                RoomControlClient::getFactory()->syncStarted();
             }
-            continue;
+        } else {
+            RoomControlClient::getFactory()->examine(result);
         }
-
-        RoomControlClient::getFactory()->examine(result);
     };
 }
 
@@ -191,6 +186,6 @@ void NetworkController::restart()
 
 void NetworkController::backup(const QString& path)
 {
-    const QByteArray cmd = "{\"type\" : \"restart\"; \"path\" : \"" + path.toUtf8() +"\"}";
+    const QByteArray cmd = "{\"type\" : \"backup\", \"path\" : \"" + path.toUtf8().replace('"','\'') +"\"}";
     write(cmd);
 }

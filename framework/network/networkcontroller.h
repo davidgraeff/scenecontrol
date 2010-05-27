@@ -55,6 +55,7 @@ public Q_SLOTS:
     void objectSync(QObject* p);
 Q_SIGNALS:
     void connectedToValidServer();
+	void logmsg(const QString& log);
 };
 
 #endif /* TCPSERVER_H_ */
