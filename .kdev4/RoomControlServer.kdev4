@@ -31,7 +31,7 @@ isExecutable=true
 
 [MakeBuilder]
 Install As Root=true
-Number Of Jobs=4
+Number Of Jobs=8
 Run Multiple Jobs=true
 Su Command=1
 
