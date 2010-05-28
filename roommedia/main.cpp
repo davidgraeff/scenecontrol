@@ -782,7 +782,12 @@ int main (int argc, char *argv[])
     items = g_ptr_array_new();
 
     /* Print status information */
-    queue(g_string_new("file:///media/roomserver/Musik/VA-incoming/n6/Various_Artists_-_Hardstyle_Top_100_Vol._9-CD-2010-MDBZ/101_-_Various_Artists_-_Hardstyle_Top_100_Vol._9_(Part_1).mp3"));
+    //queue(g_string_new("file:///media/roomserver/Musik/VA-incoming/n6/Various_Artists_-_Hardstyle_Top_100_Vol._9-CD-2010-MDBZ/101_-_Various_Artists_-_Hardstyle_Top_100_Vol._9_(Part_1).mp3"));
+	if (argc>1) {
+		GString* s = g_string_new(argv[argc-1]);
+		//g_string_append(s, argv[argc-1]);
+		queue(s);
+	}
     g_print("version %s\n", gst_version_string());
 
     init_pulseaudio();
