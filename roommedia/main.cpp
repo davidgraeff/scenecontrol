@@ -599,7 +599,7 @@ static gboolean getduration(gpointer) {
     } else
         g_print("total 0\n");
 
-    if (pos==0 && m_duration_attemps<3) {
+    if (len==0 && m_duration_attemps<3) {
         ++m_duration_attemps;
         if (durationtimer) {
             g_source_remove(durationtimer);
