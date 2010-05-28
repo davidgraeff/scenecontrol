@@ -448,15 +448,15 @@ static void catch_int(int)
 }
 
 static void play() {
-	if (m_currenttrack==-1 && !next()) return;
+    if (m_currenttrack==-1 && !next()) return;
     gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
     GstState state;
     gst_element_get_state(pipeline, &state, 0, 0);
     g_print("state playing\n");
-	if (!durationtimer) {
-		durationtimer = g_timeout_add(300, getduration, 0);
-		getduration(0);
-	}
+    if (!durationtimer) {
+        durationtimer = g_timeout_add(300, getduration, 0);
+        getduration(0);
+    }
 }
 
 static void pausemedia() {
@@ -577,7 +577,7 @@ static void position(int position) {
 // static void getposition() {
 //     GstFormat fmt = GST_FORMAT_TIME;
 //     gint64 pos;
-// 
+//
 //     if (gst_element_query_position (pipeline, &fmt, &pos)) {
 //         g_print("current %ld\n", pos/1000000);
 //     } else
@@ -587,7 +587,12 @@ static void position(int position) {
 static gboolean getduration(gpointer) {
     GstFormat fmt = GST_FORMAT_TIME;
     gint64 pos, len;
-
+	
+    if (durationtimer) {
+        g_source_remove(durationtimer);
+        durationtimer = 0;
+    }
+    
     if (gst_element_query_position (pipeline, &fmt, &pos)) {
         g_print("current %ld\n",(long int)pos/1000000);
     } else
@@ -596,16 +601,17 @@ static gboolean getduration(gpointer) {
         g_print("total %ld\n",(long int)len/1000000);
     } else
         g_print("total 0\n");
-    return true;
+    return false;
 }
 static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
 {
-	int trySkip = 0;
+    int trySkip = 0;
     switch (GST_MESSAGE_TYPE (msg))
     {
     case GST_MESSAGE_DURATION:
     {
-        durationtimer = g_timeout_add(300, getduration, 0);
+        if (!durationtimer)
+            durationtimer = g_timeout_add(300, getduration, 0);
         break;
     }
     case GST_MESSAGE_EOS:
@@ -625,7 +631,7 @@ static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
             uri = (GString*)g_ptr_array_index (items, m_currenttrack);
         }
         // Try to skip to the next track if uri is wrong for this one
-		if (err->code==3) trySkip = 1;
+        if (err->code==3) trySkip = 1;
         fprintf (stderr, "gst_error %i %s %s\n", err->code, err->message, ((uri)?uri->str:""));
         g_error_free (err);
         break;
@@ -634,9 +640,9 @@ static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
         break;
     }
 
-	if (trySkip) {
-		if (!next()) stop();
-	}
+    if (trySkip) {
+        if (!next()) stop();
+    }
     return true;
 }
 
@@ -645,7 +651,7 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
     char *line = 0;
     gsize len;
     gchar* var, *val, *before;
-	int unknown_option=0;
+    int unknown_option=0;
 
     /* Read the data into our buffer */
     //if (!(condition & G_IO_IN)) return true;
@@ -709,7 +715,7 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
                     output_volume(s);
                 }
             } else
-				unknown_option=1;
+                unknown_option=1;
         } else if (!strcmp(line,"clear")) {
             clear();
         } else if (!strcmp(line,"play")) {
@@ -729,9 +735,9 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
         } else
             unknown_option=1;
         if (line) g_free(line);
-		
-		if (unknown_option)
-			fprintf(stderr,"unknown_option\n");
+
+        if (unknown_option)
+            fprintf(stderr,"unknown_option\n");
         break;
     }
     return true;
