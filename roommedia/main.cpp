@@ -591,11 +591,11 @@ static gboolean getduration(gpointer) {
     }
 
     if (gst_element_query_position (pipeline, &fmt, &pos)) {
-        g_print("current %ld\n",(long int)pos/1000000);
+        g_print("current %d\n",pos/1000000);
     } else
         g_print("current 0\n");
     if (gst_element_query_duration (pipeline, &fmt, &len)) {
-        g_print("total %ld\n",(long int)len/1000000);
+        g_print("total %d\n",len/1000000);
     } else
         g_print("total 0\n");
 
