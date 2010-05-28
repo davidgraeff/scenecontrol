@@ -553,7 +553,7 @@ static void selectTrack(int track) {
     play();
 
     GstFormat fmt = GST_FORMAT_TIME;
-    gint64 len;
+    long int len;
     if (gst_element_query_duration (pipeline, &fmt, &len))
         g_print("total %ld\n",len/1000000);
 }
@@ -586,7 +586,7 @@ static void position(int position) {
 
 static gboolean getduration(gpointer) {
     GstFormat fmt = GST_FORMAT_TIME;
-    gint64 pos, len;
+    long int pos, len;
 
     if (gst_element_query_position (pipeline, &fmt, &pos)) {
         g_print("current %ld\n",pos/1000000);
