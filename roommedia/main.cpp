@@ -436,6 +436,7 @@ int m_currenttrack = -1;
 guint durationtimer = 0;
 enumMode m_currentmode;
 GPtrArray* items;
+int m_duration_attemps=0;
 
 static void selectTrack(int track);
 
@@ -454,8 +455,8 @@ static void play() {
     gst_element_get_state(pipeline, &state, 0, 0);
     g_print("state playing\n");
     if (!durationtimer) {
-        durationtimer = g_timeout_add(300, getduration, 0);
-        getduration(0);
+        m_duration_attemps = 0;
+        durationtimer = g_timeout_add(1000, getduration, 0);
     }
 }
 
@@ -538,6 +539,7 @@ static void selectTrack(int track) {
     if (track>=(int)items->len || track<0) return;
     // stop duration timer if active
     if (durationtimer) {
+        m_duration_attemps = 0;
         g_source_remove(durationtimer);
         durationtimer = 0;
     }
@@ -551,11 +553,6 @@ static void selectTrack(int track) {
     g_object_set (G_OBJECT (pipeline), "uri", uri->str, NULL);
     g_print("active %i\n", track);
     play();
-
-    GstFormat fmt = GST_FORMAT_TIME;
-    gint64 len;
-    if (gst_element_query_duration (pipeline, &fmt, &len))
-        g_print("total %ld\n",(long int)len/1000000);
 }
 
 static void volume(gdouble volume) {
@@ -587,12 +584,12 @@ static void position(int position) {
 static gboolean getduration(gpointer) {
     GstFormat fmt = GST_FORMAT_TIME;
     gint64 pos, len;
-	
+
     if (durationtimer) {
         g_source_remove(durationtimer);
         durationtimer = 0;
     }
-    
+
     if (gst_element_query_position (pipeline, &fmt, &pos)) {
         g_print("current %ld\n",(long int)pos/1000000);
     } else
@@ -601,6 +598,15 @@ static gboolean getduration(gpointer) {
         g_print("total %ld\n",(long int)len/1000000);
     } else
         g_print("total 0\n");
+
+    if (pos==0 && m_duration_attemps<3) {
+        ++m_duration_attemps;
+        if (durationtimer) {
+            g_source_remove(durationtimer);
+            durationtimer = 0;
+        }
+        durationtimer = g_timeout_add(1000, getduration, 0);
+    }
     return false;
 }
 static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
@@ -610,8 +616,11 @@ static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
     {
     case GST_MESSAGE_DURATION:
     {
-        if (!durationtimer)
-            durationtimer = g_timeout_add(300, getduration, 0);
+        if (durationtimer) {
+            g_source_remove(durationtimer);
+            durationtimer = 0;
+        }
+        durationtimer = g_timeout_add(300, getduration, 0);
         break;
     }
     case GST_MESSAGE_EOS:
@@ -773,7 +782,7 @@ int main (int argc, char *argv[])
     items = g_ptr_array_new();
 
     /* Print status information */
-    queue(g_string_new("file:///home/david/Desktop/{HARDSTYLE} Dj Zany - Science  Religion (Qlimax Anthem 2005).mp3"));
+    queue(g_string_new("file:///media/roomserver/Musik/VA-incoming/n6/Various_Artists_-_Hardstyle_Top_100_Vol._9-CD-2010-MDBZ/101_-_Various_Artists_-_Hardstyle_Top_100_Vol._9_(Part_1).mp3"));
     g_print("version %s\n", gst_version_string());
 
     init_pulseaudio();
