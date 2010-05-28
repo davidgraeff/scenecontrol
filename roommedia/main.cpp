@@ -596,7 +596,7 @@ static gboolean getduration(gpointer) {
         g_print("total %ld\n",(long int)len/1000000);
     } else
         g_print("total 0\n");
-    return false;
+    return true;
 }
 static gboolean bus_call (GstBus *, GstMessage *msg, gpointer)
 {
