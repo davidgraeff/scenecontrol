@@ -45,6 +45,7 @@ static void update_sink_info(pa_context *c, const pa_sink_info *info, int eol, v
 static void destroy_sink_info(void *value);
 static void reconnect_to_pulse();
 static void output_volume(sink_info *value);
+static gboolean getduration(gpointer);
 
 // This is where we'll store the output device list
 static GHashTable *sink_hash = NULL;
@@ -452,6 +453,10 @@ static void play() {
     GstState state;
     gst_element_get_state(pipeline, &state, 0, 0);
     g_print("state playing\n");
+	if (!durationtimer) {
+		durationtimer = g_timeout_add(300, getduration, 0);
+		getduration(0);
+	}
 }
 
 static void pausemedia() {
@@ -459,6 +464,10 @@ static void pausemedia() {
     GstState state;
     gst_element_get_state(pipeline, &state, 0, 0);
     g_print("state paused\n");
+    if (durationtimer) {
+        g_source_remove(durationtimer);
+        durationtimer = 0;
+    }
 }
 
 static void stop() {
@@ -466,6 +475,10 @@ static void stop() {
     GstState state;
     gst_element_get_state(pipeline, &state, 0, 0);
     g_print("state stopped\n");
+    if (durationtimer) {
+        g_source_remove(durationtimer);
+        durationtimer = 0;
+    }
 }
 
 static bool next() {
@@ -561,15 +574,15 @@ static void position(int position) {
 
 }
 
-static void getposition() {
-    GstFormat fmt = GST_FORMAT_TIME;
-    gint64 pos;
-
-    if (gst_element_query_position (pipeline, &fmt, &pos)) {
-        g_print("current %ld\n", pos/1000000);
-    } else
-        g_print("current 0\n");
-}
+// static void getposition() {
+//     GstFormat fmt = GST_FORMAT_TIME;
+//     gint64 pos;
+// 
+//     if (gst_element_query_position (pipeline, &fmt, &pos)) {
+//         g_print("current %ld\n", pos/1000000);
+//     } else
+//         g_print("current 0\n");
+// }
 
 static gboolean getduration(gpointer) {
     GstFormat fmt = GST_FORMAT_TIME;
@@ -710,7 +723,7 @@ static gboolean readinput (GIOChannel *source, GIOCondition, gpointer) {
         } else if (!strcmp(line,"prev")) {
             prev();
         } else if (!strcmp(line,"getposition")) {
-            getposition();
+            getduration(0);
         } else if (!strcmp(line,"quit")) {
             g_main_loop_quit (mloop);
         } else
