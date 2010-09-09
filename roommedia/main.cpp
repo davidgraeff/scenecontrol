@@ -267,7 +267,9 @@ static void context_state_callback(pa_context *c, void *userdata) {
         break;
     case PA_CONTEXT_FAILED:
         fprintf (stderr, "pa_notready\n");
+		fflush( stdout );
         pa_server_available = FALSE;
+		sleep(1);
         reconnect_to_pulse();
         break;
     case PA_CONTEXT_TERMINATED:
