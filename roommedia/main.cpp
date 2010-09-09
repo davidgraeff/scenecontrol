@@ -267,7 +267,6 @@ static void context_state_callback(pa_context *c, void *userdata) {
         break;
     case PA_CONTEXT_FAILED:
         fprintf (stderr, "pa_notready\n");
-		fflush( stdout );
         pa_server_available = FALSE;
 		sleep(1);
         reconnect_to_pulse();
@@ -406,15 +405,10 @@ static void reconnect_to_pulse()
     pulse_context = pa_context_new(pa_glib_mainloop_get_api(pa_main_loop), "roommedia_pulse");
     g_assert(pulse_context);
     sink_hash = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, destroy_sink_info);
+    g_assert(sink_hash);
     // Establish event callback registration
     pa_context_set_state_callback(pulse_context, context_state_callback, NULL);
     pa_context_connect(pulse_context, NULL, PA_CONTEXT_NOFAIL, NULL);
-}
-
-
-void init_pulseaudio() {
-    pa_main_loop = pa_glib_mainloop_new(g_main_context_default());
-    reconnect_to_pulse();
 }
 
 void close_pulseaudio()
@@ -792,9 +786,9 @@ int main (int argc, char *argv[])
 	}
     g_print("version %s\n", gst_version_string());
 
-    init_pulseaudio();
-
-    mloop = g_main_loop_new (NULL, false);
+    pa_main_loop = pa_glib_mainloop_new(g_main_context_default());
+    mloop = g_main_loop_new (g_main_context_default(), false);
+    reconnect_to_pulse();
     g_main_loop_run (mloop);
 
     close_pulseaudio();
