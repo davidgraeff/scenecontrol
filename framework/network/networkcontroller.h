@@ -32,7 +32,10 @@ public:
     void resync();
     void refresh();
     void restart();
-    void backup(const QString& path);
+	void backup();
+    void backup_list();
+	void backup_restore(const QString& id);
+	void backup_remove(const QString& id);
     QString serverversion();
 
 private:
@@ -56,6 +59,7 @@ public Q_SLOTS:
 Q_SIGNALS:
     void connectedToValidServer();
 	void logmsg(const QString& log);
+	void backupPaths(const QStringList&);
 };
 
 #endif /* TCPSERVER_H_ */

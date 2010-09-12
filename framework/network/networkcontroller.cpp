@@ -146,6 +146,8 @@ void NetworkController::slotreadyRead()
             RoomControlClient::getFactory()->syncComplete();
         } else if (result.value(QLatin1String("type"))=="log") {
             emit logmsg(result.value(QLatin1String("data")).toString());
+        } else if (result.value(QLatin1String("type"))=="backup_list") {
+            emit backupPaths(result.value(QLatin1String("data")).toString().split('|'));
         } else if (result.value(QLatin1String("type"))==ProgramStateTracker::staticMetaObject.className()) {
             QJson::QObjectHelper::qvariant2qobject(result, &m_serverstate);
             if (m_serverstate.minversion().toAscii()>=NETWORK_MIN_APIVERSION &&
@@ -184,8 +186,26 @@ void NetworkController::restart()
     write(cmd);
 }
 
-void NetworkController::backup(const QString& path)
+void NetworkController::backup()
 {
-    const QByteArray cmd = "{\"type\" : \"backup\", \"path\" : \"" + path.toUtf8().replace('"','\'') +"\"}";
+    const QByteArray cmd = "{\"type\" : \"backup\"}";
+    write(cmd);
+}
+
+void NetworkController::backup_list()
+{
+    const QByteArray cmd = "{\"type\" : \"backup_list\"}";
+    write(cmd);
+}
+
+void NetworkController::backup_restore(const QString& id)
+{
+    const QByteArray cmd = "{\"type\" : \"backup_restore\", \"id\" : \"" + id.toUtf8().replace('"','\'') +"\"}";
+    write(cmd);
+}
+
+void NetworkController::backup_remove(const QString& id)
+{
+    const QByteArray cmd = "{\"type\" : \"backup_remove\", \"id\" : \"" + id.toUtf8().replace('"','\'') +"\"}";
     write(cmd);
 }
