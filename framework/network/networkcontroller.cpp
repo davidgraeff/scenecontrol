@@ -112,9 +112,6 @@ void NetworkController::objectSync(QObject* p)
     QJson::Serializer serializer;
     QByteArray cmdbytes = serializer.serialize(variant);
 	
-	QJson::Parser pp;
-	QVariant v = pp.parse(("{ \"value\" : -0.05 }"),0);
-	qDebug()<< v;
     write ( cmdbytes );
 }
 
@@ -160,7 +157,9 @@ void NetworkController::slotreadyRead()
                 serverTimeout.stop();
                 emit connectedToValidServer();
                 RoomControlClient::getFactory()->syncStarted();
-            }
+            } else {
+				qWarning()<<"Protocol version missmatch";
+			}
         } else {
             RoomControlClient::getFactory()->examine(result);
         }

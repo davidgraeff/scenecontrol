@@ -24,13 +24,13 @@
 #include <QtCore/QDataStream>
 #include <QtCore/QStringList>
 #include <QtCore/QVariant>
-#include <QDebug>
+
 #include <cmath>
 
 using namespace QJson;
 
 class Serializer::SerializerPrivate {
-public:
+  public:
     SerializerPrivate() : specialNumbersAllowed(false) {}
     bool specialNumbersAllowed;
     QString sanitizeString( QString str );
@@ -38,191 +38,178 @@ public:
 
 QString Serializer::SerializerPrivate::sanitizeString( QString str )
 {
-    str.replace( QLatin1String( "\\" ), QLatin1String( "\\\\" ) );
+  str.replace( QLatin1String( "\\" ), QLatin1String( "\\\\" ) );
 
-    // escape unicode chars
-    QString result;
-    const ushort* unicode = str.utf16();
-    unsigned int i = 0;
+  // escape unicode chars
+  QString result;
+  const ushort* unicode = str.utf16();
+  unsigned int i = 0;
 
-    while ( unicode[ i ] ) {
-        if ( unicode[ i ] < 128 ) {
-            result.append( QChar( unicode[ i ] ) );
-        }
-        else {
-            QString hexCode = QString::number( unicode[ i ], 16 ).rightJustified( 4,
-                              QLatin1Char('0') );
-
-            result.append( QLatin1String ("\\u") ).append( hexCode );
-        }
-        ++i;
+  while ( unicode[ i ] ) {
+    if ( unicode[ i ] < 128 ) {
+      result.append( QChar( unicode[ i ] ) );
     }
-    str = result;
+    else {
+      QString hexCode = QString::number( unicode[ i ], 16 ).rightJustified( 4,
+                                                           QLatin1Char('0') );
 
-    str.replace( QLatin1String( "\"" ), QLatin1String( "\\\"" ) );
-    str.replace( QLatin1String( "\b" ), QLatin1String( "\\b" ) );
-    str.replace( QLatin1String( "\f" ), QLatin1String( "\\f" ) );
-    str.replace( QLatin1String( "\n" ), QLatin1String( "\\n" ) );
-    str.replace( QLatin1String( "\r" ), QLatin1String( "\\r" ) );
-    str.replace( QLatin1String( "\t" ), QLatin1String( "\\t" ) );
+      result.append( QLatin1String ("\\u") ).append( hexCode );
+    }
+    ++i;
+  }
+  str = result;
 
-    return QString( QLatin1String( "\"%1\"" ) ).arg( str );
+  str.replace( QLatin1String( "\"" ), QLatin1String( "\\\"" ) );
+  str.replace( QLatin1String( "\b" ), QLatin1String( "\\b" ) );
+  str.replace( QLatin1String( "\f" ), QLatin1String( "\\f" ) );
+  str.replace( QLatin1String( "\n" ), QLatin1String( "\\n" ) );
+  str.replace( QLatin1String( "\r" ), QLatin1String( "\\r" ) );
+  str.replace( QLatin1String( "\t" ), QLatin1String( "\\t" ) );
+
+  return QString( QLatin1String( "\"%1\"" ) ).arg( str );
 }
 
 Serializer::Serializer()
-        : d( new SerializerPrivate )
+  : d( new SerializerPrivate )
 {
 }
 
 Serializer::~Serializer() {
-    delete d;
+  delete d;
 }
 
 void Serializer::serialize( const QVariant& v, QIODevice* io, bool* ok )
 {
-    Q_ASSERT( io );
-    if (!io->isOpen()) {
-        if (!io->open(QIODevice::WriteOnly)) {
-            if ( ok != 0 )
-                *ok = false;
-            qCritical ("Error opening device");
-            return;
-        }
+  Q_ASSERT( io );
+  if (!io->isOpen()) {
+    if (!io->open(QIODevice::WriteOnly)) {
+      if ( ok != 0 )
+        *ok = false;
+      qCritical ("Error opening device");
+      return;
     }
+  }
 
-    if (!io->isWritable()) {
-        if (ok != 0)
-            *ok = false;
-        qCritical ("Device is not readable");
-        io->close();
-        return;
-    }
+  if (!io->isWritable()) {
+    if (ok != 0)
+      *ok = false;
+    qCritical ("Device is not readable");
+    io->close();
+    return;
+  }
 
-    const QByteArray str = serialize( v );
-    if ( !str.isNull() ) {
-        QDataStream stream( io );
-        stream << str;
-    } else {
-        if ( ok )
-            *ok = false;
-    }
+  const QByteArray str = serialize( v );
+  if ( !str.isNull() ) {
+    QDataStream stream( io );
+    stream << str;
+  } else {
+    if ( ok )
+      *ok = false;
+  }
 }
 
 static QByteArray join( const QList<QByteArray>& list, const QByteArray& sep ) {
-    QByteArray res;
-    Q_FOREACH( const QByteArray& i, list ) {
-        if ( !res.isEmpty() )
-            res += sep;
-        res += i;
-    }
-    return res;
+  QByteArray res;
+  Q_FOREACH( const QByteArray& i, list ) {
+    if ( !res.isEmpty() )
+      res += sep;
+    res += i;
+  }
+  return res;
 }
 
 QByteArray Serializer::serialize( const QVariant &v )
 {
-    QByteArray str;
-    bool error = false;
+  QByteArray str;
+  bool error = false;
 
-    if ( ! v.isValid() ) { // invalid or null?
-        str = "null";
-    } else if ( v.type() == QVariant::StringList ) { // variant is a list?
-        const QStringList list = v.value<QStringList>();
-        QList<QByteArray> values;
-        Q_FOREACH( const QString& v, list )
-        {
-            QByteArray serializedValue = d->sanitizeString( v ).toUtf8();
-            if ( serializedValue.isNull() ) {
-                error = true;
-                break;
-            }
-            values << serializedValue;
-        }
-        str = "[ " + join( values, ", " ) + " ]";
-    } else if ( v.type() == QVariant::List ) { // variant is a list?
-        const QVariantList list = v.toList();
-        QList<QByteArray> values;
-        Q_FOREACH( const QVariant& v, list )
-        {
-            QByteArray serializedValue = serialize( v );
-            if ( serializedValue.isNull() ) {
-                error = true;
-                break;
-            }
-            values << serializedValue;
-        }
-        str = "[ " + join( values, ", " ) + " ]";
-    } else if ( v.type() == QVariant::Map ) { // variant is a map?
-        const QVariantMap vmap = v.toMap();
-        QMapIterator<QString, QVariant> it( vmap );
-        str = "{ ";
-        QList<QByteArray> pairs;
-        while ( it.hasNext() ) {
-            it.next();
-            QByteArray serializedValue = serialize( it.value() );
-            if ( serializedValue.isNull() ) {
-                error = true;
-                break;
-            }
-            pairs << d->sanitizeString( it.key() ).toUtf8() + " : " + serializedValue;
-        }
-        str += join( pairs, ", " );
-        str += " }";
-    } else if (( v.type() == QVariant::String ) ||  ( v.type() == QVariant::ByteArray )) { // a string or a byte array?
-        str = d->sanitizeString( v.toString() ).toUtf8();
-    } else if (( v.type() == QVariant::Double) || (v.type() == QMetaType::Float)) { // a double or a float?
-        const double value = v.toDouble();
+  if ( ! v.isValid() ) { // invalid or null?
+    str = "null";
+  } else if (( v.type() == QVariant::List ) || ( v.type() == QVariant::StringList )){ // an array or a stringlist?
+    const QVariantList list = v.toList();
+    QList<QByteArray> values;
+    Q_FOREACH( const QVariant& v, list )
+    {
+      QByteArray serializedValue = serialize( v );
+      if ( serializedValue.isNull() ) {
+        error = true;
+        break;
+      }
+      values << serializedValue;
+    }
+    str = "[ " + join( values, ", " ) + " ]";
+  } else if ( v.type() == QVariant::Map ) { // variant is a map?
+    const QVariantMap vmap = v.toMap();
+    QMapIterator<QString, QVariant> it( vmap );
+    str = "{ ";
+    QList<QByteArray> pairs;
+    while ( it.hasNext() ) {
+      it.next();
+      QByteArray serializedValue = serialize( it.value() );
+      if ( serializedValue.isNull() ) {
+        error = true;
+        break;
+      }
+      pairs << d->sanitizeString( it.key() ).toUtf8() + " : " + serializedValue;
+    }
+    str += join( pairs, ", " );
+    str += " }";
+  } else if (( v.type() == QVariant::String ) ||  ( v.type() == QVariant::ByteArray )) { // a string or a byte array?
+    str = d->sanitizeString( v.toString() ).toUtf8();
+  } else if (( v.type() == QVariant::Double) || (v.type() == QMetaType::Float)) { // a double or a float?
+    const double value = v.toDouble();
 #ifdef _WIN32
-        const bool special = _isnan(value) || !_finite(value);
+    const bool special = _isnan(value) || !_finite(value);
 #else
-        const bool special = std::isnan(value) || std::isinf(value);
+    const bool special = std::isnan(value) || std::isinf(value);
 #endif
-        if (special) {
-            if (specialNumbersAllowed()) {
+    if (special) {
+      if (specialNumbersAllowed()) {
 #ifdef _WIN32
-                if (_isnan(value)) {
+        if (_isnan(value)) {
 #else
-                if (std::isnan(value)) {
+        if (std::isnan(value)) {
 #endif
-                    str += "NaN";
-                } else {
-                    if (value<0) {
-                        str += "-";
-                    }
-                    str += "Infinity";
-                }
-            } else {
-                qCritical("Attempt to write NaN or infinity, which is not supported by json");
-                error = true;
-            }
+          str += "NaN";
         } else {
-            str = QByteArray::number( value );
-            if ( ! str.contains( "." ) && ! str.contains( "e" ) ) {
-                str += ".0";
-            }
+          if (value<0) {
+            str += "-";
+          }
+          str += "Infinity";
         }
-    } else if ( v.type() == QVariant::Bool ) { // boolean value?
-        str = ( v.toBool() ? "true" : "false" );
-    } else if ( v.type() == QVariant::ULongLong ) { // large unsigned number?
-        str = QByteArray::number( v.value<qulonglong>() );
-    } else if ( v.canConvert<qlonglong>() ) { // any signed number?
-        str = QByteArray::number( v.value<qlonglong>() );
-    } else if ( v.canConvert<QString>() ) { // can value be converted to string?
-        // this will catch QDate, QDateTime, QUrl, ...
-        str = d->sanitizeString( v.toString() ).toUtf8();
-        //TODO: catch other values like QImage, QRect, ...
-    } else {
+      } else {
+        qCritical("Attempt to write NaN or infinity, which is not supported by json");
         error = true;
     }
-    if ( !error )
-        return str;
-    else
-        return QByteArray();
+    } else {
+      str = QByteArray::number( value );
+      if( ! str.contains( "." ) && ! str.contains( "e" ) ) {
+        str += ".0";
+      }
+    }
+  } else if ( v.type() == QVariant::Bool ) { // boolean value?
+    str = ( v.toBool() ? "true" : "false" );
+  } else if ( v.type() == QVariant::ULongLong ) { // large unsigned number?
+    str = QByteArray::number( v.value<qulonglong>() );
+  } else if ( v.canConvert<qlonglong>() ) { // any signed number?
+    str = QByteArray::number( v.value<qlonglong>() );
+  } else if ( v.canConvert<QString>() ){ // can value be converted to string?
+    // this will catch QDate, QDateTime, QUrl, ...
+    str = d->sanitizeString( v.toString() ).toUtf8();
+    //TODO: catch other values like QImage, QRect, ...
+  } else {
+    error = true;
+  }
+  if ( !error )
+    return str;
+  else
+    return QByteArray();
 }
 
 void QJson::Serializer::allowSpecialNumbers(bool allow) {
-    d->specialNumbersAllowed = allow;
+  d->specialNumbersAllowed = allow;
 }
 
 bool QJson::Serializer::specialNumbersAllowed() const {
-    return d->specialNumbersAllowed;
+  return d->specialNumbersAllowed;
 }
