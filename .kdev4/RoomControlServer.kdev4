@@ -2,12 +2,9 @@
 BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00"\x00R\x00o\x00o\x00m\x00C\x00o\x00n\x00t\x00r\x00o\x00l\x00S\x00e\x00r\x00v\x00e\x00r)
 
 [CMake]
-BuildDirs[$e]=$HOME/Entwicklung/roomControl/server/build
+BuildDirs[$e]=$HOME/Entwicklung/roomcontrolServer/build
 CMakeDir=/usr/share/cmake-2.8/Modules
-Current CMake Binary=file:///usr/bin/cmake
-CurrentBuildDir=file:///home/david/Entwicklung/roomControl/server/build
-CurrentBuildType=Release
-CurrentInstallDir=file:///usr
+CurrentBuildDir=file:///home/david/Entwicklung/roomcontrolServer/build
 ProjectRootRelative=./
 
 [Launch]
@@ -31,7 +28,7 @@ isExecutable=true
 
 [MakeBuilder]
 Install As Root=true
-Number Of Jobs=8
+Number Of Jobs=3
 Run Multiple Jobs=true
 Su Command=1
 
