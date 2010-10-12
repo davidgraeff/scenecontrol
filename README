@@ -47,3 +47,6 @@ Clients:
 Die Touchscreen GUI ist über QML von qt 4.7 realisiert. Der Desktopclient nutzt
 das QWidget-basierte Framework von qt.
 
+Benötigte Packete unter Ubuntu:
+-------------------------------
+libpam0g-dev
