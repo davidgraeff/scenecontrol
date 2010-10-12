@@ -1,0 +1,19 @@
+project(RoomControlServer)
+cmake_minimum_required(VERSION 2.6)
+find_package(Qt4 REQUIRED)
+#find_package(QJSON REQUIRED)
+
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  SET(CMAKE_INSTALL_PREFIX
+    "/usr" CACHE PATH "RoomControlServer install prefix" FORCE
+    )
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+# set default build type
+IF (NOT CMAKE_BUILD_TYPE)
+  SET(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build Type")
+  SET(CMAKE_CONFIGURATION_TYPES RelWithDebInfo Release Debug CACHE STRING "")
+ENDIF (NOT CMAKE_BUILD_TYPE)
+
+ADD_SUBDIRECTORY(roommedia/)
+ADD_SUBDIRECTORY(src/)

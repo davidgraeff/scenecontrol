@@ -1,0 +1,29 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="org.liri.Device">
+    <method name="ReceiverState">
+      <arg name="state" direction="out" type="i"/>
+    </method>
+    <method name="getSettings">
+      <arg name="keys" direction="in" type="as"/>
+      <arg name="values" direction="out" type="as"/>
+    </method>
+    <method name="getAllSettings">
+      <arg name="settings" direction="out" type="as"/>
+    </method>
+    <method name="setSettings">
+      <arg name="settings" direction="in" type="as"/>
+    </method>
+
+    <signal name="receiverStateChanged">
+      <arg name="state" type="i"/>
+    </signal>
+    <signal name="key">
+      <arg name="keycode" type="s"/>
+      <arg name="keyname" type="s"/>
+      <arg name="channel" type="u"/>
+      <arg name="pressed" type="i"/>
+    </signal>
+  </interface>
+</node>
