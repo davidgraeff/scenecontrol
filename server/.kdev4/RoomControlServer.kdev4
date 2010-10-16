@@ -30,3 +30,6 @@ isExecutable=false
 
 [MakeBuilder]
 Number Of Jobs=3
+
+[Project]
+VersionControlSupport=kdevgit

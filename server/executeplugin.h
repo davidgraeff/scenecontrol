@@ -29,16 +29,12 @@ class ExecutePlugin : public QObject
 {
 	Q_OBJECT
 public:
-	ExecutePlugin(AbstractPlugin* base) ;
-	virtual ~ExecutePlugin() ;
 	virtual void refresh() = 0;
 	virtual ExecuteWithBase* createExecuteService(const QString& id) = 0;
 	virtual QList<AbstractStateTracker*> stateTracker() = 0;
-	AbstractPlugin* base() ;
-protected:
-	AbstractPlugin* m_base;
+	virtual AbstractPlugin* base() = 0;
 Q_SIGNALS:
 	void stateChanged(AbstractStateTracker*);
 };
-
+Q_DECLARE_INTERFACE(ExecutePlugin, "com.roomcontrol.ServerPlugin/1.0")
 #endif // EXECUTEPLUGIN_H

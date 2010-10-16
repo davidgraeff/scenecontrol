@@ -47,8 +47,8 @@ private:
 	QMutex mutex;
 	QWaitCondition bufferNotFull;
 Q_SIGNALS:
-	void auth_success(QObject* socketptr);
-	void auth_failed(QObject* socketptr);
+	void auth_success(QObject* socketptr, const QString& name);
+	void auth_failed(QObject* socketptr, const QString& name);
 };
 
 #endif // AUTHTHREAD_H

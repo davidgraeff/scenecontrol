@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
     qapp.setApplicationName(QLatin1String("RoomControlServer"));
     qapp.setApplicationVersion(QLatin1String("2.0 "__DATE__" "__TIME__));
     qapp.setOrganizationName(QLatin1String("davidgraeff"));
+    qapp.addLibraryPath(QLatin1String("/usr/lib/roomcontrol"));
 
     QDBusConnection dbusconnection = QDBusConnection::connectToBus(QDBusConnection::SessionBus, servicename);
     if ( !dbusconnection.isConnected() )
@@ -90,11 +91,13 @@ int main(int argc, char *argv[])
 	network->connect(services,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
     network->start();
 
-	int r = qapp.exec();
+	int r = 0;//qapp.exec();
     network->dbus()->unregisterService(servicename);
     qDebug() << "Shutdown: Network server";
     delete network;
+    network = 0;
     delete services;
+    services = 0;
 
     // restart program
     if (r == EXIT_WITH_RESTART) {

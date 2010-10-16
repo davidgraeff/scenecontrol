@@ -26,7 +26,7 @@ class AbstractStateTracker : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString type READ type);
-	Q_PROPERTY(QString plugin READ plugin WRITE setPlugin);
+// 	Q_PROPERTY(QString plugin READ plugin WRITE setPlugin);
 public:
     AbstractStateTracker(QObject* parent = 0);
     /**
@@ -35,10 +35,10 @@ public:
     virtual ~AbstractStateTracker();
 
     QString type() const;
-	QString plugin() const { return m_plugin; }
-	void setPlugin(const QString& plugin) { m_plugin = plugin; }
+    /*	QString plugin() const { return m_plugin; }
+    	void setPlugin(const QString& plugin) { m_plugin = plugin; }*/
 private:
-	QString m_plugin;
+// 	QString m_plugin;
 };
 
 #endif // ABSTRACTSTATETRACKER_H

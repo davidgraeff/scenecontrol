@@ -1,10 +1,12 @@
 #include "servicecontroller.h"
-#include <QDebug>
 #include <QCoreApplication>
 #include <qprocess.h>
 #include <QSettings>
 #include <QDateTime>
 #include <QPluginLoader>
+#include <QUuid>
+#include <QDebug>
+
 #include "shared/profile.h"
 #include "shared/qjson/parser.h"
 #include "shared/qjson/qobjecthelper.h"
@@ -14,41 +16,47 @@
 #include "executeservice.h"
 #include "executeplugin.h"
 #include "executeprofile.h"
-#include <coreplugin/coreplugin_server.h>
-#include <QUuid>
+#include "eventcontroller.h"
+#include "coreplugin/coreplugin_server.h"
 #define __FUNCTION__ __FUNCTION__
 
-ServiceController::ServiceController ()
+ServiceController::ServiceController () : m_EventController(new EventController())
 {
+    int offered_services = 0;
     ExecutePlugin *plugin;
     qDebug() << "Start: Load Plugins";
 
     //corePlugin
     plugin = new CorePluginExecute(this);
     qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
-	connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
+    connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
     m_plugins.append ( plugin );
     QStringList provides = plugin->base()->registerServices();
     foreach ( QString provide, provides )
     {
         m_plugin_provider.insert ( provide, plugin );
     }
+    offered_services += provides.size();
 
     QDir pluginsDir = QDir ( QLatin1String ( "/usr/lib/roomcontrol/plugins/server" ) );
     foreach ( QString fileName, pluginsDir.entryList ( QDir::Files ) )
     {
-        QPluginLoader loader ( pluginsDir.absoluteFilePath ( fileName ) );
-        plugin = dynamic_cast<ExecutePlugin*> ( loader.instance() );
+        QPluginLoader* loader = new QPluginLoader ( pluginsDir.absoluteFilePath ( fileName ), this );
+        plugin = dynamic_cast<ExecutePlugin*> ( loader->instance() );
         if ( plugin )
         {
             qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
-			connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
-			m_plugins.append ( plugin );
+            connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
+            m_plugins.append ( plugin );
             QStringList provides = plugin->base()->registerServices();
             foreach ( QString provide, provides )
             {
                 m_plugin_provider.insert ( provide, plugin );
             }
+            offered_services += provides.size();
+        } else {
+            qDebug() << "Start: Failed loading" << pluginsDir.absoluteFilePath ( fileName );
+            delete loader;
         }
     }
 
@@ -95,15 +103,17 @@ ServiceController::ServiceController ()
     emit systemStarted();
 
     // stats
-    qDebug() << "StateTracker:" << stateTracker().size();
-    qDebug() << "All         :" << m_servicesList.size();
+    qDebug() << "StateTracker   :" << stateTracker().size();
+    qDebug() << "Services       :" << offered_services;
+    qDebug() << "Loaded Services:" << m_servicesList.size();
 }
 
 ServiceController::~ServiceController()
 {
-
-    qDebug() << "Shutdown: Core";
+    delete m_EventController;
+    qDebug() << "Shutdown: ServiceController (Services)";
     qDeleteAll ( m_servicesList );
+    qDebug() << "Shutdown: ServiceController (Plugins)";
     qDeleteAll ( m_plugins );
 }
 
@@ -200,9 +210,9 @@ void ServiceController::updateService(ExecuteWithBase* service, const QVariantMa
     }
 
     if (exservice) {
-		exservice->dataUpdate();
-		addToExecuteProfiles ( exservice );
-	}
+        exservice->dataUpdate();
+        addToExecuteProfiles ( exservice );
+    }
     saveToDisk ( service );
 }
 
@@ -214,7 +224,7 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* service )
     emit serviceSync ( service->baseService() );
 
     if ( !QFile::remove ( serviceFilename ( service->baseService() ) ) )
-		qWarning() << "Couldn't remove file" << serviceFilename ( service->baseService() );
+        qWarning() << "Couldn't remove file" << serviceFilename ( service->baseService() );
 
     // collection: remove all childs
     if (service->baseService()->type() == Collection::staticMetaObject.className()) {
@@ -284,7 +294,7 @@ void ServiceController::refresh()
 {
     foreach ( ExecutePlugin* plugin, m_plugins )
     {
-		plugin->refresh();
+        plugin->refresh();
     }
 }
 

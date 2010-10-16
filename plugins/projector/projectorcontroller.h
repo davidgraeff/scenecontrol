@@ -21,9 +21,8 @@
 #define PROJECTORCONTROLLER_H
 
 #include <QObject>
-#include "qextserialport/qextserialport.h"
+#include <shared/qextserialport.h>
 
-class QextSerialPort;
 class AbstractStateTracker;
 class ProjectorStateTracker;
 enum ProjectorControl {
@@ -41,8 +40,8 @@ class ProjectorController : public QObject
 public:
     ProjectorController();
     ~ProjectorController();
-    void setCommand(ProjectorControl c);
     QList<AbstractStateTracker*> getStateTracker();
+    void setCommand(ProjectorControl c);
 	QextSerialPort m_serial;
 private:
 	char buffer[4];

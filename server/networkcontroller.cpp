@@ -29,8 +29,8 @@
 NetworkController::NetworkController(QDBusConnection dbusconnection)
         : m_dbusconnection(dbusconnection), m_service(0), m_auththread(new AuthThread())
 {
-	connect(m_auththread,SIGNAL(auth_failed(QObject*)),SLOT(auth_failed(QObject*)),Qt::QueuedConnection);
-	connect(m_auththread,SIGNAL(auth_success(QObject*)),SLOT(auth_success(QObject*)),Qt::QueuedConnection);
+    connect(m_auththread,SIGNAL(auth_failed(QObject*,QString)),SLOT(auth_failed(QObject*,QString)),Qt::QueuedConnection);
+    connect(m_auththread,SIGNAL(auth_success(QObject*,QString)),SLOT(auth_success(QObject*,QString)),Qt::QueuedConnection);
     m_auththread->start();
 }
 
@@ -59,6 +59,8 @@ void NetworkController::incomingConnection ( int socketDescriptor )
     {
         connect ( socket, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
         m_connections.insert ( socket, new ClientConnection(socket) );
+        QByteArray data("{\"type\" : \"auth\", \"result\" : \"required\"}");
+        socket->write ( data );
         qDebug() << "new connection, waiting for authentification";
     }
     else
@@ -74,7 +76,7 @@ void NetworkController::syncClient(QSslSocket* socket)
     QList<QObject*> synclist;
 
     const QList<ExecuteWithBase*> servicesList = m_service->m_servicesList;
-	foreach (ExecuteWithBase* p, servicesList)
+    foreach (ExecuteWithBase* p, servicesList)
     {
         synclist.append(p->baseService());
     }
@@ -120,15 +122,15 @@ QByteArray NetworkController::getNextJson(ClientConnection* c)
 
 void NetworkController::statetrackerSync(AbstractStateTracker* p)
 {
-	// do nothing if no clients are connected
-	if (m_connections.isEmpty()) return;
-	
-	QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
-	QJson::Serializer serializer;
-	QByteArray cmdbytes = serializer.serialize(variant);
-	
-	foreach ( ClientConnection* c, m_connections )
-		c->socket->write ( cmdbytes );
+    // do nothing if no clients are connected
+    if (m_connections.isEmpty()) return;
+
+    QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
+    QJson::Serializer serializer;
+    QByteArray cmdbytes = serializer.serialize(variant);
+
+    foreach ( ClientConnection* c, m_connections )
+    c->socket->write ( cmdbytes );
 }
 
 void NetworkController::serviceSync(AbstractServiceProvider* p)
@@ -145,7 +147,7 @@ void NetworkController::serviceSync(AbstractServiceProvider* p)
     QByteArray cmdbytes = serializer.serialize(variant);
 
     foreach ( ClientConnection* c, m_connections )
-        c->socket->write ( cmdbytes );
+    c->socket->write ( cmdbytes );
 }
 
 void NetworkController::readyRead()
@@ -186,20 +188,22 @@ void NetworkController::readyRead()
             qWarning() << "could not parse cmd" << ok << cmdstring;
             continue;
         }
-        if (!c->auth) {
+        if (!c->auth()) {
             if (result.value(QLatin1String("type")).toByteArray()=="auth") {
-                m_auththread->query(socket, result.value(QLatin1String("name")).toString(),
-                                    result.value(QLatin1String("pwd")).toString()
-                                   );
+                if (!m_auththread->query(socket, result.value(QLatin1String("name")).toString(),
+                                         result.value(QLatin1String("pwd")).toString()
+                                        )) {
+                    QByteArray data("{\"type\" : \"auth\", \"result\" : \"notaccepted\"}");
+                    socket->write ( data );
+                }
             } else {
                 QByteArray data("{\"type\" : \"auth\", \"result\" : \"missing\"}");
                 socket->write ( data );
             }
-			continue;
-		}
+            continue;
+        }
         // Let the factory update existing objects or create new ones if necessary
         m_service->generate(result);
-
     };
 }
 
@@ -207,9 +211,8 @@ void NetworkController::disconnected()
 {
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     Q_ASSERT(socket);
-    m_connections.remove ( socket );
     qDebug() << "Client disconnected:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
-    socket->deleteLater();
+    m_connections.take ( socket )->deleteLater();
 }
 
 
@@ -234,21 +237,28 @@ void NetworkController::setServiceController ( ServiceController* controller ) {
     m_service = controller;
 }
 
-void NetworkController::auth_success(QObject* ptr) {
+void NetworkController::auth_success(QObject* ptr, const QString& name) {
     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
-	Q_ASSERT(socket);
-	ClientConnection* c = m_connections.value(socket);
-	Q_ASSERT(c);
-	c->auth = true;
-	QByteArray data("{\"type\" : \"auth\", \"result\" : \"ok\"}");
-	socket->write ( data );
+    Q_ASSERT(socket);
+    ClientConnection* c = m_connections.value(socket);
+    Q_ASSERT(c);
+    c->setAuth(name);
+    QByteArray data("{\"type\" : \"auth\", \"result\" : \"ok\"}");
+    socket->write ( data );
     syncClient(socket);
 }
 
-void NetworkController::auth_failed(QObject* ptr) {
+void NetworkController::auth_failed(QObject* ptr, const QString& name) {
     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
-	Q_ASSERT(socket);
-	QByteArray data("{\"type\" : \"auth\", \"result\" : \"failed\"}");
-	socket->write ( data );
-	socket->flush();
+    Q_ASSERT(socket);
+    QByteArray data("{\"type\" : \"auth\", \"result\" : \"failed\"}");
+    socket->write ( data );
+    socket->flush();
+}
+void NetworkController::timeoutAuth(QSslSocket* socket) {
+    QByteArray data("{\"type\" : \"auth\", \"result\" : \"timeout\"}");
+    socket->write ( data );
+    socket->flush();
+    qDebug() << "Client auth timeout:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
+    m_connections.take ( socket )->deleteLater();
 }

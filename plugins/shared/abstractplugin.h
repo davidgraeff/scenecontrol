@@ -37,5 +37,5 @@ public:
     virtual AbstractStateTracker* createStateTracker(const QString& id) = 0;
 	virtual AbstractServiceProvider* createServiceProvider(const QString& id) = 0;
 };
-
+Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/1.0")
 #endif // ABSTRACTPLUGIN_H

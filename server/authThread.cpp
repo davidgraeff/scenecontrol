@@ -96,7 +96,7 @@ void AuthThread::run() {
         int retval;
 
         /* PAM-Transaktion starten */
-        retval = pam_start("check_user",      /* Dienstname */
+        retval = pam_start("other",      /* Dienstname */
                            user,              /* Nutzername */
                            &conv,             /* conversation-Funktion */
                            &pamh);            /* PAM-Handle das zum Fuellen */
@@ -111,7 +111,7 @@ void AuthThread::run() {
 				qDebug() <<"Nutzer" << user << "erfolgreich authentifiziert";
             else {
 				qDebug() <<"Fehler beim authentifizieren von Nutzer" << user << ":" << pam_strerror( pamh, retval);
-                emit auth_failed(p.socketptr);
+                emit auth_failed(p.socketptr,p.name);
             }
         }
 
@@ -123,12 +123,12 @@ void AuthThread::run() {
 				qDebug() << "Nutzerkonto von" << user << "in Ordnung!";
             else {
 				qDebug() << "Nutzerkonto von" << user << "nicht in Ordnung:" << pam_strerror( pamh, retval);
-                emit auth_failed(p.socketptr);
+                emit auth_failed(p.socketptr,p.name);
             }
         }
 
         if (retval == PAM_SUCCESS) {
-            emit auth_success(p.socketptr);
+            emit auth_success(p.socketptr,p.name);
         }
 
         /* PAM-Transaktion beenden */
