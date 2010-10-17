@@ -19,34 +19,11 @@
 
 #include "conditionpinServer.h"
 #include <iocontroller.h>
+#include <services/conditionpin.h>
+#include <plugin_server.h>
 
-ConditionPin::ConditionPin(QObject* parent)
-: AbstractServiceProvider(parent)
-{  
-}
-
-bool ConditionPin::ok()
+bool ConditionPinServer::checkcondition()
 {
-  bool v = RoomControlServer::getIOController()->getPin(m_pin);
-  return (v == m_value);
+  return (m_plugin->controller()->getPin(service<ConditionPin>()->pin()) == service<ConditionPin>()->value());
 }
-
-unsigned int ConditionPin::pin() const
-{
-    return m_pin;
-}
-
-void ConditionPin::setPin(unsigned int value)
-{
-    m_pin = value;
-}
-
-bool ConditionPin::value() const
-{
-    return m_value;
-}
-
-void ConditionPin::setValue(bool value)
-{
-    m_value = value;
-}
+ConditionPinServer::ConditionPinServer(ConditionPin* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

@@ -17,35 +17,22 @@
 
 */
 
-#ifndef ACTORPINSERVICEPROVIDER_H
-#define ACTORPINSERVICEPROVIDER_H
+#ifndef ActorPinServer_h
+#define ActorPinServer_h
+#include <executeservice.h>
 
-#include "shared/abstractserviceprovider.h"
-
-enum ActorPinEnum
+class ActorPin;
+class myPluginExecute;
+class ActorPinServer : public ExecuteService
 {
-  PinOff,
-  PinOn,
-  PinToggle
-};
-Q_ENUMS(ActorPinEnum);
-
-class ActorPin : public AbstractServiceProvider
-{
-    Q_OBJECT
-    Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
-    Q_PROPERTY(int value READ value WRITE setValue);
-    
+  Q_OBJECT
 public:
-    ActorPin(QObject* parent = 0);
-    virtual void execute();
-    unsigned int pin() const;
-    void setPin(unsigned int value);
-    int value() const;
-    void setValue(int value);
+  ActorPinServer(ActorPin* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    unsigned int m_pin;
-    int m_value;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ACTORPINSERVICEPROVIDER_H
+#endif // ActorPinServer_h

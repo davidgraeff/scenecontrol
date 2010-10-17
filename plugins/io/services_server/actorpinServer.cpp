@@ -17,38 +17,18 @@
 
 */
 
-#include "actorpin.h"
-#include <RoomControlServer.h>
+#include "actorpinServer.h"
 #include <iocontroller.h>
+#include <services/actorpin.h>
+#include <plugin_server.h>
 
-ActorPin::ActorPin(QObject* parent)
-: AbstractServiceProvider(parent)
-{}
-
-void ActorPin::execute()
+void ActorPinServer::execute()
 {
-  if (m_value==PinToggle)
-    RoomControlServer::getIOController()->togglePin(m_pin);
+  ActorPin* a = service<ActorPin>();
+  if (a->value()==ActorPin::PinToggle)
+    m_plugin->controller()->togglePin(a->pin());
   else
-    RoomControlServer::getIOController()->setPin(m_pin,m_value);
+    m_plugin->controller()->setPin(a->pin(),a->value());
 }
 
-unsigned int ActorPin::pin() const
-{
-    return m_pin;
-}
-
-void ActorPin::setPin(unsigned int value)
-{
-    m_pin = value;
-}
-
-int ActorPin::value() const
-{
-    return m_value;
-}
-
-void ActorPin::setValue(int value)
-{
-    m_value = value;
-}
+ActorPinServer::ActorPinServer(ActorPin* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

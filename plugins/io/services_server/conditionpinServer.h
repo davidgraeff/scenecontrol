@@ -17,25 +17,22 @@
 
 */
 
-#ifndef ConditionPin_h
-#define ConditionPin_h
-#include "abstractcondition.h"
+#ifndef ConditionPinServer_h
+#define ConditionPinServer_h
+#include <executeservice.h>
 
-class ConditionPin : public AbstractCondition
+class ConditionPin;
+class myPluginExecute;
+class ConditionPinServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
-    Q_PROPERTY(bool value READ value WRITE setValue);
+  Q_OBJECT
 public:
-    ConditionPin(QObject* parent = 0);
-    virtual bool ok();
-    unsigned int pin() const;
-    void setPin(unsigned int value);
-    bool value() const;
-    void setValue(bool value);
+  ConditionPinServer(ConditionPin* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition();
+  virtual void dataUpdate(){}
+  virtual void execute(){}
 private:
-    unsigned int m_pin;
-    bool m_value;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ConditionPin_h
+#endif // ConditionPinServer_h

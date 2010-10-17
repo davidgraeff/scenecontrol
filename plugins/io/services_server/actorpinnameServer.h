@@ -17,27 +17,22 @@
 
 */
 
-#ifndef ACTORPINNAMESERVICEPROVIDER_H
-#define ACTORPINNAMESERVICEPROVIDER_H
+#ifndef ActorPinNameServer_h
+#define ActorPinNameServer_h
+#include <executeservice.h>
 
-#include "shared/abstractserviceprovider.h"
-
-
-class ActorPinName : public AbstractServiceProvider
+class ActorPinName;
+class myPluginExecute;
+class ActorPinNameServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(QString pinname READ pinname WRITE setPinname);
-    Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
+  Q_OBJECT
 public:
-    ActorPinName(QObject* parent = 0);
-    virtual void execute();
-    QString pinname() const;
-    void setPinname(const QString& value);
-    unsigned int pin() const;
-    void setPin(unsigned int value);
+  ActorPinNameServer(ActorPinName* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    QString m_pinname;
-    unsigned int m_pin;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ACTORPINNAMESERVICEPROVIDER_H
+#endif // ActorPinNameServer_h

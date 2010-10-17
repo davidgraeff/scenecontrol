@@ -22,30 +22,31 @@
 
 #include "shared/abstractserviceprovider.h"
 
-enum ActorPinEnum
-{
-  PinOff,
-  PinOn,
-  PinToggle
-};
-Q_ENUMS(ActorPinEnum);
-
 class ActorPin : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
-    Q_PROPERTY(int value READ value WRITE setValue);
-    
+    Q_PROPERTY(ActorPin::ActorPinEnum value READ value WRITE setValue);
+
 public:
+    enum ActorPinEnum
+    {
+        PinOff,
+        PinOn,
+        PinToggle
+    };
+    Q_ENUMS(ActorPinEnum);
     ActorPin(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+    virtual ProvidedTypes providedtypes() {
+        return ActionType;
+    }
     unsigned int pin() const;
     void setPin(unsigned int value);
-    int value() const;
-    void setValue(int value);
+    ActorPin::ActorPinEnum value() const;
+    void setValue(ActorPin::ActorPinEnum value);
 private:
     unsigned int m_pin;
-    int m_value;
+    ActorPin::ActorPinEnum m_value;
 };
 
 #endif // ACTORPINSERVICEPROVIDER_H

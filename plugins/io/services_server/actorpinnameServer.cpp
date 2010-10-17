@@ -17,35 +17,14 @@
 
 */
 
-#include "actorpinname.h"
-#include <RoomControlServer.h>
+#include "actorpinnameServer.h"
+#include <services/actorpinname.h>
+#include <plugin_server.h>
 #include <iocontroller.h>
 
-ActorPinName::ActorPinName(QObject* parent)
-        : AbstractServiceProvider(parent)
-{}
-
-void ActorPinName::execute()
+void ActorPinNameServer::execute()
 {
-    RoomControlServer::getIOController()->setPinName(m_pin,m_pinname);
+  ActorPinName* a = service<ActorPinName>();
+  m_plugin->controller()->setPinName(a->pin(),a->pinname());
 }
-
-unsigned int ActorPinName::pin() const
-{
-    return m_pin;
-}
-
-void ActorPinName::setPin(unsigned int value)
-{
-    m_pin = value;
-}
-
-QString ActorPinName::pinname() const
-{
-    return m_pinname;
-}
-
-void ActorPinName::setPinname(const QString& value)
-{
-    m_pinname = value;
-}
+ActorPinNameServer::ActorPinNameServer(ActorPinName* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

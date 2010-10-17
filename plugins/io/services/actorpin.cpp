@@ -33,12 +33,12 @@ void ActorPin::setPin(unsigned int value)
     m_pin = value;
 }
 
-int ActorPin::value() const
+ActorPin::ActorPinEnum ActorPin::value() const
 {
     return m_value;
 }
 
-void ActorPin::setValue(int value)
+void ActorPin::setValue(ActorPin::ActorPinEnum value)
 {
     m_value = value;
 }
