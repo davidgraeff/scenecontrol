@@ -17,27 +17,13 @@
 
 */
 
-#include "conditioncurtain.h"
-#include <RoomControlServer.h>
-#include <curtaincontroller.h>
+#include "conditioncurtainServer.h"
+#include <services/conditioncurtain.h>
+#include <plugin_server.h>
+#include <controller.h>
 
-ConditionCurtain::ConditionCurtain(QObject* parent)
-: AbstractCondition(parent)
-{  
-}
-
-bool ConditionCurtain::ok()
+bool ConditionCurtainServer::checkcondition()
 {
-  unsigned int v = RoomControlServer::getCurtainController()->getCurtain();
-  return (v == m_value);
+  return (service<ConditionCurtain>()->value() == m_plugin->controller()->getCurtain());
 }
-
-void ConditionCurtain::setValue ( unsigned int v )
-{
-    m_value = v;
-}
-
-unsigned int ConditionCurtain::value() const
-{
-    return m_value;
-}
+ConditionCurtainServer::ConditionCurtainServer(ConditionCurtain* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

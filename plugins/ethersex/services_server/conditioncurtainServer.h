@@ -17,21 +17,22 @@
 
 */
 
-#ifndef ConditionCurtain_h
-#define ConditionCurtain_h
-#include "abstractcondition.h"
+#ifndef ConditionCurtainServer_h
+#define ConditionCurtainServer_h
+#include <executeservice.h>
 
-class ConditionCurtain : public AbstractCondition
+class ConditionCurtain;
+class myPluginExecute;
+class ConditionCurtainServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY ( unsigned int value READ value WRITE setValue );
+  Q_OBJECT
 public:
-    ConditionCurtain(QObject* parent = 0);
-    virtual bool ok();
-    unsigned int value() const;
-    void setValue ( unsigned int v );
+  ConditionCurtainServer(ConditionCurtain* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition();
+  virtual void dataUpdate(){}
+  virtual void execute(){}
 private:
-    unsigned int m_value;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ConditionCurtain_h
+#endif // ConditionCurtainServer_h

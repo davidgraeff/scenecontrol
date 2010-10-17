@@ -20,6 +20,7 @@
 #ifndef ACTORPROJECTORSERVICEPROVIDER_H
 #define ACTORPROJECTORSERVICEPROVIDER_H
 #include <shared/abstractserviceprovider.h>
+#include <io/services_server/actorpinServer.h>
 
 class ActorProjector : public AbstractServiceProvider
 {
@@ -34,6 +35,7 @@ public:
         ProjectorLampNormal,
         ProjectorLampEco
     };
+    Q_ENUMS(ProjectorControl);
     ActorProjector(QObject* parent = 0);
     virtual ProvidedTypes providedtypes(){return ActionType;}
     void setCmd(ActorProjector::ProjectorControl v);

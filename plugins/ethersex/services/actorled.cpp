@@ -53,12 +53,12 @@ void ActorLed::setValue(int value)
     m_value = value;
 }
 
-int ActorLed::assignment() const
+ActorLed::ActorLedEnum ActorLed::assignment() const
 {
     return m_assignment;
 }
 
-void ActorLed::setAssignment(int value)
+void ActorLed::setAssignment(ActorLed::ActorLedEnum value)
 {
     m_assignment = value;
 }

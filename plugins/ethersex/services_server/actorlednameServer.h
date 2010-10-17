@@ -17,27 +17,22 @@
 
 */
 
-#ifndef ACTORLEDNAMESERVICEPROVIDER_H
-#define ACTORLEDNAMESERVICEPROVIDER_H
+#ifndef ActorLedNameServer_h
+#define ActorLedNameServer_h
+#include <executeservice.h>
 
-#include "shared/abstractserviceprovider.h"
-
-
-class ActorLedName : public AbstractServiceProvider
+class ActorLedName;
+class myPluginExecute;
+class ActorLedNameServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(QString ledname READ ledname WRITE setLedname);
-    Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
-  public:
-    ActorLedName(QObject* parent = 0);
-    virtual void execute();
-    QString ledname() const;
-    void setLedname(const QString& ledname);
-    unsigned int channel() const;
-    void setChannel(unsigned int channel);
-  private:
-    QString m_ledname;
-    unsigned int m_channel;
+  Q_OBJECT
+public:
+  ActorLedNameServer(ActorLedName* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
+private:
+  myPluginExecute* m_plugin;
 };
 
-#endif // ACTORLEDNAMESERVICEPROVIDER_H
+#endif // ActorLedNameServer_h

@@ -17,35 +17,13 @@
 
 */
 
-#include "actorledname.h"
-#include <RoomControlServer.h>
-#include <ledcontroller.h>
+#include "actorlednameServer.h"
+#include <services/actorledname.h>
+#include <plugin_server.h>
+#include <controller.h>
 
-ActorLedName::ActorLedName(QObject* parent)
-        : AbstractServiceProvider(parent)
-{}
-
-void ActorLedName::execute()
+void ActorLedNameServer::execute()
 {
-    RoomControlServer::getLedController()->setChannelName(m_channel,m_ledname);
+    m_plugin->controller()->setChannelName(service<ActorLedName>()->channel(),service<ActorLedName>()->ledname());
 }
-
-unsigned int ActorLedName::channel() const
-{
-    return m_channel;
-}
-
-void ActorLedName::setChannel(unsigned int value)
-{
-    m_channel = value;
-}
-
-QString ActorLedName::ledname() const
-{
-    return m_ledname;
-}
-
-void ActorLedName::setLedname(const QString& ledname)
-{
-    m_ledname = ledname;
-}
+ActorLedNameServer::ActorLedNameServer(ActorLedName* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

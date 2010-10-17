@@ -17,30 +17,22 @@
 
 */
 
-#ifndef ConditionLed_h
-#define ConditionLed_h
-#include "abstractcondition.h"
+#ifndef ConditionLedServer_h
+#define ConditionLedServer_h
+#include <executeservice.h>
 
-class ConditionLed : public AbstractCondition
+class ConditionLed;
+class myPluginExecute;
+class ConditionLedServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(unsigned int min READ max WRITE setMin);
-    Q_PROPERTY(unsigned int max READ max WRITE setMax);
-    Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
-
+  Q_OBJECT
 public:
-    ConditionLed(QObject* parent = 0);
-    virtual bool ok();
-    unsigned int channel() const;
-    void setChannel(unsigned int value);
-    unsigned int min() const;
-    void setMin(unsigned int value);
-    unsigned int max() const;
-    void setMax(unsigned int value);
-  private:
-    unsigned int m_channel;
-    unsigned int m_min;
-    unsigned int m_max;
+  ConditionLedServer(ConditionLed* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition();
+  virtual void dataUpdate(){}
+  virtual void execute(){}
+private:
+  myPluginExecute* m_plugin;
 };
 
-#endif // ConditionLed_h
+#endif // ConditionLedServer_h

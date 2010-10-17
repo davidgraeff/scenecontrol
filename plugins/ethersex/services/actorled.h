@@ -26,7 +26,7 @@ class ActorLed : public AbstractServiceProvider
     Q_OBJECT
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
     Q_PROPERTY(unsigned int fadetype READ fadetype WRITE setFadetype);
-    Q_PROPERTY(int assignment READ assignment WRITE setAssignment);
+    Q_PROPERTY(ActorLed::ActorLedEnum assignment READ assignment WRITE setAssignment);
     Q_PROPERTY(int value READ value WRITE setValue);
 public:
     enum ActorLedEnum
@@ -47,13 +47,13 @@ public:
     unsigned int fadetype() const;
     void setValue(int value);
     int value() const;
-    void setAssignment(int value);
-    int assignment() const;
+    void setAssignment(ActorLed::ActorLedEnum value);
+    ActorLed::ActorLedEnum assignment() const;
 private:
     unsigned int m_channel;
     int m_value;
     unsigned int m_fadetype;
-    int m_assignment;
+    ActorLed::ActorLedEnum m_assignment;
 };
 
 #endif // ACTORSERVICEPROVIDER_H

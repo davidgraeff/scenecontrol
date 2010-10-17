@@ -17,23 +17,22 @@
 
 */
 
-#ifndef ACTORCURTAINSERVICEPROVIDER_H
-#define ACTORCURTAINSERVICEPROVIDER_H
+#ifndef ActorCurtainServer_h
+#define ActorCurtainServer_h
+#include <executeservice.h>
 
-#include "shared/abstractserviceprovider.h"
-
-
-class ActorCurtain : public AbstractServiceProvider
+class ActorCurtain;
+class myPluginExecute;
+class ActorCurtainServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(unsigned int value READ value WRITE setValue);
+  Q_OBJECT
 public:
-    ActorCurtain(QObject* parent = 0);
-    virtual void execute();
-    unsigned int value() const;
-    void setValue(unsigned int value);
+  ActorCurtainServer(ActorCurtain* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    unsigned int m_value;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ACTORCURTAINSERVICEPROVIDER_H
+#endif // ActorCurtainServer_h

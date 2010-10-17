@@ -17,25 +17,14 @@
 
 */
 
-#include "actorcurtain.h"
-#include <RoomControlServer.h>
-#include <curtaincontroller.h>
+#include "actorcurtainServer.h"
+#include <services/actorcurtain.h>
+#include <plugin_server.h>
+#include <controller.h>
 
-ActorCurtain::ActorCurtain(QObject* parent)
-        : AbstractServiceProvider(parent)
-{}
-
-void ActorCurtain::execute()
+void ActorCurtainServer::execute()
 {
-    RoomControlServer::getCurtainController()->setCurtain(m_value);
+    m_plugin->controller()->setCurtain(service<ActorCurtain>()->value());
 }
 
-unsigned int ActorCurtain::value() const
-{
-    return m_value;
-}
-
-void ActorCurtain::setValue(unsigned int value)
-{
-    m_value = value;
-}
+ActorCurtainServer::ActorCurtainServer(ActorCurtain* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

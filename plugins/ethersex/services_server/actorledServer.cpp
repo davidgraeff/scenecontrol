@@ -17,62 +17,23 @@
 
 */
 
-#include "actorled.h"
-#include <RoomControlServer.h>
-#include <ledcontroller.h>
+#include "actorledServer.h"
+#include <services/actorled.h>
+#include <plugin_server.h>
+#include <controller.h>
 
-ActorLed::ActorLed(QObject* parent)
-        : AbstractServiceProvider(parent)
-{}
-
-void ActorLed::execute()
+void ActorLedServer::execute()
 {
-  if (m_assignment == ValueAbsolute)
-    RoomControlServer::getLedController()->setChannel ( m_channel,m_value,m_fadetype );
-  else if (m_assignment == ValueRelative)
-    RoomControlServer::getLedController()->setChannelRelative ( m_channel,m_value,m_fadetype );
-  else if (m_assignment == ValueMultiplikator)
-    RoomControlServer::getLedController()->setChannelExponential ( m_channel,m_value,m_fadetype );
-  else if (m_assignment == ValueInverse)
-    RoomControlServer::getLedController()->inverseChannel ( m_channel,m_fadetype );
+  ActorLed* a = service<ActorLed>();
+  if (a->assignment() == ActorLed::ValueAbsolute)
+    m_plugin->controller()->setChannel ( a->channel(),a->value(),a->fadetype() );
+  else if (a->assignment() == ActorLed::ValueRelative)
+    m_plugin->controller()->setChannelRelative ( a->channel(),a->value(),a->fadetype() );
+  else if (a->assignment() == ActorLed::ValueMultiplikator)
+    m_plugin->controller()->setChannelExponential ( a->channel(),a->value(),a->fadetype() );
+  else if (a->assignment() == ActorLed::ValueInverse)
+    m_plugin->controller()->inverseChannel ( a->channel(),a->fadetype() );
 }
 
-unsigned int ActorLed::channel() const
-{
-    return m_channel;
-}
 
-void ActorLed::setChannel(unsigned int value)
-{
-    m_channel = value;
-}
-
-unsigned int ActorLed::fadetype() const
-{
-    return m_fadetype;
-}
-
-void ActorLed::setFadetype(unsigned int value)
-{
-    m_fadetype = value;
-}
-
-int ActorLed::value() const
-{
-    return m_value;
-}
-
-void ActorLed::setValue(int value)
-{
-    m_value = value;
-}
-
-int ActorLed::assignment() const
-{
-    return m_assignment;
-}
-
-void ActorLed::setAssignment(int value)
-{
-    m_assignment = value;
-}
+ActorLedServer::ActorLedServer(ActorLed* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

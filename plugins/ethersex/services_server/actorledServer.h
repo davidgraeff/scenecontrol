@@ -17,42 +17,22 @@
 
 */
 
-#ifndef ACTORLEDSERVICEPROVIDER_H
-#define ACTORLEDSERVICEPROVIDER_H
-#include "shared/abstractserviceprovider.h"
+#ifndef ActorLedServer_h
+#define ActorLedServer_h
+#include <executeservice.h>
 
-enum ActorLedEnum
+class ActorLed;
+class myPluginExecute;
+class ActorLedServer : public ExecuteService
 {
-    ValueAbsolute,
-    ValueRelative,
-    ValueInverse,
-    ValueMultiplikator
-};
-Q_ENUMS(ActorLedEnum);
-
-class ActorLed : public AbstractServiceProvider
-{
-    Q_OBJECT
-    Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
-    Q_PROPERTY(unsigned int fadetype READ fadetype WRITE setFadetype);
-    Q_PROPERTY(int assignment READ assignment WRITE setAssignment);
-    Q_PROPERTY(int value READ value WRITE setValue);
+  Q_OBJECT
 public:
-    ActorLed(QObject* parent = 0);
-    virtual void execute();
-    void setChannel(unsigned int channel);
-    unsigned int channel() const;
-    void setFadetype(unsigned int fadetype);
-    unsigned int fadetype() const;
-    void setValue(int value);
-    int value() const;
-    void setAssignment(int value);
-    int assignment() const;
+  ActorLedServer(ActorLed* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    unsigned int m_channel;
-    int m_value;
-    unsigned int m_fadetype;
-    int m_assignment;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ACTORSERVICEPROVIDER_H
+#endif // ActorLedServer_h
