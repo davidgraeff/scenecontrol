@@ -25,6 +25,13 @@ string generate_variable(string type, string name) {
     return type + " m_" + name + ";";
 }
 
+string generate_init(string type, string name) {
+    if (type != "QString" && type != "QStringList")
+      return ", m_" + name + "(0)";
+    else
+      return string();
+}
+
 string generate_headerid(string name) {
     return name + "StateTracker_h";
 }
@@ -71,7 +78,11 @@ int main(int argc, char** argv)
         cout << "\t" << generate_propery_string(*it1,*it2) << "\n";
     }
 
-    cout << "public:\n\t"<<classname(name)<<"(QObject* parent = 0) : AbstractStateTracker(parent) {}\n";
+    cout << "public:\n\t"<<classname(name)<<"(QObject* parent = 0) : AbstractStateTracker(parent)";
+    for ( it1=propery_types.begin(),it2=propery_names.begin() ; it1 != propery_types.end(); it1++,it2++ ) {
+	cout << generate_init(*it1,*it2);
+    }
+    cout << "{}\n";
     //getter/setter
     for ( it1=propery_types.begin(),it2=propery_names.begin() ; it1 != propery_types.end(); it1++,it2++ ) {
         cout << "\t" << generate_getter(*it1,*it2) << "\n";
