@@ -17,57 +17,22 @@
 
 */
 
-#ifndef ActorMute_h
-#define ActorMute_h
+#ifndef ActorMuteServer_h
+#define ActorMuteServer_h
+#include <executeservice.h>
 
-#include "abstractactor.h"
-
-
-class ActorMute : public AbstractActor
+class ActorMute;
+class myPluginExecute;
+class ActorMuteServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(QString value READ value WRITE setValue)
-	Q_PROPERTY(int mute READ mute WRITE setMute)
-	Q_PROPERTY(double volume READ volume WRITE setVolume)
-	Q_PROPERTY(bool relative READ relative WRITE setRelative)
+  Q_OBJECT
 public:
-    ActorMute(QObject* parent = 0);
-    virtual void execute();
-    
-    const QString& value() const {
-        return m_value;
-    }
-    void setValue( const QString& v ) {
-        m_value = v;
-    }
-	int mute() const {
-	    return m_mute;
-	}
-	
-	void setMute( int m ) {
-	    m_mute = m;
-	}
-	
-	qreal volume() const {
-	    return m_volume;
-	}
-	
-	void setVolume( qreal v ) {
-	    m_volume = v;
-	}
-	
-	bool relative() const {
-	    return m_relative;
-	}
-	
-	void setRelative( bool r ) {
-	    m_relative = r;
-	}
+  ActorMuteServer(ActorMute* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    QString m_value;
-    int m_mute;
-	qreal m_volume;
-	bool m_relative;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ActorMute_h
+#endif // ActorMuteServer_h

@@ -19,7 +19,7 @@
 
 #ifndef ChannelNameStateTracker_h
 #define ChannelNameStateTracker_h
-#include "abstractstatetracker.h"
+#include <shared/abstractstatetracker.h>
 
 class ChannelNameStateTracker : public AbstractStateTracker
 {

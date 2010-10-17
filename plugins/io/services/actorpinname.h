@@ -20,17 +20,17 @@
 #ifndef ACTORPINNAMESERVICEPROVIDER_H
 #define ACTORPINNAMESERVICEPROVIDER_H
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 
-class ActorPinName : public AbstractActor
+class ActorPinName : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString pinname READ pinname WRITE setPinname);
     Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
 public:
     ActorPinName(QObject* parent = 0);
-    virtual void execute();
+    virtual ProvidedTypes providedtypes(){return ActionType;}
     QString pinname() const;
     void setPinname(const QString& value);
     unsigned int pin() const;

@@ -78,7 +78,7 @@ void NetworkController::syncClient(QSslSocket* socket)
     const QList<ExecuteWithBase*> servicesList = m_service->m_servicesList;
     foreach (ExecuteWithBase* p, servicesList)
     {
-        synclist.append(p->baseService());
+        synclist.append(p->base());
     }
     const QList<AbstractStateTracker*> stateTrackerlist = m_service->stateTracker();
     foreach (AbstractStateTracker* p, stateTrackerlist)

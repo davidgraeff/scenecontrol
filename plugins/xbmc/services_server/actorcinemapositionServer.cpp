@@ -22,7 +22,7 @@
 #include <media/cinemacontroller.h>
 
 ActorCinemaPosition::ActorCinemaPosition(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
 void ActorCinemaPosition::execute()

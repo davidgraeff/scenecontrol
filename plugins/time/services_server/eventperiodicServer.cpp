@@ -25,7 +25,7 @@
 
 void EventPeriodicServer::timeout(bool aftersync)
 {
-    EventPeriodic* base = ((EventPeriodic*)baseService());
+    EventPeriodic* base = service<EventPeriodic>();
     QTime m_time = QTime::fromString(base->time(),Qt::ISODate);
     // timer triggered this timeout
     if (!aftersync && !m_aftertrigger)  {

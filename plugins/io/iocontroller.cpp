@@ -19,21 +19,22 @@
 
 #include "iocontroller.h"
 #include <QDebug>
-#include "stateTracker/pinvaluestatetracker.h"
-#include "stateTracker/pinnamestatetracker.h"
 #include <QSettings>
+#include <shared/qextserialport.h>
+#include "statetracker/pinvaluestatetracker.h"
+#include "statetracker/pinnamestatetracker.h"
 
 IOController::IOController() :
-	m_serial(QLatin1String("/dev/ttyUSB0"),QextSerialPort::EventDriven) {
+        m_serial(QLatin1String("/dev/ttyUSB0"),QextSerialPort::EventDriven) {
     m_serial.setBaudRate(BAUD115200);
-	m_serial.setFlowControl(FLOW_OFF);
+    m_serial.setFlowControl(FLOW_OFF);
     m_serial.setParity(PAR_NONE);
     m_serial.setDataBits(DATA_8);
     m_serial.setStopBits(STOP_1);
-	connect(&m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
+    connect(&m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
     m_pins = 0;
-	// Open device and ask for pins
-	const char t1[] = {0xef};
+    // Open device and ask for pins
+    const char t1[] = {0xef};
     if (!m_serial.open(QIODevice::ReadWrite) || !m_serial.write(t1, sizeof(t1))) {
         qWarning() << "IO rs232 init fehler";
     }
@@ -48,26 +49,26 @@ void IOController::readyRead() {
     QByteArray bytes;
     bytes.resize(m_serial.bytesAvailable());
     m_serial.read(bytes.data(), bytes.size());
-	m_buffer.append(bytes);
-	//qDebug() << "Read:" << m_buffer.size() << m_buffer;
-	if (m_buffer.size()>=3) {
-		for (int i=m_buffer.size()-1;i>1;--i) {
-			if (m_buffer[i-2]=='O' && m_buffer[i-1]=='K') {
-				m_pins = (int)m_buffer[i];
-				m_buffer.truncate(i-1);
-				getPins();
-			}
-		}
-		m_buffer.resize(4);
-	}
+    m_buffer.append(bytes);
+    //qDebug() << "Read:" << m_buffer.size() << m_buffer;
+    if (m_buffer.size()>=3) {
+        for (int i=m_buffer.size()-1;i>1;--i) {
+            if (m_buffer[i-2]=='O' && m_buffer[i-1]=='K') {
+                m_pins = (int)m_buffer[i];
+                m_buffer.truncate(i-1);
+                getPins();
+            }
+        }
+        m_buffer.resize(4);
+    }
 }
 
 void IOController::getPins() {
     QSettings settings;
-	qDeleteAll(m_values);
+    qDeleteAll(m_values);
     qDeleteAll(m_names);
-	m_values.clear();
-	m_names.clear();
+    m_values.clear();
+    m_names.clear();
     settings.beginGroup ( QLatin1String("pinnames") );
     for ( int i=0;i<m_pins;++i )
     {
@@ -77,14 +78,13 @@ void IOController::getPins() {
         m_values.append(cv);
         cv->setPin(i);
         cv->setValue(0);
-        cv->sync();
+        emit stateChanged(cv);
         PinNameStateTracker* cn = new PinNameStateTracker();
         m_names.append(cn);
         cn->setPin(i);
         cn->setValue(name);
-        cn->sync();
+        emit stateChanged(cn);
     }
-	emit dataAvailable();
 }
 
 
@@ -96,7 +96,7 @@ bool IOController::getPin(unsigned int pin) const
 void IOController::setPin ( uint pin, bool value )
 {
     m_values[pin]->setValue(value);
-    m_values[pin]->sync();
+    emit stateChanged(m_values[pin]);
     char a[] = {(value?0xf0:0x00) | (unsigned char)pin};
     m_serial.write(a, 1);
 }
@@ -105,7 +105,7 @@ void IOController::setPinName ( uint pin, const QString& name )
 {
     if ( pin>= ( unsigned int ) m_names.size() ) return;
     m_names[pin]->setValue(name);
-    m_names[pin]->sync();
+    emit stateChanged(m_names[pin]);
     QSettings settings;
     settings.beginGroup ( QLatin1String("pinnames") );
     settings.setValue ( QLatin1String("pin")+QString::number ( pin ), name );
@@ -127,6 +127,6 @@ int IOController::countPins() {
     return m_values.size();
 }
 void IOController::setLedState(bool state) {
-	const char t1[] = {(state)?0xcf:0xdf};
+    const char t1[] = {(state)?0xcf:0xdf};
     m_serial.write(t1, sizeof(t1));
 }

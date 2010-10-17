@@ -20,10 +20,10 @@
 #ifndef ACTORPINNAMESERVICEPROVIDER_H
 #define ACTORPINNAMESERVICEPROVIDER_H
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 
-class ActorPinName : public AbstractActor
+class ActorPinName : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString pinname READ pinname WRITE setPinname);

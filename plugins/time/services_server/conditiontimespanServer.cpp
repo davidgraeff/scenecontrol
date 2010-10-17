@@ -24,7 +24,7 @@
 
 
 bool ConditionTimespanServer::checkcondition() {
-  const ConditionTimespan* base = (ConditionTimespan*)baseService();
+  const ConditionTimespan* base = service<ConditionTimespan>();
   QTime m_lower = QTime::fromString(base->lower(),Qt::ISODate);
   QTime m_upper = QTime::fromString(base->upper(),Qt::ISODate);
     if (QTime::currentTime() < m_lower) return false;

@@ -23,6 +23,7 @@
 #include <QStringList>
 #include "../../server/executeplugin.h"
 
+class Controller;
 class myPluginExecute : public ExecutePlugin
 {
 	Q_OBJECT
@@ -34,8 +35,10 @@ public:
 	virtual ExecuteWithBase* createExecuteService(const QString& id);
 	virtual QList<AbstractStateTracker*> stateTracker();
 	virtual AbstractPlugin* base() { return m_base; }
+	Controller* controller() { return m_Controller; }
 private:
         AbstractPlugin* m_base;
+	Controller* m_Controller;
 };
 
 #endif // myPLUGINSERVER_H

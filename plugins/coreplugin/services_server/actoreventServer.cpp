@@ -27,7 +27,7 @@ ActorEventServer::ActorEventServer(ActorEvent* base, CorePluginExecute* plugin, 
 
 void ActorEventServer::execute()
 {
-    ActorEvent* base = (ActorEvent*)baseService();
+    ActorEvent* base = service<ActorEvent>();
     m_plugin->serviceController()->eventcontroller()->setFilename(base->filename());
     m_plugin->serviceController()->eventcontroller()->setTitle(base->title());
     m_plugin->serviceController()->eventcontroller()->play();

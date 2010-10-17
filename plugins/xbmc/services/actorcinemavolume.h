@@ -20,10 +20,10 @@
 #ifndef ACTORCINEMAVOLUMESERVICEPROVIDER_H
 #define ACTORCINEMAVOLUMESERVICEPROVIDER_H
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 
-class ActorCinemaVolume : public AbstractActor
+class ActorCinemaVolume : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(qreal value READ value WRITE setValue);

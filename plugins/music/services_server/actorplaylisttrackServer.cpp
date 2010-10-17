@@ -17,63 +17,41 @@
 
 */
 
-#include "actorplaylisttrack.h"
+#include "actorplaylisttrackServer.h"
+#include <services/actorplaylisttrack.h>
+#include <plugin_server.h>
+#include <statetracker/mediastatetracker.h>
+#include "../mediacontroller.h"
+#include "playlistServer.h"
+#include "services/playlist.h"
 
-#include "RoomControlServer.h"
-#include "media/playlist.h"
-#include "media/mediacontroller.h"
-#include "media/mediacmds.h"
-
-ActorPlaylistTrack::ActorPlaylistTrack(QObject* parent)
-        : AbstractActor(parent)
+void ActorPlaylistTrackServer::execute()
 {
-}
-
-void ActorPlaylistTrack::execute()
-{
-    MediaController* mc = RoomControlServer::getMediaController();
+    MediaController* mc = m_plugin->mediacontroller();
+    ActorPlaylistTrack* base = service<ActorPlaylistTrack>();
     // set playlist
-    if (m_playlistid.size())
+    if (base->playlistid().size())
     {
-      mc->setPlaylistByID(m_playlistid);
+      mc->setPlaylistByID(base->playlistid());
     }
     // set track number
-    if (m_track != -1)
+    if (base->track() != -1)
     {
-        Playlist* p = mc->playlist();
+        ActorPlaylistServer* p = mc->playlist();
         if (!p) return;
-        p->setCurrentTrack(m_track);
+        p->playlist()->setCurrentTrack(base->track());
     }
 
-    if (m_state == PlayState)
+    if (base->state() == MediaStateTracker::PlayState)
     {
 	mc->play();
-    } else if (m_state == PauseState)
+    } else if (base->state() == MediaStateTracker::PauseState)
     {
         mc->pause();
-    } else if (m_state == StopState)
+    } else if (base->state() == MediaStateTracker::StopState)
     {
         mc->stop();
     }
 }
 
-QString ActorPlaylistTrack::playlistid() const {
-    return m_playlistid;
-}
-void ActorPlaylistTrack::setPlaylistID(QString playlistid) {
-    m_playlistid = playlistid;
-}
-
-int ActorPlaylistTrack::track() const {
-    return m_track;
-}
-void ActorPlaylistTrack::setTrack(int value) {
-    m_track = value;
-}
-
-int ActorPlaylistTrack::state() const {
-    return m_state;
-}
-void ActorPlaylistTrack::setState(int value) {
-    m_state = value;
-}
+ActorPlaylistTrackServer::ActorPlaylistTrackServer(ActorPlaylistTrack* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

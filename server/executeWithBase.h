@@ -29,8 +29,9 @@ class ExecuteWithBase : public QObject
 public:
     ExecuteWithBase(AbstractServiceProvider* base, QObject* parent = 0) ;
     virtual ~ExecuteWithBase() ;
-    AbstractServiceProvider* baseService() ;
-    Collection* baseCollection();
+    AbstractServiceProvider* base() ;
+    template < typename T >
+    T* service() {return qobject_cast<T*>(m_base);}
 private:
     AbstractServiceProvider* m_base;
 };

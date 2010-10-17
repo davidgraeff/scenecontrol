@@ -17,23 +17,23 @@
 
 */
 
-#include "actormute.h"
-#include <RoomControlServer.h>
-#include <media/mediacontroller.h>
+#include "actormuteServer.h"
+#include <services/actormute.h>
+#include <plugin_server.h>
+#include "../mediacontroller.h"
 
-ActorMute::ActorMute(QObject* parent)
-        : AbstractActor(parent),m_mute(-1),m_volume(-1.0), m_relative(false)
-{}
-
-void ActorMute::execute()
+void ActorMuteServer::execute()
 {
-    if (m_mute==1)
-        RoomControlServer::getMediaController()->setPAMute(m_value.toAscii(),1);
-    else if (m_mute==0)
-        RoomControlServer::getMediaController()->setPAMute(m_value.toAscii(),0);
-	else if (m_mute==2)
-		RoomControlServer::getMediaController()->togglePAMute(m_value.toAscii());
+  ActorMute* base = service<ActorMute>();
+    if (base->mute()==1)
+        m_plugin->mediacontroller()->setPAMute(base->value().toAscii(),1);
+    else if (base->mute())
+        m_plugin->mediacontroller()->setPAMute(base->value().toAscii(),0);
+    else if (base->mute())
+        m_plugin->mediacontroller()->togglePAMute(base->value().toAscii());
 
-	if (m_volume>=0.0)
-		RoomControlServer::getMediaController()->setPAVolume(m_value.toAscii(),m_volume,m_relative);
+    if (base->volume()>=0.0)
+        m_plugin->mediacontroller()->setPAVolume(base->value().toAscii(),base->volume(),base->relative());
 }
+
+ActorMuteServer::ActorMuteServer(ActorMute* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

@@ -18,17 +18,10 @@
 */
 
 #include "actorcurtain.h"
-#include <RoomControlServer.h>
-#include <curtaincontroller.h>
 
 ActorCurtain::ActorCurtain(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
-
-void ActorCurtain::execute()
-{
-    RoomControlServer::getCurtainController()->setCurtain(m_value);
-}
 
 unsigned int ActorCurtain::value() const
 {

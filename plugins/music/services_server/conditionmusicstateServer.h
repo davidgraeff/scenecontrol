@@ -17,21 +17,22 @@
 
 */
 
-#ifndef ConditionMusicState_h
-#define ConditionMusicState_h
-#include "abstractcondition.h"
+#ifndef ConditionMusicStateServer_h
+#define ConditionMusicStateServer_h
+#include <executeservice.h>
 
-class ConditionMusicState : public AbstractCondition
+class ConditionMusicState;
+class myPluginExecute;
+class ConditionMusicStateServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(int value READ value WRITE setValue);
+  Q_OBJECT
 public:
-    ConditionMusicState(QObject* parent = 0);
-    virtual bool ok();
-    int value() const;
-    void setValue(int value);
+  ConditionMusicStateServer(ConditionMusicState* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition();
+  virtual void dataUpdate(){}
+  virtual void execute(){}
 private:
-    int m_value;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ConditionMusicState_h
+#endif // ConditionMusicStateServer_h

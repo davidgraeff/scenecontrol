@@ -28,7 +28,7 @@ EventRemoteKeyServer::EventRemoteKeyServer(EventRemoteKey* base, myPluginExecute
 
 void EventRemoteKeyServer::keySlot(QString,QString keyname,uint channel,int pressed)
 {
-  EventRemoteKey* base = (EventRemoteKey*)baseService();
+    EventRemoteKey* base = service<EventRemoteKey>();
     if (base->channel()>=0 && channel != (uint)base->channel()) return;
     if (base->pressed() != pressed) {
         return;
@@ -48,7 +48,7 @@ void EventRemoteKeyServer::dataUpdate() {
 }
 
 void EventRemoteKeyServer::retrigger() {
-   EventRemoteKey* base = (EventRemoteKey*)baseService();
+    EventRemoteKey* base = service<EventRemoteKey>();
     emit trigger();
     if (base->repeat() && m_dorepeat) m_timer.start(base->repeat());
 }

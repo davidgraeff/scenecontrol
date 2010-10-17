@@ -22,7 +22,7 @@
 #include <media/cinemacontroller.h>
 
 ActorCinemaVolume::ActorCinemaVolume(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
 void ActorCinemaVolume::execute()

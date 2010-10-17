@@ -19,18 +19,16 @@
 
 #ifndef ActorPlaylistPosition_h
 #define ActorPlaylistPosition_h
+#include <shared/abstractserviceprovider.h>
 
-#include "abstractactor.h"
-
-
-class ActorPlaylistPosition : public AbstractActor
+class ActorPlaylistPosition : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(qreal value READ value WRITE setValue);
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorPlaylistPosition(QObject* parent = 0);
-    virtual void execute();
+    virtual ProvidedTypes providedtypes(){return ActionType;}
     qreal value() const ;
     void setValue(qreal value) ;
     bool relative() const ;

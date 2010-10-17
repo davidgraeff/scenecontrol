@@ -28,6 +28,6 @@ bool ActorProjectorServer::checkcondition() {
     return true;
 }
 void ActorProjectorServer::execute() {
-    ActorProjector* base = (ActorProjector*)baseService();
+    ActorProjector* base = service<ActorProjector>();
     m_plugin->setCommand(base->cmd());
 }

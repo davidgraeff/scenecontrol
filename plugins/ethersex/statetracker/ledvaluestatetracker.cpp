@@ -17,7 +17,7 @@
 
 */
 
-#include "channelvaluestatetracker.h"
+#include "ledvaluestatetracker.h"
 
 ChannelValueStateTracker::ChannelValueStateTracker(QObject* parent)
 : AbstractStateTracker(parent)

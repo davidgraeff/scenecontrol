@@ -17,20 +17,14 @@
 
 */
 
-#include "ledcontroller.h"
+#include "controller.h"
 #include <bitset>
-#include "RoomControlServer.h"
 
 #define _BV(bit) (1<<(bit))
 #include <QSettings>
-#include "stateTracker/curtainstatetracker.h"
-#include "stateTracker/pinvaluestatetracker.h"
-#include "stateTracker/pinnamestatetracker.h"
-#include "stateTracker/channelvaluestatetracker.h"
-#include "stateTracker/channelnamestatetracker.h"
-#include "iocontroller.h"
+#include "statetracker/curtainstatetracker.h"
 
-LedController::LedController()
+Controller::Controller()
 {
     m_udpSocket_lights = 0;
     m_sendTimer_lights.setInterval(20);
@@ -38,34 +32,113 @@ LedController::LedController()
     connect(&m_sendTimer_lights,SIGNAL(timeout()), SLOT(sendTimeout_lights()));
     m_tryReconnectTimer_lights.setInterval ( 10000 );
     connect ( &m_tryReconnectTimer_lights,SIGNAL ( timeout() ),SLOT ( reconnect_lights() ) );
+
+    m_curtainStateTracker = new CurtainStateTracker();
+
+    m_udpSocket_curtain = 0;
+    m_tryReconnectTimer_curtain.setInterval ( 10000 );
+    connect ( &m_tryReconnectTimer_curtain,SIGNAL ( timeout() ),SLOT ( reconnect_curtain() ) );
+
 }
 
-LedController::~LedController()
+Controller::~Controller()
 {
     qDeleteAll(m_channelvalues);
     qDeleteAll(m_channelnames);
     m_udpSocket_lights->disconnectFromHost();
+    delete m_curtainStateTracker;
+    m_udpSocket_curtain->disconnectFromHost();
 }
 
-void LedController::connectTo ( QHostAddress host, int udpport )
+void Controller::reconnect_curtain()
 {
-    m_udpport_lights = udpport;
-    m_host_lights = host;
-    if ( m_udpSocket_lights ) delete m_udpSocket_lights;
-    m_udpSocket_lights = new QUdpSocket ( this );
-    connect ( m_udpSocket_lights,SIGNAL ( connected() ),SLOT ( connected_lights() ) );
-    connect ( m_udpSocket_lights,SIGNAL ( disconnected() ),SLOT ( disconnected_lights() ) );
-    connect ( m_udpSocket_lights,SIGNAL ( readyRead() ),SLOT ( readyRead_lights() ) );
-    connect ( m_udpSocket_lights,SIGNAL ( error ( QAbstractSocket::SocketError ) ),SLOT ( error_lights ( QAbstractSocket::SocketError ) ) );
-    m_udpSocket_lights->connectToHost ( host, udpport );
+    connectTo ( m_host_curtain, 0, m_udpport_curtain );
 }
 
-void LedController::reconnect_lights()
+void Controller::readyRead_curtain()
 {
-    connectTo ( m_host_lights, m_udpport_lights );
+    if ( ! m_udpSocket_curtain->bytesAvailable() ) return;
+    QByteArray buffer = m_udpSocket_curtain->readAll();
+    QSettings settings;
+    while ( buffer.size() >1 )
+    {
+        if (!buffer.startsWith("curtain"))
+        {
+            buffer.clear();
+            break;
+        }
+
+        udpcurtain_answer* ans = ( udpcurtain_answer* ) buffer.data();
+        m_curtainStateTracker->setCurtain(ans->position);
+        m_curtainStateTracker->setCurtainMax(ans->max);
+	emit stateChanged(m_curtainStateTracker);
+        buffer = buffer.mid ( sizeof(udpcurtain_answer) );
+    }
 }
 
-void LedController::readyRead_lights()
+void Controller::error_curtain ( QAbstractSocket::SocketError err )
+{
+    qDebug() << __FUNCTION__ << __LINE__ << err;
+}
+
+void Controller::disconnected_curtain()
+{
+    m_tryReconnectTimer_curtain.start();
+}
+
+void Controller::connected_curtain()
+{
+    if ( m_udpSocket_curtain->isOpen() ) {
+        m_tryReconnectTimer_curtain.stop();
+        setCurtain(255);
+    }
+}
+
+void Controller::setCurtain(unsigned int position)
+{
+    //if (position>m_curtain_max) return;
+    char a = (unsigned char) position;
+    m_udpSocket_curtain->write( &a, 1 );
+    m_curtainStateTracker->setCurtain(position);
+    emit stateChanged(m_curtainStateTracker);
+}
+
+unsigned int Controller::getCurtain()
+{
+    return m_curtainStateTracker->curtain();
+}
+
+void Controller::connectTo ( QHostAddress host, int udpLed, int udpCurtain )
+{
+    if (udpLed!=0) {
+        m_udpport_lights = udpLed;
+        m_host = host;
+        if ( m_udpSocket_lights ) delete m_udpSocket_lights;
+        m_udpSocket_lights = new QUdpSocket ( this );
+        connect ( m_udpSocket_lights,SIGNAL ( connected() ),SLOT ( connected_lights() ) );
+        connect ( m_udpSocket_lights,SIGNAL ( disconnected() ),SLOT ( disconnected_lights() ) );
+        connect ( m_udpSocket_lights,SIGNAL ( readyRead() ),SLOT ( readyRead_lights() ) );
+        connect ( m_udpSocket_lights,SIGNAL ( error ( QAbstractSocket::SocketError ) ),SLOT ( error_lights ( QAbstractSocket::SocketError ) ) );
+        m_udpSocket_lights->connectToHost ( host, udpLed );
+    }
+    if (udpCurtain!=0) {
+        m_udpport_curtain = udpCurtain;
+        if ( m_udpSocket_curtain ) delete m_udpSocket_curtain;
+        m_udpSocket_curtain = new QUdpSocket ( this );
+        connect ( m_udpSocket_curtain,SIGNAL ( connected() ),SLOT ( connected_curtain() ) );
+        connect ( m_udpSocket_curtain,SIGNAL ( disconnected() ),SLOT ( disconnected_curtain() ) );
+        connect ( m_udpSocket_curtain,SIGNAL ( readyRead() ),SLOT ( readyRead_curtain() ) );
+        connect ( m_udpSocket_curtain,SIGNAL ( error ( QAbstractSocket::SocketError ) ),SLOT ( error_curtain ( QAbstractSocket::SocketError ) ) );
+        m_udpSocket_curtain->connectToHost ( host, udpCurtain );
+    }
+}
+
+void Controller::reconnect_lights()
+{
+    connectTo ( m_host, m_udpport_lights, 0 );
+}
+
+void Controller::readyRead_lights()
 {
     if ( ! m_udpSocket_lights->bytesAvailable() ) return;
     QByteArray buffer = m_udpSocket_lights->readAll();
@@ -106,21 +179,20 @@ void LedController::readyRead_lights()
         }
         buffer = buffer.mid ( ans->channels+7 );
     }
-    emit dataAvailable();
 }
 
-void LedController::error_lights ( QAbstractSocket::SocketError err )
+void Controller::error_lights ( QAbstractSocket::SocketError err )
 {
     qDebug() << __FUNCTION__ << __LINE__ << err;
 }
 
-void LedController::disconnected_lights()
+void Controller::disconnected_lights()
 {
     m_tryReconnectTimer_lights.start();
     m_sendTimer_lights.stop();
 }
 
-void LedController::connected_lights()
+void Controller::connected_lights()
 {
     if ( m_udpSocket_lights->isOpen() ) {
         m_tryReconnectTimer_lights.stop();
@@ -133,7 +205,7 @@ void LedController::connected_lights()
     }
 }
 
-void LedController::sendTimeout_lights()
+void Controller::sendTimeout_lights()
 {
     QByteArray bytes;
     foreach ( const udpstella_packet d, m_queue_lights )
@@ -144,20 +216,22 @@ void LedController::sendTimeout_lights()
     m_udpSocket_lights->write( bytes );
 }
 
-void LedController::refresh()
+void Controller::refresh()
 {
     connected_lights();
+    connected_curtain();
 }
 
-QList<AbstractStateTracker*> LedController::getStateTracker()
+QList<AbstractStateTracker*> Controller::getStateTracker()
 {
     QList<AbstractStateTracker*> l;
     foreach (ChannelValueStateTracker* p, m_channelvalues) l.append(p);
     foreach (ChannelNameStateTracker* p, m_channelnames) l.append(p);
+    l.append(m_curtainStateTracker);
     return l;
 }
 
-void LedController::setChannelName ( uint channel, const QString& name )
+void Controller::setChannelName ( uint channel, const QString& name )
 {
     if ( channel>= ( unsigned int ) m_channelnames.size() ) return;
     m_channelnames[channel]->setValue(name);
@@ -167,13 +241,13 @@ void LedController::setChannelName ( uint channel, const QString& name )
     settings.setValue ( QLatin1String("channel")+QString::number ( channel ), name );
 }
 
-unsigned int LedController::getChannel(unsigned int channel) const
+unsigned int Controller::getChannel(unsigned int channel) const
 {
     if ( channel>= ( unsigned int ) m_channelvalues.size() ) return 300;
     return m_channelvalues.at(channel)->value();
 }
 
-void LedController::setChannel ( uint channel, uint value, uint fade )
+void Controller::setChannel ( uint channel, uint value, uint fade )
 {
     if ( channel>= ( unsigned int ) m_channelvalues.size() ) return;
     value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
@@ -189,14 +263,14 @@ void LedController::setChannel ( uint channel, uint value, uint fade )
     m_sendTimer_lights.start();
 }
 
-void LedController::inverseChannel(uint channel, uint fade)
+void Controller::inverseChannel(uint channel, uint fade)
 {
     if ( channel>= ( unsigned int ) m_channelvalues.size() ) return;
     const unsigned int newvalue = 255 - m_channelvalues[channel]->value();
     setChannel(channel, newvalue, fade);
 }
 
-void LedController::setChannelExponential ( uint channel, int multiplikator, uint fade )
+void Controller::setChannelExponential ( uint channel, int multiplikator, uint fade )
 {
     if ( channel>= ( unsigned int ) m_channelvalues.size() ) return;
     unsigned int v = m_channelvalues[channel]->value();
@@ -217,7 +291,7 @@ void LedController::setChannelExponential ( uint channel, int multiplikator, uin
     setChannel(channel, v, fade);
 }
 
-void LedController::setChannelRelative ( uint channel, int value, uint fade )
+void Controller::setChannelRelative ( uint channel, int value, uint fade )
 {
     if ( channel>= ( unsigned int ) m_channelvalues.size() ) return;
     value += m_channelvalues[channel]->value();
@@ -226,7 +300,7 @@ void LedController::setChannelRelative ( uint channel, int value, uint fade )
 }
 
 
-int LedController::countChannels()
+int Controller::countChannels()
 {
     return m_channelvalues.size();
 }

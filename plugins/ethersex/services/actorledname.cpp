@@ -18,17 +18,10 @@
 */
 
 #include "actorledname.h"
-#include <RoomControlServer.h>
-#include <ledcontroller.h>
 
 ActorLedName::ActorLedName(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
-
-void ActorLedName::execute()
-{
-    RoomControlServer::getLedController()->setChannelName(m_channel,m_ledname);
-}
 
 unsigned int ActorLedName::channel() const
 {

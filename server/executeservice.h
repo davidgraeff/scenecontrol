@@ -28,12 +28,12 @@ class ExecuteService : public ExecuteWithBase
 {
     Q_OBJECT
 public:
-	ExecuteService(AbstractServiceProvider* base, QObject* parent = 0);
+    ExecuteService(AbstractServiceProvider* base, QObject* parent = 0);
     virtual bool checkcondition() = 0;
     virtual void execute() = 0;
-	virtual void dataUpdate() = 0;
+    virtual void dataUpdate() = 0;
 Q_SIGNALS:
-	void trigger();
+    void trigger();
 };
 
 #endif // EXECUTESERVICE_H

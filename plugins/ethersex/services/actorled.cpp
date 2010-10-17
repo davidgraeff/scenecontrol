@@ -18,24 +18,10 @@
 */
 
 #include "actorled.h"
-#include <RoomControlServer.h>
-#include <ledcontroller.h>
 
 ActorLed::ActorLed(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
-
-void ActorLed::execute()
-{
-  if (m_assignment == ValueAbsolute)
-    RoomControlServer::getLedController()->setChannel ( m_channel,m_value,m_fadetype );
-  else if (m_assignment == ValueRelative)
-    RoomControlServer::getLedController()->setChannelRelative ( m_channel,m_value,m_fadetype );
-  else if (m_assignment == ValueMultiplikator)
-    RoomControlServer::getLedController()->setChannelExponential ( m_channel,m_value,m_fadetype );
-  else if (m_assignment == ValueInverse)
-    RoomControlServer::getLedController()->inverseChannel ( m_channel,m_fadetype );
-}
 
 unsigned int ActorLed::channel() const
 {

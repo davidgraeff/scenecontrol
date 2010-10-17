@@ -19,9 +19,9 @@
 
 #ifndef ActorPlaylistTrack_h
 #define ActorPlaylistTrack_h
-#include "abstractactor.h"
+#include <shared/abstractserviceprovider.h>
 
-class ActorPlaylistTrack : public AbstractActor
+class ActorPlaylistTrack : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString playlistid READ playlistid WRITE setPlaylistID);
@@ -29,8 +29,7 @@ class ActorPlaylistTrack : public AbstractActor
     Q_PROPERTY(int state READ state WRITE setState);
 public:
     ActorPlaylistTrack(QObject* parent = 0);
-    virtual void execute();
-    
+    virtual ProvidedTypes providedtypes(){return ActionType;}
     QString playlistid() const;
     void setPlaylistID(QString playlistid);
     int track() const;

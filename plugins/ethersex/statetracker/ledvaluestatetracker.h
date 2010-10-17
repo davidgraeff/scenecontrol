@@ -19,7 +19,7 @@
 
 #ifndef CHANNELVALUESERVICEPROVIDER_H
 #define CHANNELVALUESERVICEPROVIDER_H
-#include "abstractstatetracker.h"
+#include <shared/abstractstatetracker.h>
 
 class ChannelValueStateTracker : public AbstractStateTracker
 {

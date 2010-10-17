@@ -18,21 +18,21 @@
 */
 
 #include "mediacontroller.h"
-#include "playlist.h"
 #include <QSettings>
 #include <limits>
-#include "factory.h"
-#include "RoomControlServer.h"
-#include "stateTracker/mediastatetracker.h"
-#include <stateTracker/volumestatetracker.h>
+#include <stdio.h>
 #include <qprocess.h>
-#include <stateTracker/pastatetracker.h>
+#include "statetracker/volumestatetracker.h"
+#include "statetracker/pastatetracker.h"
+#include "services_server/playlistServer.h"
+#include "plugin_server.h"
+#include "services/playlist.h"
 
-MediaController::MediaController() : m_mediastate(StopState), m_currenttime(0), m_totaltime(0)
+MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0)
 {
     m_favourite = 0;
     m_mediaStateTracker = new MediaStateTracker(this);
-    m_volumestateTracker = new VolumeStateTracker(MEDIAVOLUME_ID, this);
+    m_volumestateTracker = new MusicVolumeStateTracker(this);
     m_fakepos.setInterval(1000);
     connect(&m_fakepos, SIGNAL(timeout()),SLOT(updatefakepos()));
 
@@ -67,7 +67,7 @@ void MediaController::slotconnected()
     setVolume(m_volume);
     if (m_current) {
         QByteArray cache;
-        foreach (QString file, m_current->files()) {
+        foreach (QString file, m_current->playlist()->files()) {
             cache += "queue "+file.toUtf8()+"\n";
         }
         m_playerprocess->write(cache);
@@ -99,50 +99,51 @@ void MediaController::slotreadyRead()
         QList<QByteArray> args = line.split(' ');
 
         if (args[0] == "state" && args.size()==2) {
-			const EnumMediaState before = m_mediastate;
+            const MediaStateTracker::EnumMediaState before = m_mediastate;
             if (args[1]=="playing") {
-                m_mediastate = PlayState;
+                m_mediastate = MediaStateTracker::PlayState;
                 m_fakepos.start();
             }
             else if (args[1]=="paused") {
-                m_mediastate = PauseState;
+                m_mediastate = MediaStateTracker::PauseState;
                 m_fakepos.stop();
             }
             else if (args[1]=="stopped") {
-                m_mediastate = StopState;
+                m_mediastate = MediaStateTracker::StopState;
                 m_fakepos.stop();
             }
             if (before!=m_mediastate) needsync = true;
         } else if (args[0] == "volume" && args.size()==2) {
             m_volume = args[1].toDouble();
-            m_volumestateTracker->sync(m_volume);
+            m_volumestateTracker->setVolume(m_volume);
+            emit stateChanged(m_volumestateTracker);
         } else if (args[0] == "position" && args.size()==2) {
-			const int temp = args[1].toInt();
-			if (m_totaltime!=temp) needsync = true;
+            const int temp = args[1].toInt();
+            if (m_totaltime!=temp) needsync = true;
             m_currenttime = temp;
         } else if (args[0] == "total" && args.size()==2) {
-			const int temp = args[1].toInt();
+            const int temp = args[1].toInt();
             if (m_totaltime!=temp) needsync = true;
             m_totaltime = temp;
         } else if (args[0] == "active" && args.size()==2) {
-            m_current->setCurrentTrack(args[1].toInt());
+            m_current->playlist()->setCurrentTrack(args[1].toInt());
             m_currenttime = 0;
             needsync = true;
         } else if (args[0] == "pa_sink" && args.size()==4) {
             PAStateTracker* p = m_paStateTrackers[args[1]];
             if (!p) {
-                p = new PAStateTracker(QString::fromAscii(args[1]), this);
+                p = new PAStateTracker(this);
+		p->setSinkname(QString::fromAscii(args[1]));
                 m_paStateTrackers.insert(args[1], p);
             }
-			p->setMute(args[2].toInt());
-			p->setVolume(args[3].toUInt()/10000.0);
-			p->sync();
+            p->setMute(args[2].toInt());
+            p->setVolume(args[3].toUInt()/10000.0);
+            emit stateChanged(p);
         }
     }
 
     if (needsync) {
-		//qDebug() << __FUNCTION__ << "SYNC" << m_currenttime << m_totaltime;
-        m_mediaStateTracker->sync();
+        emit stateChanged(m_mediaStateTracker);
     }
 }
 
@@ -151,7 +152,7 @@ QList<AbstractStateTracker*> MediaController::getStateTracker()
     QList<AbstractStateTracker*> l;
     l.append(m_mediaStateTracker);
     l.append(m_volumestateTracker);
-	QList<PAStateTracker*> k = m_paStateTrackers.values();
+    QList<PAStateTracker*> k = m_paStateTrackers.values();
     foreach(PAStateTracker* p, k) l.append(p);
     return l;
 }
@@ -161,10 +162,9 @@ void MediaController::activateFavourite()
     if (!m_favourite)
     {
         // create favourite playlist
-        m_favourite = new Playlist();
-        m_favourite->setName(QLatin1String("favourite"));
-        RoomControlServer::getFactory()->addServiceProvider(m_favourite);
-        RoomControlServer::getFactory()->objectSaveToDisk(m_favourite);
+        m_favourite = new ActorPlaylistServer(new ActorPlaylist(), m_plugin);
+        m_favourite->playlist()->setName(QLatin1String("favourite"));
+        emit pluginobjectChanged(m_favourite);
     }
     setPlaylist(m_favourite);
 }
@@ -192,29 +192,32 @@ void MediaController::setPlaylistByIndex ( int index )
 
 void MediaController::setPlaylistByID ( const QString& id )
 {
-    AbstractServiceProvider* p = RoomControlServer::getFactory()->get(id);
-    if (!p) return;
-    Playlist* pl = qobject_cast<Playlist*>(p);
-    if (!pl) return;
-    setPlaylist ( pl );
+    ActorPlaylistServer* playlist = 0;
+    foreach(ActorPlaylistServer* p, m_items)
+    if (p->playlist()->id() == id) {
+        playlist = p;
+        break;
+    }
+    if (!playlist) return;
+    setPlaylist ( playlist );
 }
 
-void MediaController::setPlaylist ( Playlist* current )
+void MediaController::setPlaylist ( ActorPlaylistServer* current )
 {
     if (!current) return;
     if (current == m_current && !m_current->hasChanged()) return;
     m_current = current;
-	m_current->setChanged(false);
-    m_mediaStateTracker->sync();
+    m_current->setChanged(false);
+    emit stateChanged(m_mediaStateTracker);
     QByteArray cache = "clear\n";
     if (m_current)
-        foreach (QString file, m_current->files()) {
+        foreach (QString file, m_current->playlist()->files()) {
         cache += "queue "+file.toUtf8()+"\n";
     }
     m_playerprocess->write(cache);
 }
 
-Playlist* MediaController::playlist()
+ActorPlaylistServer* MediaController::playlist()
 {
     return m_current;
 }
@@ -223,7 +226,8 @@ void MediaController::setVolume ( qreal newvol, bool relative )
 {
     if (relative) m_volume = qBound<qreal>(0.0,m_volume+= newvol,1.0);
     else m_volume = newvol;
-    m_volumestateTracker->sync(m_volume);
+    m_volumestateTracker->setVolume(m_volume);
+    emit stateChanged(m_volumestateTracker);
     char t[20];
     sprintf((char*)t, "volume %f\n", m_volume);
 //	qDebug() << __FUNCTION__<< relative << newvol << m_volume << t;
@@ -238,16 +242,16 @@ qreal MediaController::volume() const
 void MediaController::next()
 {
     if (!m_current) return;
-    const int track = m_current->currentTrack();
-    m_current->setCurrentTrack(track+1);
+    const int track = m_current->playlist()->currentTrack();
+    m_current->playlist()->setCurrentTrack(track+1);
     play();
 }
 
 void MediaController::previous()
 {
     if (!m_current) return;
-    const int track = m_current->currentTrack();
-    m_current->setCurrentTrack(track-1);
+    const int track = m_current->playlist()->currentTrack();
+    m_current->playlist()->setCurrentTrack(track-1);
     play();
 }
 
@@ -258,7 +262,7 @@ void MediaController::stop()
 
 void MediaController::pause()
 {
-    if (m_mediastate == PlayState)
+    if (m_mediastate == MediaStateTracker::PlayState)
         m_playerprocess->write("pause\n");
     else
         m_playerprocess->write("play\n");
@@ -266,28 +270,34 @@ void MediaController::pause()
 
 void MediaController::play()
 {
-    if (!m_current || m_current->currentTrack()<0) return;
+    if (!m_current || m_current->playlist()->currentTrack()<0) return;
     setPlaylist(m_current);
 
-    const QByteArray filename = m_current->currentFilename().toUtf8();
+    const QByteArray filename = m_current->playlist()->currentFilename().toUtf8();
     if (filename.isEmpty()) return;
-    m_playerprocess->write("select " + QByteArray::number(m_current->currentTrack()) +"\n");
+    m_playerprocess->write("select " + QByteArray::number(m_current->playlist()->currentTrack()) +"\n");
 }
 
 void MediaController::setTrackPosition ( qint64 pos, bool relative )
 {
-	// Don't allow seek if total runtime is not known
-	// Instead ask media process again for the total runtime
-	if (m_totaltime==0) {
-		m_playerprocess->write("getposition\n");
-		return;
-	}
-	//qDebug() << __FUNCTION__ << m_currenttime << m_totaltime;
-	
+    // Don't allow seek if total runtime is not known
+    // Instead ask media process again for the total runtime
+    if (m_totaltime==0) {
+        m_playerprocess->write("getposition\n");
+        return;
+    }
+    //qDebug() << __FUNCTION__ << m_currenttime << m_totaltime;
+
     if (relative) m_currenttime += pos;
     else m_currenttime = pos;
     m_playerprocess->write(QString(QLatin1String("position %1\n")).arg(m_currenttime).toAscii());
-    m_mediaStateTracker->sync();
+    Q_ASSERT(m_current);
+    m_mediaStateTracker->setPlaylistid(m_current->playlist()->id());
+    m_mediaStateTracker->setPosition(m_currenttime);
+    //m_mediaStateTracker->setState();
+    m_mediaStateTracker->setTotal(m_totaltime);
+    //m_mediaStateTracker->setTrack();
+    emit stateChanged(m_mediaStateTracker);
 }
 
 qint64 MediaController::getTrackPosition()
@@ -300,26 +310,24 @@ qint64 MediaController::getTrackDuration()
     return m_totaltime;
 }
 
-EnumMediaState MediaController::state()
+MediaStateTracker::EnumMediaState MediaController::state()
 {
     return m_mediastate;
 }
 
-void MediaController::addedProvider(AbstractServiceProvider* provider)
+void MediaController::addedPlaylist(ActorPlaylistServer* playlist)
 {
-    Playlist* p = qobject_cast<Playlist*>(provider);
-    if (!p) return;
-    if (p->name() == QLatin1String("favourite"))
-        m_favourite = p;
-
-    m_items.append(p);
+    if (playlist->playlist()->name() == QLatin1String("favourite"))
+        m_favourite = playlist;
+    m_items.append(playlist);
+    connect(playlist,SIGNAL(destroyed(QObject*)), SLOT(removedPlaylist(QObject*)));
 }
 
-void MediaController::removedProvider(AbstractServiceProvider* provider)
+void MediaController::removedPlaylist(QObject* p)
 {
-    Playlist* p = qobject_cast<Playlist*>(provider);
-    if (!p) return;
-    m_items.removeAll(p);
+    ActorPlaylistServer* playlist = qobject_cast<ActorPlaylistServer*>(p);
+    Q_ASSERT(playlist);
+    m_items.removeAll(playlist);
 }
 
 int MediaController::count()
@@ -340,9 +348,9 @@ void MediaController::setPAVolume(const QByteArray sink, double volume, bool rel
         m_playerprocess->write("pa_volume_relative " + sink + " " + QByteArray::number(volume*100) + "\n");
     else {
         m_playerprocess->write("pa_volume " + sink + " " + QByteArray::number(volume*100) + "\n");
-	}
+    }
 }
 void MediaController::updatefakepos() {
-	m_currenttime+=1000;
+    m_currenttime+=1000;
 }
 

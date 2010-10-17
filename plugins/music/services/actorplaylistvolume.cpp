@@ -18,17 +18,11 @@
 */
 
 #include "actorplaylistvolume.h"
-#include <RoomControlServer.h>
-#include "media/mediacontroller.h"
 
 ActorPlaylistVolume::ActorPlaylistVolume(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
-void ActorPlaylistVolume::execute()
-{
-    RoomControlServer::getMediaController()->setVolume(m_volume, m_relative);
-}
 qreal ActorPlaylistVolume::value() const {
     return m_volume;
 }

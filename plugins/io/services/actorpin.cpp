@@ -18,20 +18,10 @@
 */
 
 #include "actorpin.h"
-#include <RoomControlServer.h>
-#include <iocontroller.h>
 
 ActorPin::ActorPin(QObject* parent)
-: AbstractActor(parent)
+: AbstractServiceProvider(parent)
 {}
-
-void ActorPin::execute()
-{
-  if (m_value==PinToggle)
-    RoomControlServer::getIOController()->togglePin(m_pin);
-  else
-    RoomControlServer::getIOController()->setPin(m_pin,m_value);
-}
 
 unsigned int ActorPin::pin() const
 {

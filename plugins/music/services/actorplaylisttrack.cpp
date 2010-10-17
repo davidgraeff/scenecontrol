@@ -19,42 +19,9 @@
 
 #include "actorplaylisttrack.h"
 
-#include "RoomControlServer.h"
-#include "media/playlist.h"
-#include "media/mediacontroller.h"
-#include "media/mediacmds.h"
-
 ActorPlaylistTrack::ActorPlaylistTrack(QObject* parent)
-        : AbstractActor(parent)
+        :AbstractServiceProvider (parent)
 {
-}
-
-void ActorPlaylistTrack::execute()
-{
-    MediaController* mc = RoomControlServer::getMediaController();
-    // set playlist
-    if (m_playlistid.size())
-    {
-      mc->setPlaylistByID(m_playlistid);
-    }
-    // set track number
-    if (m_track != -1)
-    {
-        Playlist* p = mc->playlist();
-        if (!p) return;
-        p->setCurrentTrack(m_track);
-    }
-
-    if (m_state == PlayState)
-    {
-	mc->play();
-    } else if (m_state == PauseState)
-    {
-        mc->pause();
-    } else if (m_state == StopState)
-    {
-        mc->stop();
-    }
 }
 
 QString ActorPlaylistTrack::playlistid() const {

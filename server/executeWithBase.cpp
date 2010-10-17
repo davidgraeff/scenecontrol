@@ -23,13 +23,10 @@
 
 ExecuteWithBase::ExecuteWithBase(AbstractServiceProvider* base, QObject* parent) : QObject(parent), m_base(base) {}
 
-AbstractServiceProvider* ExecuteWithBase::baseService() {
+AbstractServiceProvider* ExecuteWithBase::base() {
     return m_base;
 }
 
-Collection* ExecuteWithBase::baseCollection() {
-    return qobject_cast<Collection*>(m_base);
-}
 ExecuteWithBase::~ExecuteWithBase() {
     delete m_base;
 }

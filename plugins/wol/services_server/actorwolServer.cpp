@@ -25,9 +25,9 @@ ServiceWOLExecute::ServiceWOLExecute(ServiceWOL* base, QObject* parent)
         : ExecuteService(base, parent) {}
 
 void ServiceWOLExecute::execute() {
-    ServiceWOL* service = qobject_cast<ServiceWOL*>(baseService());
-    Q_ASSERT(service);
-    QStringList parts = service->mac().split(QLatin1Char(':'));
+    ServiceWOL* s = service<ServiceWOL>();
+    Q_ASSERT(s);
+    QStringList parts = s->mac().split(QLatin1Char(':'));
     if (parts.size()!=6) return;
     QByteArray mac;
     for (int i=0;i<6;++i)
@@ -40,8 +40,8 @@ void ServiceWOLExecute::execute() {
     for (int i=0;i<16;++i)
         bytes.append(mac);
 
-    QUdpSocket s;
-    s.writeDatagram(bytes,QHostAddress::Broadcast,9);
+    QUdpSocket socket;
+    socket.writeDatagram(bytes,QHostAddress::Broadcast,9);
 }
 bool ServiceWOLExecute::checkcondition() {
     return true;

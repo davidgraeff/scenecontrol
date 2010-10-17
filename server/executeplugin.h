@@ -22,6 +22,7 @@
 #include <QObject>
 #include <QStringList>
 
+class AbstractServiceProvider;
 class AbstractStateTracker;
 class AbstractPlugin;
 class ExecuteWithBase;
@@ -35,6 +36,8 @@ public:
 	virtual AbstractPlugin* base() = 0;
 Q_SIGNALS:
 	void stateChanged(AbstractStateTracker*);
+	// evaluate "remove" and add to services if not existing
+	void pluginobjectChanged(ExecuteWithBase*);
 };
 Q_DECLARE_INTERFACE(ExecutePlugin, "com.roomcontrol.ServerPlugin/1.0")
 #endif // EXECUTEPLUGIN_H

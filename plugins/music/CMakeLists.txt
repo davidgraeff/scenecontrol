@@ -18,9 +18,9 @@ set(SRCS_BASE ${SRCS_BASE} ${SRCS_MOCS} plugin_base.cpp plugin.cpp)
 #server
 file(GLOB_RECURSE SRCS_SERVER services_server/*.cpp)
 file(GLOB_RECURSE SRCS_SERVER_H services_server/*.h)
-set(SRCS_SERVER_H ${SRCS_SERVER_H} plugin.h plugin_server.h ../../server/executeservice.h ../../server/executeplugin.h)
+set(SRCS_SERVER_H ${SRCS_SERVER_H} plugin.h plugin_server.h ../../server/executeservice.h ../../server/executeplugin.h mediacontroller.h)
 QT_WRAP_CPP(${PROJECT_NAME}_server SRCS_MOCS ${SRCS_SERVER_H})
-set(SRCS_SERVER ${SRCS_SERVER} ${SRCS_MOCS} plugin.cpp plugin_server.cpp ../../server/executeservice.cpp)
+set(SRCS_SERVER ${SRCS_SERVER} ${SRCS_MOCS} plugin.cpp plugin_server.cpp ../../server/executeservice.cpp mediacontroller.cpp)
 #QT4_AUTOMOC(${SRCS_SERVER}} ${Shared_SRCS})
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR} ../ ../../server)

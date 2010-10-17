@@ -19,18 +19,16 @@
 
 #ifndef ACTORPLAYLISTVOLUMESERVICEPROVIDER_H
 #define ACTORPLAYLISTVOLUMESERVICEPROVIDER_H
+#include <shared/abstractserviceprovider.h>
 
-#include "abstractactor.h"
-
-
-class ActorPlaylistVolume : public AbstractActor
+class ActorPlaylistVolume : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(qreal value READ value WRITE setValue);
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorPlaylistVolume(QObject* parent = 0);
-    virtual void execute();
+    virtual ProvidedTypes providedtypes(){return ActionType;}
     qreal value() const ;
     void setValue(qreal value) ;
     bool relative() const ;

@@ -76,6 +76,7 @@ private:
 public Q_SLOTS:
     void runProfile(const QString& id);
     void stopProfile(const QString& id) ;
+    void pluginobjectChanged(ExecuteWithBase* service);
 Q_SIGNALS:
     void systemStarted();
     void serviceSync(AbstractServiceProvider* p);

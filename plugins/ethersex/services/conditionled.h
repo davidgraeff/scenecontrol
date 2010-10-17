@@ -19,9 +19,9 @@
 
 #ifndef ConditionLed_h
 #define ConditionLed_h
-#include "abstractcondition.h"
+#include <shared/abstractserviceprovider.h>
 
-class ConditionLed : public AbstractCondition
+class ConditionLed : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int min READ max WRITE setMin);
@@ -30,7 +30,7 @@ class ConditionLed : public AbstractCondition
 
 public:
     ConditionLed(QObject* parent = 0);
-    virtual bool ok();
+    virtual ProvidedTypes providedtypes(){return ConditionType;}
     unsigned int channel() const;
     void setChannel(unsigned int value);
     unsigned int min() const;

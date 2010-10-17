@@ -22,7 +22,7 @@
 #include <ledcontroller.h>
 
 ActorLed::ActorLed(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
 void ActorLed::execute()

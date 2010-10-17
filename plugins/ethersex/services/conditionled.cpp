@@ -18,20 +18,10 @@
 */
 
 #include "conditionled.h"
-#include <RoomControlServer.h>
-#include <ledcontroller.h>
 
 ConditionLed::ConditionLed(QObject* parent)
-: AbstractCondition(parent)
+: AbstractServiceProvider(parent)
 {  
-}
-
-bool ConditionLed::ok()
-{
-  const unsigned int v = RoomControlServer::getLedController()->getChannel(m_channel);
-  if (v>m_max) return false;
-  if (v<m_min) return false;
-  return true;
 }
 
 unsigned int ConditionLed::channel() const

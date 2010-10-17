@@ -17,12 +17,11 @@
 
 */
 
-#include "conditionpin.h"
-#include <RoomControlServer.h>
+#include "conditionpinServer.h"
 #include <iocontroller.h>
 
 ConditionPin::ConditionPin(QObject* parent)
-: AbstractCondition(parent)
+: AbstractServiceProvider(parent)
 {  
 }
 

@@ -18,22 +18,8 @@
 */
 
 #include "actormute.h"
-#include <RoomControlServer.h>
-#include <media/mediacontroller.h>
 
 ActorMute::ActorMute(QObject* parent)
-        : AbstractActor(parent),m_mute(-1),m_volume(-1.0), m_relative(false)
+        : AbstractServiceProvider(parent),m_mute(-1),m_volume(-1.0), m_relative(false)
 {}
 
-void ActorMute::execute()
-{
-    if (m_mute==1)
-        RoomControlServer::getMediaController()->setPAMute(m_value.toAscii(),1);
-    else if (m_mute==0)
-        RoomControlServer::getMediaController()->setPAMute(m_value.toAscii(),0);
-	else if (m_mute==2)
-		RoomControlServer::getMediaController()->togglePAMute(m_value.toAscii());
-
-	if (m_volume>=0.0)
-		RoomControlServer::getMediaController()->setPAVolume(m_value.toAscii(),m_volume,m_relative);
-}

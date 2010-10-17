@@ -20,7 +20,7 @@
 #ifndef ACTORPINSERVICEPROVIDER_H
 #define ACTORPINSERVICEPROVIDER_H
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 enum ActorPinEnum
 {
@@ -30,7 +30,7 @@ enum ActorPinEnum
 };
 Q_ENUMS(ActorPinEnum);
 
-class ActorPin : public AbstractActor
+class ActorPin : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int pin READ pin WRITE setPin);

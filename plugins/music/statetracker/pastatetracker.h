@@ -19,7 +19,7 @@
 
 #ifndef PASTATETRACKER_H
 #define PASTATETRACKER_H
-#include "abstractstatetracker.h"
+#include <shared/abstractstatetracker.h>
 
 class PAStateTracker : public AbstractStateTracker
 {
@@ -28,7 +28,7 @@ class PAStateTracker : public AbstractStateTracker
 	Q_PROPERTY(double volume READ volume WRITE setVolume)
 	Q_PROPERTY(bool mute READ mute WRITE setMute)
 public:
-    PAStateTracker(const QString& sinkname, QObject* parent = 0);
+    PAStateTracker(QObject* parent = 0) : AbstractStateTracker(parent) {}
 	
 	const QString& sinkname() const {
 	    return m_sinkname;

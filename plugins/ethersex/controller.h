@@ -32,6 +32,7 @@
 Daten von ethersex abfragen und cachen
 */
 
+class CurtainStateTracker;
 class ChannelNameStateTracker;
 class AbstractStateTracker;
 class ChannelValueStateTracker;
@@ -40,6 +41,12 @@ struct udpstella_packet
     uint8_t type;    // see above
     uint8_t channel; // if port: pin
     uint8_t value;
+};
+
+struct udpcurtain_answer {
+    char id[7];
+    uint8_t position;
+    uint8_t max;
 };
 
 struct udpstella_answer {
@@ -58,18 +65,20 @@ enum stella_fade_function
   STELLA_GETALL = 255
 };
 
-class LedController : public QObject
+class Controller : public QObject
 {
     Q_OBJECT
 public:
     /**
     Daten von ethersex abrufen
     */
-    LedController();
-    ~LedController();
-    void connectTo(QHostAddress host, int udpport);
+    Controller();
+    ~Controller();
+    void connectTo(QHostAddress host, int udpLed, int udpCurtain);
     void refresh();
     QList<AbstractStateTracker*> getStateTracker();
+    void setCurtain(unsigned int position);
+    unsigned int getCurtain();
 
     int countChannels();
     QString getChannelName ( uint channel );
@@ -82,13 +91,18 @@ public:
 private:
     // LIGHTS //
     int m_udpport_lights;
-    QHostAddress m_host_lights;
+    QHostAddress m_host;
     QUdpSocket* m_udpSocket_lights;
     QTimer m_sendTimer_lights;
     QTimer m_tryReconnectTimer_lights;
     QMap<uint, udpstella_packet > m_queue_lights;
     QList<ChannelValueStateTracker*> m_channelvalues;
     QList<ChannelNameStateTracker*> m_channelnames;
+    // CURTAIN //
+    int m_udpport_curtain;
+    QUdpSocket* m_udpSocket_curtain;
+    QTimer m_tryReconnectTimer_curtain;
+    CurtainStateTracker* m_curtainStateTracker;
 private Q_SLOTS:
     // LIGHTS //
     void sendTimeout_lights();
@@ -97,8 +111,14 @@ private Q_SLOTS:
     void connected_lights();
     void error_lights(QAbstractSocket::SocketError);
     void reconnect_lights();
+    // CURTAIN //
+    void readyRead_curtain();
+    void disconnected_curtain();
+    void connected_curtain();
+    void error_curtain(QAbstractSocket::SocketError);
+    void reconnect_curtain();
 Q_SIGNALS:
-    void dataAvailable();
+    void stateChanged(AbstractStateTracker*);
 };
 
 #endif // LEDCONTROLLER_H

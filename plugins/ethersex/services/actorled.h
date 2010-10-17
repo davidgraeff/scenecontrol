@@ -19,18 +19,9 @@
 
 #ifndef ACTORLEDSERVICEPROVIDER_H
 #define ACTORLEDSERVICEPROVIDER_H
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
-enum ActorLedEnum
-{
-    ValueAbsolute,
-    ValueRelative,
-    ValueInverse,
-    ValueMultiplikator
-};
-Q_ENUMS(ActorLedEnum);
-
-class ActorLed : public AbstractActor
+class ActorLed : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
@@ -38,8 +29,18 @@ class ActorLed : public AbstractActor
     Q_PROPERTY(int assignment READ assignment WRITE setAssignment);
     Q_PROPERTY(int value READ value WRITE setValue);
 public:
+    enum ActorLedEnum
+    {
+        ValueAbsolute,
+        ValueRelative,
+        ValueInverse,
+        ValueMultiplikator
+    };
+    Q_ENUMS(ActorLedEnum);
     ActorLed(QObject* parent = 0);
-    virtual void execute();
+    virtual ProvidedTypes providedtypes() {
+        return ActionType;
+    }
     void setChannel(unsigned int channel);
     unsigned int channel() const;
     void setFadetype(unsigned int fadetype);

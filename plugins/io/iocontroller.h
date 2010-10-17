@@ -21,7 +21,7 @@
 #define IOCONTROLLER_H
 
 #include <QObject>
-#include "qextserialport/qextserialport.h"
+#include <shared/qextserialport.h>
 
 class AbstractStateTracker;
 class PinNameStateTracker;
@@ -40,7 +40,7 @@ public:
     void togglePin ( uint pin );
     bool getPin(unsigned int pin) const;
     int countPins();
-	void setLedState(bool state);
+    void setLedState(bool state);
     QList<AbstractStateTracker*> getStateTracker();
 private:
     QList<PinValueStateTracker*> m_values;
@@ -48,11 +48,11 @@ private:
     QByteArray m_buffer;
     void getPins();
     int m_pins;
-	QextSerialPort m_serial;
+    QextSerialPort m_serial;
 public slots:
     void readyRead();
 Q_SIGNALS:
-	void dataAvailable();
+    void stateChanged(AbstractStateTracker*);
 };
 
 #endif // IOCONTROLLER_H

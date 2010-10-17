@@ -19,15 +19,15 @@
 
 #ifndef ConditionCurtain_h
 #define ConditionCurtain_h
-#include "abstractcondition.h"
+#include <shared/abstractserviceprovider.h>
 
-class ConditionCurtain : public AbstractCondition
+class ConditionCurtain : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY ( unsigned int value READ value WRITE setValue );
 public:
     ConditionCurtain(QObject* parent = 0);
-    virtual bool ok();
+    virtual ProvidedTypes providedtypes(){return ConditionType;}
     unsigned int value() const;
     void setValue ( unsigned int v );
 private:

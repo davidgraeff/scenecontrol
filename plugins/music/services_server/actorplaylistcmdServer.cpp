@@ -17,46 +17,38 @@
 
 */
 
-#include "actorplaylistcmd.h"
+#include "actorplaylistcmdServer.h"
+#include <services/actorplaylistcmd.h>
+#include "plugin_server.h"
+#include "../mediacontroller.h"
 
-#include "RoomControlServer.h"
-#include "media/mediacontroller.h"
-#include "media/mediacmds.h"
+ActorPlaylistCmdServer::ActorPlaylistCmdServer(ActorPlaylistCmd* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 
-ActorPlaylistCmd::ActorPlaylistCmd(QObject* parent)
-        : AbstractActor(parent)
+void ActorPlaylistCmdServer::execute()
 {
-}
-
-void ActorPlaylistCmd::execute()
-{
-    MediaController* mc = RoomControlServer::getMediaController();
-    if (m_cmd == PlayCmd)
+    ActorPlaylistCmd* base = service<ActorPlaylistCmd>();
+    MediaController* mc = m_plugin->mediacontroller();
+    if (base->cmd() == ActorPlaylistCmd::PlayCmd)
     {
         mc->play();
-    } else if (m_cmd == PauseCmd)
+    } else if (base->cmd() == ActorPlaylistCmd::PauseCmd)
     {
         mc->pause();
-    } else if (m_cmd == StopCmd)
+    } else if (base->cmd() == ActorPlaylistCmd::StopCmd)
     {
         mc->stop();
-    } else if (m_cmd == NextCmd)
+    } else if (base->cmd() == ActorPlaylistCmd::NextCmd)
     {
         mc->next();
-    } else if (m_cmd == PrevCmd)
+    } else if (base->cmd() == ActorPlaylistCmd::PrevCmd)
     {
         mc->previous();
-    } else if (m_cmd == NextPlaylistCmd)
+    } else if (base->cmd() == ActorPlaylistCmd::NextPlaylistCmd)
     {
         mc->nextPlaylist();
-    } else if (m_cmd == PrevPlaylistCmd)
+    } else if (base->cmd() == ActorPlaylistCmd::PrevPlaylistCmd)
     {
         mc->previousPlaylist();
     }
 }
-int ActorPlaylistCmd::cmd() const {
-    return m_cmd;
-}
-void ActorPlaylistCmd::setCmd(int value) {
-    m_cmd = value;
-}
+

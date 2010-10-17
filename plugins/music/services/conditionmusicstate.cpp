@@ -18,17 +18,10 @@
 */
 
 #include "conditionmusicstate.h"
-#include <RoomControlServer.h>
-#include <media/mediacontroller.h>
 
 ConditionMusicState::ConditionMusicState(QObject* parent)
-: AbstractCondition(parent)
+: AbstractServiceProvider(parent)
 {  
-}
-
-bool ConditionMusicState::ok()
-{
-  return (m_value == RoomControlServer::getMediaController()->state());
 }
 
 int ConditionMusicState::value() const

@@ -27,7 +27,7 @@
 #include <QNetworkRequest>
 
 ActorCinema::ActorCinema(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {
 }
 

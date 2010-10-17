@@ -19,7 +19,7 @@
 
 #ifndef CurtainStateTracker_h
 #define CurtainStateTracker_h
-#include "abstractstatetracker.h"
+#include <shared/abstractstatetracker.h>
 
 class CurtainStateTracker : public AbstractStateTracker
 {

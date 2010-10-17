@@ -20,16 +20,16 @@
 #ifndef ACTORCURTAINSERVICEPROVIDER_H
 #define ACTORCURTAINSERVICEPROVIDER_H
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 
-class ActorCurtain : public AbstractActor
+class ActorCurtain : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int value READ value WRITE setValue);
 public:
     ActorCurtain(QObject* parent = 0);
-    virtual void execute();
+    virtual ProvidedTypes providedtypes(){return ActionType;}
     unsigned int value() const;
     void setValue(unsigned int value);
 private:

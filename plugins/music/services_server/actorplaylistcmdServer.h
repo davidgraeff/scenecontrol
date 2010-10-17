@@ -16,22 +16,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+#ifndef ActorPlaylistCmdServer_h
+#define ActorPlaylistCmdServer_h
+#include <executeservice.h>
 
-#ifndef ACTORPLAYLISTCMDSERVICEPROVIDER_H
-#define ACTORPLAYLISTCMDSERVICEPROVIDER_H
-#include "abstractactor.h"
-
-class ActorPlaylistCmd : public AbstractActor
+class ActorPlaylistCmd;
+class myPluginExecute;
+class ActorPlaylistCmdServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(int cmd READ cmd WRITE setCmd);
+  Q_OBJECT
 public:
-    ActorPlaylistCmd(QObject* parent = 0);
-    virtual void execute();
-    int cmd() const ;
-    void setCmd(int value) ;
+  ActorPlaylistCmdServer(ActorPlaylistCmd* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    int m_cmd;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ACTORPLAYLISTCMDSERVICEPROVIDER_H
+#endif // ActorPlaylistCmdServer_h

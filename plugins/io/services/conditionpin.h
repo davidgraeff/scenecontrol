@@ -19,16 +19,16 @@
 
 #ifndef ConditionPin_h
 #define ConditionPin_h
-#include "abstractcondition.h"
+#include <shared/abstractserviceprovider.h>
 
-class ConditionPin : public AbstractCondition
+class ConditionPin : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
     Q_PROPERTY(bool value READ value WRITE setValue);
 public:
     ConditionPin(QObject* parent = 0);
-    virtual bool ok();
+    virtual ProvidedTypes providedtypes(){return ConditionType;}
     unsigned int pin() const;
     void setPin(unsigned int value);
     bool value() const;

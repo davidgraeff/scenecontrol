@@ -17,48 +17,51 @@
 
 */
 
-#ifndef PLAYLISTCONTROLLER_H
-#define PLAYLISTCONTROLLER_H
+#ifndef PLAYLISTMEDIACONTROLLER_H
+#define PLAYLISTMEDIACONTROLLER_H
 #include <QAbstractListModel>
 #include <QStringList>
 #include <QUuid>
 #include <QTimer>
-#include "mediacmds.h"
+
 #include <QTcpSocket>
 #include <qprocess.h>
+#include "statetracker/mediastatetracker.h"
 
+class ExecuteWithBase;
+class myPluginExecute;
+class ActorPlaylistServer;
+class MusicVolumeStateTracker;
 class PAStateTracker;
 class VolumeStateTracker;
 class AbstractStateTracker;
 class MediaStateTracker;
 class AbstractServiceProvider;
 
-class Playlist;
-
 class MediaController : public QObject
 {
-  Q_OBJECT
-  public:
-    MediaController();
+    Q_OBJECT
+public:
+    MediaController(myPluginExecute* plugin);
     ~MediaController();
     int count();
     QList<AbstractStateTracker*> getStateTracker();
-    
-    /** 
+
+    /**
      * Do nothing if favourite playlist is already added (and activated)
      * else create a new playlist with the name "favourite"
      */
     void activateFavourite();
-    
+
     /**
      * Return current active playlist or 0 if no valid playlist set
      */
-    Playlist* playlist();
-    
+    ActorPlaylistServer* playlist();
+
     /**
      * Set active playlist. Resync object
      */
-    void setPlaylist(Playlist* current);
+    void setPlaylist(ActorPlaylistServer* current);
     /**
      * Set active playlist by using the id. Resync object
      */
@@ -76,9 +79,9 @@ class MediaController : public QObject
     void pause();
     void play();
 
-	void setPAMute(const QByteArray sink, bool mute);
-	void togglePAMute(const QByteArray sink);
-	void setPAVolume(const QByteArray sink, double volume, bool relative = false);
+    void setPAMute(const QByteArray sink, bool mute);
+    void togglePAMute(const QByteArray sink);
+    void setPAVolume(const QByteArray sink, double volume, bool relative = false);
 
     /**
      * Set track position. Does nothing if no active playlist. Resync object
@@ -87,25 +90,26 @@ class MediaController : public QObject
     qint64 getTrackPosition();
     qint64 getTrackDuration();
 
-    EnumMediaState state();
+    MediaStateTracker::EnumMediaState state();
 
     void setVolume(qreal newvol, bool relative = false);
     qreal volume() const;
-    
-  private:
- 	QMap<QByteArray, PAStateTracker*> m_paStateTrackers;
-    QList<Playlist*> m_items;
-    Playlist* m_current;
-    Playlist* m_favourite;
+
+private:
+    myPluginExecute* m_plugin;
+    QMap<QByteArray, PAStateTracker*> m_paStateTrackers;
+    QList<ActorPlaylistServer*> m_items;
+    ActorPlaylistServer* m_current;
+    ActorPlaylistServer* m_favourite;
     MediaStateTracker *m_mediaStateTracker;
-    VolumeStateTracker* m_volumestateTracker;
-	EnumMediaState m_mediastate;
-	qint64 m_currenttime;
-	qint64 m_totaltime;
-	qreal m_volume;
-	bool m_requestTotal;
-	QProcess* m_playerprocess;
-	QTimer m_fakepos;
+    MusicVolumeStateTracker* m_volumestateTracker;
+    MediaStateTracker::EnumMediaState m_mediastate;
+    qint64 m_currenttime;
+    qint64 m_totaltime;
+    qreal m_volume;
+    bool m_requestTotal;
+    QProcess* m_playerprocess;
+    QTimer m_fakepos;
 private Q_SLOTS:
     void slotreadyRead ();
     void slotconnected();
@@ -113,9 +117,12 @@ private Q_SLOTS:
     void sloterror(QProcess::ProcessError e);
     void updatefakepos();
     void readyReadStandardError() ;
-  public Q_SLOTS:
-    void addedProvider(AbstractServiceProvider* provider);
-    void removedProvider(AbstractServiceProvider* provider);
+    void removedPlaylist(QObject* p);
+public Q_SLOTS:
+    void addedPlaylist(ActorPlaylistServer* playlist);
+Q_SIGNALS:
+    void pluginobjectChanged(ExecuteWithBase*);
+    void stateChanged(AbstractStateTracker*);
 };
 
-#endif // PLAYLISTCONTROLLER_H
+#endif // PLAYLISTMEDIACONTROLLER_H

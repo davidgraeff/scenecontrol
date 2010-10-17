@@ -16,28 +16,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+#ifndef ActorPlaylistPositionServer_h
+#define ActorPlaylistPositionServer_h
+#include <executeservice.h>
 
-#ifndef ActorPlaylistPosition_h
-#define ActorPlaylistPosition_h
-
-#include "abstractactor.h"
-
-
-class ActorPlaylistPosition : public AbstractActor
+class ActorPlaylistPosition;
+class myPluginExecute;
+class ActorPlaylistPositionServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(qreal value READ value WRITE setValue);
-    Q_PROPERTY(bool relative READ relative WRITE setRelative);
+  Q_OBJECT
 public:
-    ActorPlaylistPosition(QObject* parent = 0);
-    virtual void execute();
-    qreal value() const ;
-    void setValue(qreal value) ;
-    bool relative() const ;
-    void setRelative(bool value) ;
+  ActorPlaylistPositionServer(ActorPlaylistPosition* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    qreal m_volume;
-    bool m_relative;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ActorPlaylistPosition_h
+#endif // ActorPlaylistPositionServer_h

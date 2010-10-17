@@ -22,7 +22,7 @@
 #include <curtaincontroller.h>
 
 ActorCurtain::ActorCurtain(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
 void ActorCurtain::execute()

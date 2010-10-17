@@ -22,7 +22,7 @@
 #include <ledcontroller.h>
 
 ActorLedName::ActorLedName(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
 void ActorLedName::execute()

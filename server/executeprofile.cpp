@@ -32,14 +32,14 @@ ExecuteCollection::~ExecuteCollection() {
 
 void ExecuteCollection::registerChild(ExecuteService* service) {
     m_childs_linked.insert(service);
-    if (service->baseService()->providedtypes().testFlag(AbstractServiceProvider::EventType))
+    if (service->base()->providedtypes().testFlag(AbstractServiceProvider::EventType))
         connect(service,SIGNAL(trigger()),SLOT(eventTriggered()));
 }
 
 void ExecuteCollection::removeChild(ExecuteService* service) {
     if (!m_childs_linked.contains(service)) return;
     m_childs_linked.remove(service);
-    if (service->baseService()->providedtypes().testFlag(AbstractServiceProvider::EventType))
+    if (service->base()->providedtypes().testFlag(AbstractServiceProvider::EventType))
         disconnect(service,SIGNAL(trigger()),this, SLOT(eventTriggered()));
 }
 
@@ -61,12 +61,12 @@ void ExecuteCollection::executiontimeout()
     m_executionTimer.start ( 1000* ( nextTimePoint-currentTimePoint ) );
 }
 void ExecuteCollection::run() {
-    if ( !baseCollection()->enabled() ) return;
+    if ( !service<Collection>()->enabled() ) return;
 
     // check conditions
     foreach ( ExecuteService* service, m_childs_linked )
     {
-        if (service->baseService()->providedtypes().testFlag ( AbstractServiceProvider::ConditionType ) && !service->checkcondition() )
+        if (service->base()->providedtypes().testFlag ( AbstractServiceProvider::ConditionType ) && !service->checkcondition() )
         {
             return;
         }
@@ -77,8 +77,8 @@ void ExecuteCollection::run() {
     m_actors_linked_map.clear();
     foreach ( ExecuteService* service, m_childs_linked )
     {
-        if ( service->baseService()->providedtypes().testFlag ( AbstractServiceProvider::ActionType ) )
-            m_actors_linked_map.insert ( service->baseService()->delay(), service );
+        if ( service->base()->providedtypes().testFlag ( AbstractServiceProvider::ActionType ) )
+            m_actors_linked_map.insert ( service->base()->delay(), service );
     }
     if ( m_actors_linked_map.isEmpty() ) return;
     m_actors_delays = m_actors_linked_map.uniqueKeys();

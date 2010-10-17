@@ -17,26 +17,13 @@
 
 */
 
-#include "conditionmusicstate.h"
-#include <RoomControlServer.h>
-#include <media/mediacontroller.h>
+#include "conditionmusicstateServer.h"
+#include <services/conditionmusicstate.h>
+#include <plugin_server.h>
+#include "../mediacontroller.h"
 
-ConditionMusicState::ConditionMusicState(QObject* parent)
-: AbstractCondition(parent)
-{  
+ConditionMusicStateServer::ConditionMusicStateServer(ConditionMusicState* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+bool ConditionMusicStateServer::checkcondition() {
+    return (service<ConditionMusicState>()->value() == m_plugin->mediacontroller()->state());
 }
 
-bool ConditionMusicState::ok()
-{
-  return (m_value == RoomControlServer::getMediaController()->state());
-}
-
-int ConditionMusicState::value() const
-{
-    return m_value;
-}
-
-void ConditionMusicState::setValue(int value)
-{
-    m_value = value;
-}

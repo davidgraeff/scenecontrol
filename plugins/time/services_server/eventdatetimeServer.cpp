@@ -37,7 +37,7 @@ void EventDateTimeServer::dataUpdate()
 
 void EventDateTimeServer::timeout()
 {
-  EventDateTime* base = (EventDateTime*) baseService();
+  EventDateTime* base = service<EventDateTime>();
     const int sec = QDateTime::currentDateTime().secsTo (QDateTime::fromString(base->datetime(),Qt::ISODate));
 
     if (sec > 86400) {

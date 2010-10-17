@@ -47,6 +47,7 @@ ServiceController::ServiceController () : m_EventController(new EventController(
         {
             qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
             connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
+            connect(plugin,SIGNAL(pluginobjectChanged(ExecuteWithBase*)),SLOT(pluginobjectChanged(ExecuteWithBase*)));
             m_plugins.append ( plugin );
             QStringList provides = plugin->base()->registerServices();
             foreach ( QString provide, provides )
@@ -185,7 +186,7 @@ bool ServiceController::generate ( const QVariantMap& json )
     else
     {
         updateService(service, json, true);
-        m_services.insert ( service->baseService()->id(), service );
+        m_services.insert ( service->base()->id(), service );
         m_servicesList.append ( service );
     }
     return true;
@@ -206,7 +207,7 @@ void ServiceController::updateService(ExecuteWithBase* service, const QVariantMa
         {
             nid = QUuid::createUuid().toString().remove ( QLatin1Char ( '{' ) ).remove ( QLatin1Char ( '}' ) );
         };
-        service->baseService()->setId ( nid );
+        service->base()->setId ( nid );
     }
 
     if (exservice) {
@@ -216,18 +217,30 @@ void ServiceController::updateService(ExecuteWithBase* service, const QVariantMa
     saveToDisk ( service );
 }
 
+void ServiceController::pluginobjectChanged(ExecuteWithBase* service) {
+    if ( service->property("remove").isValid() )
+    {
+        removeFromDisk ( service );
+    }
+    else if (!m_services.contains ( service->base()->id() ))
+    {
+        m_services.insert ( service->base()->id(), service );
+        m_servicesList.append ( service );
+    }
+}
+
 void ServiceController::removeFromDisk ( ExecuteWithBase* service )
 {
     // set dynamic property remove to true
     service->setProperty ( "remove",true );
     // propagate to all clients, so that those remove this provider, too.
-    emit serviceSync ( service->baseService() );
+    emit serviceSync ( service->base() );
 
-    if ( !QFile::remove ( serviceFilename ( service->baseService() ) ) )
-        qWarning() << "Couldn't remove file" << serviceFilename ( service->baseService() );
+    if ( !QFile::remove ( serviceFilename ( service->base() ) ) )
+        qWarning() << "Couldn't remove file" << serviceFilename ( service->base() );
 
     // collection: remove all childs
-    if (service->baseService()->type() == Collection::staticMetaObject.className()) {
+    if (service->base()->type() == Collection::staticMetaObject.className()) {
         // find executecollection
         ExecuteCollection* p = qobject_cast<ExecuteCollection*>(service);
         Q_ASSERT(p);
@@ -241,7 +254,7 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* service )
         Q_ASSERT(exservice);
         removeFromExecuteProfiles ( exservice );
     }
-    m_services.remove(service->baseService()->id());
+    m_services.remove(service->base()->id());
     m_servicesList.removeAll(service);
     service->deleteLater();
 }
@@ -260,7 +273,7 @@ void ServiceController::saveToDisk ( ExecuteWithBase* service )
         return;
     }
 
-    const QString path = serviceFilename ( service->baseService() );
+    const QString path = serviceFilename ( service->base() );
 
     QFile file ( path );
     if ( !file.open ( QIODevice::ReadWrite | QIODevice::Truncate ) )
@@ -280,7 +293,7 @@ void ServiceController::saveToDisk ( ExecuteWithBase* service )
         file.write ( json );
     }
     file.close();
-    emit serviceSync ( service->baseService() );
+    emit serviceSync ( service->base() );
 }
 
 QString ServiceController::serviceFilename ( AbstractServiceProvider* service )
@@ -300,16 +313,16 @@ void ServiceController::refresh()
 
 void ServiceController::addToExecuteProfiles ( ExecuteService* service )
 {
-    if (service->baseService()->parentid().isEmpty()) return;
-    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(service->baseService()->parentid()));
+    if (service->base()->parentid().isEmpty()) return;
+    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(service->base()->parentid()));
     if (!p) return;
     p->registerChild ( service );
 }
 
 void ServiceController::removeFromExecuteProfiles ( ExecuteService* service )
 {
-    if (service->baseService()->parentid().isEmpty()) return;
-    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(service->baseService()->parentid()));
+    if (service->base()->parentid().isEmpty()) return;
+    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(service->base()->parentid()));
     if (!p) return;
     p->removeChild(service);
 }
@@ -329,3 +342,4 @@ void ServiceController::stopProfile(const QString& id) {
 void ServiceController::setMode(const QString& mode) {
     m_mode = mode;
 }
+

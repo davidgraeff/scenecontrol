@@ -18,17 +18,11 @@
 */
 
 #include "actorplaylistposition.h"
-#include <RoomControlServer.h>
-#include <media/mediacontroller.h>
 
 ActorPlaylistPosition::ActorPlaylistPosition(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
-void ActorPlaylistPosition::execute()
-{
-    RoomControlServer::getMediaController()->setTrackPosition(m_volume, m_relative);
-}
 qreal ActorPlaylistPosition::value() const {
     return m_volume;
 }

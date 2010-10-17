@@ -16,32 +16,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+#ifndef ActorPlaylistTrackServer_h
+#define ActorPlaylistTrackServer_h
+#include <executeservice.h>
 
-#ifndef ActorPlaylistTrack_h
-#define ActorPlaylistTrack_h
-#include "abstractactor.h"
-
-class ActorPlaylistTrack : public AbstractActor
+class ActorPlaylistTrack;
+class myPluginExecute;
+class ActorPlaylistTrackServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(QString playlistid READ playlistid WRITE setPlaylistID);
-    Q_PROPERTY(int track READ track WRITE setTrack);
-    Q_PROPERTY(int state READ state WRITE setState);
+  Q_OBJECT
 public:
-    ActorPlaylistTrack(QObject* parent = 0);
-    virtual void execute();
-    
-    QString playlistid() const;
-    void setPlaylistID(QString playlistid);
-    int track() const;
-    void setTrack(int value);
-    int state() const;
-    void setState(int value);
-    
+  ActorPlaylistTrackServer(ActorPlaylistTrack* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    QString m_playlistid;
-    int m_track;
-    int m_state;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ActorPlaylistTrack_h
+#endif // ActorPlaylistTrackServer_h

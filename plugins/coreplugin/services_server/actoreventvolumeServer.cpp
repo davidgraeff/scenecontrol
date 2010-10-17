@@ -28,7 +28,7 @@ ActorEventVolumeServer::ActorEventVolumeServer(ActorEventVolume* base, CorePlugi
 
 void ActorEventVolumeServer::execute()
 {
-    ActorEventVolume* base = (ActorEventVolume*)baseService();
+    ActorEventVolume* base = service<ActorEventVolume>();
     m_plugin->serviceController()->eventcontroller()->setVolume(base->volume()/100.0,base->relative());
 }
 

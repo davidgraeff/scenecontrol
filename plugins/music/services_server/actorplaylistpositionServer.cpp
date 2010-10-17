@@ -17,28 +17,14 @@
 
 */
 
-#include "actorplaylistposition.h"
-#include <RoomControlServer.h>
-#include <media/mediacontroller.h>
+#include "actorplaylistpositionServer.h"
+#include <plugin_server.h>
+#include <services/actorplaylistposition.h>
+#include "../mediacontroller.h"
 
-ActorPlaylistPosition::ActorPlaylistPosition(QObject* parent)
-        : AbstractActor(parent)
-{}
-
-void ActorPlaylistPosition::execute()
-{
-    RoomControlServer::getMediaController()->setTrackPosition(m_volume, m_relative);
-}
-qreal ActorPlaylistPosition::value() const {
-    return m_volume;
-}
-void ActorPlaylistPosition::setValue(qreal value) {
-    m_volume = value;
-}
-bool ActorPlaylistPosition::relative() const {
-    return m_relative;
-}
-void ActorPlaylistPosition::setRelative(bool value) {
-    m_relative = value;
+ActorPlaylistPositionServer::ActorPlaylistPositionServer(ActorPlaylistPosition* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+void ActorPlaylistPositionServer::execute() {
+  ActorPlaylistPosition* base = service<ActorPlaylistPosition>();
+    m_plugin->mediacontroller()->setTrackPosition(base->value(), base->relative());
 }
 

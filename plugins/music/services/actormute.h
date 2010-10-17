@@ -20,54 +20,55 @@
 #ifndef ActorMute_h
 #define ActorMute_h
 
-#include "abstractactor.h"
+#include <shared/abstractserviceprovider.h>
 
 
-class ActorMute : public AbstractActor
+class ActorMute : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString value READ value WRITE setValue)
-	Q_PROPERTY(int mute READ mute WRITE setMute)
-	Q_PROPERTY(double volume READ volume WRITE setVolume)
-	Q_PROPERTY(bool relative READ relative WRITE setRelative)
+    Q_PROPERTY(int mute READ mute WRITE setMute)
+    Q_PROPERTY(double volume READ volume WRITE setVolume)
+    Q_PROPERTY(bool relative READ relative WRITE setRelative)
 public:
     ActorMute(QObject* parent = 0);
-    virtual void execute();
-    
+    virtual ProvidedTypes providedtypes() {
+        return ActionType;
+    }
     const QString& value() const {
         return m_value;
     }
     void setValue( const QString& v ) {
         m_value = v;
     }
-	int mute() const {
-	    return m_mute;
-	}
-	
-	void setMute( int m ) {
-	    m_mute = m;
-	}
-	
-	qreal volume() const {
-	    return m_volume;
-	}
-	
-	void setVolume( qreal v ) {
-	    m_volume = v;
-	}
-	
-	bool relative() const {
-	    return m_relative;
-	}
-	
-	void setRelative( bool r ) {
-	    m_relative = r;
-	}
+    int mute() const {
+        return m_mute;
+    }
+
+    void setMute( int m ) {
+        m_mute = m;
+    }
+
+    qreal volume() const {
+        return m_volume;
+    }
+
+    void setVolume( qreal v ) {
+        m_volume = v;
+    }
+
+    bool relative() const {
+        return m_relative;
+    }
+
+    void setRelative( bool r ) {
+        m_relative = r;
+    }
 private:
     QString m_value;
     int m_mute;
-	qreal m_volume;
-	bool m_relative;
+    qreal m_volume;
+    bool m_relative;
 };
 
 #endif // ActorMute_h

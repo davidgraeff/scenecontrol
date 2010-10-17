@@ -20,10 +20,10 @@
 #ifndef ActorCinemaPosition_h
 #define ActorCinemaPosition_h
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 
-class ActorCinemaPosition : public AbstractActor
+class ActorCinemaPosition : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(qreal value READ value WRITE setValue);

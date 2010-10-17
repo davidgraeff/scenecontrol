@@ -18,18 +18,10 @@
 */
 
 #include "conditionpin.h"
-#include <RoomControlServer.h>
-#include <iocontroller.h>
 
 ConditionPin::ConditionPin(QObject* parent)
-: AbstractCondition(parent)
+: AbstractServiceProvider(parent)
 {  
-}
-
-bool ConditionPin::ok()
-{
-  bool v = RoomControlServer::getIOController()->getPin(m_pin);
-  return (v == m_value);
 }
 
 unsigned int ConditionPin::pin() const

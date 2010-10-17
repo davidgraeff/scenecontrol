@@ -20,17 +20,17 @@
 #ifndef ACTORLEDNAMESERVICEPROVIDER_H
 #define ACTORLEDNAMESERVICEPROVIDER_H
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 
-class ActorLedName : public AbstractActor
+class ActorLedName : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString ledname READ ledname WRITE setLedname);
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
   public:
     ActorLedName(QObject* parent = 0);
-    virtual void execute();
+    virtual ProvidedTypes providedtypes(){return ActionType;}
     QString ledname() const;
     void setLedname(const QString& ledname);
     unsigned int channel() const;

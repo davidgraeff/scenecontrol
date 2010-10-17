@@ -18,71 +18,66 @@
 */
 
 #include "playlist.h"
-#include <QSettings>
-#include <qfileinfo.h>
-#include <QUuid>
 
-Playlist::Playlist(QObject* parent) :
-        AbstractServiceProvider(parent), m_currentposition(0), m_changed(false)
+ActorPlaylist::ActorPlaylist(QObject* parent) :
+        AbstractServiceProvider(parent), m_currentposition(0)
 {}
 
-Playlist::~Playlist()
-{}
 
-void Playlist::setName ( QString name )
+void ActorPlaylist::setName ( QString name )
 {
     m_name = name;
 }
 
-QString Playlist::name() const
+QString ActorPlaylist::name() const
 {
     return m_name;
 }
 
-QStringList Playlist::files() const
+QStringList ActorPlaylist::files() const
 {
     return m_files;
 }
 
-void Playlist::setFiles ( const QStringList& files )
+void ActorPlaylist::setFiles ( const QStringList& files )
 {
     m_files = files;
 }
 
-QStringList Playlist::titles() const
+QStringList ActorPlaylist::titles() const
 {
     return m_titles;
 }
 
-void Playlist::setTitles ( const QStringList& titles )
+void ActorPlaylist::setTitles ( const QStringList& titles )
 {
     m_titles = titles;
 }
 
-void Playlist::setCurrentTrack ( int index )
+void ActorPlaylist::setCurrentTrack ( int index )
 {
     if (index<0) index = m_files.size()-1;
     else if (index>=m_files.size()) index=0;
     m_currentposition = index;
 }
 
-int Playlist::currentTrack() const
+int ActorPlaylist::currentTrack() const
 {
     return m_currentposition;
 }
 
-QString Playlist::currentFilename() const
+QString ActorPlaylist::currentFilename() const
 {
     return getFilename(m_currentposition);
 }
 
-QString Playlist::getFilename(int index) const
+QString ActorPlaylist::getFilename(int index) const
 {
     if (index<0 || index >= m_files.size()) return QString();
     return m_files.at(index);
 }
 
-int Playlist::size() const
+int ActorPlaylist::size() const
 {
     return m_files.size();
 }

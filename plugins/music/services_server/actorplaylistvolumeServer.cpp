@@ -17,28 +17,15 @@
 
 */
 
-#include "actorplaylistvolume.h"
-#include <RoomControlServer.h>
-#include "media/mediacontroller.h"
+#include "actorplaylistvolumeServer.h"
+#include <services/actorplaylistvolume.h>
+#include <plugin_server.h>
+#include "../mediacontroller.h"
 
-ActorPlaylistVolume::ActorPlaylistVolume(QObject* parent)
-        : AbstractActor(parent)
-{}
+ActorPlaylistVolumeServer::ActorPlaylistVolumeServer(ActorPlaylistVolume* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 
-void ActorPlaylistVolume::execute()
-{
-    RoomControlServer::getMediaController()->setVolume(m_volume, m_relative);
-}
-qreal ActorPlaylistVolume::value() const {
-    return m_volume;
-}
-void ActorPlaylistVolume::setValue(qreal value) {
-    m_volume = value;
-}
-bool ActorPlaylistVolume::relative() const {
-    return m_relative;
-}
-void ActorPlaylistVolume::setRelative(bool value) {
-    m_relative = value;
+void ActorPlaylistVolumeServer::execute() {
+  ActorPlaylistVolume* base = service<ActorPlaylistVolume>();
+    m_plugin->mediacontroller()->setVolume(base->value(), base->relative());
 }
 

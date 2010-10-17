@@ -19,15 +19,15 @@
 
 #ifndef ConditionMusicState_h
 #define ConditionMusicState_h
-#include "abstractcondition.h"
+#include <shared/abstractserviceprovider.h>
 
-class ConditionMusicState : public AbstractCondition
+class ConditionMusicState : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(int value READ value WRITE setValue);
 public:
     ConditionMusicState(QObject* parent = 0);
-    virtual bool ok();
+    virtual ProvidedTypes providedtypes(){return ConditionType;}
     int value() const;
     void setValue(int value);
 private:

@@ -19,25 +19,41 @@
 
 #ifndef MediaStateTracker_h
 #define MediaStateTracker_h
-#include "abstractstatetracker.h"
-#include "media/mediacmds.h"
+#include <shared/abstractstatetracker.h>
 
 class MediaStateTracker : public AbstractStateTracker
 {
-    Q_OBJECT
-    Q_PROPERTY(QString playlistid READ playlistid);
-    Q_PROPERTY(qint64 position READ position);
-    Q_PROPERTY(qint64 total READ total);
-    Q_PROPERTY(int track READ track);
-    Q_PROPERTY(int state READ state);
+	Q_OBJECT
+	Q_PROPERTY(QString playlistid READ playlistid WRITE setPlaylistid);
+	Q_PROPERTY(qint64 position READ position WRITE setPosition);
+	Q_PROPERTY(qint64 total READ total WRITE setTotal);
+	Q_PROPERTY(int track READ track WRITE setTrack);
+	Q_PROPERTY(MediaStateTracker::EnumMediaState state READ state WRITE setState);
 public:
-    MediaStateTracker(QObject* parent = 0);
-    QString playlistid() const;
-    qint64 position() const;
-    qint64 total() const;
-    int state();
-    int track() const;
+    enum EnumMediaState
+    {
+        PlayState,
+        PauseState,
+        StopState
+    };
+    Q_ENUMS(EnumMediaState);
 
+	MediaStateTracker(QObject* parent = 0) : AbstractStateTracker(parent) {}
+	QString playlistid() { return m_playlistid; }
+	void setPlaylistid(QString playlistid) {m_playlistid = playlistid;}
+	qint64 position() { return m_position; }
+	void setPosition(qint64 position) {m_position = position;}
+	qint64 total() { return m_total; }
+	void setTotal(qint64 total) {m_total = total;}
+	int track() { return m_track; }
+	void setTrack(int track) {m_track = track;}
+	MediaStateTracker::EnumMediaState state() { return m_state; }
+	void setState(MediaStateTracker::EnumMediaState state) {m_state = state;}
+private:
+	QString m_playlistid;
+	qint64 m_position;
+	qint64 m_total;
+	int m_track;
+	MediaStateTracker::EnumMediaState m_state;
 };
-
-#endif // MediaStateTracker_h
+#endif //MediaStateTracker_h

@@ -22,7 +22,7 @@
 #include <iocontroller.h>
 
 ActorPinName::ActorPinName(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
 
 void ActorPinName::execute()

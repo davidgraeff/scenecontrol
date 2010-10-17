@@ -19,19 +19,48 @@
 
 #ifndef ACTORPLAYLISTCMDSERVICEPROVIDER_H
 #define ACTORPLAYLISTCMDSERVICEPROVIDER_H
-#include "abstractactor.h"
+#include <shared/abstractserviceprovider.h>
 
-class ActorPlaylistCmd : public AbstractActor
+class ActorPlaylistCmd : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(int cmd READ cmd WRITE setCmd);
+    Q_PROPERTY(ActorPlaylistCmd::EnumMediaCmd cmd READ cmd WRITE setCmd);
 public:
+enum EnumMediaCmd
+{
+    PlayCmd,
+    StopCmd,
+    PauseCmd,
+    NextCmd,
+    PrevCmd,
+    NextPlaylistCmd,
+    PrevPlaylistCmd,
+    InfoCmd,
+    AspectRatioCmd,
+    NextSubtitleCmd,
+    NextLanguageCmd,
+    NavigationUpCmd,
+    NavigationDownCmd,
+    NavigationLeftCmd,
+    NavigationRightCmd,
+    NavigationBackCmd,
+    NavigationOKCmd,
+    NavigationHomeCmd,
+    NavigationCloseCmd,
+    NavigationContextMenuCmd,
+    FastForwardCmd,
+    FastRewindCmd
+};
+Q_ENUMS(EnumMediaCmd);
+
     ActorPlaylistCmd(QObject* parent = 0);
-    virtual void execute();
-    int cmd() const ;
-    void setCmd(int value) ;
+    virtual ProvidedTypes providedtypes() {
+        return ActionType;
+    }
+    ActorPlaylistCmd::EnumMediaCmd cmd() const ;
+    void setCmd(ActorPlaylistCmd::EnumMediaCmd value) ;
 private:
-    int m_cmd;
+    ActorPlaylistCmd::EnumMediaCmd m_cmd;
 };
 
 #endif // ACTORPLAYLISTCMDSERVICEPROVIDER_H

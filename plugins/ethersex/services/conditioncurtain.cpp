@@ -18,18 +18,10 @@
 */
 
 #include "conditioncurtain.h"
-#include <RoomControlServer.h>
-#include <curtaincontroller.h>
 
 ConditionCurtain::ConditionCurtain(QObject* parent)
-: AbstractCondition(parent)
+: AbstractServiceProvider(parent)
 {  
-}
-
-bool ConditionCurtain::ok()
-{
-  unsigned int v = RoomControlServer::getCurtainController()->getCurtain();
-  return (v == m_value);
 }
 
 void ConditionCurtain::setValue ( unsigned int v )

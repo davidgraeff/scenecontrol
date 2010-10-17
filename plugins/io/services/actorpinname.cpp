@@ -18,17 +18,10 @@
 */
 
 #include "actorpinname.h"
-#include <RoomControlServer.h>
-#include <iocontroller.h>
 
 ActorPinName::ActorPinName(QObject* parent)
-        : AbstractActor(parent)
+        : AbstractServiceProvider(parent)
 {}
-
-void ActorPinName::execute()
-{
-    RoomControlServer::getIOController()->setPinName(m_pin,m_pinname);
-}
 
 unsigned int ActorPinName::pin() const
 {

@@ -17,23 +17,23 @@
 
 */
 
-#ifndef VOLUMESTATETRACKER_H
-#define VOLUMESTATETRACKER_H
-#include "abstractstatetracker.h"
+#ifndef MusicVolumeStateTracker_h
+#define MusicVolumeStateTracker_h
+#include <shared/abstractstatetracker.h>
 
-class VolumeStateTracker : public AbstractStateTracker
+class MusicVolumeStateTracker : public AbstractStateTracker
 {
     Q_OBJECT
-    Q_PROPERTY(int track READ track);
-    Q_PROPERTY(double volume READ volume);
+    Q_PROPERTY(double volume READ volume WRITE setVolume);
 public:
-    VolumeStateTracker(int track, QObject* parent = 0);
-    double volume() const;
-    int track() const;
-	void sync(qreal volume) ;
+    MusicVolumeStateTracker(QObject* parent = 0) : AbstractStateTracker(parent) {}
+    double volume() {
+        return m_volume;
+    }
+    void setVolume(double volume) {
+        m_volume = volume;
+    }
 private:
-	int m_track;
-	double m_volume;
+    double m_volume;
 };
-
-#endif // VOLUMESTATETRACKER_H
+#endif //MusicVolumeStateTracker_h

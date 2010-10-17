@@ -20,10 +20,10 @@
 #ifndef ACTORCINEMASERVICEPROVIDER_H
 #define ACTORCINEMASERVICEPROVIDER_H
 
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 class QNetworkAccessManager;
 #include <QNetworkRequest>
-class ActorCinema : public AbstractActor
+class ActorCinema : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(int cmd READ cmd WRITE setCmd);

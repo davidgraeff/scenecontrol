@@ -19,44 +19,12 @@
 
 #include "actorplaylistcmd.h"
 
-#include "RoomControlServer.h"
-#include "media/mediacontroller.h"
-#include "media/mediacmds.h"
-
 ActorPlaylistCmd::ActorPlaylistCmd(QObject* parent)
-        : AbstractActor(parent)
-{
-}
+        : AbstractServiceProvider(parent) {}
 
-void ActorPlaylistCmd::execute()
-{
-    MediaController* mc = RoomControlServer::getMediaController();
-    if (m_cmd == PlayCmd)
-    {
-        mc->play();
-    } else if (m_cmd == PauseCmd)
-    {
-        mc->pause();
-    } else if (m_cmd == StopCmd)
-    {
-        mc->stop();
-    } else if (m_cmd == NextCmd)
-    {
-        mc->next();
-    } else if (m_cmd == PrevCmd)
-    {
-        mc->previous();
-    } else if (m_cmd == NextPlaylistCmd)
-    {
-        mc->nextPlaylist();
-    } else if (m_cmd == PrevPlaylistCmd)
-    {
-        mc->previousPlaylist();
-    }
-}
-int ActorPlaylistCmd::cmd() const {
+ActorPlaylistCmd::EnumMediaCmd ActorPlaylistCmd::cmd() const {
     return m_cmd;
 }
-void ActorPlaylistCmd::setCmd(int value) {
+void ActorPlaylistCmd::setCmd(ActorPlaylistCmd::EnumMediaCmd value) {
     m_cmd = value;
 }

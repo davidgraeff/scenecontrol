@@ -19,7 +19,7 @@
 
 #ifndef PINNAMESTATETRACKER_H
 #define PINNAMESTATETRACKER_H
-#include "abstractstatetracker.h"
+#include <shared/abstractstatetracker.h>
 
 class PinNameStateTracker : public AbstractStateTracker
 {

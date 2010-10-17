@@ -17,23 +17,38 @@
 
 */
 
-#ifndef ACTORCURTAINSERVICEPROVIDER_H
-#define ACTORCURTAINSERVICEPROVIDER_H
+#ifndef PLAYLISTServer_H
+#define PLAYLISTServer_H
 
-#include "abstractactor.h"
+#include <QObject>
+#include <QVariantMap>
+#include <executeservice.h>
 
-
-class ActorCurtain : public AbstractActor
+class ActorPlaylist;
+class myPluginExecute;
+class ActorPlaylist;
+class ActorPlaylistServer : public ExecuteService
 {
     Q_OBJECT
-    Q_PROPERTY(unsigned int value READ value WRITE setValue);
 public:
-    ActorCurtain(QObject* parent = 0);
-    virtual void execute();
-    unsigned int value() const;
-    void setValue(unsigned int value);
-private:
-    unsigned int m_value;
+    ActorPlaylistServer(ActorPlaylist* base, myPluginExecute* plugin, QObject* parent = 0);
+    virtual bool checkcondition(){return true;}
+    virtual void dataUpdate() {
+        m_changed=true;
+    }
+    virtual void execute(){}
+
+    bool hasChanged() {
+        return m_changed;
+    }
+    void setChanged(bool changed) {
+        m_changed=changed;
+    }
+    ActorPlaylist* playlist() ;
+protected:
+    bool m_changed;
+    ActorPlaylist* m_playlist;
+    myPluginExecute* m_plugin;
 };
 
-#endif // ACTORCURTAINSERVICEPROVIDER_H
+#endif // PLAYLIST_H

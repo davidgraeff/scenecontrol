@@ -22,9 +22,10 @@
 
 #include <QObject>
 #include <QVariantMap>
-#include "abstractserviceprovider.h"
+#include "shared/abstractserviceprovider.h"
+#include <QStringList>
 
-class Playlist : public AbstractServiceProvider
+class ActorPlaylist : public AbstractServiceProvider
 {
   Q_OBJECT
   Q_PROPERTY(QString name READ name WRITE setName);
@@ -32,30 +33,25 @@ class Playlist : public AbstractServiceProvider
   Q_PROPERTY(QStringList titles READ titles WRITE setTitles);
   Q_PROPERTY(int currentTrack READ currentTrack WRITE setCurrentTrack);
   public:
-    Playlist(QObject* parent = 0);
-    ~Playlist();
-	virtual void newvalues() {AbstractServiceProvider::newvalues();m_changed=true;}
-
+    ActorPlaylist(QObject* parent = 0);
+    virtual ProvidedTypes providedtypes(){return NoneType;}
     QString name() const;
     QStringList files() const;
     QStringList titles() const;
     int currentTrack() const;
-    QString currentFilename() const;
     void setName ( QString name );
     void setFiles(const QStringList& files);
     void setTitles(const QStringList& titles);
     void setCurrentTrack(int index);
 
+    QString currentFilename() const;
     QString getFilename(int index) const;
     int size() const;
-    bool hasChanged(){return m_changed; }
-    void setChanged(bool changed){m_changed=changed;}
   protected:
     QString m_name;
     QStringList m_files;
     QStringList m_titles;
     int m_currentposition;
-	bool m_changed;
 };
 
 #endif // PLAYLIST_H

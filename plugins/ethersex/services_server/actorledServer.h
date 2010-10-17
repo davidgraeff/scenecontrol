@@ -19,7 +19,7 @@
 
 #ifndef ACTORLEDSERVICEPROVIDER_H
 #define ACTORLEDSERVICEPROVIDER_H
-#include "abstractactor.h"
+#include "shared/abstractserviceprovider.h"
 
 enum ActorLedEnum
 {
@@ -30,7 +30,7 @@ enum ActorLedEnum
 };
 Q_ENUMS(ActorLedEnum);
 
-class ActorLed : public AbstractActor
+class ActorLed : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
