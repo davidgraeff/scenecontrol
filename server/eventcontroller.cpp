@@ -40,7 +40,7 @@ EventController::EventController()
     m_audioPath = Phonon::createPath ( m_eventMedia, m_eventOutput );
     connect(m_eventMedia,SIGNAL(stateChanged(Phonon::State,Phonon::State)),
             SLOT(stateChanged(Phonon::State,Phonon::State)));
-    connect(m_eventOutput,SIGNAL(volumeChanged(qreal)),SLOT(volumeChanged(qreal)));
+    connect(m_eventOutput,SIGNAL(volumeChanged(qreal)),SIGNAL(volumeChanged(qreal)));
 
     QSettings settings;
     settings.beginGroup(QLatin1String("events"));

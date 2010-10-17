@@ -249,6 +249,7 @@ void NetworkController::auth_success(QObject* ptr, const QString& name) {
 }
 
 void NetworkController::auth_failed(QObject* ptr, const QString& name) {
+  Q_UNUSED(name);
     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
     Q_ASSERT(socket);
     QByteArray data("{\"type\" : \"auth\", \"result\" : \"failed\"}");

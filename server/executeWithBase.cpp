@@ -18,8 +18,7 @@
  */
 
 #include "executeWithBase.h"
-#include <abstractserviceprovider.h>
-#include <profile.h>
+#include <shared/abstractserviceprovider.h>
 
 ExecuteWithBase::ExecuteWithBase(AbstractServiceProvider* base, QObject* parent) : QObject(parent), m_base(base) {}
 

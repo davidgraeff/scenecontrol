@@ -38,13 +38,13 @@ void myMessageOutput(QtMsgType type, const char *msg)
         fprintf(stderr, "%s\n", msg);
         break;
     case QtWarningMsg:
-        fprintf(stderr, "Warning: %s\n", msg);
+        fprintf(stderr, "\033[33mWarning: %s\033[0m\n", msg);
         break;
     case QtCriticalMsg:
-        fprintf(stderr, "Critical: %s\n", msg);
+        fprintf(stderr, "\033[31mCritical: %s\033[0m\n", msg);
         break;
     case QtFatalMsg:
-        fprintf(stderr, "Fatal: %s\n", msg);
+        fprintf(stderr, "\033[31mFatal: %s\033[0m\n", msg);
         abort();
     }
 }
@@ -91,7 +91,9 @@ int main(int argc, char *argv[])
 	network->connect(services,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
     network->start();
 
-	int r = 0;//qapp.exec();
+	int r = 0;
+    if (argc<=1 || strcmp("--shutdown", argv[1])!=0)
+	qapp.exec();
     network->dbus()->unregisterService(servicename);
     qDebug() << "Shutdown: Network server";
     delete network;

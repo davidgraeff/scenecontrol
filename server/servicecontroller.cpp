@@ -42,23 +42,29 @@ ServiceController::ServiceController () : m_EventController(new EventController(
     foreach ( QString fileName, pluginsDir.entryList ( QDir::Files ) )
     {
         QPluginLoader* loader = new QPluginLoader ( pluginsDir.absoluteFilePath ( fileName ), this );
-        plugin = dynamic_cast<ExecutePlugin*> ( loader->instance() );
-        if ( plugin )
-        {
-            qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
-            connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
-            connect(plugin,SIGNAL(pluginobjectChanged(ExecuteWithBase*)),SLOT(pluginobjectChanged(ExecuteWithBase*)));
-            m_plugins.append ( plugin );
-            QStringList provides = plugin->base()->registerServices();
-            foreach ( QString provide, provides )
-            {
-                m_plugin_provider.insert ( provide, plugin );
-            }
-            offered_services += provides.size();
-        } else {
-            qDebug() << "Start: Failed loading" << pluginsDir.absoluteFilePath ( fileName );
+        loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
+        if (!loader->load()) {
+            qWarning() << "Start: Failed loading" << pluginsDir.absoluteFilePath ( fileName ) << loader->errorString();
             delete loader;
+            continue;
         }
+        plugin = dynamic_cast<ExecutePlugin*> ( loader->instance() );
+        if (!plugin) {
+            qWarning() << "Start: Failed to get instance" << pluginsDir.absoluteFilePath ( fileName );
+            delete loader;
+            continue;
+        }
+        qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
+
+        connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
+        connect(plugin,SIGNAL(pluginobjectChanged(ExecuteWithBase*)),SLOT(pluginobjectChanged(ExecuteWithBase*)));
+        m_plugins.append ( plugin );
+        QStringList provides = plugin->base()->registerServices();
+        foreach ( QString provide, provides )
+        {
+            m_plugin_provider.insert ( provide, plugin );
+        }
+        offered_services += provides.size();
     }
 
     qDebug() << "Start: Load service provider";
