@@ -17,28 +17,14 @@
 
 */
 
-#include "actorcinemavolume.h"
-#include <RoomControlServer.h>
-#include <media/cinemacontroller.h>
+#include "actorcinemavolumeServer.h"
+#include <services/actorcinemavolume.h>
+#include <plugin_server.h>
 
-ActorCinemaVolume::ActorCinemaVolume(QObject* parent)
-        : AbstractServiceProvider(parent)
-{}
-
-void ActorCinemaVolume::execute()
+void ActorCinemaVolumeServer::execute()
 {
-    RoomControlServer::getCinemaController()->setVolume(m_volume, m_relative);
+    m_plugin->setVolume(service<ActorCinemaVolume>()->value(),service<ActorCinemaVolume>()->relative());
 }
-qreal ActorCinemaVolume::value() const {
-    return m_volume;
-}
-void ActorCinemaVolume::setValue(qreal value) {
-    m_volume = value;
-}
-bool ActorCinemaVolume::relative() const {
-    return m_relative;
-}
-void ActorCinemaVolume::setRelative(bool value) {
-    m_relative = value;
-}
+
+ActorCinemaVolumeServer::ActorCinemaVolumeServer(ActorCinemaVolume* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 

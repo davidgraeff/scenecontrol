@@ -17,28 +17,12 @@
 
 */
 
-#include "actorcinema.h"
-#include "RoomControlServer.h"
-#include "media/cinemacontroller.h"
-#include "media/mediacmds.h"
-#include <qprocess.h>
-#include <QNetworkAccessManager>
-#include <QUrl>
-#include <QNetworkRequest>
+#include "actorcinemaServer.h"
+#include <services/actorcinema.h>
+#include <plugin_server.h>
 
-ActorCinema::ActorCinema(QObject* parent)
-        : AbstractServiceProvider(parent)
+void ActorCinemaServer::execute()
 {
+    m_plugin->setCommand(service<ActorCinema>()->cmd());
 }
-
-void ActorCinema::execute()
-{
-    CinemaController* mc = RoomControlServer::getCinemaController();
-    mc->setCommand(m_cmd);
-}
-int ActorCinema::cmd() const {
-    return m_cmd;
-}
-void ActorCinema::setCmd(int value) {
-    m_cmd = value;
-}
+ActorCinemaServer::ActorCinemaServer(ActorCinema* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

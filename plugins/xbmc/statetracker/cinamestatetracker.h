@@ -17,33 +17,24 @@
 
 */
 
-#ifndef CINAMESTATETRACKER_H
-#define CINAMESTATETRACKER_H
-#include "abstractstatetracker.h"
-#include "media/mediacmds.h"
+#ifndef CinemaStateTracker_h
+#define CinemaStateTracker_h
+#include <shared/abstractstatetracker.h>
 
-class OrgFreedesktopMediaPlayerInterface;
 class CinemaStateTracker : public AbstractStateTracker
 {
-    Q_OBJECT
-    Q_PROPERTY(QString url READ url);
-    Q_PROPERTY(int position READ position);
-    Q_PROPERTY(int volume READ volume);
-    Q_PROPERTY(int state READ state);
-
+	Q_OBJECT
+	Q_PROPERTY(QString url READ url WRITE setUrl);
+	Q_PROPERTY(int state READ state WRITE setState);
 public:
-    CinemaStateTracker(QObject* parent = 0);
-    virtual ~CinemaStateTracker();
-    QString url();
-    int position();
-    int volume();
-    EnumMediaState state();
-    void setState(EnumMediaState s) { m_cachedstate = s; }
+	CinemaStateTracker(QObject* parent = 0) : AbstractStateTracker(parent),m_volume(0),m_state(0) {}
+	QString url() { return m_url; }
+	void setUrl(QString url) {m_url = url;}
+	int state() { return m_state; }
+	void setState(int state) {m_state = state;}
 private:
-    EnumMediaState m_cachedstate;
-    QString m_cachedurl;
-    int m_cachedposition;
-    int m_cachedvolume;
+	QString m_url;
+	int m_volume;
+	int m_state;
 };
-
-#endif // MPRISSTATETRACKER_H
+#endif //CinemaStateTracker_h

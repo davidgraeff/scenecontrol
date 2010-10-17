@@ -1,6 +1,6 @@
 /*
-    RoomControlServer. Home automation for controlling sockets, leds and music.
-    Copyright (C) 2010  David Gräff
+    <one line to give the program's name and a brief idea of what it does.>
+    Copyright (C) <year>  <name of author>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,22 +14,26 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
-#ifndef CinemaVolumeStateTracker_h
-#define CinemaVolumeStateTracker_h
+
+#ifndef CinemaPositionStateTracker_h
+#define CinemaPositionStateTracker_h
 #include <shared/abstractstatetracker.h>
 
-class CinemaVolumeStateTracker : public AbstractStateTracker
+class CinemaPositionStateTracker : public AbstractStateTracker
 {
 	Q_OBJECT
-	Q_PROPERTY(double volume READ volume WRITE setVolume);
+	Q_PROPERTY(int position READ position WRITE setPosition);
+	Q_PROPERTY(int total READ total WRITE setTotal);
 public:
-	CinemaVolumeStateTracker(QObject* parent = 0) : AbstractStateTracker(parent),m_volume(0) {}
-	double volume() { return m_volume; }
-	void setVolume(double volume) {m_volume = volume;}
+	CinemaPositionStateTracker(QObject* parent = 0) : AbstractStateTracker(parent), m_position(0), m_total(0) {}
+	int position() { return m_position; }
+	void setPosition(int position) {m_position = position;}
+	int total() { return m_total; }
+	void setTotal(int total) {m_total = total;}
 private:
-	double m_volume;
+	int m_position;
+	int m_total;
 };
-#endif //CinemaVolumeStateTracker_h
+#endif //CinemaPositionStateTracker_h

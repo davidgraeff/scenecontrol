@@ -21,19 +21,32 @@
 #define ACTORCINEMASERVICEPROVIDER_H
 
 #include "shared/abstractserviceprovider.h"
-class QNetworkAccessManager;
-#include <QNetworkRequest>
 class ActorCinema : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(int cmd READ cmd WRITE setCmd);
-    
+    Q_PROPERTY(ActorCinema::CinemaCmds cmd READ cmd WRITE setCmd);
+    Q_PROPERTY(QString url READ url WRITE setUrl);
 public:
+    enum CinemaCmds  {
+    PlayCmd,PauseCmd,StopCmd,NextCmd,PrevCmd,InfoCmd,AspectRatioCmd,NextSubtitleCmd,NextLanguageCmd,NavigationBackCmd,NavigationHomeCmd,
+    NavigationOKCmd,NavigationDownCmd,NavigationUpCmd,NavigationLeftCmd,NavigationRightCmd,NavigationCloseCmd,NavigationContextMenuCmd,
+    FastForwardCmd,FastRewindCmd
+    };
+    Q_ENUMS(CinemaCmds);
     ActorCinema(QObject* parent = 0);
-    virtual void execute();
-    int cmd() const ;
-    void setCmd(int value) ;
+    virtual ProvidedTypes providedtypes() {
+        return ActionType;
+    }
+    QString url() {
+        return m_url;
+    }
+    void setUrl(QString url) {
+        m_url = url;
+    }
+    ActorCinema::CinemaCmds cmd() const ;
+    void setCmd(ActorCinema::CinemaCmds value) ;
 private:
-    int m_cmd;
+    ActorCinema::CinemaCmds m_cmd;
+    QString m_url;
 };
 #endif // ACTORCINEMASERVICEPROVIDER_H

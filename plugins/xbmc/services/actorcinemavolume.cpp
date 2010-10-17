@@ -18,17 +18,11 @@
 */
 
 #include "actorcinemavolume.h"
-#include <RoomControlServer.h>
-#include <media/cinemacontroller.h>
 
 ActorCinemaVolume::ActorCinemaVolume(QObject* parent)
         : AbstractServiceProvider(parent)
 {}
 
-void ActorCinemaVolume::execute()
-{
-    RoomControlServer::getCinemaController()->setVolume(m_volume, m_relative);
-}
 qreal ActorCinemaVolume::value() const {
     return m_volume;
 }

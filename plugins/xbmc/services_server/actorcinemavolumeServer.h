@@ -17,31 +17,22 @@
 
 */
 
-#ifndef ACTORCINEMAVOLUMESERVICEPROVIDER_H
-#define ACTORCINEMAVOLUMESERVICEPROVIDER_H
+#ifndef ActorCinemaVolumeServer_h
+#define ActorCinemaVolumeServer_h
+#include <executeservice.h>
 
-#include "shared/abstractserviceprovider.h"
-
-
-class ActorCinemaVolume : public AbstractServiceProvider
+class ActorCinemaVolume;
+class myPluginExecute;
+class ActorCinemaVolumeServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(qreal value READ value WRITE setValue);
-    
-    Q_PROPERTY(bool relative READ relative WRITE setRelative);
+  Q_OBJECT
 public:
-    ActorCinemaVolume(QObject* parent = 0);
-    virtual void execute();
-    qreal value() const ;
-    void setValue(qreal value) ;
-    
-    
-    bool relative() const ;
-    void setRelative(bool value) ;
+  ActorCinemaVolumeServer(ActorCinemaVolume* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    qreal m_volume;
-    
-    bool m_relative;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ACTORCINEMAVOLUMESERVICEPROVIDER_H
+#endif // ActorCinemaVolumeServer_h

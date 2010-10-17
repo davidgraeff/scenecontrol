@@ -27,20 +27,16 @@ class ActorCinemaVolume : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(qreal value READ value WRITE setValue);
-    
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorCinemaVolume(QObject* parent = 0);
-    virtual void execute();
+    virtual ProvidedTypes providedtypes(){return ActionType;}
     qreal value() const ;
     void setValue(qreal value) ;
-    
-    
     bool relative() const ;
     void setRelative(bool value) ;
 private:
     qreal m_volume;
-    
     bool m_relative;
 };
 

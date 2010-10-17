@@ -17,23 +17,22 @@
 
 */
 
-#ifndef ACTORCINEMASERVICEPROVIDER_H
-#define ACTORCINEMASERVICEPROVIDER_H
+#ifndef ActorCinemaServer_h
+#define ActorCinemaServer_h
+#include <executeservice.h>
 
-#include "shared/abstractserviceprovider.h"
-class QNetworkAccessManager;
-#include <QNetworkRequest>
-class ActorCinema : public AbstractServiceProvider
+class ActorCinema;
+class myPluginExecute;
+class ActorCinemaServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(int cmd READ cmd WRITE setCmd);
-    
+  Q_OBJECT
 public:
-    ActorCinema(QObject* parent = 0);
-    virtual void execute();
-    int cmd() const ;
-    void setCmd(int value) ;
+  ActorCinemaServer(ActorCinema* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    int m_cmd;
+  myPluginExecute* m_plugin;
 };
-#endif // ACTORCINEMASERVICEPROVIDER_H
+
+#endif // ActorCinemaServer_h

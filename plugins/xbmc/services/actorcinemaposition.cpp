@@ -18,17 +18,11 @@
 */
 
 #include "actorcinemaposition.h"
-#include <RoomControlServer.h>
-#include <media/cinemacontroller.h>
 
 ActorCinemaPosition::ActorCinemaPosition(QObject* parent)
         : AbstractServiceProvider(parent)
 {}
 
-void ActorCinemaPosition::execute()
-{
-    RoomControlServer::getCinemaController()->setPosition(m_volume,m_relative);
-}
 qreal ActorCinemaPosition::value() const {
     return m_volume;
 }

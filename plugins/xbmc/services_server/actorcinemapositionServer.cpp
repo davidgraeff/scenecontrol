@@ -17,21 +17,12 @@
 
 */
 
-#include "actorcinemaposition.h"
-#include <RoomControlServer.h>
-#include <media/cinemacontroller.h>
+#include "actorcinemapositionServer.h"
+#include <services/actorcinemaposition.h>
+#include <plugin_server.h>
 
-ActorCinemaPosition::ActorCinemaPosition(QObject* parent)
-        : AbstractServiceProvider(parent)
-{}
-
-void ActorCinemaPosition::execute()
+void ActorCinemaPositionServer::execute()
 {
-    RoomControlServer::getCinemaController()->setPosition(m_volume,m_relative);
+    m_plugin->setVolume(service<ActorCinemaPosition>()->value(),service<ActorCinemaPosition>()->relative());
 }
-qreal ActorCinemaPosition::value() const {
-    return m_volume;
-}
-void ActorCinemaPosition::setValue(qreal value) {
-    m_volume = value;
-}
+ActorCinemaPositionServer::ActorCinemaPositionServer(ActorCinemaPosition* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

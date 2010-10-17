@@ -17,31 +17,22 @@
 
 */
 
-#ifndef ActorCinemaPosition_h
-#define ActorCinemaPosition_h
+#ifndef ActorCinemaPositionServer_h
+#define ActorCinemaPositionServer_h
+#include <executeservice.h>
 
-#include "shared/abstractserviceprovider.h"
-
-
-class ActorCinemaPosition : public AbstractServiceProvider
+class ActorCinemaPosition;
+class myPluginExecute;
+class ActorCinemaPositionServer : public ExecuteService
 {
-    Q_OBJECT
-    Q_PROPERTY(qreal value READ value WRITE setValue);
-    
-    Q_PROPERTY(bool relative READ relative WRITE setRelative);
+  Q_OBJECT
 public:
-    ActorCinemaPosition(QObject* parent = 0);
-    virtual void execute();
-    qreal value() const ;
-    void setValue(qreal value) ;
-    
-    
-    bool relative() const { return m_relative; }
-    void setRelative(bool value) { m_relative = value; }
+  ActorCinemaPositionServer(ActorCinemaPosition* base, myPluginExecute* plugin, QObject* parent = 0);
+  virtual bool checkcondition(){return true;}
+  virtual void dataUpdate(){}
+  virtual void execute();
 private:
-    qreal m_volume;
-    
-    bool m_relative;
+  myPluginExecute* m_plugin;
 };
 
-#endif // ActorCinemaPosition_h
+#endif // ActorCinemaPositionServer_h
