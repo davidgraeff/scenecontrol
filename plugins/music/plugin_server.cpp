@@ -28,7 +28,7 @@ Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 myPluginExecute::myPluginExecute() : ExecutePlugin() {
     m_base = new myPlugin();
     m_mediacontroller = new MediaController(this);
-    connect(m_mediacontroller,SIGNAL(pluginobjectChanged(AbstractServiceProvider*)),SIGNAL(pluginobjectChanged(ExecuteWithBase*)));
+    connect(m_mediacontroller,SIGNAL(pluginobjectChanged(ExecuteWithBase*)),SIGNAL(pluginobjectChanged(ExecuteWithBase*)));
     connect(m_mediacontroller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
 }
 

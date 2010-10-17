@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
-add_subdirectory(ethersex);
-add_subdirectory(io);
-add_subdirectory(music);
-add_subdirectory(projector);
-add_subdirectory(remotecontrol);
-add_subdirectory(time);
-add_subdirectory(wol);
-add_subdirectory(xbmc);
+add_subdirectory(ethersex)
+add_subdirectory(io)
+add_subdirectory(music)
+add_subdirectory(projector)
+add_subdirectory(remotecontrol)
+add_subdirectory(time)
+add_subdirectory(wol)
+add_subdirectory(xbmc)

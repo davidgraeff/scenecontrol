@@ -27,7 +27,7 @@ class RemoteControlStateTracker : public AbstractStateTracker
     Q_PROPERTY(bool connected READ connected WRITE setConnected);
     Q_PROPERTY(int receivers READ receivers WRITE setReceivers);
 public:
-    RemoteControlStateTracker(QObject* parent = 0);
+    RemoteControlStateTracker(QObject* parent = 0) : AbstractStateTracker(parent) {}
     bool connected() const {
         return m_connected;
     }

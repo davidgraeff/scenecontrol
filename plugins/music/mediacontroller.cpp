@@ -27,10 +27,11 @@
 #include "services_server/playlistServer.h"
 #include "plugin_server.h"
 #include "services/playlist.h"
+#include <shared/abstractplugin.h>
 
 MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0)
 {
-    m_favourite = 0;
+    m_current = 0;
     m_mediaStateTracker = new MediaStateTracker(this);
     m_volumestateTracker = new MusicVolumeStateTracker(this);
     m_fakepos.setInterval(1000);
@@ -45,7 +46,7 @@ MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_
     connect (m_playerprocess, SIGNAL(readyReadStandardError()),SLOT(readyReadStandardError()));
 
     QSettings settings;
-    settings.beginGroup(QLatin1String("media"));
+    settings.beginGroup(m_plugin->base()->name());
     m_volume = settings.value(QLatin1String("volume"),1.0).toDouble();
 
     slotdisconnected(0);
@@ -57,7 +58,7 @@ MediaController::~MediaController()
     if (!m_playerprocess->waitForFinished())
         m_playerprocess->kill();
     QSettings settings;
-    settings.beginGroup(QLatin1String("media"));
+    settings.beginGroup(m_plugin->base()->name());
     settings.setValue(QLatin1String("volume"),volume());
 }
 
@@ -155,18 +156,6 @@ QList<AbstractStateTracker*> MediaController::getStateTracker()
     QList<PAStateTracker*> k = m_paStateTrackers.values();
     foreach(PAStateTracker* p, k) l.append(p);
     return l;
-}
-
-void MediaController::activateFavourite()
-{
-    if (!m_favourite)
-    {
-        // create favourite playlist
-        m_favourite = new ActorPlaylistServer(new ActorPlaylist(), m_plugin);
-        m_favourite->playlist()->setName(QLatin1String("favourite"));
-        emit pluginobjectChanged(m_favourite);
-    }
-    setPlaylist(m_favourite);
 }
 
 void MediaController::nextPlaylist()
@@ -317,8 +306,8 @@ MediaStateTracker::EnumMediaState MediaController::state()
 
 void MediaController::addedPlaylist(ActorPlaylistServer* playlist)
 {
-    if (playlist->playlist()->name() == QLatin1String("favourite"))
-        m_favourite = playlist;
+    if (playlist->playlist()->name() == QLatin1String("favourite") && m_current==0)
+        m_current = playlist;
     m_items.append(playlist);
     connect(playlist,SIGNAL(destroyed(QObject*)), SLOT(removedPlaylist(QObject*)));
 }

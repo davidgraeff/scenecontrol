@@ -12,7 +12,9 @@ Extra Arguments=
 ProjectRootRelative=./
 
 [MakeBuilder]
-Number Of Jobs=3
+Install As Root=true
+Number Of Jobs=1
+Su Command=1
 
 [Project]
 VersionControlSupport=kdevgit

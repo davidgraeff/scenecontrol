@@ -23,9 +23,11 @@
 #include <shared/qextserialport.h>
 #include "statetracker/pinvaluestatetracker.h"
 #include "statetracker/pinnamestatetracker.h"
+#include <qfile.h>
 
+#define DEVICE "/dev/ttyUSB0"
 IOController::IOController() :
-        m_serial(QLatin1String("/dev/ttyUSB0"),QextSerialPort::EventDriven) {
+        m_serial(QLatin1String(DEVICE),QextSerialPort::EventDriven) {
     m_serial.setBaudRate(BAUD115200);
     m_serial.setFlowControl(FLOW_OFF);
     m_serial.setParity(PAR_NONE);
@@ -35,8 +37,12 @@ IOController::IOController() :
     m_pins = 0;
     // Open device and ask for pins
     const char t1[] = {0xef};
+    if (!QFile::exists(QLatin1String(DEVICE))) {
+      qWarning() << "IO: device not found"<<DEVICE;
+	return;
+    }
     if (!m_serial.open(QIODevice::ReadWrite) || !m_serial.write(t1, sizeof(t1))) {
-        qWarning() << "IO rs232 init fehler";
+        qWarning() << "IO: rs232 init fehler";
     }
 }
 

@@ -23,6 +23,8 @@
 #define _BV(bit) (1<<(bit))
 #include <QSettings>
 #include "statetracker/curtainstatetracker.h"
+#include "statetracker/ledvaluestatetracker.h"
+#include "statetracker/lednamestatetracker.h"
 
 Controller::Controller()
 {
@@ -52,7 +54,7 @@ Controller::~Controller()
 
 void Controller::reconnect_curtain()
 {
-    connectTo ( m_host_curtain, 0, m_udpport_curtain );
+    connectTo ( m_host, 0, m_udpport_curtain );
 }
 
 void Controller::readyRead_curtain()
@@ -164,17 +166,17 @@ void Controller::readyRead_lights()
                 m_channelvalues.append(cv);
                 cv->setChannel(i);
                 cv->setValue(newvalue);
-                cv->sync();
+		emit stateChanged(cv);
                 ChannelNameStateTracker* cn = new ChannelNameStateTracker();
                 m_channelnames.append(cn);
                 cn->setChannel(i);
                 cn->setValue(name);
-                cn->sync();
+		emit stateChanged(cn);
             }
             else if ( m_channelvalues[i]->value() != newvalue )
             {
                 m_channelvalues[i]->setValue(newvalue);
-                m_channelvalues[i]->sync();
+		emit stateChanged(m_channelvalues[i]);
             }
         }
         buffer = buffer.mid ( ans->channels+7 );
@@ -235,7 +237,8 @@ void Controller::setChannelName ( uint channel, const QString& name )
 {
     if ( channel>= ( unsigned int ) m_channelnames.size() ) return;
     m_channelnames[channel]->setValue(name);
-    m_channelnames[channel]->sync();
+    emit stateChanged(m_channelnames[channel]);
+
     QSettings settings;
     settings.beginGroup ( QLatin1String("channelnames") );
     settings.setValue ( QLatin1String("channel")+QString::number ( channel ), name );
@@ -252,8 +255,7 @@ void Controller::setChannel ( uint channel, uint value, uint fade )
     if ( channel>= ( unsigned int ) m_channelvalues.size() ) return;
     value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
     m_channelvalues[channel]->setValue(value);
-    m_channelvalues[channel]->sync();
-
+    emit stateChanged(m_channelvalues[channel]);
     udpstella_packet setch;
     setch.type = fade;
     setch.channel = channel;

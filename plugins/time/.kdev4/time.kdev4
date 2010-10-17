@@ -11,5 +11,10 @@ CurrentInstallDir=file:///usr/
 Extra Arguments=
 ProjectRootRelative=./
 
+[MakeBuilder]
+Install As Root=true
+Number Of Jobs=1
+Su Command=1
+
 [Project]
 VersionControlSupport=kdevgit

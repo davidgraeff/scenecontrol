@@ -8,11 +8,15 @@
 #include "statetracker/projectorstatetracker.h"
 #include "services/actorprojector.h"
 #include "services_server/actorprojectorServer.h"
+#include <qfile.h>
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
+#define DEVICE "/dev/ttyS0"
 myPluginExecute::myPluginExecute() : ExecutePlugin(),
-        m_serial(QLatin1String("/dev/ttyS0"),QextSerialPort::EventDriven) {
+        m_serial(QLatin1String(DEVICE),QextSerialPort::EventDriven) {
+    m_base = new myPlugin();
+    m_ProjectorStateTracker = new ProjectorStateTracker();
     m_serial.setBaudRate(BAUD19200);
     m_serial.setFlowControl(FLOW_OFF);
     m_serial.setParity(PAR_NONE);
@@ -20,10 +24,13 @@ myPluginExecute::myPluginExecute() : ExecutePlugin(),
     m_serial.setStopBits(STOP_1);
     connect(&m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
     buffer[3] = '\r';
-    if (!m_serial.open(QIODevice::ReadWrite)) {
-        qWarning() << "projector rs232 init fehler";
+    if (!QFile::exists(QLatin1String(DEVICE))) {
+        qWarning() << "Projector: device not found"<<DEVICE;
+        return;
     }
-    m_ProjectorStateTracker = new ProjectorStateTracker();
+    if (!m_serial.open(QIODevice::ReadWrite)) {
+        qWarning() << "Projector: rs232 init fehler";
+    }
 }
 
 myPluginExecute::~myPluginExecute() {
@@ -53,7 +60,7 @@ QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
 
 void myPluginExecute::setCommand(ActorProjector::ProjectorControl c) {
     switch (c) {
-      case ActorProjector::ProjectorOn:
+    case ActorProjector::ProjectorOn:
         strncpy(buffer, "C00", 3);
         break;
     case ActorProjector::ProjectorOff:

@@ -100,7 +100,6 @@ private:
     QMap<QByteArray, PAStateTracker*> m_paStateTrackers;
     QList<ActorPlaylistServer*> m_items;
     ActorPlaylistServer* m_current;
-    ActorPlaylistServer* m_favourite;
     MediaStateTracker *m_mediaStateTracker;
     MusicVolumeStateTracker* m_volumestateTracker;
     MediaStateTracker::EnumMediaState m_mediastate;

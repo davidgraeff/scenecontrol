@@ -18,7 +18,6 @@
 */
 
 #include "actorprojector.h"
-#include <projectorcontroller.h>
 
 ActorProjector::ActorProjector(QObject* parent) : AbstractServiceProvider(parent) {}
 
