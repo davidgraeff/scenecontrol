@@ -158,15 +158,19 @@ QByteArray Serializer::serialize( const QVariant &v )
     str = d->sanitizeString( v.toString() ).toUtf8();
   } else if (( v.type() == QVariant::Double) || (v.type() == QMetaType::Float)) { // a double or a float?
     const double value = v.toDouble();
-#ifdef _WIN32
+#if defined _WIN32 && !defined(Q_OS_SYMBIAN)
     const bool special = _isnan(value) || !_finite(value);
+#elif defined(Q_OS_SYMBIAN)
+    const bool special = isnan(value) || isinf(value);
 #else
     const bool special = std::isnan(value) || std::isinf(value);
 #endif
     if (special) {
       if (specialNumbersAllowed()) {
-#ifdef _WIN32
+#if defined _WIN32 && !defined(Q_OS_SYMBIAN)
         if (_isnan(value)) {
+#elif defined(Q_OS_SYMBIAN)
+        if (isnan(value)) {
 #else
         if (std::isnan(value)) {
 #endif

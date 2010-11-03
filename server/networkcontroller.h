@@ -15,8 +15,8 @@
 #include <QStringList>
 #include <QDBusConnection>
 
-#define NETWORK_MIN_APIVERSION "3.0"
-#define NETWORK_MAX_APIVERSION "3.0"
+#define NETWORK_APIVERSION "3.0"
+#define NETWORK_AUTHTIMEOUT "120000"
 #define LISTENPORT 3101
 #include <QDir>
 #include <QTimer>
@@ -55,7 +55,7 @@ public:
         socket=s;
         m_auth=false;
         connect(&m_authTimer,SIGNAL(timeout()),SLOT(timeout()));
-        m_authTimer.start(1000*60*2);
+        m_authTimer.start(NETWORK_AUTHTIMEOUT);
     }
     ~ClientConnection() {
         delete socket;
@@ -98,6 +98,8 @@ private Q_SLOTS:
     void auth_success(QObject* socketptr, const QString& name);
     void auth_failed(QObject* socketptr, const QString& name);
     void timeoutAuth(QSslSocket* socket);
+    void peerVerifyError(QSslError);
+    void sslErrors(QList<QSslError>);
 public Q_SLOTS:
     void serviceSync(AbstractServiceProvider* p);
     void statetrackerSync(AbstractStateTracker* p);

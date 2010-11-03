@@ -52,14 +52,31 @@ bool NetworkController::start()
     return true;
 }
 
+/*
+    openssl req -x509 -newkey rsa:1024 -keyout server.key -nodes -days 365 -out server.crt
+    openssl
+    openssl
+    openssl x509 -noout -text -in thecert.pem
+    openssl -new -x509 -extensions v3_ca -days 3650 -keyout cakey.pem -out cacert.pem
+    openssl req -x509 -newkey rsa:1024 -keyout server.key -nodes -days 3650 -out server.crt
+*/
 void NetworkController::incomingConnection ( int socketDescriptor )
 {
     QSslSocket *socket = new QSslSocket;
     if ( socket->setSocketDescriptor ( socketDescriptor ) == true )
     {
+        socket->setLocalCertificate("server.crt");
+        socket->setPrivateKey("server.key");
+        socket->startServerEncryption();
         connect ( socket, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
+        connect(socket, SIGNAL(peerVerifyError(const QSslError &)),
+                this, SLOT(slot_peerVerifyError (const QSslError &)));
+        connect(socket, SIGNAL(sslErrors(const QList<QSslError> &)),
+                this, SLOT(slot_sslErrors(const QList<QSslError> &)));
         m_connections.insert ( socket, new ClientConnection(socket) );
-        QByteArray data("{\"type\" : \"auth\", \"result\" : \"required\"}");
+        QByteArray data;
+        data.append("{\"type\" : \"serverinfo\", \"version\" : \""NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \""NETWORK_AUTHTIMEOUT"\", \"plugins\" : \"");
+        data.append("\"}");
         socket->write ( data );
         qDebug() << "new connection, waiting for authentification";
     }
@@ -130,7 +147,7 @@ void NetworkController::statetrackerSync(AbstractStateTracker* p)
     QByteArray cmdbytes = serializer.serialize(variant);
 
     foreach ( ClientConnection* c, m_connections )
-    c->socket->write ( cmdbytes );
+    if (c->auth()) c->socket->write ( cmdbytes );
 }
 
 void NetworkController::serviceSync(AbstractServiceProvider* p)
@@ -147,7 +164,7 @@ void NetworkController::serviceSync(AbstractServiceProvider* p)
     QByteArray cmdbytes = serializer.serialize(variant);
 
     foreach ( ClientConnection* c, m_connections )
-    c->socket->write ( cmdbytes );
+    if (c->auth()) c->socket->write ( cmdbytes );
 }
 
 void NetworkController::readyRead()
@@ -218,16 +235,14 @@ void NetworkController::disconnected()
 
 void NetworkController::log(const char* msg) {
     if (m_connections.isEmpty()) return;
-    QByteArray data("{\"type\" : \"log\", \"data\" : \"");
+    QByteArray cmdbytes("{\"type\" : \"log\", \"data\" : \"");
     // replace " with '
     for (char* msgr = (char*)msg;*msgr!=0;++msgr)
         if (*msgr == '"') *msgr = '\'';
-    data.append(msg);
-    data.append("\"}");
+    cmdbytes.append(msg);
+    cmdbytes.append("\"}");
     foreach ( ClientConnection* c, m_connections )
-    {
-        c->socket->write ( data );
-    }
+    if (c->auth()) c->socket->write ( cmdbytes );
 }
 QDBusConnection* NetworkController::dbus() {
     return &m_dbusconnection;
@@ -249,7 +264,7 @@ void NetworkController::auth_success(QObject* ptr, const QString& name) {
 }
 
 void NetworkController::auth_failed(QObject* ptr, const QString& name) {
-  Q_UNUSED(name);
+    Q_UNUSED(name);
     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
     Q_ASSERT(socket);
     QByteArray data("{\"type\" : \"auth\", \"result\" : \"failed\"}");
@@ -262,4 +277,11 @@ void NetworkController::timeoutAuth(QSslSocket* socket) {
     socket->flush();
     qDebug() << "Client auth timeout:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
     m_connections.take ( socket )->deleteLater();
+}
+void NetworkController::sslErrors(QList< QSslError >) {
+    QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
+}
+
+void NetworkController::peerVerifyError(QSslError) {
+    QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
 }
