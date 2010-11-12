@@ -16,7 +16,7 @@
 #include <QDBusConnection>
 
 #define NETWORK_APIVERSION "3.0"
-#define NETWORK_AUTHTIMEOUT "120000"
+#define NETWORK_AUTHTIMEOUT 120000
 #define LISTENPORT 3101
 #include <QDir>
 #include <QTimer>

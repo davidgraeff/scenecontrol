@@ -19,19 +19,19 @@
 
 #ifndef ACTOREVENTSERVERSERVICEPROVIDER_H
 #define ACTOREVENTSERVERSERVICEPROVIDER_H
-#include <../server/executeservice.h>
+#include "shared/server/executeservice.h"
 
-class CorePluginExecute;
+class myPluginExecute;
 class ActorEvent;
 class ActorEventServer : public ExecuteService
 {
     Q_OBJECT
 public:
-    ActorEventServer(ActorEvent* base, CorePluginExecute* plugin, QObject* parent = 0) ;
+    ActorEventServer(ActorEvent* base, myPluginExecute* plugin, QObject* parent = 0) ;
     virtual void execute();
     virtual bool checkcondition();
     virtual void dataUpdate();
 private:
-    CorePluginExecute* m_plugin;
+    myPluginExecute* m_plugin;
 };
 #endif // ACTOREVENTSERVERSERVICEPROVIDER_H

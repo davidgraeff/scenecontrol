@@ -19,7 +19,7 @@
 
 #include "actorcinemaServer.h"
 #include <services/actorcinema.h>
-#include <plugin_server.h>
+#include "server/plugin_server.h"
 
 void ActorCinemaServer::execute()
 {

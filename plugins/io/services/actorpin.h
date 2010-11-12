@@ -26,6 +26,9 @@ class ActorPin : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
+    Q_CLASSINFO("pin_model", "PinsModel")
+    Q_CLASSINFO("pin_model_displaytype", "0");
+    Q_CLASSINFO("pin_model_savetype", "32");
     Q_PROPERTY(ActorPin::ActorPinEnum value READ value WRITE setValue);
 
 public:

@@ -26,6 +26,7 @@ class EventDateTime : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString datetime READ datetime WRITE setDatetime);
+    Q_CLASSINFO("datetime_props", "datetime")
 public:
     EventDateTime(QObject* parent = 0);
     virtual ProvidedTypes providedtypes() { return EventType; }

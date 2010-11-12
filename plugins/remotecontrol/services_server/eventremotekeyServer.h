@@ -19,7 +19,7 @@
 
 #ifndef EventRemoteKeyServer_h
 #define EventRemoteKeyServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 #include <QTimer>
 class EventRemoteKey;
 class myPluginExecute;

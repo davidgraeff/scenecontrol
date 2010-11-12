@@ -21,7 +21,7 @@
 #include <QDebug>
 #include <services/eventdatetime.h>
 #include <QDateTime>
-#include <plugin_server.h>
+#include "server/plugin_server.h"
 
 EventDateTimeServer::EventDateTimeServer(EventDateTime* base, myPluginExecute* , QObject* parent)
         : ExecuteService(base, parent)

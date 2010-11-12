@@ -24,12 +24,12 @@ ConditionMusicState::ConditionMusicState(QObject* parent)
 {  
 }
 
-int ConditionMusicState::value() const
+MediaStateTracker::EnumMediaState ConditionMusicState::value() const
 {
     return m_value;
 }
 
-void ConditionMusicState::setValue(int value)
+void ConditionMusicState::setValue(MediaStateTracker::EnumMediaState value)
 {
     m_value = value;
 }

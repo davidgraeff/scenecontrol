@@ -26,7 +26,9 @@ class ConditionTimespan : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString lower READ lower WRITE setLower);
+    Q_CLASSINFO("lower_props", "datetime")
     Q_PROPERTY(QString upper READ upper WRITE setUpper);
+    Q_CLASSINFO("upper_props", "datetime")
 public:
     ConditionTimespan(QObject* parent = 0);
     virtual ProvidedTypes providedtypes() { return ConditionType; }

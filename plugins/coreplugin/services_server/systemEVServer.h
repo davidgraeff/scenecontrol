@@ -20,21 +20,21 @@
 #ifndef EventSystemServer_h
 #define EventSystemServer_h
 #include "shared/abstractserviceprovider.h"
-#include <../server/executeservice.h>
+#include "shared/server/executeservice.h"
 
-class CorePluginExecute;
+class myPluginExecute;
 class EventSystem;
 class EventSystemServer : public ExecuteService
 {
     Q_OBJECT
 public:
-	EventSystemServer(EventSystem* base, CorePluginExecute* plugin, QObject* parent = 0);
+	EventSystemServer(EventSystem* base, myPluginExecute* plugin, QObject* parent = 0);
     virtual bool checkcondition();
     virtual void execute();
     virtual void dataUpdate();
 private:
 	EventSystem* m_base;
-	CorePluginExecute* m_plugin;
+	myPluginExecute* m_plugin;
 };
 
 #endif // EventSystemServer_h

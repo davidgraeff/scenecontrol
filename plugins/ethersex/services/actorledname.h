@@ -28,6 +28,9 @@ class ActorLedName : public AbstractServiceProvider
     Q_OBJECT
     Q_PROPERTY(QString ledname READ ledname WRITE setLedname);
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
+    Q_CLASSINFO("channel_model", "ChannelsModel")
+    Q_CLASSINFO("channel_model_displaytype", "0");
+    Q_CLASSINFO("channel_model_savetype", "32");
   public:
     ActorLedName(QObject* parent = 0);
     virtual ProvidedTypes providedtypes(){return ActionType;}

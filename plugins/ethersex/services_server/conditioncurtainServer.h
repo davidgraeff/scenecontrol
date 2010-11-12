@@ -19,7 +19,7 @@
 
 #ifndef ConditionCurtainServer_h
 #define ConditionCurtainServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ConditionCurtain;
 class myPluginExecute;

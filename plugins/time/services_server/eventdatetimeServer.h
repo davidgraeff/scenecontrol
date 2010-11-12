@@ -20,7 +20,7 @@
 #ifndef EventDateTimeServer_h
 #define EventDateTimeServer_h
 #include <QTimer>
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class myPluginExecute;
 class EventDateTime;

@@ -19,7 +19,7 @@
 
 #ifndef ActorProjectorServer_h
 #define ActorProjectorServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class myPluginExecute;
 class ActorProjector;

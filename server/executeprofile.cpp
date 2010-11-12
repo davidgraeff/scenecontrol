@@ -19,7 +19,7 @@
 
 #include "executeprofile.h"
 #include <QUuid>
-#include "executeservice.h"
+#include "shared/server/executeservice.h"
 
 ExecuteCollection::ExecuteCollection(AbstractServiceProvider* p, QObject* parent) :ExecuteWithBase(p,parent) {
     m_currentExecution = 0;

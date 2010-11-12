@@ -25,16 +25,20 @@ class EventPeriodic : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString time READ time WRITE setTime);
+    Q_CLASSINFO("time_props", "time")
     Q_PROPERTY(int days READ days WRITE setDays);
+    Q_CLASSINFO("days_props", "daybits")
 public:
     EventPeriodic(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() { return EventType; }
+    virtual ProvidedTypes providedtypes() {
+        return EventType;
+    }
     QString time() const;
     void setTime(QString value);
     int days() const;
     void setDays(int value);
     bool m_days[7];
-  private:
+private:
     QString m_time;
 };
 

@@ -19,7 +19,7 @@
 
 #ifndef ActorCurtainServer_h
 #define ActorCurtainServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorCurtain;
 class myPluginExecute;

@@ -25,6 +25,7 @@ class ConditionCurtain : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY ( unsigned int value READ value WRITE setValue );
+    Q_CLASSINFO("value_max", "10");
 public:
     ConditionCurtain(QObject* parent = 0);
     virtual ProvidedTypes providedtypes(){return ConditionType;}

@@ -19,7 +19,7 @@
 
 #ifndef ActorLedNameServer_h
 #define ActorLedNameServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorLedName;
 class myPluginExecute;

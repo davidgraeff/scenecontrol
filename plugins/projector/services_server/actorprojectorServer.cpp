@@ -18,8 +18,8 @@
 */
 
 #include "actorprojectorServer.h"
-#include <plugin_server.h>
-#include <services/actorprojector.h>
+#include "server/plugin_server.h"
+#include "services/actorprojector.h"
 
 
 ActorProjectorServer::ActorProjectorServer(ActorProjector* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

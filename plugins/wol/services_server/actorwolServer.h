@@ -20,7 +20,7 @@
 #ifndef ServiceWOLExecute_H
 #define ServiceWOLExecute_H
 
-#include "executeservice.h"
+#include "shared/server/executeservice.h"
 
 class ServiceWOL;
 class ServiceWOLExecute : public ExecuteService

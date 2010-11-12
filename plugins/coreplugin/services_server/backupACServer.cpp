@@ -19,9 +19,9 @@
 
 #include "backupACServer.h"
 #include <coreplugin/services/backupAC.h>
-#include <coreplugin/coreplugin_server.h>
+#include <coreplugin/server/plugin_server.h>
 
-ActorBackupServer::ActorBackupServer(ActorBackup* base, CorePluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
+ActorBackupServer::ActorBackupServer(ActorBackup* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
 bool ActorBackupServer::checkcondition() {
 	return true;
 }

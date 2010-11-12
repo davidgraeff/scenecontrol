@@ -21,8 +21,8 @@
 #define EXECUTE_H
 #include <QObject>
 #include <QStringList>
-#include <shared/profile.h>
-#include "executeWithBase.h"
+#include "shared/services/profile.h"
+#include "shared/server/executeWithBase.h"
 
 class ExecuteService;
 class ExecuteCollection : public ExecuteWithBase

@@ -26,6 +26,7 @@ class ActorCinema : public AbstractServiceProvider
     Q_OBJECT
     Q_PROPERTY(ActorCinema::CinemaCmds cmd READ cmd WRITE setCmd);
     Q_PROPERTY(QString url READ url WRITE setUrl);
+    Q_CLASSINFO("url_props", "url");
 public:
     enum CinemaCmds  {
     PlayCmd,PauseCmd,StopCmd,NextCmd,PrevCmd,InfoCmd,AspectRatioCmd,NextSubtitleCmd,NextLanguageCmd,NavigationBackCmd,NavigationHomeCmd,

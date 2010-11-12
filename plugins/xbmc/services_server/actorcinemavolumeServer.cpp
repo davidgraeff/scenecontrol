@@ -19,7 +19,7 @@
 
 #include "actorcinemavolumeServer.h"
 #include <services/actorcinemavolume.h>
-#include <plugin_server.h>
+#include "server/plugin_server.h"
 
 void ActorCinemaVolumeServer::execute()
 {

@@ -21,7 +21,7 @@
 #include <QDebug>
 #include <services/eventperiodic.h>
 #include <QDateTime>
-#include <plugin_server.h>
+#include "server/plugin_server.h"
 
 void EventPeriodicServer::timeout(bool aftersync)
 {

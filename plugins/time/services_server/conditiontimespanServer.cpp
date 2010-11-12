@@ -20,7 +20,7 @@
 #include "conditiontimespanServer.h"
 #include <QDateTime>
 #include <services/conditiontimespan.h>
-#include <plugin_server.h>
+#include "server/plugin_server.h"
 
 
 bool ConditionTimespanServer::checkcondition() {

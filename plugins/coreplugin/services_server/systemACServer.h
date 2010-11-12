@@ -20,23 +20,23 @@
 #ifndef ACTORSYSTEMSERVER_H
 #define ACTORSYSTEMSERVER_H
 #include "shared/abstractserviceprovider.h"
-#include <../server/executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorSystem;
-class CorePluginExecute;
+class myPluginExecute;
 class AbstractPlugin;
 
 class ActorSystemServer : public ExecuteService
 {
     Q_OBJECT
 public:
-	ActorSystemServer(ActorSystem* base, CorePluginExecute* plugin, QObject* parent = 0) ;
+	ActorSystemServer(ActorSystem* base, myPluginExecute* plugin, QObject* parent = 0) ;
 	virtual bool checkcondition();
 	virtual void execute();
 	virtual void dataUpdate();
 private:
 	ActorSystem* m_base;
-	CorePluginExecute* m_plugin;
+	myPluginExecute* m_plugin;
 };
 
 #endif // ACTORSYSTEMSERVER_H

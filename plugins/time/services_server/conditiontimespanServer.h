@@ -19,7 +19,7 @@
 
 #ifndef ConditionTimespanServer_h
 #define ConditionTimespanServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class myPluginExecute;
 class ConditionTimespan;

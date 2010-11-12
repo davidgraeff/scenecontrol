@@ -28,6 +28,9 @@ class ActorPinName : public AbstractServiceProvider
     Q_OBJECT
     Q_PROPERTY(QString pinname READ pinname WRITE setPinname);
     Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
+    Q_CLASSINFO("pin_model", "PinsModel")
+    Q_CLASSINFO("pin_model_displaytype", "0");
+    Q_CLASSINFO("pin_model_savetype", "32");
 public:
     ActorPinName(QObject* parent = 0);
     virtual ProvidedTypes providedtypes(){return ActionType;}

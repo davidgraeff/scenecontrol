@@ -18,7 +18,7 @@
 */
 #ifndef ActorPlaylistTrackServer_h
 #define ActorPlaylistTrackServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorPlaylistTrack;
 class myPluginExecute;

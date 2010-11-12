@@ -33,17 +33,10 @@ public:
     ServiceController ();
     virtual ~ServiceController();
     QList<AbstractStateTracker*> stateTracker();
-    void setMode(const QString& mode);
-    QString mode() {
-        return m_mode;
-    }
-    EventController* eventcontroller() { return m_EventController; }
-
     /**
      * Refresh data of all plugins.
      */
     void refresh();
-    QDir saveDir() const;
 private:
     QString serviceFilename(AbstractServiceProvider* service);
     /*
@@ -69,10 +62,7 @@ private:
     void addToExecuteProfiles(ExecuteService* service);
     void removeFromExecuteProfiles(ExecuteService* service);
 
-    // savedir
     QDir m_savedir;
-    QString m_mode;
-    EventController* m_EventController;
 public Q_SLOTS:
     void runProfile(const QString& id);
     void stopProfile(const QString& id) ;

@@ -30,10 +30,10 @@ void ActorCollection::setProfileid(const QString& value) {
     m_id = value;
 }
 
-ActorCollection::ActorCollectionEnum ActorCollection::action() const {
+ActorCollection::actionEnum ActorCollection::action() const {
     return m_action;
 }
 
-void ActorCollection::setAction(ActorCollection::ActorCollectionEnum value) {
+void ActorCollection::setAction(ActorCollection::actionEnum value) {
     m_action = value;
 }

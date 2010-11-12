@@ -38,9 +38,9 @@ void ActorPlaylistTrack::setTrack(int value) {
     m_track = value;
 }
 
-int ActorPlaylistTrack::state() const {
+MediaStateTracker::EnumMediaState ActorPlaylistTrack::state() const {
     return m_state;
 }
-void ActorPlaylistTrack::setState(int value) {
+void ActorPlaylistTrack::setState(MediaStateTracker::EnumMediaState value) {
     m_state = value;
 }

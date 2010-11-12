@@ -25,35 +25,47 @@ class ActorLed : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
-    Q_PROPERTY(unsigned int fadetype READ fadetype WRITE setFadetype);
-    Q_PROPERTY(ActorLed::ActorLedEnum assignment READ assignment WRITE setAssignment);
+    Q_CLASSINFO("channel_model", "ChannelsModel")
+    Q_CLASSINFO("channel_model_displaytype", "0");
+    Q_CLASSINFO("channel_model_savetype", "32");
+    Q_PROPERTY(ActorLed::fadetypeEnum fadetype READ fadetype WRITE setFadetype);
+    Q_PROPERTY(ActorLed::assignmentEnum assignment READ assignment WRITE setAssignment);
     Q_PROPERTY(int value READ value WRITE setValue);
+    Q_CLASSINFO("value_max", "255");
+    Q_CLASSINFO("value_min", "0");
 public:
-    enum ActorLedEnum
+    enum assignmentEnum
     {
         ValueAbsolute,
         ValueRelative,
         ValueInverse,
         ValueMultiplikator
     };
-    Q_ENUMS(ActorLedEnum);
+    Q_ENUMS(assignmentEnum);
+    enum fadetypeEnum
+    {
+        FadeTypeImmediately,
+        FadeTypeFade,
+	FadeTypeFlashyFade
+    };
+    Q_ENUMS(fadetypeEnum);
     ActorLed(QObject* parent = 0);
     virtual ProvidedTypes providedtypes() {
         return ActionType;
     }
     void setChannel(unsigned int channel);
     unsigned int channel() const;
-    void setFadetype(unsigned int fadetype);
-    unsigned int fadetype() const;
+    void setFadetype(ActorLed::fadetypeEnum fadetype);
+    ActorLed::fadetypeEnum fadetype() const;
     void setValue(int value);
     int value() const;
-    void setAssignment(ActorLed::ActorLedEnum value);
-    ActorLed::ActorLedEnum assignment() const;
+    void setAssignment(ActorLed::assignmentEnum value);
+    ActorLed::assignmentEnum assignment() const;
 private:
     unsigned int m_channel;
     int m_value;
-    unsigned int m_fadetype;
-    ActorLed::ActorLedEnum m_assignment;
+    ActorLed::fadetypeEnum m_fadetype;
+    ActorLed::assignmentEnum m_assignment;
 };
 
 #endif // ACTORSERVICEPROVIDER_H

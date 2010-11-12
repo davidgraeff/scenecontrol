@@ -18,7 +18,7 @@
 */
 
 #include "systemEVServer.h"
-#include <coreplugin/coreplugin_server.h>
+#include <coreplugin/server/plugin_server.h>
 #include <coreplugin/services/systemEV.h>
 #include <../server/servicecontroller.h>
 
@@ -39,6 +39,6 @@ void EventSystemServer::dataUpdate() {
 			break;
 	};
 }
-EventSystemServer::EventSystemServer(EventSystem* base, CorePluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {
+EventSystemServer::EventSystemServer(EventSystem* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {
     dataUpdate();
 }

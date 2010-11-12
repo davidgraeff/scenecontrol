@@ -19,8 +19,8 @@
 
 #include "actormuteServer.h"
 #include <services/actormute.h>
-#include <plugin_server.h>
-#include "../mediacontroller.h"
+#include "server/plugin_server.h"
+#include "server/mediacontroller.h"
 
 void ActorMuteServer::execute()
 {

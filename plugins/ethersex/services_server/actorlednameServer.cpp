@@ -19,8 +19,8 @@
 
 #include "actorlednameServer.h"
 #include <services/actorledname.h>
-#include <plugin_server.h>
-#include <controller.h>
+#include "server/plugin_server.h"
+#include "server/controller.h"
 
 void ActorLedNameServer::execute()
 {

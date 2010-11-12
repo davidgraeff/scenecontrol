@@ -1,0 +1,28 @@
+editor: auto generierter service editor tab
+* bool : immer checkbox
+* int: intbox
+* double, qreal: doublebox
+* int, range: slider+intbox
+* strings: textinput
+* enums : Combobox
+
+Q_CLASSINFO("propname_props", "url|filename|time|date|datetime|daybits") alles
+Q_CLASSINFO("propname_model", "") alles
+Q_CLASSINFO("propname_model_displaytype", "") alles
+Q_CLASSINFO("propname_model_savetype", "") alles
+Q_CLASSINFO("propname_is_model_and_editable", "1") wo ein model gesetzt ist
+Q_CLASSINFO("propname_max", "") int
+Q_CLASSINFO("propname_min", "") int
+Q_CLASSINFO("propname_statetracker_id", "")
+Q_CLASSINFO("propname_statetracker_property", "")
+
+handle_PROPNAME_model_indexchanged(QModelIndex)
+
+
+
+CollectionModel
+BackupsModel
+ChannelsModel
+PinsModel
+PlaylistsModel
+TempPlaylistTracksModel

@@ -18,11 +18,11 @@
 */
 
 #include "modeACServer.h"
-#include <coreplugin/coreplugin_server.h>
-#include <../server/servicecontroller.h>
 #include <coreplugin/services/modeAC.h>
+#include "../server/servicecontroller.h"
+#include "coreplugin/server/plugin_server.h"
 
-ActorModeServer::ActorModeServer(ActorMode* base, CorePluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {
+ActorModeServer::ActorModeServer(ActorMode* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {
 	connect(plugin,SIGNAL(modeChanged()),SIGNAL(trigger()));
 }
 bool ActorModeServer::checkcondition() {

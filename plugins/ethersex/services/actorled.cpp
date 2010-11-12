@@ -33,12 +33,12 @@ void ActorLed::setChannel(unsigned int value)
     m_channel = value;
 }
 
-unsigned int ActorLed::fadetype() const
+ActorLed::fadetypeEnum ActorLed::fadetype() const
 {
     return m_fadetype;
 }
 
-void ActorLed::setFadetype(unsigned int value)
+void ActorLed::setFadetype(ActorLed::fadetypeEnum value)
 {
     m_fadetype = value;
 }
@@ -53,12 +53,12 @@ void ActorLed::setValue(int value)
     m_value = value;
 }
 
-ActorLed::ActorLedEnum ActorLed::assignment() const
+ActorLed::assignmentEnum ActorLed::assignment() const
 {
     return m_assignment;
 }
 
-void ActorLed::setAssignment(ActorLed::ActorLedEnum value)
+void ActorLed::setAssignment(ActorLed::assignmentEnum value)
 {
     m_assignment = value;
 }

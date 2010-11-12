@@ -7,39 +7,28 @@
 #include <QUuid>
 #include <QDebug>
 
-#include "shared/profile.h"
+#include "shared/services/profile.h"
 #include "shared/qjson/parser.h"
 #include "shared/qjson/qobjecthelper.h"
 #include "shared/qjson/serializer.h"
-#include "shared/category.h"
+#include "shared/services/category.h"
+#include "shared/abstractplugin.h"
 #include "shared/abstractstatetracker.h"
-#include "executeservice.h"
-#include "executeplugin.h"
+#include "shared/server/executeservice.h"
+#include "shared/server/executeplugin.h"
 #include "executeprofile.h"
-#include "eventcontroller.h"
-#include "coreplugin/coreplugin_server.h"
+#include <QApplication>
 #define __FUNCTION__ __FUNCTION__
 
-ServiceController::ServiceController () : m_EventController(new EventController())
+ServiceController::ServiceController ()
 {
     int offered_services = 0;
     ExecutePlugin *plugin;
     qDebug() << "Start: Load Plugins";
 
-    //corePlugin
-    plugin = new CorePluginExecute(this);
-    qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
-    connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
-    m_plugins.append ( plugin );
-    QStringList provides = plugin->base()->registerServices();
-    foreach ( QString provide, provides )
-    {
-        m_plugin_provider.insert ( provide, plugin );
-    }
-    offered_services += provides.size();
-
-    QDir pluginsDir = QDir ( QLatin1String ( "/usr/lib/roomcontrol/plugins/server" ) );
-    foreach ( QString fileName, pluginsDir.entryList ( QDir::Files ) )
+    const QDir pluginsDir = QDir(qApp->property("pluginspath").value<QString>());
+    const QStringList plugins = pluginsDir.entryList ( QDir::Files );
+    foreach ( QString fileName, plugins )
     {
         QPluginLoader* loader = new QPluginLoader ( pluginsDir.absoluteFilePath ( fileName ), this );
         loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
@@ -68,11 +57,7 @@ ServiceController::ServiceController () : m_EventController(new EventController(
     }
 
     qDebug() << "Start: Load service provider";
-    m_savedir = QFileInfo ( QSettings().fileName() ).absoluteDir();
-    m_savedir.mkpath ( m_savedir.absolutePath() );
-    m_savedir.mkdir ( QLatin1String ( "json" ) );
-    m_savedir.cd ( QLatin1String ( "json" ) );
-
+    m_savedir = QDir(qApp->property("settingspath").value<QString>());
     QStringList files = m_savedir.entryList ( QDir::Files );
     QJson::Parser parser;
     foreach ( QString file, files )
@@ -117,7 +102,6 @@ ServiceController::ServiceController () : m_EventController(new EventController(
 
 ServiceController::~ServiceController()
 {
-    delete m_EventController;
     qDebug() << "Shutdown: ServiceController (Services)";
     qDeleteAll ( m_servicesList );
     qDebug() << "Shutdown: ServiceController (Plugins)";
@@ -132,11 +116,6 @@ QList<AbstractStateTracker*> ServiceController::stateTracker()
         l.append ( plugin->stateTracker() );
     }
     return l;
-}
-
-QDir ServiceController::saveDir() const
-{
-    return m_savedir;
 }
 
 bool ServiceController::generate ( const QVariantMap& json )
@@ -160,14 +139,13 @@ bool ServiceController::generate ( const QVariantMap& json )
 
     // Object with id not known. Create new object
     const QString type = json.value ( QLatin1String ( "type" ), QString() ).toString();
-    const QString plugin = json.value ( QLatin1String ( "plugin" ), QString() ).toString();
-    if ( type.isEmpty() || plugin.isEmpty() )
+    if ( type.isEmpty())
     {
-        qWarning() << __FUNCTION__ << "detected json object without type or plugin" << json;
+        qWarning() << __FUNCTION__ << "detected json object without type" << json;
         return false;
     }
 
-    ExecutePlugin* eplugin = m_plugin_provider.value ( plugin );
+    ExecutePlugin* eplugin = m_plugin_provider.value ( type );
     if ( !eplugin )
     {
         qWarning() << __FUNCTION__ << "no plugin for json object" << json;
@@ -345,7 +323,3 @@ void ServiceController::stopProfile(const QString& id) {
     if (!p) return;
     p->stop();
 }
-void ServiceController::setMode(const QString& mode) {
-    m_mode = mode;
-}
-

@@ -24,13 +24,13 @@
 class ActorPlaylistVolume : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(qreal value READ value WRITE setValue);
+    Q_PROPERTY(qreal volume READ volume WRITE setVolume);
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorPlaylistVolume(QObject* parent = 0);
     virtual ProvidedTypes providedtypes(){return ActionType;}
-    qreal value() const ;
-    void setValue(qreal value) ;
+    qreal volume() const ;
+    void setVolume(qreal value) ;
     bool relative() const ;
     void setRelative(bool value) ;
 private:

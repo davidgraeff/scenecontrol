@@ -18,7 +18,7 @@
 */
 #ifndef ActorPlaylistVolumeServer_h
 #define ActorPlaylistVolumeServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorPlaylistVolume;
 class myPluginExecute;

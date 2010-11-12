@@ -36,7 +36,7 @@ public:
         PauseState,
         StopState
     };
-    Q_ENUMS(EnumMediaState);
+    Q_ENUMS(MediaStateTracker::EnumMediaState);
 
 	MediaStateTracker(QObject* parent = 0) : AbstractStateTracker(parent) {}
 	QString playlistid() { return m_playlistid; }

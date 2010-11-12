@@ -19,7 +19,7 @@
 
 #ifndef ConditionPinServer_h
 #define ConditionPinServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ConditionPin;
 class myPluginExecute;

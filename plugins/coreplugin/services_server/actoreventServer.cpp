@@ -18,19 +18,18 @@
 */
 
 #include "actoreventServer.h"
-#include <coreplugin/coreplugin_server.h>
-#include <../server/servicecontroller.h>
-#include <../server/eventcontroller.h>
 #include <coreplugin/services/actorevent.h>
+#include <coreplugin/server/eventcontroller.h>
+#include <coreplugin/server/plugin_server.h>
 
-ActorEventServer::ActorEventServer(ActorEvent* base, CorePluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+ActorEventServer::ActorEventServer(ActorEvent* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 
 void ActorEventServer::execute()
 {
     ActorEvent* base = service<ActorEvent>();
-    m_plugin->serviceController()->eventcontroller()->setFilename(base->filename());
-    m_plugin->serviceController()->eventcontroller()->setTitle(base->title());
-    m_plugin->serviceController()->eventcontroller()->play();
+    m_plugin->eventcontroller()->setFilename(base->filename());
+    m_plugin->eventcontroller()->setTitle(base->title());
+    m_plugin->eventcontroller()->play();
 }
 
 bool ActorEventServer::checkcondition() {

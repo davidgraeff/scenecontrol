@@ -18,7 +18,7 @@
 */
 #ifndef ActorPlaylistPositionServer_h
 #define ActorPlaylistPositionServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorPlaylistPosition;
 class myPluginExecute;

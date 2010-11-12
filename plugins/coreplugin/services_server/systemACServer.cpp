@@ -19,11 +19,11 @@
 
 #include "systemACServer.h"
 #include <coreplugin/services/systemAC.h>
-#include <coreplugin/coreplugin_server.h>
+#include <coreplugin/server/plugin_server.h>
 #include <QCoreApplication>
 #include <../server/servicecontroller.h>
 
-ActorSystemServer::ActorSystemServer(ActorSystem* base, CorePluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
+ActorSystemServer::ActorSystemServer(ActorSystem* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
 bool ActorSystemServer::checkcondition() {
     return true;
 }

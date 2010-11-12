@@ -19,22 +19,22 @@
 
 #ifndef ACTORBACKUPSERVER_H
 #define ACTORBACKUPSERVER_H
-#include <../server/executeservice.h>
+#include "shared/server/executeservice.h"
 
-class CorePluginExecute;
+class myPluginExecute;
 class ActorBackup;
 class AbstractPlugin;
 class ActorBackupServer : public ExecuteService
 {
     Q_OBJECT
 public:
-	ActorBackupServer(ActorBackup* base, CorePluginExecute* plugin, QObject* parent = 0) ;
+	ActorBackupServer(ActorBackup* base, myPluginExecute* plugin, QObject* parent = 0) ;
 	virtual bool checkcondition();
 	virtual void execute();
 	virtual void dataUpdate();
 private:
 	ActorBackup* m_base;
-	CorePluginExecute* m_plugin;
+	myPluginExecute* m_plugin;
 };
 
 #endif // ACTORBACKUPSERVER_H

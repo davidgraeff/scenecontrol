@@ -19,8 +19,8 @@
 
 #include "actorplaylistcmdServer.h"
 #include <services/actorplaylistcmd.h>
-#include "plugin_server.h"
-#include "../mediacontroller.h"
+#include "server/plugin_server.h"
+#include "server/mediacontroller.h"
 
 ActorPlaylistCmdServer::ActorPlaylistCmdServer(ActorPlaylistCmd* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 

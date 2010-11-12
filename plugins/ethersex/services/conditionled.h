@@ -25,9 +25,15 @@ class ConditionLed : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(unsigned int min READ max WRITE setMin);
+    Q_CLASSINFO("min_max", "255");
+    Q_CLASSINFO("min_min", "0");
     Q_PROPERTY(unsigned int max READ max WRITE setMax);
+    Q_CLASSINFO("max_max", "255");
+    Q_CLASSINFO("max_min", "0");
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
-
+    Q_CLASSINFO("channel_model", "ChannelsModel")
+    Q_CLASSINFO("channel_model_displaytype", "0");
+    Q_CLASSINFO("channel_model_savetype", "32");
 public:
     ConditionLed(QObject* parent = 0);
     virtual ProvidedTypes providedtypes(){return ConditionType;}

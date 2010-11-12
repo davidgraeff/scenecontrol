@@ -20,30 +20,36 @@
 #ifndef ACTORPROFILESERVICEPROVIDER_H
 #define ACTORPROFILESERVICEPROVIDER_H
 #include "shared/abstractserviceprovider.h"
+#include <Qt>
 
 class AbstractPlugin;
 class ActorCollection : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString profileid READ profileid WRITE setProfileid);
-	Q_PROPERTY(ActorCollection::ActorCollectionEnum action READ action WRITE setAction);
+    Q_CLASSINFO("profileid_model", "CollectionModel")
+    Q_CLASSINFO("profileid_model_displaytype", "0");
+    Q_CLASSINFO("profileid_model_savetype", "32");
+    Q_PROPERTY(ActorCollection::actionEnum action READ action WRITE setAction);
 public:
-	enum ActorCollectionEnum
-	{
-		StartProfile,
-		CancelProfile
-	};
-	Q_ENUMS(ActorProfileEnum);
-	
-	ActorCollection(QObject* parent=0);
-	virtual ProvidedTypes providedtypes(){return ActionType;}
+    enum actionEnum
+    {
+        StartProfile,
+        CancelProfile
+    };
+    Q_ENUMS(actionEnum);
+
+    ActorCollection(QObject* parent=0);
+    virtual ProvidedTypes providedtypes() {
+        return ActionType;
+    }
     QString profileid() const;
     void setProfileid(const QString& value);
-	ActorCollection::ActorCollectionEnum action() const;
-	void setAction(ActorCollection::ActorCollectionEnum value);
+    ActorCollection::actionEnum action() const;
+    void setAction(ActorCollection::actionEnum value);
 private:
     QString m_id;
-	ActorCollection::ActorCollectionEnum m_action;
+    ActorCollection::actionEnum m_action;
 };
 
 #endif // ACTORPROFILESERVICEPROVIDER_H

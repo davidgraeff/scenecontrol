@@ -23,10 +23,10 @@ ActorPlaylistVolume::ActorPlaylistVolume(QObject* parent)
         : AbstractServiceProvider(parent)
 {}
 
-qreal ActorPlaylistVolume::value() const {
+qreal ActorPlaylistVolume::volume() const {
     return m_volume;
 }
-void ActorPlaylistVolume::setValue(qreal value) {
+void ActorPlaylistVolume::setVolume(qreal value) {
     m_volume = value;
 }
 bool ActorPlaylistVolume::relative() const {

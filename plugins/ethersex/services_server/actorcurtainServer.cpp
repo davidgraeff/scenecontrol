@@ -19,8 +19,8 @@
 
 #include "actorcurtainServer.h"
 #include <services/actorcurtain.h>
-#include <plugin_server.h>
-#include <controller.h>
+#include "server/plugin_server.h"
+#include "server/controller.h"
 
 void ActorCurtainServer::execute()
 {

@@ -22,7 +22,7 @@
 #include <QVector>
 #include <QVariantMap>
 #include <QTimer>
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class myPluginExecute;
 class EventPeriodic;

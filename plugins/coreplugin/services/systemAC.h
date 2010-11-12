@@ -26,21 +26,21 @@ class AbstractPlugin;
 class ActorSystem : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(ActorSystem::ActorSystemEnum action READ action WRITE setAction);
+    Q_PROPERTY(ActorSystem::actionEnum action READ action WRITE setAction);
 public:
     ActorSystem(QObject* parent=0);
 	virtual ProvidedTypes providedtypes(){return ActionType;}
-    enum ActorSystemEnum
+    enum actionEnum
     {
       RestartSystem,
 	  QuitSystem,
       ResyncSystem
     };
-    Q_ENUMS(ActorSystemEnum);
-    ActorSystem::ActorSystemEnum action() const;
-    void setAction(ActorSystem::ActorSystemEnum value);
+    Q_ENUMS(actionEnum);
+    ActorSystem::actionEnum action() const;
+    void setAction(ActorSystem::actionEnum value);
 private:
-	ActorSystem::ActorSystemEnum m_action;
+	ActorSystem::actionEnum m_action;
 };
 
 #endif // ACTORSYSTEM_H

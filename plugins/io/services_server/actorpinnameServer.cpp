@@ -19,8 +19,8 @@
 
 #include "actorpinnameServer.h"
 #include <services/actorpinname.h>
-#include <plugin_server.h>
-#include <iocontroller.h>
+#include "server/plugin_server.h"
+#include "server/iocontroller.h"
 
 void ActorPinNameServer::execute()
 {

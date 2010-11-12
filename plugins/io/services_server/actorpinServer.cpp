@@ -18,9 +18,9 @@
 */
 
 #include "actorpinServer.h"
-#include <iocontroller.h>
 #include <services/actorpin.h>
-#include <plugin_server.h>
+#include "server/plugin_server.h"
+#include "server/iocontroller.h"
 
 void ActorPinServer::execute()
 {

@@ -20,18 +20,20 @@
 #ifndef ConditionMusicState_h
 #define ConditionMusicState_h
 #include <shared/abstractserviceprovider.h>
+#include <statetracker/mediastatetracker.h>
 
 class ConditionMusicState : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(int value READ value WRITE setValue);
+    Q_PROPERTY(MediaStateTracker::EnumMediaState value READ value WRITE setValue);
 public:
+    Q_ENUMS(MediaStateTracker::EnumMediaState);
     ConditionMusicState(QObject* parent = 0);
     virtual ProvidedTypes providedtypes(){return ConditionType;}
-    int value() const;
-    void setValue(int value);
+    MediaStateTracker::EnumMediaState value() const;
+    void setValue(MediaStateTracker::EnumMediaState value);
 private:
-    int m_value;
+    MediaStateTracker::EnumMediaState m_value;
 };
 
 #endif // ConditionMusicState_h

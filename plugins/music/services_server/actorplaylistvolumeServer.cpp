@@ -19,8 +19,8 @@
 
 #include "actorplaylistvolumeServer.h"
 #include <services/actorplaylistvolume.h>
-#include <plugin_server.h>
-#include "../mediacontroller.h"
+#include "server/plugin_server.h"
+#include "server/mediacontroller.h"
 
 ActorPlaylistVolumeServer::ActorPlaylistVolumeServer(ActorPlaylistVolume* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 

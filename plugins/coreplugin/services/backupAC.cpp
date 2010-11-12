@@ -22,11 +22,11 @@
 ActorBackup::ActorBackup(QObject* parent)
         : AbstractServiceProvider(parent) {}
 
-ActorBackup::ActorBackupEnum ActorBackup::action() const {
+ActorBackup::actionEnum ActorBackup::action() const {
     return m_action;
 }
 
-void ActorBackup::setAction(ActorBackup::ActorBackupEnum value) {
+void ActorBackup::setAction(ActorBackup::actionEnum value) {
     m_action = value;
 }
 

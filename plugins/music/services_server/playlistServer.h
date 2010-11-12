@@ -22,7 +22,7 @@
 
 #include <QObject>
 #include <QVariantMap>
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorPlaylist;
 class myPluginExecute;

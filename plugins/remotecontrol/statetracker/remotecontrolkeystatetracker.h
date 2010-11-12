@@ -25,6 +25,8 @@ class RemoteControlKeyStateTracker : public AbstractStateTracker
 {
     Q_OBJECT
     Q_PROPERTY(QString key READ key WRITE setKey);
+    Q_PROPERTY(bool pressed READ pressed WRITE setPressed);
+    Q_PROPERTY(int channel READ channel WRITE setChannel);
 public:
     RemoteControlKeyStateTracker(QObject* parent = 0);
     void setKey(const QString& key) {
@@ -33,8 +35,22 @@ public:
     QString key() const {
         return m_key;
     }
+    bool pressed() const {
+        return m_pressed;
+    }
+    int channel() const {
+        return m_channel;
+    }
+    void setPressed(bool b) {
+        m_pressed = b;
+    }
+    void setChannel(int r) {
+        m_channel = r;
+    }
 private:
     QString m_key;
+    bool m_pressed;
+    int m_channel;
 };
 
 #endif // REMOTECONTROLKEYSTATETRACKER_H

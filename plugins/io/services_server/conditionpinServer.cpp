@@ -18,9 +18,9 @@
 */
 
 #include "conditionpinServer.h"
-#include <iocontroller.h>
 #include <services/conditionpin.h>
-#include <plugin_server.h>
+#include "server/plugin_server.h"
+#include "server/iocontroller.h"
 
 bool ConditionPinServer::checkcondition()
 {

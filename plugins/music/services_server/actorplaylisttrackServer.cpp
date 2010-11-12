@@ -19,11 +19,11 @@
 
 #include "actorplaylisttrackServer.h"
 #include <services/actorplaylisttrack.h>
-#include <plugin_server.h>
 #include <statetracker/mediastatetracker.h>
-#include "../mediacontroller.h"
 #include "playlistServer.h"
 #include "services/playlist.h"
+#include "server/plugin_server.h"
+#include "server/mediacontroller.h"
 
 void ActorPlaylistTrackServer::execute()
 {

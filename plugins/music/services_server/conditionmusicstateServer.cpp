@@ -19,8 +19,8 @@
 
 #include "conditionmusicstateServer.h"
 #include <services/conditionmusicstate.h>
-#include <plugin_server.h>
-#include "../mediacontroller.h"
+#include "server/plugin_server.h"
+#include "server/mediacontroller.h"
 
 ConditionMusicStateServer::ConditionMusicStateServer(ConditionMusicState* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 bool ConditionMusicStateServer::checkcondition() {

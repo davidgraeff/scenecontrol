@@ -19,7 +19,7 @@
 
 #ifndef ActorPinServer_h
 #define ActorPinServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorPin;
 class myPluginExecute;

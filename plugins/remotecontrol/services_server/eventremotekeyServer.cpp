@@ -18,8 +18,8 @@
 */
 
 #include "eventremotekeyServer.h"
-#include <services/eventremotekey.h>
-#include <plugin_server.h>
+#include "services/eventremotekey.h"
+#include "server/plugin_server.h"
 
 EventRemoteKeyServer::EventRemoteKeyServer(EventRemoteKey* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {
     connect(&m_timer,SIGNAL(timeout()),SLOT(retrigger()));

@@ -26,6 +26,8 @@ class ActorMode : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString mode READ mode WRITE setMode);
+    Q_CLASSINFO("mode_statetracker_id", "ModeStateTracker")
+    Q_CLASSINFO("mode_statetracker_property", "mode")
 public:
 	ActorMode(QObject* parent=0);
 	virtual ProvidedTypes providedtypes(){return ActionType|ConditionType|EventType;}

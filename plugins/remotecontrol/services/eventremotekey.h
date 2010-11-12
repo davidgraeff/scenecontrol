@@ -26,8 +26,14 @@ class EventRemoteKey : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString key READ key WRITE setKey);
+    Q_CLASSINFO("key_statetracker_id", "RemoteControlKeyStateTracker")
+    Q_CLASSINFO("key_statetracker_property", "key")
     Q_PROPERTY(bool pressed READ pressed WRITE setPressed);
+    Q_CLASSINFO("pressed_statetracker_id", "RemoteControlKeyStateTracker")
+    Q_CLASSINFO("pressed_statetracker_property", "pressed")
     Q_PROPERTY(int channel READ channel WRITE setChannel);
+    Q_CLASSINFO("channel_statetracker_id", "RemoteControlKeyStateTracker")
+    Q_CLASSINFO("channel_statetracker_property", "channel")
     Q_PROPERTY(int repeat READ repeat WRITE setRepeat)
     Q_PROPERTY(int repeatinit READ repeatinit WRITE setRepeatinit)
 public:

@@ -19,8 +19,8 @@
 
 #include "conditionledServer.h"
 #include <services/conditionled.h>
-#include <plugin_server.h>
-#include <controller.h>
+#include "server/plugin_server.h"
+#include "server/controller.h"
 
 bool ConditionLedServer::checkcondition()
 {

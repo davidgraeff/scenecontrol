@@ -19,10 +19,10 @@
 
 #include "profileACServer.h"
 #include <coreplugin/services/profileAC.h>
-#include <coreplugin/coreplugin_server.h>
+#include <coreplugin/server/plugin_server.h>
 #include <../server/servicecontroller.h>
 
-ActorCollectionServer::ActorCollectionServer(ActorCollection* base, CorePluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
+ActorCollectionServer::ActorCollectionServer(ActorCollection* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
 bool ActorCollectionServer::checkcondition() {
 	return true;
 }

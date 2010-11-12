@@ -24,14 +24,21 @@
 class EventSystem : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(int system READ system WRITE setSystem)
+    Q_PROPERTY(EventSystem::systemEnum system READ system WRITE setSystem)
 public:
+  	enum systemEnum
+	{
+		ServerStarted,
+		ServerGoingToStop
+	};
+	Q_ENUMS(systemEnum);
+	
     EventSystem(QObject* parent = 0);
 	virtual ProvidedTypes providedtypes(){return EventType;}
-    int system() const ;
-    void setSystem( int s ) ;
+    EventSystem::systemEnum system() const ;
+    void setSystem( EventSystem::systemEnum s ) ;
 private:
-    int m_system;
+    EventSystem::systemEnum m_system;
 };
 
 #endif // EventSystem_h

@@ -19,7 +19,7 @@
 
 #ifndef ActorCinemaVolumeServer_h
 #define ActorCinemaVolumeServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorCinemaVolume;
 class myPluginExecute;

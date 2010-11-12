@@ -19,7 +19,7 @@
 
 #ifndef ConditionMusicStateServer_h
 #define ConditionMusicStateServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ConditionMusicState;
 class myPluginExecute;

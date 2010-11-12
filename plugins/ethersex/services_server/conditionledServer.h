@@ -19,7 +19,7 @@
 
 #ifndef ConditionLedServer_h
 #define ConditionLedServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ConditionLed;
 class myPluginExecute;

@@ -20,21 +20,21 @@
 #ifndef ACTORMODESERVER_H
 #define ACTORMODESERVER_H
 #include "shared/abstractserviceprovider.h"
-#include <../server/executeservice.h>
+#include "shared/server/executeservice.h"
 
+class myPluginExecute;
 class ActorMode;
-class CorePluginExecute;
 class ActorModeServer : public ExecuteService
 {
     Q_OBJECT
 public:
-	ActorModeServer(ActorMode* base, CorePluginExecute* plugin, QObject* parent = 0);
+	ActorModeServer(ActorMode* base, myPluginExecute* plugin, QObject* parent = 0);
 	virtual bool checkcondition();
 	virtual void execute();
 	virtual void dataUpdate();
 private:
 	ActorMode* m_base;
-	CorePluginExecute* m_plugin;
+	myPluginExecute* m_plugin;
 };
 
 #endif // ACTORMODESERVER_H

@@ -19,7 +19,7 @@
 
 #ifndef ActorMuteServer_h
 #define ActorMuteServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorMute;
 class myPluginExecute;

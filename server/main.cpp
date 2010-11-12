@@ -25,7 +25,8 @@
 #include <qprocess.h>
 #include "networkcontroller.h"
 #include "servicecontroller.h"
-#include <abstractserviceprovider.h>
+#include "shared/abstractserviceprovider.h"
+#include <QSettings>
 
 const QLatin1String servicename = QLatin1String("org.roomcontrol");
 NetworkController* network = 0;
@@ -69,6 +70,14 @@ int main(int argc, char *argv[])
     qapp.setApplicationVersion(QLatin1String("2.0 "__DATE__" "__TIME__));
     qapp.setOrganizationName(QLatin1String("davidgraeff"));
     qapp.addLibraryPath(QLatin1String("/usr/lib/roomcontrol"));
+    
+    QDir m_savedir = QFileInfo ( QSettings().fileName() ).absoluteDir();
+    m_savedir.mkpath ( m_savedir.absolutePath() );
+    m_savedir.mkdir ( QLatin1String ( "json" ) );
+    m_savedir.cd ( QLatin1String ( "json" ) );
+
+    qapp.setProperty("settingspath",m_savedir.path());
+    qapp.setProperty("pluginspath",QLatin1String ( "/usr/lib/roomcontrol/plugins/server" ) );
 
     QDBusConnection dbusconnection = QDBusConnection::connectToBus(QDBusConnection::SessionBus, servicename);
     if ( !dbusconnection.isConnected() )

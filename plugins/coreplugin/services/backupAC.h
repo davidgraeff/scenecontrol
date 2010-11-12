@@ -25,24 +25,28 @@ class AbstractPlugin;
 class ActorBackup : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(ActorBackup::ActorBackupEnum action READ action WRITE setAction);
+    Q_PROPERTY(QString backupid READ backupid WRITE setBackupid);
+    Q_CLASSINFO("backupid_model", "BackupsModel")
+    Q_CLASSINFO("backupid_model_displaytype", "0");
+    Q_CLASSINFO("backupid_model_savetype", "32");
+    Q_PROPERTY(ActorBackup::actionEnum action READ action WRITE setAction);
 public:
     ActorBackup(QObject* parent=0);
 	virtual ProvidedTypes providedtypes(){return ActionType;}
-    enum ActorBackupEnum
+    enum actionEnum
     {
       CreateBackup,
       RemoveBackup,
       RestoreBackup
     };
-    Q_ENUMS(ActorSystemEnum);
-    ActorBackup::ActorBackupEnum action() const;
-    void setAction(ActorBackup::ActorBackupEnum value);
+    Q_ENUMS(actionEnum);
+    ActorBackup::actionEnum action() const;
+    void setAction(ActorBackup::actionEnum value);
     QString backupid() const;
     void setBackupid(const QString& value);
 private:
     QString m_id;
-	ActorBackup::ActorBackupEnum m_action;
+	ActorBackup::actionEnum m_action;
 };
 
 #endif // ACTORBACKUP_H

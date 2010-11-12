@@ -19,7 +19,7 @@
 
 #ifndef ActorPinNameServer_h
 #define ActorPinNameServer_h
-#include <executeservice.h>
+#include "shared/server/executeservice.h"
 
 class ActorPinName;
 class myPluginExecute;

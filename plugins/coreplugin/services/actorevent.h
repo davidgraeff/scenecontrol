@@ -26,6 +26,7 @@ class ActorEvent : public AbstractServiceProvider
     Q_OBJECT
     Q_PROPERTY(QString title READ title WRITE setTitle);
     Q_PROPERTY(QString filename READ filename WRITE setFilename);
+    Q_CLASSINFO("filename_props", "filename")
 public:
     ActorEvent(QObject* parent = 0);
     virtual ProvidedTypes providedtypes() {return ActionType;}

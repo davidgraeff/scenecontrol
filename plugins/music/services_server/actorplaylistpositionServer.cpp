@@ -18,9 +18,9 @@
 */
 
 #include "actorplaylistpositionServer.h"
-#include <plugin_server.h>
 #include <services/actorplaylistposition.h>
-#include "../mediacontroller.h"
+#include "server/plugin_server.h"
+#include "server/mediacontroller.h"
 
 ActorPlaylistPositionServer::ActorPlaylistPositionServer(ActorPlaylistPosition* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 void ActorPlaylistPositionServer::execute() {

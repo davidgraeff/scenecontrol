@@ -18,9 +18,9 @@
 */
 
 #include "conditioncurtainServer.h"
-#include <services/conditioncurtain.h>
-#include <plugin_server.h>
-#include <controller.h>
+#include "services/conditioncurtain.h"
+#include "server/plugin_server.h"
+#include "server/controller.h"
 
 bool ConditionCurtainServer::checkcondition()
 {

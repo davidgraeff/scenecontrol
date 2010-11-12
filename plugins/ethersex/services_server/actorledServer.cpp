@@ -19,8 +19,8 @@
 
 #include "actorledServer.h"
 #include <services/actorled.h>
-#include <plugin_server.h>
-#include <controller.h>
+#include "server/plugin_server.h"
+#include "server/controller.h"
 
 void ActorLedServer::execute()
 {

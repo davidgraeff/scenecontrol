@@ -24,10 +24,9 @@ EventSystem::EventSystem(QObject* parent)
 {
 }
 
-int EventSystem::system() const {
-
+EventSystem::systemEnum EventSystem::system() const {
     return m_system;
 }
-void EventSystem::setSystem(int s) {
+void EventSystem::setSystem(EventSystem::systemEnum s) {
 	m_system = s;
 }

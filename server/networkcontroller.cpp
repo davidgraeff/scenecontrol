@@ -12,19 +12,19 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
+#include <QSettings>
 // Json
 #include "shared/qjson/parser.h"
 #include "shared/qjson/qobjecthelper.h"
 #include "shared/qjson/serializer.h"
 
-#include <QSettings>
 #include "shared/abstractserviceprovider.h"
 #include "shared/abstractstatetracker.h"
+#include "shared/services/profile.h"
+#include "shared/services/category.h"
+#include "shared/server/executeservice.h"
 #include "servicecontroller.h"
-#include <shared/profile.h>
-#include <shared/category.h>
 #include "authThread.h"
-#include "executeservice.h"
 
 NetworkController::NetworkController(QDBusConnection dbusconnection)
         : m_dbusconnection(dbusconnection), m_service(0), m_auththread(new AuthThread())
@@ -65,8 +65,8 @@ void NetworkController::incomingConnection ( int socketDescriptor )
     QSslSocket *socket = new QSslSocket;
     if ( socket->setSocketDescriptor ( socketDescriptor ) == true )
     {
-        socket->setLocalCertificate("server.crt");
-        socket->setPrivateKey("server.key");
+        socket->setLocalCertificate(QLatin1String("server.crt"));
+        socket->setPrivateKey(QLatin1String("server.key"));
         socket->startServerEncryption();
         connect ( socket, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
         connect(socket, SIGNAL(peerVerifyError(const QSslError &)),
@@ -75,7 +75,9 @@ void NetworkController::incomingConnection ( int socketDescriptor )
                 this, SLOT(slot_sslErrors(const QList<QSslError> &)));
         m_connections.insert ( socket, new ClientConnection(socket) );
         QByteArray data;
-        data.append("{\"type\" : \"serverinfo\", \"version\" : \""NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \""NETWORK_AUTHTIMEOUT"\", \"plugins\" : \"");
+        data.append("{\"type\" : \"serverinfo\", \"version\" : \""NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \"");
+	data.append(QByteArray::number(NETWORK_AUTHTIMEOUT));
+	data.append("\", \"plugins\" : \"");
         data.append("\"}");
         socket->write ( data );
         qDebug() << "new connection, waiting for authentification";
@@ -280,8 +282,10 @@ void NetworkController::timeoutAuth(QSslSocket* socket) {
 }
 void NetworkController::sslErrors(QList< QSslError >) {
     QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
+    qWarning()<<__FUNCTION__ << socket->peerAddress();
 }
 
 void NetworkController::peerVerifyError(QSslError) {
     QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
+    qWarning()<<__FUNCTION__ << socket->peerAddress();
 }

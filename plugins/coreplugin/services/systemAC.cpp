@@ -22,10 +22,10 @@
 ActorSystem::ActorSystem(QObject* parent)
 : AbstractServiceProvider(parent) {}
 
-ActorSystem::ActorSystemEnum ActorSystem::action() const {
+ActorSystem::actionEnum ActorSystem::action() const {
     return m_action;
 }
 
-void ActorSystem::setAction(ActorSystem::ActorSystemEnum value) {
+void ActorSystem::setAction(ActorSystem::actionEnum value) {
     m_action = value;
 }
