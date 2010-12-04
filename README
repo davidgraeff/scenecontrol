@@ -12,22 +12,30 @@ diverse Plugins Linuxspezifische Dienste nutzen.
 Architektur:
 ------------
 Es gibt den ausführenden Kern des Systems, im weiteren Server genannt.
-Es gibt Clients, welche sich mit dem Server über eine ssl gesicherte
+Es gibt Clients, welche sich mit dem Server über eine SSL gesicherte
 Verbindung und linux-pam Authentifierzung verbinden können.
 Es gibt Plugins, welche den Server um Funktionalität ergänzen und Clients
 GUI Erweiterungen zur Ansteuerung der Plugin Funktionen zur Verfügung stellen.
 
-Die Funktionalität eines Plugins ist durch seine Controllerklasse gegeben.
-Diese kommuniziert mit dem Server über Ereignisse, Bedingungen, Aktionen und
-StateTracker. Der Benutzer kann für den Server Profile erstellen, welche
-Ereignisse, Bedingungen und Aktionen zusammenfassen.
+Auf der Serverseite wird die Funktionalität eines Plugins durch seine Controllerklasse gegeben.
+Diese kommuniziert mit dem Server und gegebenenfalls mit anderen Plugins über Aktionen und
+StateTracker.
+Auf der Clientseite kann ein Plugin Modelle (Qt MVC Prinzip) bereitstellen, die von Clients
+zu Anzeige und Manipulationszwecken genutzt werden können. Die Modelle der Clients werden
+in ständiger Synchronität mit dem Server gehalten.
+
+Plugins bieten desweiteren Ereignisse, Bedingungen und Aktionen an, welche in Profilen
+zusammengefasst werden können. Profile können Kategorien zugeordnet werden.
 Ereignisse können Profile aktivieren (z.B. das Drücken einer Fernbedienungstaste,
 das Eintreten eines bestimmten Zeitpunktes).
-Wenn alle Bedingungen zutreffen (z.B. das Rollo ist offen) werden die im Profil
-definierten Aktionen, ggfs. mit der eingestellten zeitlicher Verzögerung, ausgeführt.
-StateTracker geben Veränderungen des Controllers an den Server weiter um
-verbundene Clients zu synchronisieren. Clients werden beim Verbinden mit allen Objekten
-(Events, Conditions, Actions, StateTracker) synchronisiert.
+Wenn alle Bedingungen, welche einem Profil zugeordnet sind, zutreffen
+(z.B. das Rollo ist offen) werden die im Profil definierten Aktionen,
+ggfs. mit einer eingestellten zeitlichen Verzögerung, ausgeführt.
+
+StateTracker geben Veränderungen des Controllers an den Server weiter, welcher
+verbundene Clients synchronisiert. Clients werden beim Verbinden mit allen Objekten
+(Events, Conditions, Actions, StateTracker) synchronisiert und über das StateTracker
+System ist die ständige Konsistenz mit dem Server sichergestellt.
 
 Anwendungsgebiete:
 ------------------
@@ -44,9 +52,10 @@ entgegengenommen.
 
 Clients:
 --------
-Die Touchscreen GUI ist über QML von qt 4.7 realisiert. Der Desktopclient nutzt
-das QWidget-basierte Framework von qt.
+Die Touchscreen GUI ist über QML (seid Qt 4.7) realisiert. Der Desktopclient nutzt
+das QWidget-basierte Framework.
 
 Benötigte Packete unter Ubuntu:
 -------------------------------
 libpam0g-dev
+libqt4-dev
