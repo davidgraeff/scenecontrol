@@ -20,6 +20,7 @@
 #include "executeprofile.h"
 #include <QUuid>
 #include "shared/server/executeservice.h"
+#include <shared/categorize/profile.h>
 
 ExecuteCollection::ExecuteCollection(AbstractServiceProvider* p, QObject* parent) :ExecuteWithBase(p,parent) {
     m_currentExecution = 0;
@@ -32,14 +33,14 @@ ExecuteCollection::~ExecuteCollection() {
 
 void ExecuteCollection::registerChild(ExecuteService* service) {
     m_childs_linked.insert(service);
-    if (service->base()->providedtypes().testFlag(AbstractServiceProvider::EventType))
+    if (service->base()->service() == AbstractServiceProvider::EventService)
         connect(service,SIGNAL(trigger()),SLOT(eventTriggered()));
 }
 
 void ExecuteCollection::removeChild(ExecuteService* service) {
     if (!m_childs_linked.contains(service)) return;
     m_childs_linked.remove(service);
-    if (service->base()->providedtypes().testFlag(AbstractServiceProvider::EventType))
+    if (service->base()->service() == AbstractServiceProvider::EventService)
         disconnect(service,SIGNAL(trigger()),this, SLOT(eventTriggered()));
 }
 
@@ -52,7 +53,7 @@ void ExecuteCollection::executiontimeout()
     QList<ExecuteService*> actors = m_actors_linked_map.values ( currentTimePoint );
     foreach ( ExecuteService* p, actors )
     {
-        p->execute();
+        emit executeservice(p);
     }
     if ( ++m_currentExecution >= m_actors_delays.size() )
         return;
@@ -66,7 +67,7 @@ void ExecuteCollection::run() {
     // check conditions
     foreach ( ExecuteService* service, m_childs_linked )
     {
-        if (service->base()->providedtypes().testFlag ( AbstractServiceProvider::ConditionType ) && !service->checkcondition() )
+        if ((service->base()->service() == AbstractServiceProvider::ConditionService ) && !service->checkcondition() )
         {
             return;
         }
@@ -77,7 +78,7 @@ void ExecuteCollection::run() {
     m_actors_linked_map.clear();
     foreach ( ExecuteService* service, m_childs_linked )
     {
-        if ( service->base()->providedtypes().testFlag ( AbstractServiceProvider::ActionType ) )
+        if ( (service->base()->service() == AbstractServiceProvider::ActionService ) )
             m_actors_linked_map.insert ( service->base()->delay(), service );
     }
     if ( m_actors_linked_map.isEmpty() ) return;

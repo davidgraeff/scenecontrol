@@ -22,12 +22,12 @@
 
 #include "shared/server/executeservice.h"
 
-class ServiceWOL;
+class ActorWOL;
 class ServiceWOLExecute : public ExecuteService
 {
     Q_OBJECT
 public:
-    ServiceWOLExecute(ServiceWOL* base, QObject* parent = 0);
+    ServiceWOLExecute(ActorWOL* base, QObject* parent = 0);
     virtual void execute();
     virtual bool checkcondition();
     virtual void dataUpdate();

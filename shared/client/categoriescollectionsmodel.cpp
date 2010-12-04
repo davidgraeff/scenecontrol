@@ -16,33 +16,55 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-
-#include "profilesmodel.h"
+#include "categoriescollectionsmodel.h"
 #include <QStringList>
 #include <QDebug>
-#include <RoomControlClient.h>
-#include <profile/serviceproviderprofile.h>
-#include "kcategorizedsortfilterproxymodel.h"
-#include <actors/abstractactor.h>
-#include <conditions/abstractcondition.h>
-#include <events/abstractevent.h>
-#include <profile/category.h>
+#include <shared/categorize/profile.h>
+#include <shared/categorize/category.h>
 
-ProfilesModel::ProfilesModel ( QObject* parent )
-        : QAbstractItemModel ( parent )
-{
-    connect ( RoomControlClient::getNetworkController(),SIGNAL ( disconnected() ),
-              SLOT ( slotdisconnected() ) );
-
-    slotdisconnected();
+CategoryItem::~CategoryItem() {
+    qDeleteAll(m_profiles.begin(),m_profiles.end());
+}
+CategoryItem::CategoryItem(Category* c, int p) {
+    category = c;
+    pos = p;
+}
+void CategoryItem::removeProfile(int pos) {
+    delete m_profiles.takeAt(pos);
+    for (int i=pos;i<m_profiles.size();++i)
+        m_profiles[i]->pos = i;
+}
+ProfileItem* CategoryItem::insertProfile(Collection* profile, int row) {
+    ProfileItem* p = new ProfileItem(profile,this,row);
+    m_profiles.insert(row, p);
+    for (int i=row+1;i<m_profiles.size();++i)
+        m_profiles[i]->pos = i;
+    return p;
+}
+ProfileItem::ProfileItem(Collection* p, CategoryItem* c, int po) {
+    profile=p;
+    category=c;
+    pos=po;
+}ProfileItem::ProfileItem() {
+    profile=0;
+    category=0;
+    pos=-1;
 }
 
-ProfilesModel::~ProfilesModel()
+/////////////////////////////////////////////////////////////////////////
+
+CategoriesCollectionsModel::CategoriesCollectionsModel ( QObject* parent )
+        : ClientModel ( parent )
 {
-    slotdisconnected();
+    clear();
 }
 
-void ProfilesModel::slotdisconnected()
+CategoriesCollectionsModel::~CategoriesCollectionsModel()
+{
+    qDeleteAll(m_catitems.begin(),m_catitems.end());
+}
+
+void CategoriesCollectionsModel::clear()
 {
     qDeleteAll(m_catitems.begin(),m_catitems.end());
     m_catitems.clear();
@@ -50,7 +72,7 @@ void ProfilesModel::slotdisconnected()
     reset();
 }
 
-int ProfilesModel::rowCount ( const QModelIndex & parent) const
+int CategoriesCollectionsModel::rowCount ( const QModelIndex & parent) const
 {
     if (!parent.isValid()) return m_catitems.size();
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
@@ -60,15 +82,22 @@ int ProfilesModel::rowCount ( const QModelIndex & parent) const
     return 0;
 }
 
-int ProfilesModel::columnCount(const QModelIndex& ) const {
+int CategoriesCollectionsModel::columnCount(const QModelIndex& ) const {
     return 1;
 }
 
-Qt::ItemFlags ProfilesModel::flags(const QModelIndex& index) const {
-    return QAbstractItemModel::flags ( index );
+Qt::ItemFlags CategoriesCollectionsModel::flags(const QModelIndex& index) const {
+    ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
+    CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
+    if (p)
+        return QAbstractItemModel::flags ( index ) | Qt::ItemIsEditable | Qt::ItemIsUserCheckable;
+    else if (cat && cat->category!=0)
+        return QAbstractItemModel::flags ( index ) | Qt::ItemIsEditable;
+    else
+        return QAbstractItemModel::flags ( index );
 }
 
-QVariant ProfilesModel::headerData ( int section, Qt::Orientation orientation, int role ) const
+QVariant CategoriesCollectionsModel::headerData ( int section, Qt::Orientation orientation, int role ) const
 {
     if ( orientation == Qt::Horizontal )
     {
@@ -81,24 +110,63 @@ QVariant ProfilesModel::headerData ( int section, Qt::Orientation orientation, i
     return QAbstractItemModel::headerData ( section, orientation, role );
 }
 
-QVariant ProfilesModel::data ( const QModelIndex & index, int role ) const
+QVariant CategoriesCollectionsModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
-    if ( role!=Qt::DisplayRole ) return QVariant();
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
     if (cat) {
-        if (cat->category==0) return tr("Nicht kategorisiert");
-        return cat->category->toString();
+        if (role==Qt::UserRole) return cat->category->id();
+        else if (role==Qt::DisplayRole || role==Qt::EditRole) {
+            if (cat->category==0) return tr("Nicht kategorisiert");
+            return cat->category->name();
+        } else return QVariant();
     }
     ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
     if (!p) return QVariant();
-    return p->profile->toString();
+    if (role==Qt::UserRole) return p->profile->id();
+    else if (role==Qt::DisplayRole || role==Qt::EditRole) {
+        return p->profile->name();
+    } else if (role==Qt::CheckStateRole) {
+        return (p->profile->enabled()?Qt::Checked:Qt::Unchecked);
+    } else
+        return QVariant();
 }
 
+bool CategoriesCollectionsModel::setData ( const QModelIndex& index, const QVariant& value, int role )
+{
+    if ( !index.isValid() || index.column() !=0 ) return false;
+    CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
+    ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
+    const QString currentname = (cat && cat->category ? cat->category->name() : (p && p->profile ? p->profile->name() : QString()));
 
-QModelIndex ProfilesModel::parent(const QModelIndex& child) const {
+    if ( role == Qt::EditRole ) {
+        QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
+        if ( newname.isEmpty() || newname == currentname ) return false;
+        if (cat && cat->category) {
+            cat->category->setName(newname);
+            emit changeService(cat->category);
+        }
+        else if (p && p->profile) {
+            p->profile->setName(newname);
+            emit changeService(p->profile);
+        }
+        QModelIndex index = createIndex ( index.row(),0,0 );
+        emit dataChanged ( index,index );
+        return true;
+    } else if ( role == Qt::CheckStateRole && p && p->profile) {
+        p->profile->setEnabled(value.toInt()==Qt::Checked);
+        emit changeService(p->profile);
+        QModelIndex index = createIndex ( index.row(),0,0 );
+        emit dataChanged ( index,index );
+        return true;
+    }
+    return false;
+}
+
+QModelIndex CategoriesCollectionsModel::parent(const QModelIndex& child) const {
     if (!child.isValid()) return QModelIndex();
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)child.internalPointer());
+
     if (cat) return QModelIndex();
     ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)child.internalPointer());
     if (!p) {
@@ -108,13 +176,25 @@ QModelIndex ProfilesModel::parent(const QModelIndex& child) const {
     return createIndex(p->category->pos,0,p->category);
 }
 
-QModelIndex ProfilesModel::index(int row, int column, const QModelIndex& parent) const {
+bool CategoriesCollectionsModel::hasChildren(const QModelIndex& parent) const {
+    if (!parent.isValid()) return m_catitems.size();
+    CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
+    if (cat) {
+        return cat->m_profiles.size();
+    }
+    return false;
+}
+
+QModelIndex CategoriesCollectionsModel::index(int row, int column, const QModelIndex& parent) const {
+    if (row<0 || column != 0) return QModelIndex();
     if (!parent.isValid()) {
+        if (row>=m_catitems.size()) return QModelIndex();
         CategoryItem* cat = m_catitems[row];
         return createIndex(row, column, cat);
     }
 
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
+
     if (!cat) {
         qWarning()<<__PRETTY_FUNCTION__<<"Category not found"<<row;
     }
@@ -128,21 +208,26 @@ QModelIndex ProfilesModel::index(int row, int column, const QModelIndex& parent)
     return createIndex(row, column, cat->m_profiles[row]);
 }
 
-bool ProfilesModel::removeRows ( int row, int count, const QModelIndex &parent )
+bool CategoriesCollectionsModel::removeRows ( int row, int count, const QModelIndex &parent )
 {
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
     if (cat) {
         for ( int i=row+count-1;i>=row;--i )
         {
-            if (m_catitems[row]->category)
-                m_catitems[row]->category->requestRemove();
+            if (m_catitems[row]->category) {
+                Category* c = m_catitems[row]->category;
+                c->setProperty("remove",true);
+                emit changeService(c);
+            }
         }
         return true;
     }
 
     for ( int i=row+count-1;i>=row;--i )
     {
-        cat->m_profiles[i]->profile->requestRemove();
+        Collection* c = cat->m_profiles[i]->profile;
+        c->setProperty("remove",true);
+        emit changeService(c);
     }
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );
@@ -150,15 +235,15 @@ bool ProfilesModel::removeRows ( int row, int count, const QModelIndex &parent )
     return true;
 }
 
-void ProfilesModel::addedCategory(CategoryProvider* category)
+void CategoriesCollectionsModel::addedCategory(Category* category)
 {
     QModelIndex index = indexOf ( category->id());
     if ( index.isValid() ) return;
 
-    // Find alphabetic position amoung categories
+    // Find alphabetic position amoung categories (start at 1, because of the automatic first cat)
     int row=1;
-    for (row=1;row<m_catitems.size();++row)
-        if (m_catitems[row]->category->toString().toLower() >= category->toString().toLower())
+    for (;row<m_catitems.size();++row)
+        if (m_catitems[row]->category->name().toLower() >= category->name().toLower())
             break;
 
     beginInsertRows ( QModelIndex(),row,row );
@@ -171,8 +256,8 @@ void ProfilesModel::addedCategory(CategoryProvider* category)
     // There may already exist profiles assigned to this category that are
     // currently visible at the unassigned-category. Reassign now
     for (int i=m_catitems[0]->m_profiles.size()-1;i>=0;--i) {
-        if (m_catitems[0]->m_profiles[i]->profile->category_id()==category->id()) {
-            objectChanged(m_catitems[0]->m_profiles[i]->profile, false);
+        if (m_catitems[0]->m_profiles[i]->profile->parentid()==category->id()) {
+            emit serviceChanged(m_catitems[0]->m_profiles[i]->profile);
         }
     }
 
@@ -182,22 +267,22 @@ void ProfilesModel::addedCategory(CategoryProvider* category)
     }
 }
 
-void ProfilesModel::addedProfile(Collection* profile)
+void CategoriesCollectionsModel::addedProfile(Collection* profile)
 {
     QModelIndex index = indexOf ( profile->id());
     if ( index.isValid() ) return;
+    /*
+        connect ( profile, SIGNAL ( serviceChanged ( AbstractServiceProvider* ) ),
+                  SLOT ( serviceChanged ( AbstractServiceProvider* ) ) );*/
 
-    connect ( profile, SIGNAL ( objectChanged ( AbstractServiceProvider* ) ),
-              SLOT ( objectChanged ( AbstractServiceProvider* ) ) );
-
-    connect( profile, SIGNAL(childsChanged(Collection*)),
-             SLOT(childsChanged(Collection*)));
+//     connect( profile, SIGNAL(childsChanged(Collection*)),
+//              SLOT(childsChanged(Collection*)));
 
     // Find right category
     int catpos = 0;
     CategoryItem* cat = m_catitems[0];
     for (int i=1;i<m_catitems.size();++i) {
-        if (m_catitems[i]->category->id()==profile->category_id()) {
+        if (m_catitems[i]->category->id()==profile->parentid()) {
             cat = m_catitems[i];
             catpos = i;
             break;
@@ -205,9 +290,9 @@ void ProfilesModel::addedProfile(Collection* profile)
     }
 
     // Find alphabetic position amoung profiles in the same category
-    int row;
-    for (row=0;row<cat->m_profiles.size();++row)
-        if (cat->m_profiles[row]->profile->toString().toLower() >= profile->toString().toLower())
+    int row=0;
+    for (;row<cat->m_profiles.size();++row)
+        if (cat->m_profiles[row]->profile->name().toLower() >= profile->name().toLower())
             break;
 
     beginInsertRows ( createIndex(catpos,0,cat),row,row );
@@ -221,7 +306,7 @@ void ProfilesModel::addedProfile(Collection* profile)
 
 }
 
-void ProfilesModel::removedProvider ( AbstractServiceProvider* provider )
+void CategoriesCollectionsModel::serviceRemoved ( AbstractServiceProvider* provider )
 {
     QModelIndex index = indexOf ( provider->id() );
     if ( !index.isValid() ) return;
@@ -245,16 +330,25 @@ void ProfilesModel::removedProvider ( AbstractServiceProvider* provider )
     endRemoveRows();
 }
 
-void ProfilesModel::objectChanged ( AbstractServiceProvider* provider, bool indicateMovement )
+void CategoriesCollectionsModel::serviceChanged ( AbstractServiceProvider* provider )
 {
     QModelIndex index = indexOf ( provider->id());
-    if ( !index.isValid() ) return;
 
-    const int oldrow = index.row();
-    int newCategoryRow = 0; // default is the unassigned-category
+    if ( !index.isValid() ) {
+        Category* cat = dynamic_cast<Category*>(provider);
+        Collection* p = dynamic_cast<Collection*>(provider);
+        if (cat) addedCategory(cat);
+        else if (p) addedProfile(p);
+        return;
+    }
 
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
     ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)index.internalPointer());
+    const QString nameOfService = (cat?cat->category->name().toLower():p->profile->name().toLower());
+
+    bool indicateMovement = false;
+    const int oldrow = index.row();
+    int newCategoryRow = 0; // default is the unassigned-category
 
     int row=-1;
     bool skip = false;
@@ -263,15 +357,16 @@ void ProfilesModel::objectChanged ( AbstractServiceProvider* provider, bool indi
         {
             if (index.row() == row) skip = true;
             if (index.row() != row && m_catitems[row]->category &&
-                    m_catitems[row]->category->toString().toLower() >= provider->toString().toLower())
+                    m_catitems[row]->category->name().toLower() >= nameOfService)
             {
+                indicateMovement = true;
                 break;
             }
         }
     } else if (p) {
         // determine new category
         for (int i=1;i<m_catitems.size();++i)
-            if (m_catitems[i]->category->id() == ((Collection*)provider)->category_id()) {
+            if (m_catitems[i]->category->id() == ((Collection*)provider)->parentid()) {
                 newCategoryRow = i;
                 break;
             }
@@ -281,8 +376,10 @@ void ProfilesModel::objectChanged ( AbstractServiceProvider* provider, bool indi
         {
             if (index.row() == row)
                 skip = true;
-            else if (newCategory->m_profiles[row]->profile->toString().toLower() >= provider->toString().toLower())
+            else if (newCategory->m_profiles[row]->profile->name().toLower() >= nameOfService) {
+                indicateMovement = true;
                 break;
+            }
         }
     }
     if (skip) row--;
@@ -313,14 +410,14 @@ void ProfilesModel::objectChanged ( AbstractServiceProvider* provider, bool indi
             ProfileItem* newProfileItem = newCategory->insertProfile(item, row);
             endInsertRows();
 
-			if (indicateMovement) emit itemMoved(createIndex(row, 0, newProfileItem));
+            if (indicateMovement) emit itemMoved(createIndex(row, 0, newProfileItem));
         }
     } else {
         emit dataChanged ( index,index );
     }
 }
 
-QModelIndex ProfilesModel::indexOf ( const QString& id )
+QModelIndex CategoriesCollectionsModel::indexOf ( const QString& id )
 {
     for (int cats=0;cats<m_catitems.size();++cats)
     {
@@ -336,13 +433,30 @@ QModelIndex ProfilesModel::indexOf ( const QString& id )
     return QModelIndex();
 }
 
-void ProfilesModel::childsChanged(Collection* provider)
+int CategoriesCollectionsModel::indexOf(const QVariant& data) {
+    if (data.type()!=QVariant::String) return -1;
+    const QString id = data.toString();
+    for (int cats=0;cats<m_catitems.size();++cats)
+    {
+        if (m_catitems[cats]->category && m_catitems[cats]->category->id() == id) {
+            return cats; // createIndex ( cats,0,m_catitems[cats] );
+        }
+        for (int pros=0;pros<m_catitems[cats]->m_profiles.size();++pros) {
+            if (m_catitems[cats]->m_profiles[pros]->profile->id() == id) {
+                return pros; // createIndex ( pros,0,m_catitems[cats]->m_profiles[pros] );
+            }
+        }
+    }
+    return -1;
+}
+
+void CategoriesCollectionsModel::childsChanged(Collection* provider)
 {
     QModelIndex index = indexOf ( provider->id());
     emit dataChanged ( index,index );
 }
 
-AbstractServiceProvider* ProfilesModel::get(const QModelIndex& index)
+AbstractServiceProvider* CategoriesCollectionsModel::get(const QModelIndex& index)
 {
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)index.internalPointer());
     if (cat) {
@@ -354,3 +468,5 @@ AbstractServiceProvider* ProfilesModel::get(const QModelIndex& index)
     }
     return 0;
 }
+void CategoriesCollectionsModel::stateTrackerChanged(AbstractStateTracker*) {}
+

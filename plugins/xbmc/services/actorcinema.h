@@ -26,7 +26,7 @@ class ActorCinema : public AbstractServiceProvider
     Q_OBJECT
     Q_PROPERTY(ActorCinema::CinemaCmds cmd READ cmd WRITE setCmd);
     Q_PROPERTY(QString url READ url WRITE setUrl);
-    Q_CLASSINFO("url_props", "url");
+    Q_CLASSINFO("url_props", "url|optional");
 public:
     enum CinemaCmds  {
     PlayCmd,PauseCmd,StopCmd,NextCmd,PrevCmd,InfoCmd,AspectRatioCmd,NextSubtitleCmd,NextLanguageCmd,NavigationBackCmd,NavigationHomeCmd,
@@ -35,8 +35,20 @@ public:
     };
     Q_ENUMS(CinemaCmds);
     ActorCinema(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() {
-        return ActionType;
+	virtual QString service_name(){return tr("Cinemakommando");}
+	virtual QString service_desc(){return tr("Setzt ein Kommando an die Vorführungsengine ab");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+			if (enumindex==-1)
+				return tr("Kommando");
+			else return QString();
+        case 1:
+            return tr("Url");
+        default:
+            return QString();
+        }
     }
     QString url() {
         return m_url;

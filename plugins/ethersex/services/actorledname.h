@@ -26,14 +26,27 @@
 class ActorLedName : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(QString ledname READ ledname WRITE setLedname);
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
     Q_CLASSINFO("channel_model", "ChannelsModel")
     Q_CLASSINFO("channel_model_displaytype", "0");
     Q_CLASSINFO("channel_model_savetype", "32");
+    Q_PROPERTY(QString ledname READ ledname WRITE setLedname);
   public:
     ActorLedName(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+	virtual QString service_name(){return tr("Lednamen setzen");}
+	virtual QString service_desc(){return tr("Setzt den Namen zu einer LED");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Kanal");
+        case 1:
+            return tr("Kanalnamen");
+        default:
+            return QString();
+        }
+    }
+
     QString ledname() const;
     void setLedname(const QString& ledname);
     unsigned int channel() const;

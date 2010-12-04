@@ -17,18 +17,32 @@
 
 */
 
-#ifndef ACTOREVENTVOLUMESERVICEPROVIDER_H
-#define ACTOREVENTVOLUMESERVICEPROVIDER_H
+#pragma once
 #include <shared/abstractserviceprovider.h>
 
 class ActorEventVolume : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(qreal volume READ volume WRITE setVolume);
+	Q_CLASSINFO("volume_doublemin", "-1.0");
+	Q_CLASSINFO("volume_doublemax", "1.0");
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorEventVolume(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() {return ActionType; }
+	virtual QString service_name(){return tr("Ereignislautstärke");}
+	virtual QString service_desc(){return tr("Setzt die Laustärke für Ereignisse");}
+
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Lautstärke");
+        case 1:
+            return tr("Relativ");
+        default:
+            return QString();
+        }
+    }
     void setVolume(qreal volume);
     qreal volume();
     bool relative() const ;
@@ -37,5 +51,3 @@ private:
     qreal m_volume;
     bool m_relative;
 };
-
-#endif // ACTOREVENTVOLUMESERVICEPROVIDER_H

@@ -28,7 +28,8 @@ class MediaStateTracker : public AbstractStateTracker
 	Q_PROPERTY(qint64 position READ position WRITE setPosition);
 	Q_PROPERTY(qint64 total READ total WRITE setTotal);
 	Q_PROPERTY(int track READ track WRITE setTrack);
-	Q_PROPERTY(MediaStateTracker::EnumMediaState state READ state WRITE setState);
+	Q_PROPERTY(EnumMediaState state READ state WRITE setState);
+    Q_ENUMS(EnumMediaState);
 public:
     enum EnumMediaState
     {
@@ -36,7 +37,6 @@ public:
         PauseState,
         StopState
     };
-    Q_ENUMS(MediaStateTracker::EnumMediaState);
 
 	MediaStateTracker(QObject* parent = 0) : AbstractStateTracker(parent) {}
 	QString playlistid() { return m_playlistid; }

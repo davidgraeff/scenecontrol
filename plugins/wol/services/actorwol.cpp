@@ -22,7 +22,7 @@
 #include <QDebug>
 #include <QUdpSocket>
 
-ServiceWOL::ServiceWOL(QObject* parent)
+ActorWOL::ActorWOL(QObject* parent)
         : AbstractServiceProvider(parent)
 {
 }

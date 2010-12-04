@@ -20,11 +20,38 @@
 
 #include "shared/abstractserviceprovider.h"
 #include "shared/abstractstatetracker.h"
-#include "shared/services/profile.h"
-#include "shared/services/category.h"
 #include "shared/server/executeservice.h"
 #include "servicecontroller.h"
 #include "authThread.h"
+#include "config.h"
+
+ClientConnection::ClientConnection(QSslSocket* s) {
+    bufferpos=0;
+    bufferBrakes=0;
+    socket=s;
+    m_auth=false;
+    connect(&m_authTimer,SIGNAL(timeout()),SLOT(timeout()));
+    m_authTimer.start(ROOM_NETWORK_AUTHTIMEOUT);
+}
+ClientConnection::~ClientConnection() {
+    delete socket;
+}
+void ClientConnection::timeout() {
+    emit timeoutAuth(socket);
+}
+bool ClientConnection::auth() {
+    return m_auth;
+}
+void ClientConnection::setAuth(const QString& user) {
+    m_user = user;
+    m_auth = true;
+    m_authTimer.stop();
+}
+QString ClientConnection::user() {
+    return m_user;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 NetworkController::NetworkController(QDBusConnection dbusconnection)
         : m_dbusconnection(dbusconnection), m_service(0), m_auththread(new AuthThread())
@@ -43,48 +70,55 @@ NetworkController::~NetworkController()
 
 bool NetworkController::start()
 {
-    if ( !listen ( QHostAddress::Any, LISTENPORT ) )
+    if ( !listen ( QHostAddress::Any, ROOM_LISTENPORT ) )
     {
-        qCritical() << "TCP Server listen failed on port " << LISTENPORT << "!";
+        qCritical() << "TCP Server listen failed on port " << ROOM_LISTENPORT << "!";
         return false;
     } else
-        qDebug() << "Listen on port" << LISTENPORT;
+        qDebug() << "Listen on port" << ROOM_LISTENPORT;
     return true;
 }
 
 /*
-    openssl req -x509 -newkey rsa:1024 -keyout server.key -nodes -days 365 -out server.crt
-    openssl
-    openssl
-    openssl x509 -noout -text -in thecert.pem
+   * Generate a self signed root certificate
+    openssl req -x509 -utf8 -newkey rsa:1024 -nodes -days 3650 -keyout server.key -out server.crt
     openssl -new -x509 -extensions v3_ca -days 3650 -keyout cakey.pem -out cacert.pem
-    openssl req -x509 -newkey rsa:1024 -keyout server.key -nodes -days 3650 -out server.crt
+    openssl x509 -noout -text -in thecert.pem
 */
 void NetworkController::incomingConnection ( int socketDescriptor )
 {
     QSslSocket *socket = new QSslSocket;
     if ( socket->setSocketDescriptor ( socketDescriptor ) == true )
     {
-        socket->setLocalCertificate(QLatin1String("server.crt"));
-        socket->setPrivateKey(QLatin1String("server.key"));
+        if (!QDir().exists(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.crt"))) {
+            qWarning()<<"Couldn't load local certificate"<<ROOM_SYSTEM_CERTIFICATES"/server.crt";
+        } else
+            socket->setLocalCertificate(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.crt"));
+        if (!QDir().exists(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.key"))) {
+            qWarning()<<"Couldn't load private key"<<ROOM_SYSTEM_CERTIFICATES"/server.key";
+        } else
+            socket->setPrivateKey(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.key"));
+
+        socket->setPeerVerifyMode(QSslSocket::VerifyNone);
         socket->startServerEncryption();
         connect ( socket, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
         connect(socket, SIGNAL(peerVerifyError(const QSslError &)),
-                this, SLOT(slot_peerVerifyError (const QSslError &)));
+                this, SLOT(peerVerifyError (const QSslError &)));
         connect(socket, SIGNAL(sslErrors(const QList<QSslError> &)),
-                this, SLOT(slot_sslErrors(const QList<QSslError> &)));
+                this, SLOT(sslErrors(const QList<QSslError> &)));
+		connect(socket,SIGNAL(disconnected()),SLOT(disconnected()));
         m_connections.insert ( socket, new ClientConnection(socket) );
         QByteArray data;
-        data.append("{\"type\" : \"serverinfo\", \"version\" : \""NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \"");
-	data.append(QByteArray::number(NETWORK_AUTHTIMEOUT));
-	data.append("\", \"plugins\" : \"");
+        data.append("{\"type\" : \"serverinfo\", \"version\" : \""ROOM_NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \"");
+        data.append(QByteArray::number(ROOM_NETWORK_AUTHTIMEOUT));
+        data.append("\", \"plugins\" : \"");
         data.append("\"}");
         socket->write ( data );
-        qDebug() << "new connection, waiting for authentification";
+        //qDebug() << "new connection, waiting for authentification";
     }
     else
     {
-        qWarning() << "Failed to bind incoming connection " << LISTENPORT << "!";
+        qWarning() << "Failed to bind incoming connection " << ROOM_LISTENPORT << "!";
         delete socket;
     }
 }
@@ -105,7 +139,7 @@ void NetworkController::syncClient(QSslSocket* socket)
         synclist.append(p);
     }
 
-    qDebug() << "New client from" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor() << "sync objects:" << synclist.size();
+    qDebug() << "New client from" << socket->peerAddress().toString().toUtf8().data() << "Sync objects:" << synclist.size();
     foreach (QObject* p, synclist)
     {
         QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
@@ -165,8 +199,11 @@ void NetworkController::serviceSync(AbstractServiceProvider* p)
     QJson::Serializer serializer;
     QByteArray cmdbytes = serializer.serialize(variant);
 
-    foreach ( ClientConnection* c, m_connections )
-    if (c->auth()) c->socket->write ( cmdbytes );
+    foreach ( ClientConnection* c, m_connections ) {
+		if (c->auth()) {
+			c->socket->write ( cmdbytes );
+		}
+	}
 }
 
 void NetworkController::readyRead()
@@ -230,7 +267,7 @@ void NetworkController::disconnected()
 {
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     Q_ASSERT(socket);
-    qDebug() << "Client disconnected:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
+    //qDebug() << "Client disconnected:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
     m_connections.take ( socket )->deleteLater();
 }
 
@@ -255,6 +292,10 @@ void NetworkController::setServiceController ( ServiceController* controller ) {
 }
 
 void NetworkController::auth_success(QObject* ptr, const QString& name) {
+    if (ptr==0) { // Test
+        qDebug() << __FUNCTION__ << name;
+        return;
+    }
     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
     Q_ASSERT(socket);
     ClientConnection* c = m_connections.value(socket);
@@ -266,6 +307,10 @@ void NetworkController::auth_success(QObject* ptr, const QString& name) {
 }
 
 void NetworkController::auth_failed(QObject* ptr, const QString& name) {
+    if (ptr==0) { // Test
+        qDebug() << __FUNCTION__ << name;
+        return;
+    }
     Q_UNUSED(name);
     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
     Q_ASSERT(socket);
@@ -273,19 +318,39 @@ void NetworkController::auth_failed(QObject* ptr, const QString& name) {
     socket->write ( data );
     socket->flush();
 }
+
 void NetworkController::timeoutAuth(QSslSocket* socket) {
     QByteArray data("{\"type\" : \"auth\", \"result\" : \"timeout\"}");
     socket->write ( data );
     socket->flush();
-    qDebug() << "Client auth timeout:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
+    qWarning() << "Client auth timeout:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
     m_connections.take ( socket )->deleteLater();
 }
-void NetworkController::sslErrors(QList< QSslError >) {
+
+void NetworkController::sslErrors(QList< QSslError > errors) {
     QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
-    qWarning()<<__FUNCTION__ << socket->peerAddress();
+    QString errorString;
+    foreach(QSslError error, errors) {
+		switch (error.error()) {
+			default:
+				errorString.append(error.errorString());
+				errorString.append(QLatin1String(" "));
+				break;
+			case QSslError::SelfSignedCertificate:
+				break;
+		}
+    }
+    if (errorString.size())
+		qWarning()<<__FUNCTION__ << socket->peerAddress()<< errorString;
 }
 
-void NetworkController::peerVerifyError(QSslError) {
+void NetworkController::peerVerifyError(QSslError error) {
     QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
-    qWarning()<<__FUNCTION__ << socket->peerAddress();
+	switch (error.error()) {
+		default:
+			qWarning()<<__FUNCTION__ << socket->peerAddress() << error.errorString();
+			break;
+		case QSslError::SelfSignedCertificate:
+			break;
+	}
 }

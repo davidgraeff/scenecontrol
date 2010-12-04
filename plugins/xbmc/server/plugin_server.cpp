@@ -113,7 +113,6 @@ Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 #include <QDebug>
 #include <sys/socket.h>
 #include "xbmcclient.h"
-#include <networkcontroller.h>
 #include <QCoreApplication>
 #include "statetracker/cinamestatetracker.h"
 #include "services/actorcinema.h"

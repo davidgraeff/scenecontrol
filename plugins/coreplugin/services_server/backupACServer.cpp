@@ -28,13 +28,16 @@ bool ActorBackupServer::checkcondition() {
 void ActorBackupServer::execute() {
 	switch (m_base->action()) {
 		case ActorBackup::CreateBackup:
-			m_plugin->backup();
+			m_plugin->backup_create(m_base->backupname());
 			break;
 		case ActorBackup::RemoveBackup:
 			m_plugin->backup_remove(m_base->backupid());
 			break;
 		case ActorBackup::RestoreBackup:
 			m_plugin->backup_restore(m_base->backupid());
+			break;
+		case ActorBackup::RenameBackup:
+			m_plugin->backup_rename(m_base->backupid(), m_base->backupname());
 			break;
 		default:
 			break;

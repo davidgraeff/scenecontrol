@@ -35,10 +35,32 @@ class EventRemoteKey : public AbstractServiceProvider
     Q_CLASSINFO("channel_statetracker_id", "RemoteControlKeyStateTracker")
     Q_CLASSINFO("channel_statetracker_property", "channel")
     Q_PROPERTY(int repeat READ repeat WRITE setRepeat)
+    Q_CLASSINFO("repeat_min", "-1");
+    Q_CLASSINFO("repeat_max", "1000");
     Q_PROPERTY(int repeatinit READ repeatinit WRITE setRepeatinit)
+    Q_CLASSINFO("repeatinit_min", "-1");
+    Q_CLASSINFO("repeatinit_max", "1000");
 public:
     EventRemoteKey(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() { return EventType; }
+	virtual QString service_name(){return tr("Fernbedienungsereignis");}
+	virtual QString service_desc(){return tr("Wird ausgelöst, sobald ein Fernbedienungsknopf gedrückt wurde. Taste kann wiederholt werden, sobald die Wiederholungsstartzeit überschritten ist.");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Taste");
+        case 1:
+            return tr("Gedrückt");
+        case 2:
+            return tr("Kanal");
+        case 3:
+            return tr("Wiederholen (ms)");
+        case 4:
+            return tr("Wiederholen/Startzeit (ms)");
+        default:
+            return QString();
+        }
+    }
     QString key();
     void setKey(QString value);
     bool pressed();

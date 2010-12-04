@@ -22,7 +22,6 @@
 
 #include "shared/abstractserviceprovider.h"
 
-
 class ActorCurtain : public AbstractServiceProvider
 {
     Q_OBJECT
@@ -30,7 +29,17 @@ class ActorCurtain : public AbstractServiceProvider
     Q_CLASSINFO("value_max", "10");
 public:
     ActorCurtain(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+	virtual QString service_name(){return tr("Rollosteuerung");}
+	virtual QString service_desc(){return tr("Steuert ein Rollo");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Rolloposition");
+        default:
+            return QString();
+        }
+    }
     unsigned int value() const;
     void setValue(unsigned int value);
 private:

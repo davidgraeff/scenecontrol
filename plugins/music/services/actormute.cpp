@@ -20,6 +20,6 @@
 #include "actormute.h"
 
 ActorMute::ActorMute(QObject* parent)
-        : AbstractServiceProvider(parent),m_mute(-1),m_volume(-1.0), m_relative(false)
+        : AbstractServiceProvider(parent),m_mute(ToggleSink),m_volume(1.0), m_assignment(NoVolumeSet)
 {}
 

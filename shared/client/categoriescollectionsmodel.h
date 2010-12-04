@@ -17,25 +17,53 @@
 
 */
 
-#ifndef ServiceProviderTreeModel_h
-#define ServiceProviderTreeModel_h
+#ifndef ProfilesModel_h
+#define ProfilesModel_h
 
 #include <QModelIndex>
 #include <QAbstractListModel>
 #include <QString>
 #include <QStringList>
 #include <QIcon>
+#include "shared/client/clientplugin.h"
 
+class Category;
 class Collection;
 class AbstractServiceProvider;
 
-class ServiceProviderTreeModel : public QAbstractItemModel
+class CategoryItem;
+class ProfileItem : public QObject {
+    Q_OBJECT
+public:
+    ProfileItem() ;
+    ProfileItem(Collection*p,CategoryItem*c,int po) ;
+public:
+    Collection* profile;
+    CategoryItem* category;
+    int pos;
+};
+
+class CategoryItem : public QObject {
+    Q_OBJECT
+public:
+    CategoryItem(Category* c, int p);
+    ~CategoryItem();
+    ProfileItem* insertProfile(Collection* profile, int row);
+    void removeProfile(int pos);
+public:
+    int pos;
+    Category* category;
+    QList< ProfileItem* > m_profiles;
+};
+
+class CategoriesCollectionsModel : public ClientModel
 {
     Q_OBJECT
 public:
-    ServiceProviderTreeModel (const QString& title, QObject* parent = 0);
-    ~ServiceProviderTreeModel();
+    CategoriesCollectionsModel (QObject* parent = 0);
+    ~CategoriesCollectionsModel();
 
+    virtual bool hasChildren(const QModelIndex& parent) const;
     virtual QModelIndex index(int row, int column,
                               const QModelIndex &parent = QModelIndex()) const;
     virtual QModelIndex parent(const QModelIndex &child) const;
@@ -44,35 +72,31 @@ public:
     virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
     virtual QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
+	virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
     virtual QVariant headerData ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
 
-	virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
+//	virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
     virtual bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
-
-    //QString getName ( int i ) const;
     AbstractServiceProvider* get(const QModelIndex & index) ;
-    //int indexOf ( const QString& id ) ;
-    void addedProvider(AbstractServiceProvider*);
-    void removedProvider(AbstractServiceProvider*);
-	
-	QModelIndex indexOf(const QString& id) ;
-	#define eventsrow 0
-	#define conditionsrow 1
-	#define actorsrow 2
-	inline QModelIndex eventsindex(int c) const { return createIndex(eventsrow,c,'e'); }
-	inline QModelIndex conditionsindex(int c) const { return createIndex(conditionsrow,c,'c'); }
-	inline QModelIndex actorsindex(int c) const { return createIndex(actorsrow,c,'a'); }
+    QModelIndex indexOf ( const QString& id ) ;
+	virtual int indexOf(const QVariant& data);
+    void addedProfile(Collection* profile);
+    void addedCategory(Category* category);
+	void focusAsSoonAsAvailable(const QString& id) {m_focusid=id;}
 public Q_SLOTS:
-    void objectChanged(AbstractServiceProvider*);
-    void slotdisconnected();
+    virtual void clear();
+    virtual void serviceChanged(AbstractServiceProvider*);
+    virtual void serviceRemoved(AbstractServiceProvider* );
+    virtual void stateTrackerChanged(AbstractStateTracker* );
+    void childsChanged(Collection*);
+Q_SIGNALS:
+    void itemMoved(const QModelIndex& newindex);
 private:
-    QList< AbstractServiceProvider* > m_events;
-    QList< AbstractServiceProvider* > m_conditions;
-    QList< AbstractServiceProvider* > m_actors;
-    QString m_title;
-	void addToList(QList< AbstractServiceProvider* >& list, AbstractServiceProvider* provider);
+    //QList< AbstractServiceProvider* > m_items;
+    QList< CategoryItem* > m_catitems;
+	QString m_focusid;
 };
 
-#endif // ServiceProviderTreeModel_h
+#endif // ProfilesModel_h

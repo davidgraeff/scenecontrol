@@ -40,8 +40,27 @@ public:
     };
     Q_ENUMS(ActorPinEnum);
     ActorPin(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() {
-        return ActionType;
+	virtual QString service_name(){return tr("Pin setzen");}
+	virtual QString service_desc(){return tr("Setzt einen Pin");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Pin");
+        case 1:
+            switch (enumindex) {
+            case 0:
+                return tr("Aus");
+            case 1:
+                return tr("An");
+            case 2:
+                return tr("Umschalten");
+            default:
+                return tr("Wert");
+            }
+        default:
+            return QString();
+        }
     }
     unsigned int pin() const;
     void setPin(unsigned int value);

@@ -21,7 +21,9 @@
 #define EXECUTE_H
 #include <QObject>
 #include <QStringList>
-#include "shared/services/profile.h"
+#include <QTimer>
+#include <QMap>
+#include <QSet>
 #include "shared/server/executeWithBase.h"
 
 class ExecuteService;
@@ -46,6 +48,8 @@ private:
     int m_currentExecution;
     QMultiMap<int, ExecuteService*> m_actors_linked_map;
     QList<int> m_actors_delays;
+Q_SIGNALS:
+	void executeservice(ExecuteService*);
 };
 
 #endif // EXECUTESERVICEPROVIDER_H

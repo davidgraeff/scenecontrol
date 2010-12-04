@@ -31,14 +31,41 @@ class ActorPlaylistTrack : public AbstractServiceProvider
     Q_CLASSINFO("playlistid_model_displaytype", "0");
     Q_CLASSINFO("playlistid_model_savetype", "32");
     Q_PROPERTY(int track READ track WRITE setTrack);
-    Q_CLASSINFO("track_model", "TempPlaylistTracksModel")
+    Q_CLASSINFO("track_model", "CurrentPlaylistTracksModel")
     Q_CLASSINFO("track_model_displaytype", "0");
     Q_CLASSINFO("track_model_savetype", "32");
     Q_PROPERTY(MediaStateTracker::EnumMediaState state READ state WRITE setState);
+    Q_ENUMS(MediaStateTracker::EnumMediaState);
 public:
-  Q_ENUMS(MediaStateTracker::EnumMediaState);
     ActorPlaylistTrack(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+    virtual QString service_name() {
+        return tr("Spielt einen Track ab");
+    }
+    virtual QString service_desc() {
+        return tr("Spielt einen Track einer Abspielliste ab");
+    }
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Abspielliste");
+        case 1:
+            return tr("Track");
+        case 2:
+            switch (enumindex) {
+            case 0:
+                return tr("Abspielen");
+            case 1:
+                return tr("Pausieren");
+            case 2:
+                return tr("Stoppen");
+            default:
+                return tr("Kommando");
+            }
+        default:
+            return QString();
+        }
+    }
     QString playlistid() const;
     void setPlaylistID(QString playlistid);
     int track() const;

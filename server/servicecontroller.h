@@ -10,16 +10,14 @@
 #include <QDir>
 #define EXIT_WITH_RESTART 1
 
-class EventController;
-class ExecuteService;
 class AbstractPlugin;
 class AbstractServiceProvider;
+class AbstractStateTracker;
 class ExecuteWithBase;
 class ExecutePlugin;
-class Category;
+class ExecuteService;
 class NetworkController;
 class ExecuteCollection;
-class AbstractStateTracker;
 
 /**
  * Used as singleton to access all other controllers.
@@ -43,10 +41,10 @@ private:
      * @link: true if profiles and services should be linked together,
      * Should be false on initial loading
      */
-    bool generate ( const QVariantMap& json);
-    void saveToDisk(ExecuteWithBase* service);
-    void removeFromDisk(ExecuteWithBase* service);
-    void updateService(ExecuteWithBase* service, const QVariantMap& json, bool newid = false);
+    bool generate ( const QVariantMap& json, bool loading = false);
+    void saveToDisk(ExecuteWithBase* eservice);
+    void removeFromDisk(ExecuteWithBase* eservice);
+    void updateService(ExecuteWithBase* service, const QVariantMap& json, bool newid = false, bool loading = false);
 
     // service providers
     QList<ExecuteWithBase*> m_servicesList;
@@ -67,6 +65,8 @@ public Q_SLOTS:
     void runProfile(const QString& id);
     void stopProfile(const QString& id) ;
     void pluginobjectChanged(ExecuteWithBase* service);
+	void pluginexecuteService(AbstractServiceProvider*);
+    void executeservice(ExecuteService* service);
 Q_SIGNALS:
     void systemStarted();
     void serviceSync(AbstractServiceProvider* p);

@@ -31,7 +31,19 @@ class ConditionTimespan : public AbstractServiceProvider
     Q_CLASSINFO("upper_props", "datetime")
 public:
     ConditionTimespan(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() { return ConditionType; }
+	virtual QString service_name(){return tr("Zeitspannenbedingung");}
+	virtual QString service_desc(){return tr("Bedingung, dass die aktuelle Zeit zwischen einer bestimmten Zeitspanne liegt");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Startzeitpunkt");
+        case 1:
+            return tr("Endzeitpunkt");
+        default:
+            return QString();
+        }
+    }
     QString lower() const;
     void setLower(QString value);
     QString upper() const;

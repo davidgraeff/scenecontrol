@@ -28,10 +28,10 @@ bool EventSystemServer::checkcondition() {
     return true;
 }
 void EventSystemServer::dataUpdate() {
-	disconnect(this, SIGNAL(trigger()));
+	disconnect(this, SIGNAL(systemStarted()), this, SIGNAL(trigger()));
 	switch (m_base->system()) {
 		case 0:
-			connect(m_plugin->serviceController(),SIGNAL(systemStarted()),SIGNAL(trigger()));
+			connect(this, SIGNAL(systemStarted()),SIGNAL(trigger()));
 			break;
 		case 1:
 			break;

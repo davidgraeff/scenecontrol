@@ -26,6 +26,6 @@ ActorPlaylistVolumeServer::ActorPlaylistVolumeServer(ActorPlaylistVolume* base, 
 
 void ActorPlaylistVolumeServer::execute() {
   ActorPlaylistVolume* base = service<ActorPlaylistVolume>();
-    m_plugin->mediacontroller()->setVolume(base->value(), base->relative());
+    m_plugin->mediacontroller()->setVolume(base->volume(), base->relative());
 }
 

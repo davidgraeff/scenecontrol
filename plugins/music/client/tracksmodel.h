@@ -17,22 +17,21 @@
 
 */
 
-#ifndef PLAYLISTITEMSMODEL_H
-#define PLAYLISTITEMSMODEL_H
-
+#pragma once
 #include <QModelIndex>
 #include <QAbstractListModel>
 #include <QString>
 #include <QStringList>
 #include <QIcon>
+#include "shared/client/clientplugin.h"
 
-class Playlist;
-class PlaylistItemsModel : public QAbstractTableModel
+class ActorPlaylist;
+class PlaylistTracksModel : public ClientModel
 {
     Q_OBJECT
-    friend class Playlist;
+    friend class ActorPlaylist;
 public:
-    PlaylistItemsModel (Playlist* playlist, QObject* parent=0);
+    PlaylistTracksModel (ActorPlaylist* playlist, QObject* parent=0);
 
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
     int columnCount ( const QModelIndex & parent = QModelIndex() ) const;
@@ -50,9 +49,7 @@ public:
     bool m_waitforsync;
     void updateCurrenttrack( int old ) ;
   private:
-    Playlist* m_playlist;
+    ActorPlaylist* m_playlist;
     
     bool addFile(QUrl url, int row);
 };
-
-#endif // PLAYLISTITEMSMODEL_H

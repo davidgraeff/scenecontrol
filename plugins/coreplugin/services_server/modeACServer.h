@@ -17,8 +17,7 @@
 
 */
 
-#ifndef ACTORMODESERVER_H
-#define ACTORMODESERVER_H
+#pragma once
 #include "shared/abstractserviceprovider.h"
 #include "shared/server/executeservice.h"
 
@@ -36,5 +35,3 @@ private:
 	ActorMode* m_base;
 	myPluginExecute* m_plugin;
 };
-
-#endif // ACTORMODESERVER_H

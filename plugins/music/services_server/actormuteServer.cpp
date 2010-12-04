@@ -24,16 +24,16 @@
 
 void ActorMuteServer::execute()
 {
-  ActorMute* base = service<ActorMute>();
-    if (base->mute()==1)
+    ActorMute* base = service<ActorMute>();
+    if (base->mute()==ActorMute::MuteSink)
         m_plugin->mediacontroller()->setPAMute(base->value().toAscii(),1);
-    else if (base->mute())
+    else if (base->mute()==ActorMute::UnmuteSink)
         m_plugin->mediacontroller()->setPAMute(base->value().toAscii(),0);
-    else if (base->mute())
+    else if (base->mute()==ActorMute::ToggleSink)
         m_plugin->mediacontroller()->togglePAMute(base->value().toAscii());
 
-    if (base->volume()>=0.0)
-        m_plugin->mediacontroller()->setPAVolume(base->value().toAscii(),base->volume(),base->relative());
+    if (base->assignment()==ActorMute::NoVolumeSet) return;
+    m_plugin->mediacontroller()->setPAVolume(base->value().toAscii(),base->volume(),(base->assignment()==ActorMute::VolumeRelative));
 }
 
 ActorMuteServer::ActorMuteServer(ActorMute* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

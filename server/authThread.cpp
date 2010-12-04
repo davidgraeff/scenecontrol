@@ -26,48 +26,46 @@
 
 char* pwdptr;
 int su_conv(int num_msg,const struct pam_message **msgm,
-			struct pam_response **resp,void *appdata)
+            struct pam_response **resp,void *appdata)
 {
-	int count;
-	struct pam_response *r;
-	
-	r = (struct pam_response*)calloc(num_msg,sizeof(struct pam_response));
-	
-	for(count=0;count < num_msg;++count)
-	{
-		
-// 		switch(msgm[count]->msg_style)
-// 		{
-// 			case PAM_PROMPT_ECHO_OFF:
-// 				printf("%s",msgm[count]->msg);
-// 				break;
-// 			case PAM_PROMPT_ECHO_ON:
-// 				printf("%s",msgm[count]->msg);
-// 				break;
-// 			case PAM_ERROR_MSG:
-// 				printf(" %s\n",msgm[count]->msg);
-// 				break;
-// 			case PAM_TEXT_INFO:
-// 				printf(" %s\n",msgm[count]->msg);
-// 				break;
-// 			default:
-// 				printf("Erroneous Conversation (%d)\n"
-// 					   ,msgm[count]->msg_style);
-// 				
-// 		}
-		
-		r[count].resp_retcode = 0;
-		r[count].resp = pwdptr;
-	}
-	*resp = r;
-	return PAM_SUCCESS;
+    int count;
+    struct pam_response *r;
+
+    r = (struct pam_response*)calloc(num_msg,sizeof(struct pam_response));
+
+    for (count=0;count < num_msg;++count)
+    {
+
+        switch (msgm[count]->msg_style)
+        {
+        case PAM_PROMPT_ECHO_OFF:
+            r[count].resp_retcode = 0;
+            r[count].resp = strdup(pwdptr);
+            break;
+        case PAM_PROMPT_ECHO_ON:
+            printf("%s",msgm[count]->msg);
+            break;
+        case PAM_ERROR_MSG:
+            printf(" %s\n",msgm[count]->msg);
+            break;
+        case PAM_TEXT_INFO:
+            printf(" %s\n",msgm[count]->msg);
+            break;
+        default:
+            printf("Erroneous Conversation (%d)\n"
+                   ,msgm[count]->msg_style);
+
+        }
+    }
+    *resp = r;
+    return PAM_SUCCESS;
 }
 
 bool AuthThread::query(QObject* socketptr, const QString& name, const QString& pwd) {
     bool ok = false;
     mutex.lock();
     if (m_creds.size()<MAX_SIMULTANEOUS_LOGINS) {
-        m_creds.append(AuthQueryData(socketptr, name, pwd));
+        m_creds.append(new AuthQueryData(socketptr, name.toUtf8(), pwd.toUtf8()));
         ok = true;
     }
     mutex.unlock();
@@ -78,7 +76,7 @@ bool AuthThread::query(QObject* socketptr, const QString& name, const QString& p
 void AuthThread::run() {
     /* conversation-Struktur */
     static struct pam_conv conv = {
-		su_conv,          /* default PAM-conversation */
+        su_conv,          /* default PAM-conversation */
         NULL                /* brauchen wir nicht */
     };
 
@@ -86,13 +84,13 @@ void AuthThread::run() {
         // get next request
         mutex.lock();
         while (m_creds.size()==0) bufferNotFull.wait(&mutex);
-        AuthQueryData p = m_creds.takeFirst();
+        AuthQueryData* p = m_creds.takeFirst();
         mutex.unlock();
 
         // check user
         pam_handle_t *pamh = NULL;
-		const char *user = p.name.toLatin1().constData();
-		pwdptr = (char*)p.pwd.toLatin1().data();
+        const char *user = p->name.constData();
+        pwdptr = (char*)p->pwd.constData();
         int retval;
 
         /* PAM-Transaktion starten */
@@ -105,31 +103,30 @@ void AuthThread::run() {
         if (retval == PAM_SUCCESS) {
             retval = pam_authenticate(pamh, 0);
 
-            qDebug() <<"Authentientifizieren Nutzer" << user;
-
-            if (retval == PAM_SUCCESS)
-				qDebug() <<"Nutzer" << user << "erfolgreich authentifiziert";
-            else {
-				qDebug() <<"Fehler beim authentifizieren von Nutzer" << user << ":" << pam_strerror( pamh, retval);
-                emit auth_failed(p.socketptr,p.name);
+            if (retval != PAM_SUCCESS) {
+                //qDebug() <<"Fehler beim authentifizieren von Nutzer" << user << ":" << pam_strerror( pamh, retval);
+                emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
             }
+        } else {
+            qWarning() <<"Fehler bei Verbindung zu pam";
+            emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
         }
 
         /* Nutzerkonto auf Guelitigkeit pruefen */
         if (retval == PAM_SUCCESS) {
             retval = pam_acct_mgmt(pamh, PAM_SILENT);
 
-            if (retval == PAM_SUCCESS)
-				qDebug() << "Nutzerkonto von" << user << "in Ordnung!";
-            else {
-				qDebug() << "Nutzerkonto von" << user << "nicht in Ordnung:" << pam_strerror( pamh, retval);
-                emit auth_failed(p.socketptr,p.name);
+            if (retval != PAM_SUCCESS) {
+                //qDebug() << "Nutzerkonto von" << user << "nicht in Ordnung:" << pam_strerror( pamh, retval);
+                emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
             }
         }
 
         if (retval == PAM_SUCCESS) {
-            emit auth_success(p.socketptr,p.name);
+            emit auth_success(p->socketptr,QString::fromUtf8(p->name));
         }
+
+        delete p;
 
         /* PAM-Transaktion beenden */
         if (pam_end(pamh, retval) != PAM_SUCCESS) {

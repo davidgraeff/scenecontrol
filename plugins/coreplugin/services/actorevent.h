@@ -17,8 +17,7 @@
 
 */
 
-#ifndef ACTOREVENTSERVICEPROVIDER_H
-#define ACTOREVENTSERVICEPROVIDER_H
+#pragma once
 #include <shared/abstractserviceprovider.h>
 
 class ActorEvent : public AbstractServiceProvider
@@ -29,7 +28,19 @@ class ActorEvent : public AbstractServiceProvider
     Q_CLASSINFO("filename_props", "filename")
 public:
     ActorEvent(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() {return ActionType;}
+	virtual QString service_name(){return tr("Ereignisindikator");}
+	virtual QString service_desc(){return tr("Zeigt an und gibt ggfs. eine Mediendatei wieder um ein Ereignis anzuzeigen");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Titel");
+        case 1:
+            return tr("Dateiname");
+        default:
+            return QString();
+        }
+    }
     void setTitle(const QString& v);
     QString title();
     void setFilename(const QString& v);
@@ -38,5 +49,3 @@ private:
     QString m_eventTitle;
     QString m_filename;
 };
-
-#endif // ACTOREVENTSERVICEPROVIDER_H

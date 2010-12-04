@@ -20,12 +20,12 @@
 #ifndef ACTORPROJECTORSERVICEPROVIDER_H
 #define ACTORPROJECTORSERVICEPROVIDER_H
 #include <shared/abstractserviceprovider.h>
-#include <io/services_server/actorpinServer.h>
 
 class ActorProjector : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(ActorProjector::ProjectorControl cmd READ cmd WRITE setCmd);
+    Q_ENUMS(ProjectorControl);
 public:
     enum ProjectorControl {
         ProjectorOn,
@@ -35,9 +35,33 @@ public:
         ProjectorLampNormal,
         ProjectorLampEco
     };
-    Q_ENUMS(ProjectorControl);
     ActorProjector(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+	virtual QString service_name(){return tr("Projektorsteuerung");}
+	virtual QString service_desc(){return tr("Steuert den Z700 Projektor");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            switch (enumindex) {
+            case 0:
+                return tr("Einschalten");
+            case 1:
+                return tr("Ausschalten");
+            case 2:
+                return tr("Video aus");
+            case 3:
+                return tr("Video an");
+            case 4:
+                return tr("Lampe normal");
+            case 5:
+                return tr("Lampe eco");
+            default:
+                return tr("Kommando");
+            }
+        default:
+            return QString();
+        }
+    }
     void setCmd(ActorProjector::ProjectorControl v);
     ActorProjector::ProjectorControl cmd();
 private:

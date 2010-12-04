@@ -15,9 +15,6 @@
 #include <QStringList>
 #include <QDBusConnection>
 
-#define NETWORK_APIVERSION "3.0"
-#define NETWORK_AUTHTIMEOUT 120000
-#define LISTENPORT 3101
 #include <QDir>
 #include <QTimer>
 
@@ -38,32 +35,13 @@ public:
     int bufferpos;
     int bufferBrakes;
     QSslSocket* socket;
-    QString user() {
-        return m_user;
-    }
-    void setAuth(const QString& user) {
-        m_user = user;
-        m_auth = true;
-        m_authTimer.stop();
-    }
-    bool auth() {
-        return m_auth;
-    }
-    ClientConnection(QSslSocket* s) {
-        bufferpos=0;
-        bufferBrakes=0;
-        socket=s;
-        m_auth=false;
-        connect(&m_authTimer,SIGNAL(timeout()),SLOT(timeout()));
-        m_authTimer.start(NETWORK_AUTHTIMEOUT);
-    }
-    ~ClientConnection() {
-        delete socket;
-    }
+    QString user() ;
+    void setAuth(const QString& user) ;
+    bool auth() ;
+    ClientConnection(QSslSocket* s) ;
+    ~ClientConnection() ;
 private Q_SLOTS:
-    void timeout() {
-        emit timeoutAuth(socket);
-    }
+    void timeout() ;
 Q_SIGNALS:
     void timeoutAuth(QSslSocket* socket);
 };

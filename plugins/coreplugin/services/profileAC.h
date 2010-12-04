@@ -17,8 +17,7 @@
 
 */
 
-#ifndef ACTORPROFILESERVICEPROVIDER_H
-#define ACTORPROFILESERVICEPROVIDER_H
+#pragma once
 #include "shared/abstractserviceprovider.h"
 #include <Qt>
 
@@ -27,21 +26,38 @@ class ActorCollection : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString profileid READ profileid WRITE setProfileid);
-    Q_CLASSINFO("profileid_model", "CollectionModel")
+    Q_CLASSINFO("profileid_model", "CollectionsModel")
     Q_CLASSINFO("profileid_model_displaytype", "0");
     Q_CLASSINFO("profileid_model_savetype", "32");
-    Q_PROPERTY(ActorCollection::actionEnum action READ action WRITE setAction);
+    Q_PROPERTY(actionEnum action READ action WRITE setAction);
+    Q_ENUMS(actionEnum);
 public:
     enum actionEnum
     {
         StartProfile,
         CancelProfile
     };
-    Q_ENUMS(actionEnum);
 
     ActorCollection(QObject* parent=0);
-    virtual ProvidedTypes providedtypes() {
-        return ActionType;
+	virtual QString service_name(){return tr("Profilsteuerung");}
+	virtual QString service_desc(){return tr("Startet oder stopped ein Profil");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+			case 0:
+                return tr("Profil");
+        case 1:
+            switch (enumindex) {
+            case 0:
+                return tr("Starten");
+            case 1:
+                return tr("Stoppen");
+            default:
+                return tr("Aktion");
+            }
+        default:
+            return QString();
+        }
     }
     QString profileid() const;
     void setProfileid(const QString& value);
@@ -51,5 +67,3 @@ private:
     QString m_id;
     ActorCollection::actionEnum m_action;
 };
-
-#endif // ACTORPROFILESERVICEPROVIDER_H

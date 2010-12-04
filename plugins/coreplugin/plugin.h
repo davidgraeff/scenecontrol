@@ -21,7 +21,7 @@
 #define COREPLUGIN_H
 #include <QObject>
 #include <QStringList>
-#include "../shared/abstractplugin.h"
+#include "shared/abstractplugin.h"
 
 class BackupStateTracker;
 class SystemStateTracker;

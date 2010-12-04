@@ -26,14 +26,26 @@
 class ActorPinName : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(QString pinname READ pinname WRITE setPinname);
     Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
     Q_CLASSINFO("pin_model", "PinsModel")
     Q_CLASSINFO("pin_model_displaytype", "0");
     Q_CLASSINFO("pin_model_savetype", "32");
+    Q_PROPERTY(QString pinname READ pinname WRITE setPinname);
 public:
     ActorPinName(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+	virtual QString service_name(){return tr("PinName");}
+	virtual QString service_desc(){return tr("Setzt den Namen eines Pins");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Pin");
+        case 1:
+            return tr("Name");
+        default:
+            return QString();
+        }
+    }
     QString pinname() const;
     void setPinname(const QString& value);
     unsigned int pin() const;

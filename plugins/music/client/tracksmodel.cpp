@@ -17,31 +17,32 @@
 
 */
 
-#include "playlistitemsmodel.h"
-#include "media/playlist.h"
+#include "tracksmodel.h"
 #include <QSettings>
 #include <qfileinfo.h>
 #include <QPalette>
 #include <QApplication>
 #include <QUrl>
 #include <QDebug>
+#include <services/playlist.h>
+#include <qmimedata.h>
 
-PlaylistItemsModel::PlaylistItemsModel (Playlist* playlist, QObject* parent)
-        : QAbstractTableModel(parent), m_waitforsync(false), m_playlist(playlist)
+PlaylistTracksModel::PlaylistTracksModel (ActorPlaylist* playlist, QObject* parent)
+        : ClientModel(), m_waitforsync(false), m_playlist(playlist)
 {
 }
 
-Qt::DropActions PlaylistItemsModel::supportedDropActions() const
+Qt::DropActions PlaylistTracksModel::supportedDropActions() const
 {
     return Qt::MoveAction | Qt::CopyAction;
 }
 
-int PlaylistItemsModel::rowCount ( const QModelIndex & ) const
+int PlaylistTracksModel::rowCount ( const QModelIndex & ) const
 {
     return m_playlist->m_files.size();
 }
 
-QVariant PlaylistItemsModel::headerData ( int section, Qt::Orientation orientation, int role ) const
+QVariant PlaylistTracksModel::headerData ( int section, Qt::Orientation orientation, int role ) const
 {
     if ( orientation == Qt::Horizontal )
     {
@@ -55,51 +56,53 @@ QVariant PlaylistItemsModel::headerData ( int section, Qt::Orientation orientati
         }
     }
 
-    return QAbstractTableModel::headerData ( section, orientation, role );
+    return QAbstractListModel::headerData ( section, orientation, role );
 }
 
 
-bool PlaylistItemsModel::setData ( const QModelIndex& index, const QVariant& value, int role )
+bool PlaylistTracksModel::setData ( const QModelIndex& index, const QVariant& value, int role )
 {
     if ( !index.isValid() || role != Qt::EditRole) return false;
 
-    QString newname = value.toString().trimmed().replace ( '\n',"" ).replace ( '\t',"" );
+    QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
 
     if ( index.column() ==0)
     {
         if ( newname.isEmpty() || newname == m_playlist->m_titles[index.row()] ) return false;
 
         m_playlist->m_titles[index.row()] = newname;
-        m_playlist->sync();
+	emit serviceChanged(m_playlist);
+
         return true;
     } else if (index.column()==1)
     {
         if ( newname.isEmpty() || newname == m_playlist->m_files[index.row()] ) return false;
         m_playlist->m_files[index.row()] = newname;
-        m_playlist->sync();
+        	emit serviceChanged(m_playlist);
+
         return true;
     }
 
     return false;
 }
 
-Qt::ItemFlags PlaylistItemsModel::flags ( const QModelIndex& index ) const
+Qt::ItemFlags PlaylistTracksModel::flags ( const QModelIndex& index ) const
 {
     if ( !index.isValid() )
         return Qt::ItemIsDropEnabled;
 
     if (m_waitforsync)
-        return QAbstractTableModel::flags ( index );
+        return QAbstractListModel::flags ( index );
     else
-        return QAbstractTableModel::flags ( index ) | Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
+        return QAbstractListModel::flags ( index ) | Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
 }
 
-QMimeData *PlaylistItemsModel::mimeData( const QModelIndexList & indexes ) const
+QMimeData *PlaylistTracksModel::mimeData( const QModelIndexList & indexes ) const
 {
     if (m_playlist->m_files.isEmpty())
         return 0;
 
-    QMimeData *mimeData = QAbstractTableModel::mimeData(indexes);
+    QMimeData *mimeData = QAbstractListModel::mimeData(indexes);
     QByteArray encodedData;
 
     QDataStream stream(&encodedData, QIODevice::WriteOnly);
@@ -111,30 +114,30 @@ QMimeData *PlaylistItemsModel::mimeData( const QModelIndexList & indexes ) const
         }
     }
 
-    mimeData->setData("text/uri-list", encodedData);
+    mimeData->setData(QLatin1String("text/uri-list"), encodedData);
     return mimeData;
 
 }
 
-QStringList PlaylistItemsModel::mimeTypes() const
+QStringList PlaylistTracksModel::mimeTypes() const
 {
-    QStringList types = QAbstractTableModel::mimeTypes();
-    types << "text/uri-list";
+    QStringList types = QAbstractListModel::mimeTypes();
+    types << QLatin1String("text/uri-list");
     return types;
 }
 
-bool PlaylistItemsModel::addFile(QUrl url, int row)
+bool PlaylistTracksModel::addFile(QUrl url, int row)
 {
     const QSettings settings;
-    const QString localbase = settings.value ( "baselocal" ).toString();
-    const QString remotebase = settings.value ( "baseremote" ).toString();
+    const QString localbase = settings.value ( QLatin1String("baselocal") ).toString();
+    const QString remotebase = settings.value ( QLatin1String("baseremote") ).toString();
 
     if (row==-1)
         row = m_playlist->m_files.size();
     const QFileInfo info(url.path());
     const QString suffix = info.suffix().toLower();
     QString path = url.path();
-    if (suffix == "pls")
+    if (suffix == QLatin1String("pls"))
     {
         QFile f(path);
         if (!f.open(QIODevice::ReadOnly))
@@ -146,10 +149,10 @@ bool PlaylistItemsModel::addFile(QUrl url, int row)
             if (l.size()==2 && l[0].toLower()=="file1") {
                 QByteArray suburl = l[1];
                 suburl = suburl.replace('\r',"").replace('\n',"");
-                return addFile(QUrl(suburl), row);
+                return addFile(QUrl(QString::fromUtf8(suburl)), row);
             }
         }
-    } if (suffix == "m3u")
+    } if (suffix == QLatin1String("m3u"))
     {
         QFile f(path);
         if (!f.open(QIODevice::ReadOnly))
@@ -159,14 +162,14 @@ bool PlaylistItemsModel::addFile(QUrl url, int row)
         foreach (QByteArray line, filecontent) {
 	  line = line.trimmed().replace('\r',"").replace('\n',"");
 	  if (line.size() && line[0] == '#') continue;
-          return addFile(QUrl(line), row);
+          return addFile(QUrl(QString::fromUtf8(line)), row);
         }
-    } else if (url.scheme().startsWith("http"))
+    } else if (url.scheme().startsWith(QLatin1String("http")))
     {
         m_playlist->m_files.insert(row, url.toString());
         m_playlist->m_titles.insert(row, url.authority());
         return true;
-    } else if (path.startsWith ( localbase ) && (suffix == "mp3" || suffix == "ogg"))
+    } else if (path.startsWith ( localbase ) && (suffix == QLatin1String("mp3") || suffix == QLatin1String("ogg")))
     {
         path = path.replace ( 0, localbase.length(), remotebase );
         m_playlist->m_files.insert(row, path);
@@ -177,7 +180,7 @@ bool PlaylistItemsModel::addFile(QUrl url, int row)
 }
 
 
-bool PlaylistItemsModel::dropMimeData(const QMimeData *data,
+bool PlaylistTracksModel::dropMimeData(const QMimeData *data,
                                       Qt::DropAction action, int row, int column, const QModelIndex &)
 {
     Q_UNUSED(column);
@@ -185,7 +188,7 @@ bool PlaylistItemsModel::dropMimeData(const QMimeData *data,
     if (action == Qt::IgnoreAction)
         return true;
 
-    QByteArray itemData = data->data("application/x-qabstractitemmodeldatalist");
+    QByteArray itemData = data->data(QLatin1String("application/x-qabstractitemmodeldatalist"));
     if (itemData.size() && row!=-1) {
       QDataStream stream(&itemData, QIODevice::ReadOnly);
 
@@ -208,7 +211,7 @@ bool PlaylistItemsModel::dropMimeData(const QMimeData *data,
 	const QModelIndex index2 = createIndex(qMax(r,row), 1);
 	emit dataChanged(index, index2);*/
       }
-      m_playlist->sync();
+	emit serviceChanged(m_playlist);
       return false;
     }
     
@@ -224,12 +227,12 @@ bool PlaylistItemsModel::dropMimeData(const QMimeData *data,
     }
 
     if (count<0) return false;
-    m_playlist->sync();
+	emit serviceChanged(m_playlist);
 
     return true;
 }
 
-QVariant PlaylistItemsModel::data ( const QModelIndex & index, int role ) const
+QVariant PlaylistTracksModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
 
@@ -254,7 +257,7 @@ QVariant PlaylistItemsModel::data ( const QModelIndex & index, int role ) const
     return QVariant();
 }
 
-bool PlaylistItemsModel::removeRows ( int row, int count, const QModelIndex & )
+bool PlaylistTracksModel::removeRows ( int row, int count, const QModelIndex & )
 {
     QString str;
     for ( int i=row+count-1;i>=row;--i )
@@ -263,22 +266,22 @@ bool PlaylistItemsModel::removeRows ( int row, int count, const QModelIndex & )
         m_playlist->m_titles.removeAt( i );
     }
 
-    if (count) m_playlist->sync();
+    if (count) emit serviceChanged(m_playlist);
     return true;
 }
 
-bool PlaylistItemsModel::removeRows ( QModelIndexList list )
+bool PlaylistTracksModel::removeRows ( QModelIndexList list )
 {
     for (int i = list.size()-1; i >= 0; i--)
     {
         m_playlist->m_files.removeAt ( list[i].row() );
         m_playlist->m_titles.removeAt( list[i].row() );
     }
-    if (list.size()) m_playlist->sync();
+    if (list.size()) emit serviceChanged(m_playlist);
     return true;
 }
 
-bool PlaylistItemsModel::insertRows ( int row, int count, const QModelIndex &)
+bool PlaylistTracksModel::insertRows ( int row, int count, const QModelIndex &)
 {
     beginInsertRows(QModelIndex(), row, row+count-1);
     for ( int i=row+count-1;i>=row;--i )
@@ -291,11 +294,11 @@ bool PlaylistItemsModel::insertRows ( int row, int count, const QModelIndex &)
     return true;
 }
 
-int PlaylistItemsModel::columnCount ( const QModelIndex & ) const
+int PlaylistTracksModel::columnCount ( const QModelIndex & ) const
 {
     return 1;//2;
 }
-void PlaylistItemsModel::updateCurrenttrack(int old) {
+void PlaylistTracksModel::updateCurrenttrack(int old) {
     const QModelIndex index = createIndex(m_playlist->currentTrack(), 0);
     emit dataChanged(index, index);
     const QModelIndex index2 = createIndex(old, 0);

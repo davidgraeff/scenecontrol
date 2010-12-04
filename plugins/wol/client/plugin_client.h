@@ -20,34 +20,21 @@
 #ifndef myPluginClient_H
 #define myPluginClient_H
 #include <QObject>
-#include <QStringList>
-#include <../clients/clientplugin.h>
+#include <shared/client/clientplugin.h>
 #include <shared/abstractplugin.h>
 
-class EventStateTracker;
-class ModeStateTracker;
-class ExecuteWithBase;
-class SystemStateTracker;
-class BackupStateTracker;
-class ExecuteService;
-class ServiceController;
-class EventVolumeStateTracker;
 class myPluginClient : public ClientPlugin
 {
     Q_OBJECT
+    Q_INTERFACES(ClientPlugin)
 public:
     myPluginClient(QObject* parent = 0);
     virtual ~myPluginClient();
     virtual AbstractPlugin* base() {
         return m_base;
     }
-    virtual QList< ClientModel* > models();
-    virtual void serviceChanged(AbstractServiceProvider* );
-    virtual void serviceRemoved(AbstractServiceProvider* );
-    virtual void stateChanged(AbstractStateTracker* ) ;
 private:
     AbstractPlugin* m_base;
-    QList< ClientModel* > m_models;
 };
 
 #endif // myPluginClient_H

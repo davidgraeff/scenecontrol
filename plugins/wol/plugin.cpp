@@ -4,7 +4,7 @@
 
 QStringList myPlugin::registerServices() const {
     return QStringList() <<
-	QString::fromAscii(ServiceWOL::staticMetaObject.className());
+	QString::fromAscii(ActorWOL::staticMetaObject.className());
 
 }
 QStringList myPlugin::registerStateTracker() const {
@@ -17,8 +17,8 @@ AbstractStateTracker* myPlugin::createStateTracker(const QString& id) {
 }
 AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
     QByteArray idb = id.toAscii();
-    if (idb == ServiceWOL::staticMetaObject.className()) {
-        return new ServiceWOL();
+    if (idb == ActorWOL::staticMetaObject.className()) {
+        return new ActorWOL();
     }
     return 0;
 }

@@ -17,8 +17,7 @@
 
 */
 
-#ifndef ABSTRACTPLUGIN_H
-#define ABSTRACTPLUGIN_H
+#pragma once
 #include <QObject>
 #include <QStringList>
 #include "abstractstatetracker.h"
@@ -27,6 +26,7 @@
 class AbstractPlugin
 {
 public:
+	virtual ~AbstractPlugin() {}
     virtual QString name() const = 0;
     virtual QString version() const = 0;
     /**
@@ -38,4 +38,3 @@ public:
 	virtual AbstractServiceProvider* createServiceProvider(const QString& id) = 0;
 };
 Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/1.0")
-#endif // ABSTRACTPLUGIN_H

@@ -20,26 +20,22 @@
 #include "channelsmodel.h"
 #include <QStringList>
 #include <QDebug>
-#include <actors/actorled.h>
-#include <RoomControlClient.h>
-#include <actors/actorledname.h>
-#include <stateTracker/channelvaluestatetracker.h>
-#include <stateTracker/channelnamestatetracker.h>
+#include <shared/abstractstatetracker.h>
+#include <statetracker/ledvaluestatetracker.h>
+#include <statetracker/lednamestatetracker.h>
+#include <services/actorled.h>
+#include <services/actorledname.h>
 
-ChannelsModel::ChannelsModel (QObject* parent) : QAbstractListModel ( parent )
+ChannelsModel::ChannelsModel (QObject* parent) : ClientModel ( parent )
 {
-    connect(RoomControlClient::getFactory(),SIGNAL(stateChanged(AbstractStateTracker*)),
-            SLOT(stateChanged(AbstractStateTracker*)));
-    connect(RoomControlClient::getNetworkController(),SIGNAL(disconnected()),
-            SLOT(slotdisconnected()));
 }
 
 ChannelsModel::~ChannelsModel()
 {
-    slotdisconnected();
+    clear();
 }
 
-void ChannelsModel::slotdisconnected()
+void ChannelsModel::clear()
 {
     qDeleteAll(m_itemvalues);
     qDeleteAll(m_itemnames);
@@ -49,13 +45,15 @@ void ChannelsModel::slotdisconnected()
     reset();
 }
 
-void ChannelsModel::stateChanged(AbstractStateTracker* tracker)
+void ChannelsModel::stateTrackerChanged(AbstractStateTracker* tracker)
 {
     if (tracker->metaObject()->className() ==
             ChannelValueStateTracker::staticMetaObject.className())
     {
-        ChannelValueStateTracker* p = (ChannelValueStateTracker*)tracker;
-        p->setManaged();
+        ChannelValueStateTracker* original = (ChannelValueStateTracker*)tracker;
+		ChannelValueStateTracker* p = new ChannelValueStateTracker();
+		p->setChannel(original->channel());
+		p->setValue(original->value());
         if (!m_assignment.contains(p->channel())) {
             beginInsertRows(QModelIndex(), p->channel(), p->channel());
             m_assignment.insert(p->channel(), m_itemvalues.size());
@@ -73,8 +71,11 @@ void ChannelsModel::stateChanged(AbstractStateTracker* tracker)
     } else if (tracker->metaObject()->className() ==
                ChannelNameStateTracker::staticMetaObject.className())
     {
-        ChannelNameStateTracker* p = (ChannelNameStateTracker*)tracker;
-        p->setManaged();
+        ChannelNameStateTracker* original = (ChannelNameStateTracker*)tracker;
+		ChannelNameStateTracker* p = new ChannelNameStateTracker();
+		p->setChannel(original->channel());
+		p->setValue(original->value());
+
         if (!m_assignment.contains(p->channel())) {
         } else {
             const int listpos = m_assignment.value(p->channel());
@@ -100,7 +101,7 @@ QVariant ChannelsModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
 
-
+	if ( role==Qt::UserRole) return m_itemnames.at(index.row())->channel();
     if ( role==Qt::DisplayRole || role==Qt::EditRole )
     {
         if ( index.column() ==0 )
@@ -140,7 +141,7 @@ bool ChannelsModel::setData ( const QModelIndex& index, const QVariant& value, i
 
     if ( index.column() ==0 && role == Qt::EditRole )
     {
-        QString newname = value.toString().trimmed().replace ( '\n',"" ).replace ( '\t',"" );
+        QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
         ChannelNameStateTracker* t= m_itemnames[index.row() ];
         if ( newname.isEmpty() || newname == t->value() ) return false;
 
@@ -174,7 +175,7 @@ void ChannelsModel::setValue ( int i, unsigned int value )
     ActorLed* a = new ActorLed();
     a->setChannel(i);
     a->setValue(value);
-    RoomControlClient::getFactory()->executeActor(a);
+	emit executeService(a);
 }
 
 void ChannelsModel::setName ( int i, const QString& value )
@@ -182,7 +183,7 @@ void ChannelsModel::setName ( int i, const QString& value )
     ActorLedName* a = new ActorLedName();
     a->setChannel(i);
     a->setLedname(value);
-    RoomControlClient::getFactory()->executeActor(a);
+	emit executeService(a);
 }
 
 QString ChannelsModel::getName ( int i )
@@ -195,4 +196,12 @@ int ChannelsModel::getValue ( int i ) const
 {
     if (i<0 || i>=m_itemvalues.size()) return 0;
     return m_itemvalues.at ( i )->value();
+}
+void ChannelsModel::serviceRemoved(AbstractServiceProvider*) {}
+void ChannelsModel::serviceChanged(AbstractServiceProvider*) {}
+
+
+int ChannelsModel::indexOf(const QVariant& data) {
+    if (data.type()!=QVariant::UInt) return -1;
+    return m_assignment.value(data.toUInt(), -1);
 }

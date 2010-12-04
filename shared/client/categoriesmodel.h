@@ -17,40 +17,38 @@
 
 */
 
-#ifndef ServiceProviderModel_h
-#define ServiceProviderModel_h
+#pragma once
 
 #include <QModelIndex>
 #include <QAbstractListModel>
 #include <QString>
 #include <QStringList>
-#include <QIcon>
+#include "shared/client/clientplugin.h"
 
-class Collection;
-class AbstractServiceProvider;
-class ServiceProviderModel : public QAbstractListModel
+class Category;
+class CategoriesModel : public ClientModel
 {
     Q_OBJECT
 public:
-    ServiceProviderModel (const QString& title, QObject* parent = 0);
-    ~ServiceProviderModel();
+    CategoriesModel (QObject* parent = 0);
+    ~CategoriesModel();
 
     virtual int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
-    virtual QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-    virtual bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
-    QString getName ( int i ) const;
-    virtual QVariant headerData ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-    inline AbstractServiceProvider* get(int index) { return m_items.at(index);}
-    int indexOf ( const QString& id ) ;
-    void addedProvider(AbstractServiceProvider*);
-public Q_SLOTS:
-    void objectChanged(AbstractServiceProvider*);
-    void slotdisconnected();
-    void childsChanged(Collection*);
-    void removedProvider(AbstractServiceProvider*);
-private:
-    QList< AbstractServiceProvider* > m_items;
-    QString m_title;
-};
 
-#endif // ServiceProviderModel_h
+    virtual QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
+    virtual QVariant headerData ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const;
+
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
+    virtual bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
+
+    Category* get(int index) ;
+    virtual int indexOf(const QVariant& data);
+public Q_SLOTS:
+    virtual void clear();
+    virtual void serviceChanged(AbstractServiceProvider* );
+    virtual void serviceRemoved(AbstractServiceProvider* );
+    virtual void stateTrackerChanged(AbstractStateTracker* );
+private:
+    QList<Category*> m_items;
+};

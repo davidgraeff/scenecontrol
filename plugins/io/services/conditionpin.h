@@ -31,7 +31,19 @@ class ConditionPin : public AbstractServiceProvider
     Q_PROPERTY(bool value READ value WRITE setValue);
 public:
     ConditionPin(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ConditionType;}
+	virtual QString service_desc(){return tr("Bedingung ob Pin gesetzt ist");}
+	virtual QString service_name(){return tr("Pinbedingung");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Pin");
+        case 1:
+            return tr("Wert");
+        default:
+            return QString();
+        }
+    }
     unsigned int pin() const;
     void setPin(unsigned int value);
     bool value() const;

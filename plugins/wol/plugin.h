@@ -21,17 +21,17 @@
 #define myPLUGIN_H
 #include <QObject>
 #include <QStringList>
-#include "../shared/abstractplugin.h"
+#include "shared/abstractplugin.h"
 
 class myPlugin : public QObject, public AbstractPlugin
 {
   Q_OBJECT
-  Q_INTERFACES(AbstractPlugin)
 public:
 	myPlugin();
 	virtual ~myPlugin();
 	virtual QString name() const ;
-	virtual QString version() const ;
+    virtual QString version() const;
+	
 	/**
 	 * Return all Actions, Conditions, Events and StateTracker
 	 */

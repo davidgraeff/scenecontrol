@@ -35,6 +35,8 @@ public:
 private:
 	EventSystem* m_base;
 	myPluginExecute* m_plugin;
+Q_SIGNALS:
+	void systemStarted();
 };
 
 #endif // EventSystemServer_h

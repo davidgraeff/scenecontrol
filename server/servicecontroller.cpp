@@ -7,24 +7,28 @@
 #include <QUuid>
 #include <QDebug>
 
-#include "shared/services/profile.h"
+#include "shared/categorize/profile.h"
+#include "shared/categorize/category.h"
 #include "shared/qjson/parser.h"
 #include "shared/qjson/qobjecthelper.h"
 #include "shared/qjson/serializer.h"
-#include "shared/services/category.h"
 #include "shared/abstractplugin.h"
 #include "shared/abstractstatetracker.h"
 #include "shared/server/executeservice.h"
 #include "shared/server/executeplugin.h"
 #include "executeprofile.h"
 #include <QApplication>
+#include <plugins/coreplugin/services_server/systemACServer.h>
+#include <plugins/coreplugin/services/systemAC.h>
+#include <plugins/coreplugin/services_server/systemEVServer.h>
+#include <plugins/coreplugin/services_server/profileACServer.h>
+#include <plugins/coreplugin/services/profileAC.h>
 #define __FUNCTION__ __FUNCTION__
 
 ServiceController::ServiceController ()
 {
     int offered_services = 0;
     ExecutePlugin *plugin;
-    qDebug() << "Start: Load Plugins";
 
     const QDir pluginsDir = QDir(qApp->property("pluginspath").value<QString>());
     const QStringList plugins = pluginsDir.entryList ( QDir::Files );
@@ -47,6 +51,7 @@ ServiceController::ServiceController ()
 
         connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
         connect(plugin,SIGNAL(pluginobjectChanged(ExecuteWithBase*)),SLOT(pluginobjectChanged(ExecuteWithBase*)));
+        connect(plugin,SIGNAL(executeService(AbstractServiceProvider*)),SLOT(pluginexecuteService(AbstractServiceProvider*)));
         m_plugins.append ( plugin );
         QStringList provides = plugin->base()->registerServices();
         foreach ( QString provide, provides )
@@ -72,13 +77,14 @@ ServiceController::ServiceController ()
         }
 
         QVariantMap result = parser.parse ( &f, &ok ).toMap();
+        f.close();
         if ( !ok )
         {
             qWarning() << "Not a json file" << file;
             continue;
         }
 
-        if ( !generate ( result ) )
+        if ( !generate ( result, true ) )
         {
             qWarning() << "Json file content not recognised" << file;
             continue;
@@ -88,23 +94,21 @@ ServiceController::ServiceController ()
     // link execute_services to execute_collections
     foreach (ExecuteWithBase* s, m_servicesList) {
         // do not look at collections, only at services
-        ExecuteService* exservice = qobject_cast<ExecuteService*>(s);
+        ExecuteService* exservice = dynamic_cast<ExecuteService*>(s);
         if (exservice) addToExecuteProfiles(exservice);
     }
 
     emit systemStarted();
 
     // stats
-    qDebug() << "StateTracker   :" << stateTracker().size();
-    qDebug() << "Services       :" << offered_services;
-    qDebug() << "Loaded Services:" << m_servicesList.size();
+    qDebug() << "Available StateTracker:" << stateTracker().size();
+    qDebug() << "Available Services    :" << offered_services;
+    qDebug() << "Loaded    Services    :" << m_servicesList.size();
 }
 
 ServiceController::~ServiceController()
 {
-    qDebug() << "Shutdown: ServiceController (Services)";
     qDeleteAll ( m_servicesList );
-    qDebug() << "Shutdown: ServiceController (Plugins)";
     qDeleteAll ( m_plugins );
 }
 
@@ -118,22 +122,27 @@ QList<AbstractStateTracker*> ServiceController::stateTracker()
     return l;
 }
 
-bool ServiceController::generate ( const QVariantMap& json )
+bool ServiceController::generate ( const QVariantMap& json, bool loading )
 {
     const QString id = json.value ( QLatin1String ( "id" ) ).toString();
     ExecuteWithBase* service = m_services.value ( id );
     bool remove = json.contains ( QLatin1String ( "remove" ) );
+    bool iExecute = json.contains ( QLatin1String ( "iexecute" ) );
 
     if ( service )
     {
+        QJson::QObjectHelper::qvariant2qobject ( json, service->base() );
         if ( remove )
         {
             removeFromDisk ( service );
+            return true;
         }
-        else
+        else if (!iExecute )
         {
             updateService(service, json, false);
+            return true;
         }
+        return false;
     }
     else if ( remove ) return false;
 
@@ -145,44 +154,60 @@ bool ServiceController::generate ( const QVariantMap& json )
         return false;
     }
 
-    ExecutePlugin* eplugin = m_plugin_provider.value ( type );
-    if ( !eplugin )
-    {
-        qWarning() << __FUNCTION__ << "no plugin for json object" << json;
-        return false;
+    if (type.toUtf8() == Category::staticMetaObject.className()) {
+        service = new ExecuteWithBase(new Category(), this);
+    } else if (type.toUtf8() == Collection::staticMetaObject.className()) {
+        service = new ExecuteCollection(new Collection(), this);
+    } else {
+        ExecutePlugin* eplugin = m_plugin_provider.value ( type );
+        if ( !eplugin )
+        {
+            qWarning() << __FUNCTION__ << "no plugin for json object" << json;
+            return false;
+        }
+
+        service=eplugin->createExecuteService ( type ) ;
     }
 
-    service=eplugin->createExecuteService ( type ) ;
     if ( !service )
     {
         qWarning() << __FUNCTION__ << "no service from plugin for json object" << json;
         return false;
     }
 
+    QJson::QObjectHelper::qvariant2qobject ( json, service->base() );
+
+    if (service->base()->type() == EventSystemServer::staticMetaObject.className()) {
+        connect(this, SIGNAL(systemStarted()), (EventSystemServer*)service, SIGNAL(systemStarted()));
+    }
+
+    // connect executecollection signals
+    ExecuteCollection* collection = dynamic_cast<ExecuteCollection*>(service);
+    if (collection) {
+        connect(collection,SIGNAL(executeservice(ExecuteService*)),SLOT(executeservice(ExecuteService*)));
+    }
+
     // check if it is an immediately to execute actor
-    if ( json.contains ( QLatin1String ( "iexecute" ) ) )
+    if ( iExecute )
     {
-        ExecuteService* exservice = qobject_cast<ExecuteService*>(service);
+        ExecuteService* exservice = dynamic_cast<ExecuteService*>(service);
         Q_ASSERT(exservice);
-        exservice->execute();
+        executeservice(exservice);
         delete exservice;
     }
     else
     {
-        updateService(service, json, true);
+        updateService(service, json, true, loading);
         m_services.insert ( service->base()->id(), service );
         m_servicesList.append ( service );
     }
     return true;
 }
 
-void ServiceController::updateService(ExecuteWithBase* service, const QVariantMap& json, bool newid)
+void ServiceController::updateService(ExecuteWithBase* service, const QVariantMap& json, bool newid, bool loading)
 {
-    ExecuteService* exservice = qobject_cast<ExecuteService*>(service);
+    ExecuteService* exservice = dynamic_cast<ExecuteService*>(service);
     if (exservice) removeFromExecuteProfiles ( exservice );
-
-    // load json data into object
-    QJson::QObjectHelper::qvariant2qobject ( json, service );
 
     // Generate uinque ids amoung all existing ids
     if (newid) {
@@ -198,7 +223,7 @@ void ServiceController::updateService(ExecuteWithBase* service, const QVariantMa
         exservice->dataUpdate();
         addToExecuteProfiles ( exservice );
     }
-    saveToDisk ( service );
+    if (!loading) saveToDisk ( service );
 }
 
 void ServiceController::pluginobjectChanged(ExecuteWithBase* service) {
@@ -213,38 +238,41 @@ void ServiceController::pluginobjectChanged(ExecuteWithBase* service) {
     }
 }
 
-void ServiceController::removeFromDisk ( ExecuteWithBase* service )
+void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
 {
+    AbstractServiceProvider* service = eservice->base();
     // set dynamic property remove to true
     service->setProperty ( "remove",true );
     // propagate to all clients, so that those remove this provider, too.
-    emit serviceSync ( service->base() );
+    emit serviceSync ( service );
 
-    if ( !QFile::remove ( serviceFilename ( service->base() ) ) )
-        qWarning() << "Couldn't remove file" << serviceFilename ( service->base() );
+    if ( !QFile::remove ( serviceFilename ( service ) ) ||
+            QFileInfo(serviceFilename ( service )).exists() )
+        qWarning() << "Couldn't remove file" << serviceFilename ( service );
 
     // collection: remove all childs
-    if (service->base()->type() == Collection::staticMetaObject.className()) {
+    if (service->type() == Collection::staticMetaObject.className()) {
         // find executecollection
-        ExecuteCollection* p = qobject_cast<ExecuteCollection*>(service);
+        ExecuteCollection* p = dynamic_cast<ExecuteCollection*>(eservice);
         Q_ASSERT(p);
         QSet<ExecuteService*> childs_linked = p->m_childs_linked;
         p->m_childs_linked.clear();
         foreach (ExecuteService* s, childs_linked) {
             removeFromDisk(s);
         }
-    } else {
-        ExecuteService* exservice = qobject_cast<ExecuteService*>(service);
-        Q_ASSERT(exservice);
-        removeFromExecuteProfiles ( exservice );
+    } else if (service->type() != Category::staticMetaObject.className()) {
+        ExecuteService* exservice = dynamic_cast<ExecuteService*>(eservice);
+        // Not true for categories that are only ExecuteWithBase
+        if (exservice) removeFromExecuteProfiles ( exservice );
     }
-    m_services.remove(service->base()->id());
-    m_servicesList.removeAll(service);
-    service->deleteLater();
+    m_services.remove(service->id());
+    m_servicesList.removeAll(eservice);
+    eservice->deleteLater();
 }
 
-void ServiceController::saveToDisk ( ExecuteWithBase* service )
+void ServiceController::saveToDisk ( ExecuteWithBase* eservice )
 {
+    AbstractServiceProvider* service = eservice->base();
     Q_ASSERT ( service );
     if ( service->dynamicPropertyNames().contains ( "iexecute" ) )
     {
@@ -257,7 +285,7 @@ void ServiceController::saveToDisk ( ExecuteWithBase* service )
         return;
     }
 
-    const QString path = serviceFilename ( service->base() );
+    const QString path = serviceFilename ( service );
 
     QFile file ( path );
     if ( !file.open ( QIODevice::ReadWrite | QIODevice::Truncate ) )
@@ -277,7 +305,8 @@ void ServiceController::saveToDisk ( ExecuteWithBase* service )
         file.write ( json );
     }
     file.close();
-    emit serviceSync ( service->base() );
+    qDebug() << __FUNCTION__ << json;
+    emit serviceSync ( service );
 }
 
 QString ServiceController::serviceFilename ( AbstractServiceProvider* service )
@@ -298,7 +327,7 @@ void ServiceController::refresh()
 void ServiceController::addToExecuteProfiles ( ExecuteService* service )
 {
     if (service->base()->parentid().isEmpty()) return;
-    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(service->base()->parentid()));
+    ExecuteCollection* p = dynamic_cast<ExecuteCollection*>(m_services.value(service->base()->parentid()));
     if (!p) return;
     p->registerChild ( service );
 }
@@ -306,20 +335,57 @@ void ServiceController::addToExecuteProfiles ( ExecuteService* service )
 void ServiceController::removeFromExecuteProfiles ( ExecuteService* service )
 {
     if (service->base()->parentid().isEmpty()) return;
-    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(service->base()->parentid()));
+    ExecuteCollection* p = dynamic_cast<ExecuteCollection*>(m_services.value(service->base()->parentid()));
     if (!p) return;
     p->removeChild(service);
 }
 
 void ServiceController::runProfile ( const QString& id )   // only run if enabled
 {
-    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(id));
+    ExecuteCollection* p = dynamic_cast<ExecuteCollection*>(m_services.value(id));
     if (!p) return;
     p->run();
 }
 
 void ServiceController::stopProfile(const QString& id) {
-    ExecuteCollection* p = qobject_cast<ExecuteCollection*>(m_services.value(id));
+    ExecuteCollection* p = dynamic_cast<ExecuteCollection*>(m_services.value(id));
     if (!p) return;
     p->stop();
+}
+void ServiceController::pluginexecuteService(AbstractServiceProvider* service) {
+    Q_ASSERT(service);
+    service->setProperty("iexecute",1);
+    generate(QJson::QObjectHelper::qobject2qvariant(service));
+}
+void ServiceController::executeservice(ExecuteService* service) {
+    if (service->base()->type() == ActorSystemServer::staticMetaObject.className()) {
+
+        switch (((ActorSystem*)service->base())->action()) {
+        case ActorSystem::RestartSystem:
+            QCoreApplication::exit(EXIT_WITH_RESTART);
+            break;
+        case ActorSystem::QuitSystem:
+            QCoreApplication::exit(0);
+            break;
+        case ActorSystem::ResyncSystem:
+            refresh();
+            break;
+        default:
+            break;
+        };
+    }
+    if (service->base()->type() == ActorCollectionServer::staticMetaObject.className()) {
+        switch (((ActorCollection*)service->base())->action()) {
+        case ActorCollection::StartProfile:
+            runProfile(((ActorCollection*)service->base())->profileid());
+            break;
+        case ActorCollection::CancelProfile:
+            stopProfile(((ActorCollection*)service->base())->profileid());
+            break;
+        default:
+            break;
+        };
+    }
+    else
+        service->execute();
 }

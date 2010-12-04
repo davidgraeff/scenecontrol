@@ -26,19 +26,16 @@
 #include <QStringList>
 #include <QIcon>
 #include "services/playlist.h"
-#include <clientplugin.h>
+#include "shared/client/clientplugin.h"
 
 class AbstractServiceProvider;
 class ActorPlaylist;
-class ActorPlaylistModel : public ClientModel
+class PlaylistModel : public ClientModel
 {
     Q_OBJECT
 public:
-    ActorPlaylistModel (QObject* parent=0);
-    ~ActorPlaylistModel();
-    virtual QString getQML();
-    virtual QString id();
-    virtual void stateTrackerChanged(AbstractStateTracker* );
+    PlaylistModel (QObject* parent=0);
+    ~PlaylistModel();
     
     virtual int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
     virtual QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -106,11 +103,12 @@ public:
       * slot.
       */
     void addRequest ( const QString& name );
+	virtual int indexOf(const QVariant&) {return -1;}
 private Q_SLOTS:
-    void addedProvider(AbstractServiceProvider*);
-    void removedProvider(AbstractServiceProvider*);
-    void objectChanged(AbstractServiceProvider*);
-    void slotdisconnected();
+    void stateTrackerChanged(AbstractStateTracker*);
+    void serviceRemoved(AbstractServiceProvider*);
+    void serviceChanged(AbstractServiceProvider*);
+	void clear();
 private:
     QList< ActorPlaylist* > m_items;
     int m_current;

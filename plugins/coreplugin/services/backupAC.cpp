@@ -31,9 +31,17 @@ void ActorBackup::setAction(ActorBackup::actionEnum value) {
 }
 
 QString ActorBackup::backupid() const {
-    return m_id;
+    return m_backupid;
 }
 
 void ActorBackup::setBackupid(const QString& value) {
-    m_id = value;
+    m_backupid = value;
+}
+
+QString ActorBackup::backupname() const {
+    return m_backupname;
+}
+
+void ActorBackup::setBackupname(const QString& value) {
+    m_backupname = value;
 }

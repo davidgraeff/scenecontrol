@@ -25,17 +25,17 @@
 #include <QString>
 #include <QStringList>
 #include <QIcon>
+#include "shared/client/clientplugin.h"
 
 class AbstractStateTracker;
 class PinNameStateTracker;
 class PinValueStateTracker;
-class PinsModel : public QAbstractListModel
+class PinsModel : public ClientModel
 {
     Q_OBJECT
 public:
     PinsModel(QObject* parent = 0);
     ~PinsModel();
-
     virtual int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
     virtual int columnCount ( const QModelIndex & parent = QModelIndex() ) const;
     virtual QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
@@ -48,9 +48,13 @@ public:
     QString getName ( int i );
     int getValue ( int i ) const;
     void toggle( int i );
-private Q_SLOTS:
-    void stateChanged(AbstractStateTracker*);
-    void slotdisconnected();
+	
+    virtual int indexOf(const QVariant& data);
+public Q_SLOTS:
+    void stateTrackerChanged(AbstractStateTracker*);
+    void serviceRemoved(AbstractServiceProvider*);
+    void serviceChanged(AbstractServiceProvider*);
+	void clear();
     
 private:
     QList<PinValueStateTracker*> m_itemvalues;

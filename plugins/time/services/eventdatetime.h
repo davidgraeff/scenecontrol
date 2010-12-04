@@ -29,7 +29,17 @@ class EventDateTime : public AbstractServiceProvider
     Q_CLASSINFO("datetime_props", "datetime")
 public:
     EventDateTime(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() { return EventType; }
+	virtual QString service_name(){return tr("Zeitereignis");}
+	virtual QString service_desc(){return tr("Wird ausgelöst, sobald ein bestimmter Zeitpunkt eintritt");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Datum/Zeit");
+        default:
+            return QString();
+        }
+    }
     QString datetime() const;
     void setDatetime(const QString& value);
   private:

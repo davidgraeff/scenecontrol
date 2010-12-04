@@ -38,12 +38,12 @@ private:
 	class AuthQueryData {
 	public:
 		QObject* socketptr;
-		QString name;
-		QString pwd;
-		AuthQueryData(QObject* socketptr, const QString& name, const QString& pwd)
+		QByteArray name;
+		QByteArray pwd;
+		AuthQueryData(QObject* socketptr, const QByteArray& name, const QByteArray& pwd)
 		 : socketptr(socketptr), name(name), pwd(pwd) {}
 	};
-	QList<AuthQueryData> m_creds;
+	QList<AuthQueryData*> m_creds;
 	QMutex mutex;
 	QWaitCondition bufferNotFull;
 Q_SIGNALS:

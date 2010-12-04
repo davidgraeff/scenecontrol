@@ -27,8 +27,8 @@
 #include "servicecontroller.h"
 #include "shared/abstractserviceprovider.h"
 #include <QSettings>
+#include "config.h"
 
-const QLatin1String servicename = QLatin1String("org.roomcontrol");
 NetworkController* network = 0;
 
 void myMessageOutput(QtMsgType type, const char *msg)
@@ -66,19 +66,20 @@ int main(int argc, char *argv[])
     signal(SIGTERM, catch_int);
 
     QCoreApplication qapp(argc, argv);
-    qapp.setApplicationName(QLatin1String("RoomControlServer"));
-    qapp.setApplicationVersion(QLatin1String("2.0 "__DATE__" "__TIME__));
-    qapp.setOrganizationName(QLatin1String("davidgraeff"));
-    qapp.addLibraryPath(QLatin1String("/usr/lib/roomcontrol"));
-    
+    qapp.setApplicationName(QLatin1String(ABOUT_PRODUCT));
+    qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
+    qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
+
+	QDir::home();
     QDir m_savedir = QFileInfo ( QSettings().fileName() ).absoluteDir();
     m_savedir.mkpath ( m_savedir.absolutePath() );
-    m_savedir.mkdir ( QLatin1String ( "json" ) );
-    m_savedir.cd ( QLatin1String ( "json" ) );
+    m_savedir.mkdir ( QLatin1String ( ABOUT_PRODUCT ) );
+    m_savedir.cd ( QLatin1String ( ABOUT_PRODUCT ) );
 
     qapp.setProperty("settingspath",m_savedir.path());
-    qapp.setProperty("pluginspath",QLatin1String ( "/usr/lib/roomcontrol/plugins/server" ) );
+    qapp.setProperty("pluginspath",QLatin1String (ROOM_SYSTEM_SERVERPLUGINS));
 
+	const QLatin1String servicename = QLatin1String(ROOM_SERVICENAME);
     QDBusConnection dbusconnection = QDBusConnection::connectToBus(QDBusConnection::SessionBus, servicename);
     if ( !dbusconnection.isConnected() )
     {
@@ -98,6 +99,7 @@ int main(int argc, char *argv[])
     ServiceController* services = new ServiceController();
 	network->setServiceController(services);
 	network->connect(services,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
+	network->connect(services,SIGNAL(statetrackerSync(AbstractStateTracker*)),SLOT(statetrackerSync(AbstractStateTracker*)));
     network->start();
 
 	int r = 0;

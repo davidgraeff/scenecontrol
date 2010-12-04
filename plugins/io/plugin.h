@@ -21,7 +21,7 @@
 #define myPLUGIN_H
 #include <QObject>
 #include <QStringList>
-#include "../shared/abstractplugin.h"
+#include "shared/abstractplugin.h"
 
 class myPlugin : public QObject, public AbstractPlugin
 {

@@ -25,8 +25,8 @@ ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
     AbstractServiceProvider* service = m_base->createServiceProvider(id);
     if (!service) return 0;
     QByteArray idb = id.toAscii();
-    if (idb == ServiceWOL::staticMetaObject.className()) {
-        return new ServiceWOLExecute((ServiceWOL*)service, this);
+    if (idb == ActorWOL::staticMetaObject.className()) {
+        return new ServiceWOLExecute((ActorWOL*)service, this);
     }
     return 0;
 }

@@ -24,13 +24,17 @@
 class BackupStateTracker : public AbstractStateTracker
 { 
   Q_OBJECT
-  Q_PROPERTY(QStringList backups READ backups WRITE setBackups);
+  Q_PROPERTY(QStringList backupids READ backupids WRITE setBackupids);
+  Q_PROPERTY(QStringList backupnames READ backupnames WRITE setBackupnames);
   public:
     BackupStateTracker(QObject* parent = 0);
-    QStringList backups() ;
-    void setBackups(const QStringList& b) ;
+    QStringList backupids() ;
+    void setBackupids(const QStringList& b) ;
+    QStringList backupnames() ;
+    void setBackupnames(const QStringList& b) ;
 private:
-	QStringList m_backups;
+	QStringList m_backupids;
+	QStringList m_backupnames;
 };
 
 #endif // BACKUPSTATETRACKER_H

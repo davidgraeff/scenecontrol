@@ -17,8 +17,7 @@
 
 */
 
-#ifndef ABSTRACTSERVICEPROVIDER_H
-#define ABSTRACTSERVICEPROVIDER_H
+#pragma once
 #include <QObject>
 #include <QString>
 #include <QByteArray>
@@ -28,51 +27,40 @@ class AbstractServiceProvider : public QObject
     Q_OBJECT
     Q_PROPERTY(QString id READ id WRITE setId);
     Q_PROPERTY(QString parentid READ parentid WRITE setParentid);
-    Q_PROPERTY(ProvidedTypes usetypes READ usetypes WRITE setUseTypes);
     Q_PROPERTY(QByteArray type READ type);
-    Q_PROPERTY(ProvidedTypes providedtypes READ providedtypes);
-    // Delay until this actor get executed
     Q_PROPERTY(int delay READ delay WRITE setDelay);
+	Q_ENUMS(ProvidedService);
 public:
-    enum ProvidedType {
-        NoneType = 0x0,
-        EventType = 0x1,
-        ConditionType = 0x2,
-        ActionType = 0x4
+	// Types that this class objects can be
+    enum ProvidedService {
+        NoneService = 0x0,
+        EventService = 0x1,
+        ConditionService = 0x2,
+        ActionService = 0x4
     };
-    Q_DECLARE_FLAGS(ProvidedTypes, ProvidedType)
-    
+
     AbstractServiceProvider(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() = 0;
+	virtual QString service_name() = 0;
+	virtual QString service_desc() = 0;
+	virtual QString translate(int propindex, int enumindex = -1);
+    virtual QByteArray type() const;
+    virtual AbstractServiceProvider::ProvidedService service();
+
+    QString id() const;
+    void setId(const QString& id);
+
     int delay() const ;
     void setDelay(int cmd) ;
 
-    QByteArray type() const;
-    QString id() const;
-    void setId(const QString& id);
-    ProvidedTypes usetypes() {
-        return m_usetypes;
-    }
-    void setUseTypes(ProvidedTypes t) {
-        m_usetypes = t;
-    }
-    QString parentid() const
-    {
-        return m_parentid;
-    }
-
-    void setParentid ( const QString& id )
-    {
-        m_parentid = id;
-    }
+	QString toString() ;
+    void setString(const QString& name);
+    
+    QString parentid() const;
+    void setParentid ( const QString& id );
 protected:
     QString m_id;
+    QString m_name;
     QString m_parentid;
 private:
     int m_delay;
-    ProvidedTypes m_usetypes;
 };
-
-Q_DECLARE_OPERATORS_FOR_FLAGS(AbstractServiceProvider::ProvidedTypes)
-
-#endif // ABSTRACTSERVICEPROVIDER_H

@@ -46,12 +46,50 @@ public:
     {
         FadeTypeImmediately,
         FadeTypeFade,
-	FadeTypeFlashyFade
+        FadeTypeFlashyFade
     };
     Q_ENUMS(fadetypeEnum);
     ActorLed(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() {
-        return ActionType;
+    virtual QString service_name() {
+        return tr("Setzt LED");
+    }
+    virtual QString service_desc() {
+        return tr("Setzt eine LED auf den angegebene Wert auf die angegebene Weise");
+    }
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Kanal");
+        case 1:
+            switch (enumindex) {
+            case 0:
+                return tr("Sofort");
+            case 1:
+                return tr("Faden");
+            case 2:
+                return tr("Flashy Faden");
+            default:
+                return tr("Farbübernahme");
+            }
+        case 2:
+            switch (enumindex) {
+            case 0:
+                return tr("Absolut");
+            case 1:
+                return tr("Relativ");
+            case 2:
+                return tr("Invers (ignoriert Wert)");
+            case 3:
+                return tr("Multiplikator");
+            default:
+                return tr("Art");
+            }
+        case 3:
+            return tr("Wert");
+        default:
+            return QString();
+        }
     }
     void setChannel(unsigned int channel);
     unsigned int channel() const;

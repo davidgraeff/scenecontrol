@@ -17,8 +17,7 @@
 
 */
 
-#ifndef ACTORSYSTEM_H
-#define ACTORSYSTEM_H
+#pragma once
 #include "shared/abstractserviceprovider.h"
 
 class AbstractPlugin;
@@ -29,7 +28,26 @@ class ActorSystem : public AbstractServiceProvider
     Q_PROPERTY(ActorSystem::actionEnum action READ action WRITE setAction);
 public:
     ActorSystem(QObject* parent=0);
-	virtual ProvidedTypes providedtypes(){return ActionType;}
+	virtual QString service_name(){return tr("Serveraktion");}
+	virtual QString service_desc(){return tr("Gibt ein Kommando an den Raumkontrollserver");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            switch (enumindex) {
+            case 0:
+                return tr("Neustart");
+            case 1:
+                return tr("Beenden");
+            case 2:
+                return tr("Resynchronisieren");
+            default:
+                return tr("Kommando");
+            }
+        default:
+            return QString();
+        }
+    }
     enum actionEnum
     {
       RestartSystem,
@@ -42,5 +60,3 @@ public:
 private:
 	ActorSystem::actionEnum m_action;
 };
-
-#endif // ACTORSYSTEM_H

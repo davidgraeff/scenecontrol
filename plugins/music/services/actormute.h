@@ -27,13 +27,66 @@ class ActorMute : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString value READ value WRITE setValue)
-    Q_PROPERTY(int mute READ mute WRITE setMute)
+    Q_PROPERTY(EnumActorMute mute READ mute WRITE setMute)
+    Q_PROPERTY(EnumActorAssignment assignment READ assignment WRITE setAssignment)
     Q_PROPERTY(double volume READ volume WRITE setVolume)
-    Q_PROPERTY(bool relative READ relative WRITE setRelative)
+    Q_CLASSINFO("volume_doublemin", "-1.0");
+    Q_CLASSINFO("volume_doublemax", "1.0");
+    Q_ENUMS(EnumActorMute);
+	Q_ENUMS(EnumActorAssignment);
 public:
+    enum EnumActorMute
+    {
+        MuteSink,
+        UnmuteSink,
+        ToggleSink,
+    };
+    enum EnumActorAssignment
+    {
+        NoVolumeSet,
+        VolumeRelative,
+        VolumeAbsolute,
+    };
     ActorMute(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() {
-        return ActionType;
+    virtual QString service_name() {
+        return tr("Pulseaudiokanal steuern");
+    }
+    virtual QString service_desc() {
+        return tr("Steuert die Laustärke und Stummschaltung eines Pulseaudiokanal");
+    }
+
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Kanal");
+        case 1:
+            switch (enumindex) {
+            case 0:
+                return tr("Aktiv");
+            case 1:
+                return tr("Inaktiv");
+            case 2:
+                return tr("Umschalten");
+            default:
+                return tr("Stumm");
+            }
+        case 2:
+            switch (enumindex) {
+            case 0:
+                return tr("Lautstärke nicht ändern");
+            case 1:
+                return tr("Relativ setzen");
+            case 2:
+                return tr("Absolut setzen");
+            default:
+                return tr("Art");
+            }
+        case 3:
+            return tr("Lautstärke");
+        default:
+            return QString();
+        }
     }
     const QString& value() const {
         return m_value;
@@ -41,11 +94,11 @@ public:
     void setValue( const QString& v ) {
         m_value = v;
     }
-    int mute() const {
+    EnumActorMute mute() const {
         return m_mute;
     }
 
-    void setMute( int m ) {
+    void setMute( EnumActorMute m ) {
         m_mute = m;
     }
 
@@ -57,18 +110,18 @@ public:
         m_volume = v;
     }
 
-    bool relative() const {
-        return m_relative;
+    EnumActorAssignment assignment() const {
+        return m_assignment;
     }
 
-    void setRelative( bool r ) {
-        m_relative = r;
+    void setAssignment( EnumActorAssignment r ) {
+        m_assignment = r;
     }
 private:
     QString m_value;
-    int m_mute;
+    EnumActorMute m_mute;
     qreal m_volume;
-    bool m_relative;
+    EnumActorAssignment m_assignment;
 };
 
 #endif // ActorMute_h

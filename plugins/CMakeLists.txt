@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
+add_subdirectory(coreplugin)
 add_subdirectory(ethersex)
 add_subdirectory(io)
 add_subdirectory(music)

@@ -12,7 +12,7 @@ ProjectRootRelative=./
 
 [MakeBuilder]
 Install As Root=true
-Number Of Jobs=1
+Number Of Jobs=6
 Su Command=1
 
 [Project]

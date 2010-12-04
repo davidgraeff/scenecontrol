@@ -21,11 +21,11 @@
 #include <QUdpSocket>
 #include "services/actorwol.h"
 
-ServiceWOLExecute::ServiceWOLExecute(ServiceWOL* base, QObject* parent)
+ServiceWOLExecute::ServiceWOLExecute(ActorWOL* base, QObject* parent)
         : ExecuteService(base, parent) {}
 
 void ServiceWOLExecute::execute() {
-    ServiceWOL* s = service<ServiceWOL>();
+    ActorWOL* s = service<ActorWOL>();
     Q_ASSERT(s);
     QStringList parts = s->mac().split(QLatin1Char(':'));
     if (parts.size()!=6) return;

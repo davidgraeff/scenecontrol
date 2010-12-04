@@ -12,16 +12,6 @@ myPluginClient::myPluginClient(QObject* parent) {
 }
 
 myPluginClient::~myPluginClient() {
-    delete m_base;
+    //delete m_base;
     qDeleteAll(m_models);
 }
-void myPluginClient::stateChanged(AbstractStateTracker*) {}
-void myPluginClient::serviceRemoved(AbstractServiceProvider*) {}
-void myPluginClient::serviceChanged(AbstractServiceProvider*) {}
-QList< ClientModel* > myPluginClient::models() {
-    return m_models;
-}
-void myPluginClient::handle_ActorPlaylistTrack_playlistid_indexchanged(QModelIndex) {
-  //temp track model: reload with new playlist
-}
-

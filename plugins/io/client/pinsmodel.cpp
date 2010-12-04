@@ -20,29 +20,25 @@
 #include "pinsmodel.h"
 #include <QStringList>
 #include <QDebug>
-#include <actors/actorpin.h>
-#include <RoomControlClient.h>
-#include <actors/actorpinname.h>
-#include <stateTracker/pinvaluestatetracker.h>
-#include <stateTracker/pinnamestatetracker.h>
+#include <shared/abstractstatetracker.h>
+#include <statetracker/pinvaluestatetracker.h>
+#include <statetracker/pinnamestatetracker.h>
+#include <services/actorpin.h>
+#include <services/actorpinname.h>
 
 
-PinsModel::PinsModel (QObject* parent) : QAbstractListModel ( parent )
+PinsModel::PinsModel (QObject* parent) : ClientModel ( parent )
 {
-    this->iconOn = QIcon ( ":/green" );
-    this->iconOff = QIcon ( ":/red" );
-    connect(RoomControlClient::getFactory(),SIGNAL(stateChanged(AbstractStateTracker*)),
-            SLOT(stateChanged(AbstractStateTracker*)));
-    connect(RoomControlClient::getNetworkController(),SIGNAL(disconnected()),
-            SLOT(slotdisconnected()));
+    this->iconOn = QIcon ( QLatin1String(":/green") );
+    this->iconOff = QIcon ( QLatin1String(":/red") );
 }
 
 PinsModel::~PinsModel()
 {
-    slotdisconnected();
+    clear();
 }
 
-void PinsModel::slotdisconnected()
+void PinsModel::clear()
 {
     qDeleteAll(m_itemvalues);
     qDeleteAll(m_itemnames);
@@ -52,13 +48,15 @@ void PinsModel::slotdisconnected()
     reset();
 }
 
-void PinsModel::stateChanged(AbstractStateTracker* tracker)
+void PinsModel::stateTrackerChanged(AbstractStateTracker* tracker)
 {
     if (tracker->metaObject()->className() ==
             PinValueStateTracker::staticMetaObject.className())
     {
-        PinValueStateTracker* p = (PinValueStateTracker*)tracker;
-        p->setManaged();
+        PinValueStateTracker* original = (PinValueStateTracker*)tracker;
+		PinValueStateTracker* p = new PinValueStateTracker();
+		p->setPin(original->pin());
+		p->setValue(original->value());
         if (!m_assignment.contains(p->pin())) {
             beginInsertRows(QModelIndex(), p->pin(), p->pin());
             m_assignment.insert(p->pin(), m_itemvalues.size());
@@ -76,8 +74,10 @@ void PinsModel::stateChanged(AbstractStateTracker* tracker)
     } else if (tracker->metaObject()->className() ==
                PinNameStateTracker::staticMetaObject.className())
     {
-        PinNameStateTracker* p = (PinNameStateTracker*)tracker;
-        p->setManaged();
+        PinNameStateTracker* original = (PinNameStateTracker*)tracker;
+		PinNameStateTracker* p = new PinNameStateTracker();
+		p->setPin(original->pin());
+		p->setValue(original->value());
         if (!m_assignment.contains(p->pin())) {
         } else {
             const int listpos = m_assignment.value(p->pin());
@@ -103,6 +103,7 @@ QVariant PinsModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
 
+	if ( role==Qt::UserRole) return m_itemnames.at(index.row())->pin();
     if ( role==Qt::DisplayRole || role==Qt::EditRole )
     {
         if ( index.column() ==0 )
@@ -150,7 +151,7 @@ bool PinsModel::setData ( const QModelIndex& index, const QVariant& value, int r
 
     if ( index.column() ==0 && role == Qt::EditRole )
     {
-        QString newname = value.toString().trimmed().replace ( '\n',"" ).replace ( '\t',"" );
+        QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
         PinNameStateTracker* t= m_itemnames[index.row() ];
         if ( newname.isEmpty() || newname == t->value() ) return false;
 
@@ -177,8 +178,8 @@ void PinsModel::setValue ( int i, unsigned int value )
 {
     ActorPin* a = new ActorPin();
     a->setPin(i);
-    a->setValue(value);
-    RoomControlClient::getFactory()->executeActor(a);
+    a->setValue((ActorPin::ActorPinEnum)value);
+	emit executeService(a);
 }
 
 void PinsModel::setName ( int i, const QString& value )
@@ -186,7 +187,7 @@ void PinsModel::setName ( int i, const QString& value )
     ActorPinName* a = new ActorPinName();
     a->setPin(i);
     a->setPinname(value);
-    RoomControlClient::getFactory()->executeActor(a);
+    emit executeService(a);
 }
 
 QString PinsModel::getName ( int i )
@@ -205,4 +206,11 @@ void PinsModel::toggle ( int i )
 {
     if (i<0 || i>=m_itemvalues.size()) return;
     setValue(i, ( m_itemvalues.at ( i )->value() ?0:1 ));
+}
+void PinsModel::serviceRemoved(AbstractServiceProvider*) {}
+void PinsModel::serviceChanged(AbstractServiceProvider*) {}
+
+int PinsModel::indexOf(const QVariant& data) {
+    if (data.type()!=QVariant::UInt) return -1;
+    return m_assignment.value(data.toUInt(), -1);
 }

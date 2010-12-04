@@ -17,8 +17,7 @@
 
 */
 
-#ifndef EventSystem_h
-#define EventSystem_h
+#pragma once
 #include "shared/abstractserviceprovider.h"
 
 class EventSystem : public AbstractServiceProvider
@@ -34,11 +33,26 @@ public:
 	Q_ENUMS(systemEnum);
 	
     EventSystem(QObject* parent = 0);
-	virtual ProvidedTypes providedtypes(){return EventType;}
+	virtual QString service_name(){return tr("Serverereignis");}
+	virtual QString service_desc(){return tr("Wird von Serverereignissen ausgelöst wie z.B. dem Start des Servers");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            switch (enumindex) {
+            case 0:
+                return tr("Startet");
+            case 1:
+                return tr("Wird beendet");
+            default:
+                return tr("Serverereignis");
+            }
+        default:
+            return QString();
+        }
+    }
     EventSystem::systemEnum system() const ;
     void setSystem( EventSystem::systemEnum s ) ;
 private:
     EventSystem::systemEnum m_system;
 };
-
-#endif // EventSystem_h

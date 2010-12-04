@@ -17,8 +17,7 @@
 
 */
 
-#ifndef ACTORMODE_H
-#define ACTORMODE_H
+#pragma once
 #include "shared/abstractserviceprovider.h"
 
 class AbstractPlugin;
@@ -30,11 +29,19 @@ class ActorMode : public AbstractServiceProvider
     Q_CLASSINFO("mode_statetracker_property", "mode")
 public:
 	ActorMode(QObject* parent=0);
-	virtual ProvidedTypes providedtypes(){return ActionType|ConditionType|EventType;}
+	virtual QString service_name(){return tr("Modus setzen");}
+	virtual QString service_desc(){return tr("Setzt den Modus auf den angegebenen");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Modus");
+        default:
+            return QString();
+        }
+    }
     QString mode() const ;
 	void setMode(const QString& value);
 private:
     QString m_mode;
 };
-
-#endif // ACTORMODE_H

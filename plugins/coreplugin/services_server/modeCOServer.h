@@ -17,45 +17,21 @@
 
 */
 
-#ifndef SERVICEPROVIDERPROFILE_H
-#define SERVICEPROVIDERPROFILE_H
+#pragma once
 #include "shared/abstractserviceprovider.h"
-#include <QSet>
-#include <QTimer>
-#include <QMap>
-#include <QStringList>
+#include "shared/server/executeservice.h"
 
-class Collection : public AbstractServiceProvider
+class ConditionMode;
+class myPluginExecute;
+class ConditionModeServer : public ExecuteService
 {
     Q_OBJECT
-    Q_PROPERTY ( QString name READ name WRITE setName );
-    Q_PROPERTY ( bool enabled READ enabled WRITE setEnabled )
 public:
-    Collection(QObject* parent = 0);
-    QString name() const
-    {
-        return m_name;
-    }
-    void setName ( const QString& cmd )
-    {
-        m_name = cmd;
-    }
-
-    bool enabled() const
-    {
-        return m_enabled;
-    }
-
-    void setEnabled ( bool e )
-    {
-        m_enabled = e;
-    }
-
-
-    virtual ProvidedTypes providedtypes() { return NoneType; }
+	ConditionModeServer(ConditionMode* base, myPluginExecute* plugin, QObject* parent = 0);
+	virtual bool checkcondition();
+	virtual void execute();
+	virtual void dataUpdate();
 private:
-    QString m_name;
-    bool m_enabled;
+	ConditionMode* m_base;
+	myPluginExecute* m_plugin;
 };
-
-#endif // SERVICEPROVIDERPROFILE_H

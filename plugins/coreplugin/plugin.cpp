@@ -5,14 +5,14 @@
 #include "services/systemEV.h"
 #include "statetracker/backupST.h"
 #include "statetracker/systemST.h"
-#include <shared/profile.h>
-#include <shared/category.h>
 #include "services/modeAC.h"
 #include "statetracker/modeST.h"
 #include "services/actorevent.h"
 #include "services/actoreventvolume.h"
 #include "statetracker/eventST.h"
 #include "statetracker/eventvolumeST.h"
+#include "services/modeCO.h"
+#include "services/modeEV.h"
 
 QStringList myPlugin::registerServices() const {
     return QStringList() <<
@@ -21,10 +21,10 @@ QStringList myPlugin::registerServices() const {
            QString::fromAscii(ActorBackup::staticMetaObject.className()) <<
            QString::fromAscii(ActorCollection::staticMetaObject.className()) <<
            QString::fromAscii(ActorMode::staticMetaObject.className()) <<
+           QString::fromAscii(ConditionMode::staticMetaObject.className()) <<
+           QString::fromAscii(EventMode::staticMetaObject.className()) <<
            QString::fromAscii(ActorEvent::staticMetaObject.className()) <<
-           QString::fromAscii(ActorEventVolume::staticMetaObject.className()) <<
-           QString::fromAscii(Category::staticMetaObject.className()) <<
-           QString::fromAscii(Collection::staticMetaObject.className());
+           QString::fromAscii(ActorEventVolume::staticMetaObject.className());
 
 }
 QStringList myPlugin::registerStateTracker() const {
@@ -59,6 +59,10 @@ AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
         return new ActorCollection();
     } else if (idb == ActorMode::staticMetaObject.className()) {
         return new ActorMode();
+    } else if (idb == ConditionMode::staticMetaObject.className()) {
+        return new ConditionMode();
+    } else if (idb == EventMode::staticMetaObject.className()) {
+        return new EventMode();
     } else if (idb == ActorBackup::staticMetaObject.className()) {
         return new ActorBackup();
     } else if (idb == ActorEvent::staticMetaObject.className()) {
@@ -67,10 +71,6 @@ AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
         return new ActorEventVolume();
     } else if (idb == EventSystem::staticMetaObject.className()) {
         return new EventSystem();
-    } else if (idb == Category::staticMetaObject.className()) {
-        return new Category();
-    } else if (idb == Collection::staticMetaObject.className()) {
-        return new Collection();
     }
     return 0;
 }

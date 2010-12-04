@@ -17,44 +17,23 @@
 
 */
 
-#ifndef SERVICEPROVIDERCATEGORY_H
-#define SERVICEPROVIDERCATEGORY_H
-#include <QObject>
-#include <QString>
-#include <QStringList>
-#include <QSet>
+#pragma once
 #include "shared/abstractserviceprovider.h"
+#include "shared/server/executeservice.h"
 
-class Category : public AbstractServiceProvider
+class EventMode;
+class myPluginExecute;
+class EventModeServer : public ExecuteService
 {
     Q_OBJECT
-    Q_PROPERTY(QString name READ name WRITE setName);
-    /**
-     * Is this the categorie with all the alarms?
-     */
-    Q_PROPERTY(bool flagAlarm READ flagAlarm WRITE setFlagAlarm)
 public:
-    Category(QObject* parent=0);
-    QString name() const {
-        return m_name;
-    }
-    void setName(const QString& cmd) {
-        m_name = cmd;
-    }
-
-    bool flagAlarm() const {
-        return m_flagAlarm;
-    }
-
-    void setFlagAlarm( bool e ) {
-        m_flagAlarm = e;
-    }
-    virtual ProvidedTypes providedtypes() { return NoneType; }
-
+	EventModeServer(EventMode* base, myPluginExecute* plugin, QObject* parent = 0);
+	virtual bool checkcondition();
+	virtual void execute();
+	virtual void dataUpdate();
 private:
-    QString m_name;
-    bool m_flagAlarm;
-
+	EventMode* m_base;
+	myPluginExecute* m_plugin;
+private Q_SLOTS:
+	void modeChanged();
 };
-
-#endif // SERVICEPROVIDERPROFILE_H

@@ -12,10 +12,6 @@
 #include "services_server/profileACServer.h"
 #include "services_server/backupACServer.h"
 #include "services_server/systemEVServer.h"
-#include "shared/services/category.h"
-#include "shared/services/profile.h"
-#include "../server/executeprofile.h"
-#include "../server/servicecontroller.h"
 #include "shared/server/executeservice.h"
 #include "statetracker/modeST.h"
 #include "statetracker/eventST.h"
@@ -26,9 +22,18 @@
 #include "services_server/actoreventvolumeServer.h"
 #include "eventcontroller.h"
 #include <QApplication>
+#include <QtPlugin>
+#include <services_server/modeACServer.h>
+#include <services/modeAC.h>
+#include <services/modeCO.h>
+#include <services_server/modeCOServer.h>
+#include <services/modeEV.h>
+#include <services_server/modeEVServer.h>
 
-myPluginExecute::myPluginExecute( ServiceController* services, QObject* parent) : m_eventcontroller(new EventController()) {
-  Q_UNUSED(parent);
+Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+
+myPluginExecute::myPluginExecute( QObject* parent) : m_eventcontroller(new EventController()) {
+    Q_UNUSED(parent);
     m_base = new myPlugin();
     m_BackupStateTracker = new BackupStateTracker();
     m_SystemStateTracker = new SystemStateTracker();
@@ -70,10 +75,12 @@ ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
         return new ActorEventServer((ActorEvent*)service, this);
     } else if (idb == ActorEventVolume::staticMetaObject.className()) {
         return new ActorEventVolumeServer((ActorEventVolume*)service, this);
-    } else if (idb == Category::staticMetaObject.className()) {
-        return new ExecuteWithBase(service, this);
-    } else if (idb == Collection::staticMetaObject.className()) {
-        return new ExecuteCollection(service, this);
+    } else if (idb == ActorMode::staticMetaObject.className()) {
+        return new ActorModeServer((ActorMode*)service, this);
+    } else if (idb == ConditionMode::staticMetaObject.className()) {
+        return new ConditionModeServer((ConditionMode*)service, this);
+    } else if (idb == EventMode::staticMetaObject.className()) {
+        return new EventModeServer((EventMode*)service, this);
     }
     return 0;
 }
@@ -83,7 +90,7 @@ QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
     m_SystemStateTracker->setApp(QCoreApplication::applicationVersion());
     m_SystemStateTracker->setMin(QCoreApplication::applicationVersion());
     m_SystemStateTracker->setMax(QCoreApplication::applicationVersion());
-    m_BackupStateTracker->setBackups(backups());
+    backups_changed();
     m_ModeStateTracker->setMode(m_mode);
     m_EventStateTracker->setFilename(m_eventcontroller->filename());
     m_EventStateTracker->setTitle(m_eventcontroller->title());
@@ -97,7 +104,7 @@ QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
     return a;
 }
 
-void myPluginExecute::backup()
+void myPluginExecute::backup_create(const QString& name)
 {
     QDir destdir = m_savedir.filePath ( QDateTime::currentDateTime().toString() );
     if ( !destdir.exists() && !destdir.mkpath ( destdir.absolutePath() ) )
@@ -107,8 +114,9 @@ void myPluginExecute::backup()
     }
     QDir sourcedir = m_savedir;
     QStringList files = sourcedir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
-    qDebug() << "Backup" << files.size() << "files to" << destdir.path();
-    foreach ( QString file, files )
+    files.removeAll(QLatin1String("name.txt"));
+                    qDebug() << "Backup" << files.size() << "files to" << destdir.path();
+                    foreach ( QString file, files )
     {
         QFile::remove ( destdir.absoluteFilePath ( file ) );
         if ( !QFile::copy ( sourcedir.absoluteFilePath ( file ), destdir.absoluteFilePath ( file ) ) )
@@ -116,9 +124,29 @@ void myPluginExecute::backup()
             qDebug() << "Backup of"<<file<<"failed";
         }
     }
+    QFile namefile(destdir.absoluteFilePath ( QLatin1String("name.txt") ));
+    namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    namefile.write(name.toUtf8());
+    namefile.close();
 
-    m_BackupStateTracker->setBackups(backups());
+    backups_changed();
     emit stateChanged(m_BackupStateTracker);
+}
+
+void myPluginExecute::backup_rename(const QString& id, const QString& name)
+{
+    if ( id.trimmed().isEmpty() ) return;
+    QDir destdir = m_savedir;
+    if ( !destdir.cd ( id ) ) return;
+    if ( destdir.exists() )
+    {
+        QFile namefile(destdir.absoluteFilePath ( QLatin1String("name.txt") ));
+        namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
+        namefile.write(name.toUtf8());
+        namefile.close();
+        backups_changed();
+        emit stateChanged(m_BackupStateTracker);
+    }
 }
 
 void myPluginExecute::backup_remove ( const QString& id )
@@ -133,7 +161,7 @@ void myPluginExecute::backup_remove ( const QString& id )
         destdir.rmdir ( destdir.absolutePath() );
     }
 
-    m_BackupStateTracker->setBackups(backups());
+    backups_changed();
     emit stateChanged(m_BackupStateTracker);
 }
 
@@ -153,9 +181,18 @@ void myPluginExecute::backup_restore ( const QString& id )
     QFile::copy ( sourcedir.filePath ( file ),m_savedir.filePath ( file ) );
 }
 
-QStringList myPluginExecute::backups()
+void myPluginExecute::backups_changed()
 {
-    return m_savedir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
+    QStringList backups = m_savedir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
+    m_BackupStateTracker->setBackupids(backups);
+    QStringList names;
+    foreach(QString dir, backups) {
+        QFile namefile(m_savedir.absoluteFilePath ( dir ));
+        namefile.open(QIODevice::ReadOnly|QIODevice::Truncate);
+        names.append(QString::fromUtf8(namefile.readLine()));
+        namefile.close();
+    }
+    m_BackupStateTracker->setBackupnames(names);
 }
 
 void myPluginExecute::setMode(const QString& mode) {
@@ -175,7 +212,7 @@ void myPluginExecute::finished(const QString& eventTitle, const QString& filenam
     m_EventStateTracker->setState(0);
     emit stateChanged(m_EventStateTracker);
 }
-void myPluginExecute::volumeChanged(qreal vol) {
+void myPluginExecute::volumeChanged(qreal) {
     m_EventVolumeStateTracker->setVolume(m_eventcontroller->volume()*100);
     emit stateChanged(m_EventVolumeStateTracker);
 }

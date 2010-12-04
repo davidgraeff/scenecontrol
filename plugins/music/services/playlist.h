@@ -32,9 +32,11 @@ class ActorPlaylist : public AbstractServiceProvider
   Q_PROPERTY(QStringList files READ files WRITE setFiles);
   Q_PROPERTY(QStringList titles READ titles WRITE setTitles);
   Q_PROPERTY(int currentTrack READ currentTrack WRITE setCurrentTrack);
+  friend class PlaylistTracksModel;
   public:
     ActorPlaylist(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return NoneType;}
+	virtual QString service_name(){return tr("Abspielliste setzen");}
+	virtual QString service_desc(){return tr("Setzt Abspielliste");}
     QString name() const;
     QStringList files() const;
     QStringList titles() const;

@@ -22,147 +22,144 @@
 #include <QDebug>
 #include "services/playlist.h"
 
-ActorPlaylistModel::ActorPlaylistModel ( QObject* parent )
-                : QAbstractListModel ( parent ), m_current ( 0 )
+PlaylistModel::PlaylistModel ( QObject* parent )
+        : ClientModel ( parent ), m_current ( 0 )
 {
 }
 
-ActorPlaylistModel::~ActorPlaylistModel()
+PlaylistModel::~PlaylistModel()
 {
-        slotdisconnected();
+    clear();
 }
 
-void ActorPlaylistModel::slotdisconnected()
+void PlaylistModel::clear()
 {
-        // Do not delete playlist objects, they are managed through the factory
-        m_items.clear();
-        reset();
+    // Do not delete playlist objects, they are managed through the factory
+    m_items.clear();
+    reset();
 }
 
-int ActorPlaylistModel::rowCount ( const QModelIndex & ) const
+int PlaylistModel::rowCount ( const QModelIndex & ) const
 {
-        return m_items.size();
+    return m_items.size();
 }
 
-QVariant ActorPlaylistModel::data ( const QModelIndex & index, int role ) const
+QVariant PlaylistModel::data ( const QModelIndex & index, int role ) const
 {
-        if ( !index.isValid() ) return QVariant();
+    if ( !index.isValid() ) return QVariant();
 
-        if ( role==Qt::DisplayRole || role==Qt::EditRole ) {
-                return m_items.at ( index.row() )->toString();
-        } else if ( role==Qt::BackgroundColorRole && m_current==index.row() ) {
-                return QColor ( Qt::darkGreen );
+    if ( role==Qt::DisplayRole || role==Qt::EditRole ) {
+        return m_items.at ( index.row() )->currentFilename();
+    } else if ( role==Qt::BackgroundColorRole && m_current==index.row() ) {
+        return QColor ( Qt::darkGreen );
+    }
+
+    return QVariant();
+}
+
+
+QVariant PlaylistModel::headerData ( int section, Qt::Orientation orientation, int role ) const
+{
+    if ( orientation == Qt::Horizontal ) {
+        if ( role == Qt::DisplayRole && section==0 ) {
+            return tr ( "Abspielliste" );
         }
+    }
 
-        return QVariant();
+    return QAbstractListModel::headerData ( section, orientation, role );
 }
 
-
-QVariant ActorPlaylistModel::headerData ( int section, Qt::Orientation orientation, int role ) const
+bool PlaylistModel::setData ( const QModelIndex& index, const QVariant& value, int role )
 {
-        if ( orientation == Qt::Horizontal ) {
-                if ( role == Qt::DisplayRole && section==0 ) {
-                        return tr ( "Abspielliste" );
-                }
-        }
+    if ( !index.isValid() ) return false;
 
-        return QAbstractListModel::headerData ( section, orientation, role );
-}
-
-bool ActorPlaylistModel::setData ( const QModelIndex& index, const QVariant& value, int role )
-{
-        if ( !index.isValid() ) return false;
-
-        if ( index.column() ==0 && role == Qt::EditRole ) {
-                QString newname = value.toString().trimmed().replace ( '\n',"" ).replace ( '\t',"" );
-                if ( newname.isEmpty() || newname == m_items[index.row() ]->name() ) return false;
-                setName ( index.row(),newname );
-                QModelIndex index = createIndex ( index.row(),0,0 );
-                emit dataChanged ( index,index );
-                return true;
-        }
-        return false;
-}
-
-bool ActorPlaylistModel::removeRows ( int row, int count, const QModelIndex & )
-{
-        QString str;
-        for ( int i=row+count-1;i>=row;--i ) {
-			m_items[i]->requestRemove();
-        }
-        QModelIndex ifrom = createIndex ( row,0 );
-        QModelIndex ito = createIndex ( row+count-1,1 );
-        emit dataChanged ( ifrom,ito );
+    if ( index.column() ==0 && role == Qt::EditRole ) {
+        QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
+        if ( newname.isEmpty() || newname == m_items[index.row() ]->name() ) return false;
+        setName ( index.row(),newname );
+        QModelIndex index = createIndex ( index.row(),0,0 );
+        emit dataChanged ( index,index );
         return true;
+    }
+    return false;
 }
 
-Qt::ItemFlags ActorPlaylistModel::flags ( const QModelIndex& index ) const
+bool PlaylistModel::removeRows ( int row, int count, const QModelIndex & )
 {
-        if ( !index.isValid() )
-                return 0;
+    QString str;
+    for ( int i=row+count-1;i>=row;--i ) {
+        m_items[i]->setProperty("remove",1);
+		emit changeService(m_items.at ( i ));
+    }
+    QModelIndex ifrom = createIndex ( row,0 );
+    QModelIndex ito = createIndex ( row+count-1,1 );
+    emit dataChanged ( ifrom,ito );
+    return true;
+}
 
-        return QAbstractListModel::flags ( index ) | Qt::ItemIsEditable;
+Qt::ItemFlags PlaylistModel::flags ( const QModelIndex& index ) const
+{
+    if ( !index.isValid() )
+        return 0;
+
+    return QAbstractListModel::flags ( index ) | Qt::ItemIsEditable;
 }
 
 bool sortActorPlaylists ( const ActorPlaylist* &s1, const ActorPlaylist* &s2 )
 {
-        return s1->name() < s2->name();
+    return s1->name() < s2->name();
 }
 
-void ActorPlaylistModel::addedProvider ( AbstractServiceProvider* provider )
+void PlaylistModel::serviceChanged ( AbstractServiceProvider* provider )
 {
-        ActorPlaylist* p = qobject_cast<ActorPlaylist*> ( provider );
-        if ( !p ) return;
-        if ( getPositionByID ( provider->id() ) !=-1 ) return;
-
+    ActorPlaylist* p = qobject_cast<ActorPlaylist*> ( provider );
+    if ( !p ) return;
+    if ( getPositionByID ( provider->id() ) !=-1 ) {
+        const int listpos = getPositionByID ( provider->id() );
+        if ( listpos==-1 ) return;
+        QModelIndex index = createIndex ( listpos,0,0 );
+        emit dataChanged ( index,index );
+    } else  {
         connect ( p, SIGNAL ( objectChanged ( AbstractServiceProvider* ) ),
                   SLOT ( objectChanged ( AbstractServiceProvider* ) ) );
         const int row = m_items.size();
         beginInsertRows ( QModelIndex(),row,row );
         m_items.append ( p );
         endInsertRows();
+    }
 }
 
-void ActorPlaylistModel::removedProvider ( AbstractServiceProvider* provider )
+void PlaylistModel::serviceRemoved ( AbstractServiceProvider* provider )
 {
-        const int listpos = getPositionByID ( provider->id() );
+    const int listpos = getPositionByID ( provider->id() );
 
-        if ( listpos==-1 ) return;
-        beginRemoveRows ( QModelIndex(), listpos, listpos );
-        m_items.removeAt ( listpos );
-        endRemoveRows();
+    if ( listpos==-1 ) return;
+    beginRemoveRows ( QModelIndex(), listpos, listpos );
+    m_items.removeAt ( listpos );
+    endRemoveRows();
 }
 
-void ActorPlaylistModel::objectChanged ( AbstractServiceProvider* provider )
+void PlaylistModel::addRequest ( const QString& name )
 {
-        const int listpos = getPositionByID ( provider->id() );
-        if ( listpos==-1 ) return;
-        QModelIndex index = createIndex ( listpos,0,0 );
-        emit dataChanged ( index,index );
-        return;
+    ActorPlaylist* p = new ActorPlaylist();
+    p->setName ( name );
+    emit executeService(p);
 }
 
-void ActorPlaylistModel::addRequest ( const QString& name )
+void PlaylistModel::setName ( int i, const QString& name )
 {
-        ActorPlaylist* p = new ActorPlaylist();
-        p->setName ( name );
-        RoomControlClient::getNetworkController()->objectSync ( p );
-        delete p;
+    m_items.at ( i )->setName ( name );
+	emit changeService(m_items.at ( i ));
 }
 
-void ActorPlaylistModel::setName ( int i, const QString& name )
+void PlaylistModel::setCurrentActorPlaylist ( int pos )
 {
-        m_items.at ( i )->setName ( name );
-        emit changeObject(m_items.at ( i ));
+    const int old = m_current;
+    m_current = pos;
+    const QModelIndex index = createIndex ( pos, 0 );
+    emit dataChanged ( index, index );
+    const QModelIndex index2 = createIndex ( old, 0 );
+    emit dataChanged ( index2, index2 );
 }
-
-void ActorPlaylistModel::setCurrentActorPlaylist ( int pos )
-{
-        const int old = m_current;
-        m_current = pos;
-        const QModelIndex index = createIndex ( pos, 0 );
-        emit dataChanged ( index, index );
-        const QModelIndex index2 = createIndex ( old, 0 );
-        emit dataChanged ( index2, index2 );
-}
+void PlaylistModel::stateTrackerChanged(AbstractStateTracker*) {}
 

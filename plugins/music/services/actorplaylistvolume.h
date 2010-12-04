@@ -25,10 +25,24 @@ class ActorPlaylistVolume : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(qreal volume READ volume WRITE setVolume);
+	Q_CLASSINFO("volume_doublemin", "-1.0");
+	Q_CLASSINFO("volume_doublemax", "1.0");
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorPlaylistVolume(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+	virtual QString service_name(){return tr("Abspiellistenlautstärke");}
+	virtual QString service_desc(){return tr("Regelt die Lautstärke einer Abspielliste");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Lautstärke");
+        case 1:
+            return tr("Relativ");
+        default:
+            return QString();
+        }
+    }
     qreal volume() const ;
     void setVolume(qreal value) ;
     bool relative() const ;

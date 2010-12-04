@@ -28,7 +28,18 @@ class ConditionCurtain : public AbstractServiceProvider
     Q_CLASSINFO("value_max", "10");
 public:
     ConditionCurtain(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ConditionType;}
+	virtual QString service_name(){return tr("Rollopositionsbedingung");}
+	virtual QString service_desc(){return tr("Bedingung, dass das Rollo in einer gewissen Position sein muss");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Rolloposition");
+        default:
+            return QString();
+        }
+    }
+
     unsigned int value() const;
     void setValue ( unsigned int v );
 private:

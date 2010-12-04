@@ -17,36 +17,64 @@
 
 */
 
-#ifndef ACTORBACKUP_H
-#define ACTORBACKUP_H
+#pragma once
 #include "shared/abstractserviceprovider.h"
 
 class AbstractPlugin;
 class ActorBackup : public AbstractServiceProvider
 {
     Q_OBJECT
+    Q_PROPERTY(actionEnum action READ action WRITE setAction);
+    Q_ENUMS(actionEnum);
     Q_PROPERTY(QString backupid READ backupid WRITE setBackupid);
     Q_CLASSINFO("backupid_model", "BackupsModel")
     Q_CLASSINFO("backupid_model_displaytype", "0");
     Q_CLASSINFO("backupid_model_savetype", "32");
-    Q_PROPERTY(ActorBackup::actionEnum action READ action WRITE setAction);
+	Q_CLASSINFO("backupid_props", "modeleditable|optional")
+	Q_PROPERTY(QString backupname READ backupname WRITE setBackupname);
 public:
-    ActorBackup(QObject* parent=0);
-	virtual ProvidedTypes providedtypes(){return ActionType;}
     enum actionEnum
     {
-      CreateBackup,
-      RemoveBackup,
-      RestoreBackup
+      CreateBackup, // no id, name optional
+      RemoveBackup, // id only
+      RestoreBackup, // id only
+	  RenameBackup // id, name optional
     };
-    Q_ENUMS(actionEnum);
+    ActorBackup(QObject* parent=0);
+	virtual QString service_name(){return tr("Backupkommando");}
+	virtual QString service_desc(){return tr("Erstellt, entfernt, stellt wieder her und kann Backups umbennenen");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            switch (enumindex) {
+            case 0:
+                return tr("Erstellen (ID nicht benötigt)");
+            case 1:
+                return tr("Entfernen");
+            case 2:
+                return tr("Wiederherstellen");
+            case 3:
+                return tr("Umbennenen");
+            default:
+                return tr("Aktion");
+            }
+			case 1:
+                return tr("ID");
+			case 2:
+                return tr("Name");
+        default:
+            return QString();
+        }
+    }
     ActorBackup::actionEnum action() const;
     void setAction(ActorBackup::actionEnum value);
     QString backupid() const;
     void setBackupid(const QString& value);
+    QString backupname() const;
+    void setBackupname(const QString& value);
 private:
-    QString m_id;
+    QString m_backupid;
+	QString m_backupname;
 	ActorBackup::actionEnum m_action;
 };
-
-#endif // ACTORBACKUP_H

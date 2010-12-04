@@ -22,7 +22,7 @@
 #include <QUuid>
 
 AbstractServiceProvider::AbstractServiceProvider ( QObject* parent )
-        : QObject ( parent )
+        : QObject ( parent ), m_delay(0)
 {
     m_id = QUuid::createUuid().toString().remove ( QLatin1Char ( '{' ) ).remove ( QLatin1Char ( '}' ) );
 }
@@ -42,11 +42,43 @@ QByteArray AbstractServiceProvider::type() const
     return metaObject()->className();
 }
 
+AbstractServiceProvider::ProvidedService AbstractServiceProvider::service() {
+	QByteArray className(metaObject()->className());
+	if (className.startsWith("Actor"))  {
+		return ActionService;
+	} else if (className.startsWith("Condition"))  {
+		return ConditionService;
+	} else if (className.startsWith("Event"))  {
+		return EventService;
+	} else
+		return NoneService;
+}
+
 void AbstractServiceProvider::setDelay(int cmd) {
     m_delay = cmd;
 }
 int AbstractServiceProvider::delay() const {
     return m_delay;
+}
+QString AbstractServiceProvider::toString() {
+	if (m_name.size())
+		return m_name;
+	else
+		return service_name();
+}
+void AbstractServiceProvider::setString(const QString& name) {
+    m_name = name;
+}
+QString AbstractServiceProvider::parentid() const {
+    return m_parentid;
+}
+void AbstractServiceProvider::setParentid(const QString& id) {
+    m_parentid = id;
+}
+QString AbstractServiceProvider::translate(int propindex, int enumindex) {
+    Q_UNUSED(propindex);
+    Q_UNUSED(enumindex);
+    return QString();
 }
 
 

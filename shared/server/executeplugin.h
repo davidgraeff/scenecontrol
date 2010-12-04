@@ -17,8 +17,7 @@
 
 */
 
-#ifndef EXECUTEPLUGIN_H
-#define EXECUTEPLUGIN_H
+#pragma once
 #include <QObject>
 #include <QStringList>
 
@@ -38,6 +37,11 @@ Q_SIGNALS:
 	void stateChanged(AbstractStateTracker*);
 	// evaluate "remove" and add to services if not existing
 	void pluginobjectChanged(ExecuteWithBase*);
+	/*
+	 * Service will be provided to the server and propagated to the correct plugin.
+	 * This mechanism allows inter-plugin communication. The handed over service object
+	 * will get an iExecute flag and be freed by the server after execution.
+	 */
+	void executeService(AbstractServiceProvider*);
 };
 Q_DECLARE_INTERFACE(ExecutePlugin, "com.roomcontrol.ServerPlugin/1.0")
-#endif // EXECUTEPLUGIN_H

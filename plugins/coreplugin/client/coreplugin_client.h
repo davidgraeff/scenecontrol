@@ -17,12 +17,11 @@
  *
  */
 
-#ifndef COREPLUGINSERVER_H
-#define COREPLUGINSERVER_H
+#pragma once
 #include <QObject>
 #include <QStringList>
-#include "coreplugin.h"
-#include <../clients/clientplugin.h>
+#include "plugin.h"
+#include "shared/client/clientplugin.h"
 
 class EventStateTracker;
 class ModeStateTracker;
@@ -41,13 +40,7 @@ public:
     virtual AbstractPlugin* base() {
         return m_base;
     }
-    virtual QList< ClientModel* > models();
-    virtual void serviceChanged(AbstractServiceProvider* );
-    virtual void serviceRemoved(AbstractServiceProvider* );
-    virtual void stateChanged(AbstractStateTracker* ) ;
 private:
     AbstractPlugin* m_base;
-    QList< ClientModel* > m_models;
+   
 };
-
-#endif // COREPLUGINSERVER_H

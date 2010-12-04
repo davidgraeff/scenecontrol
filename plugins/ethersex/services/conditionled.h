@@ -24,19 +24,33 @@
 class ConditionLed : public AbstractServiceProvider
 {
     Q_OBJECT
+    Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
+    Q_CLASSINFO("channel_model", "ChannelsModel")
+    Q_CLASSINFO("channel_model_displaytype", "0");
+    Q_CLASSINFO("channel_model_savetype", "32");
     Q_PROPERTY(unsigned int min READ max WRITE setMin);
     Q_CLASSINFO("min_max", "255");
     Q_CLASSINFO("min_min", "0");
     Q_PROPERTY(unsigned int max READ max WRITE setMax);
     Q_CLASSINFO("max_max", "255");
     Q_CLASSINFO("max_min", "0");
-    Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
-    Q_CLASSINFO("channel_model", "ChannelsModel")
-    Q_CLASSINFO("channel_model_displaytype", "0");
-    Q_CLASSINFO("channel_model_savetype", "32");
 public:
     ConditionLed(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ConditionType;}
+	virtual QString service_name(){return tr("Ledbedingung");}
+	virtual QString service_desc(){return tr("Bedingung ob eine LED einen gewissen Wert hat");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Kanal");
+        case 1:
+            return tr("Minimum");
+        case 2:
+            return tr("Maximum");
+        default:
+            return QString();
+        }
+    }
     unsigned int channel() const;
     void setChannel(unsigned int value);
     unsigned int min() const;

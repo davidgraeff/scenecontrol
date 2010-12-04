@@ -65,8 +65,6 @@ QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
     QList<AbstractStateTracker*> a;
     m_statetracker->setConnected(m_control!=0);
     m_statetracker->setReceivers(m_devices.size());
-    m_statetrackerKey->setKey(QString());
-    a.append(m_statetrackerKey);
     a.append(m_statetracker);
     return a;
 }

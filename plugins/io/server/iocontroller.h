@@ -21,7 +21,7 @@
 #define IOCONTROLLER_H
 
 #include <QObject>
-#include <shared/qextserialport.h>
+#include <shared/server/qextserialport.h>
 
 class AbstractStateTracker;
 class PinNameStateTracker;

@@ -30,8 +30,18 @@ class EventPeriodic : public AbstractServiceProvider
     Q_CLASSINFO("days_props", "daybits")
 public:
     EventPeriodic(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() {
-        return EventType;
+	virtual QString service_name(){return tr("Periodisches Ereignis");}
+	virtual QString service_desc(){return tr("Wird ausgelöst, sobald ein periodischer Zeitpunkt erreicht ist. Eine Periode ist eine Woche.");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Zeit");
+        case 1:
+            return tr("Tage");
+        default:
+            return QString();
+        }
     }
     QString time() const;
     void setTime(QString value);

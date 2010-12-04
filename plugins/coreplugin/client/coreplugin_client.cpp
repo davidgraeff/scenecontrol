@@ -1,19 +1,18 @@
 #include "coreplugin_client.h"
 #include <QDebug>
 #include <QCoreApplication>
+#include <QtPlugin>
+#include "backupsmodel.h"
+
+Q_EXPORT_PLUGIN2(libroomclient, CorePluginClient)
 
 CorePluginClient::CorePluginClient(QObject* parent) {
     Q_UNUSED(parent);
-    m_base = new CorePlugin();
+    m_base = new myPlugin();
+    addModel(new BackupsModel());
 }
 
 CorePluginClient::~CorePluginClient() {
-    delete m_base;
+    //delete m_base;
+	qDeleteAll(m_models);
 }
-void CorePluginClient::stateChanged(AbstractStateTracker*) {}
-void CorePluginClient::serviceRemoved(AbstractServiceProvider*) {}
-void CorePluginClient::serviceChanged(AbstractServiceProvider*) {}
-QList< ClientModel* > CorePluginClient::models() {
-    return m_models;
-}
-

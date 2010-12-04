@@ -18,28 +18,14 @@
 */
 
 #include "systemACServer.h"
-#include <coreplugin/services/systemAC.h>
 #include <coreplugin/server/plugin_server.h>
-#include <QCoreApplication>
-#include <../server/servicecontroller.h>
+#include <coreplugin/services/systemAC.h>
 
 ActorSystemServer::ActorSystemServer(ActorSystem* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
 bool ActorSystemServer::checkcondition() {
     return true;
 }
 void ActorSystemServer::execute() {
-    switch (m_base->action()) {
-    case ActorSystem::RestartSystem:
-        QCoreApplication::exit(EXIT_WITH_RESTART);
-        break;
-    case ActorSystem::QuitSystem:
-        QCoreApplication::exit(0);
-        break;
-    case ActorSystem::ResyncSystem:
-        m_plugin->serviceController()->refresh();
-        break;
-    default:
-        break;
-    };
+
 }
 void ActorSystemServer::dataUpdate() {}

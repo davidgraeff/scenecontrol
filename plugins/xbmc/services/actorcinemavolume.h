@@ -30,7 +30,19 @@ class ActorCinemaVolume : public AbstractServiceProvider
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorCinemaVolume(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes(){return ActionType;}
+	virtual QString service_name(){return tr("Abspiellautstärke Cinema setzen");}
+	virtual QString service_desc(){return tr("Setzt die Abspiellautstärke der aktuellen Vorführung");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("Lautstärke");
+        case 1:
+            return tr("Relativ");
+        default:
+            return QString();
+        }
+    }
     qreal value() const ;
     void setValue(qreal value) ;
     bool relative() const ;

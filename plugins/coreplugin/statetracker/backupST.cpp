@@ -22,9 +22,15 @@
 BackupStateTracker::BackupStateTracker(QObject* parent)
         : AbstractStateTracker(parent)
 {}
-void BackupStateTracker::setBackups(const QStringList& b) {
-    m_backups = b;
+void BackupStateTracker::setBackupids(const QStringList& b) {
+    m_backupids = b;
 }
-QStringList BackupStateTracker::backups() {
-    return m_backups;
+QStringList BackupStateTracker::backupids() {
+    return m_backupids;
+}
+void BackupStateTracker::setBackupnames(const QStringList& b) {
+    m_backupnames = b;
+}
+QStringList BackupStateTracker::backupnames() {
+    return m_backupnames;
 }

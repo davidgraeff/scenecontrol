@@ -17,8 +17,7 @@
 
 */
 
-#ifndef EXECUTESERVICE_H
-#define EXECUTESERVICE_H
+#pragma once
 #include <QObject>
 #include <QStringList>
 #include <shared/abstractserviceprovider.h>
@@ -35,5 +34,3 @@ public:
 Q_SIGNALS:
     void trigger();
 };
-
-#endif // EXECUTESERVICE_H

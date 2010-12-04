@@ -27,16 +27,5 @@ bool ActorCollectionServer::checkcondition() {
 	return true;
 }
 void ActorCollectionServer::execute() {
-	
-	switch (m_base->action()) {
-		case ActorCollection::StartProfile:
-			m_plugin->serviceController()->runProfile(m_base->profileid());
-			break;
-		case ActorCollection::CancelProfile:
-			m_plugin->serviceController()->stopProfile(m_base->profileid());
-			break;
-		default:
-			break;
-	};
 }
 void ActorCollectionServer::dataUpdate() {}

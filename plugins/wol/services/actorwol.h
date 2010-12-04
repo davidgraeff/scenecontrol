@@ -22,14 +22,23 @@
 
 #include "shared/abstractserviceprovider.h"
 
-class ServiceWOL : public AbstractServiceProvider
+class ActorWOL : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString mac READ mac WRITE setMac)
 public:
-    ServiceWOL(QObject* parent = 0);
-    virtual ProvidedTypes providedtypes() { return ActionType;}
-    
+    ActorWOL(QObject* parent = 0);
+	virtual QString service_name(){return tr("WakeUpOnLan");}
+	virtual QString service_desc(){return tr("Schickt ein WOL Paket an einen besteimmten PC");}
+    virtual QString translate(int propindex, int enumindex = -1) {
+        Q_UNUSED(enumindex);
+        switch (propindex) {
+        case 0:
+            return tr("MAC");
+        default:
+            return QString();
+        }
+    }
     const QString& mac() const {
         return m_mac;
     }

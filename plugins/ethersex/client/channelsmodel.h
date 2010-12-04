@@ -25,11 +25,12 @@
 #include <QString>
 #include <QStringList>
 #include <QIcon>
+#include "shared/client/clientplugin.h"
 
 class AbstractStateTracker;
 class ChannelNameStateTracker;
 class ChannelValueStateTracker;
-class ChannelsModel : public QAbstractListModel
+class ChannelsModel : public ClientModel
 {
     Q_OBJECT
 public:
@@ -47,9 +48,13 @@ public:
     void setName ( int i, const QString& value );
     QString getName ( int i );
     int getValue ( int i ) const;
-private Q_SLOTS:
-    void stateChanged(AbstractStateTracker*);
-    void slotdisconnected();
+	
+	virtual int indexOf(const QVariant& data);
+public Q_SLOTS:
+    void stateTrackerChanged(AbstractStateTracker*);
+    void serviceRemoved(AbstractServiceProvider*);
+    void serviceChanged(AbstractServiceProvider*);
+	void clear();
 private:
     QList<ChannelValueStateTracker*> m_itemvalues;
     QList<ChannelNameStateTracker*> m_itemnames;

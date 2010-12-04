@@ -22,8 +22,8 @@
 #include <QObject>
 #include <QStringList>
 #include "../plugin.h"
-#include "executeplugin.h"
 #include <QDir>
+#include <shared/server/executeplugin.h>
 
 class EventController;
 class EventStateTracker;
@@ -46,8 +46,10 @@ public:
         return m_base;
     }
     void setMode(const QString& mode);
-    QStringList backups();
-    void backup();
+	QString mode() { return m_mode; }
+    void backups_changed();
+    void backup_create(const QString& name);
+	void backup_rename(const QString& id, const QString& name);
     void backup_restore(const QString& id);
     void backup_remove(const QString& id);
     EventController* eventcontroller() {return m_eventcontroller;}
