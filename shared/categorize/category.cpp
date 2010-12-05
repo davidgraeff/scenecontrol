@@ -21,5 +21,5 @@
 #include <QUuid>
 #include "profile.h"
 
-Category::Category(QObject* parent) : AbstractServiceProvider ( parent ), m_flagAlarm ( false )
+Category::Category(QObject* parent) : AbstractServiceProvider ( parent )
 {}

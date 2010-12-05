@@ -120,7 +120,7 @@ void CollectionsModel::serviceRemoved ( AbstractServiceProvider* provider )
     if ( index == -1 ) return;
 
     beginRemoveRows ( QModelIndex(), index, index );
-    //Collection* collection = m_collections[index];
+    m_collections.removeAt(index);
     endRemoveRows();
 }
 

@@ -36,7 +36,7 @@ public:
      */
     void refresh();
 private:
-    QString serviceFilename(AbstractServiceProvider* service);
+    QString serviceFilename(const QByteArray& type, const QString& id);
     /*
      * @link: true if profiles and services should be linked together,
      * Should be false on initial loading
@@ -44,7 +44,7 @@ private:
     bool generate ( const QVariantMap& json, bool loading = false);
     void saveToDisk(ExecuteWithBase* eservice);
     void removeFromDisk(ExecuteWithBase* eservice);
-    void updateService(ExecuteWithBase* service, const QVariantMap& json, bool newid = false, bool loading = false);
+    void updateService(ExecuteWithBase* service, bool newid = false, bool loading = false);
 
     // service providers
     QList<ExecuteWithBase*> m_servicesList;

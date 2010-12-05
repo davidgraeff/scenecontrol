@@ -170,7 +170,6 @@ QModelIndex CategoriesCollectionsModel::parent(const QModelIndex& child) const {
     if (cat) return QModelIndex();
     ProfileItem* p = qobject_cast<ProfileItem*>((QObject*)child.internalPointer());
     if (!p) {
-        qWarning()<<__PRETTY_FUNCTION__<<"No parent found!";
         return QModelIndex();
     }
     return createIndex(p->category->pos,0,p->category);
@@ -211,26 +210,25 @@ QModelIndex CategoriesCollectionsModel::index(int row, int column, const QModelI
 bool CategoriesCollectionsModel::removeRows ( int row, int count, const QModelIndex &parent )
 {
     CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
-    if (cat) {
+    if (!cat) { // remove categories
         for ( int i=row+count-1;i>=row;--i )
         {
-            if (m_catitems[row]->category) {
+            if (m_catitems[row]->category) { // do not remove the predefined categories
                 Category* c = m_catitems[row]->category;
                 c->setProperty("remove",true);
                 emit changeService(c);
             }
         }
-        return true;
+    } else { // remove profiles
+        for ( int i=row+count-1;i>=row;--i )
+        {
+            Collection* c = cat->m_profiles[i]->profile;
+            c->setProperty("remove",true);
+            emit changeService(c);
+        }
     }
-
-    for ( int i=row+count-1;i>=row;--i )
-    {
-        Collection* c = cat->m_profiles[i]->profile;
-        c->setProperty("remove",true);
-        emit changeService(c);
-    }
-    QModelIndex ifrom = createIndex ( row,0 );
-    QModelIndex ito = createIndex ( row+count-1,1 );
+    QModelIndex ifrom = createIndex ( row,0, parent.internalPointer() );
+    QModelIndex ito = createIndex ( row+count-1,columnCount(), parent.internalPointer() );
     emit dataChanged ( ifrom,ito );
     return true;
 }
@@ -262,7 +260,7 @@ void CategoriesCollectionsModel::addedCategory(Category* category)
     }
 
     if (m_focusid == category->name()) {
-        emit itemMoved(createIndex(row,0,newitem));
+		emit itemFocus(createIndex(row,0,newitem));
         m_focusid = QString();
     }
 }
@@ -271,12 +269,6 @@ void CategoriesCollectionsModel::addedProfile(Collection* profile)
 {
     QModelIndex index = indexOf ( profile->id());
     if ( index.isValid() ) return;
-    /*
-        connect ( profile, SIGNAL ( serviceChanged ( AbstractServiceProvider* ) ),
-                  SLOT ( serviceChanged ( AbstractServiceProvider* ) ) );*/
-
-//     connect( profile, SIGNAL(childsChanged(Collection*)),
-//              SLOT(childsChanged(Collection*)));
 
     // Find right category
     int catpos = 0;
@@ -300,7 +292,7 @@ void CategoriesCollectionsModel::addedProfile(Collection* profile)
     endInsertRows();
 
     if (m_focusid == profile->name()) {
-        emit itemMoved(createIndex(row,0,newitem));
+		emit itemFocus(createIndex(row,0,newitem));
         m_focusid = QString();
     }
 
@@ -395,22 +387,23 @@ void CategoriesCollectionsModel::serviceChanged ( AbstractServiceProvider* provi
             for (int i=0;i<m_catitems.size();++i)
                 m_catitems[i]->pos = i;
             endInsertRows();
-            if (indicateMovement) emit itemMoved(createIndex(row, 0, item));
+			if (indicateMovement) emit itemFocus(createIndex(row, 0, item));
         } else if (p) {
             // Remove from old category
             CategoryItem* oldCategory = p->category;
             beginRemoveRows (parent, oldrow, oldrow );
             Collection* item = oldCategory->m_profiles[oldrow]->profile;
             oldCategory->removeProfile(oldrow);
+			p = 0;
             endRemoveRows();
 
             // add to new category
             CategoryItem* newCategory = m_catitems[newCategoryRow];
             beginInsertRows ( createIndex(newCategoryRow,0,newCategory),row,row );
-            ProfileItem* newProfileItem = newCategory->insertProfile(item, row);
+            p = newCategory->insertProfile(item, row);
             endInsertRows();
 
-            if (indicateMovement) emit itemMoved(createIndex(row, 0, newProfileItem));
+			emit itemFocus(createIndex(row, 0, p));
         }
     } else {
         emit dataChanged ( index,index );

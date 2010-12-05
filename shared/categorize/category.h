@@ -29,10 +29,6 @@ class Category : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString name READ name WRITE setName);
-    /**
-     * Is this the categorie with all the alarms?
-     */
-    Q_PROPERTY(bool flagAlarm READ flagAlarm WRITE setFlagAlarm)
 public:
     Category(QObject* parent=0);
     virtual QString service_name(){return tr("Kategorie");}
@@ -43,18 +39,8 @@ public:
     void setName(const QString& cmd) {
         m_name = cmd;
     }
-
-    bool flagAlarm() const {
-        return m_flagAlarm;
-    }
-
-    void setFlagAlarm( bool e ) {
-        m_flagAlarm = e;
-    }
-
 private:
     QString m_name;
-    bool m_flagAlarm;
 
 };
 

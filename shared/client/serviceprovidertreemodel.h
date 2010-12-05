@@ -34,9 +34,10 @@ class ServiceProviderTreeModel : public ClientModel
 {
     Q_OBJECT
 public:
-    ServiceProviderTreeModel (const QString& title, QObject* parent = 0);
+    ServiceProviderTreeModel (QObject* parent = 0);
     ~ServiceProviderTreeModel();
 
+    virtual bool hasChildren(const QModelIndex& parent) const;
     virtual QModelIndex index(int row, int column,
                               const QModelIndex &parent = QModelIndex()) const;
     virtual QModelIndex parent(const QModelIndex &child) const;
@@ -72,7 +73,6 @@ private:
     QList< AbstractServiceProvider* > m_events;
     QList< AbstractServiceProvider* > m_conditions;
     QList< AbstractServiceProvider* > m_actors;
-    QString m_title;
 	QString m_parentid;
 	void addToList(AbstractServiceProvider* provider);
 };

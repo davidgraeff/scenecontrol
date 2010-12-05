@@ -33,10 +33,10 @@ IF (NOT CMAKE_BUILD_TYPE)
 ENDIF (NOT CMAKE_BUILD_TYPE)
 
 file(GLOB_RECURSE SRCS_H *.h)
-file(GLOB_RECURSE Shared_SRCS_H "../shared/*.h")
+file(GLOB Shared_SRCS_H "../shared/*.h" "../shared/server/*.h" "../shared/categorize/*.h" "../shared/qjson/*.h")
 
 file(GLOB_RECURSE SRCS *.cpp)
-file(GLOB_RECURSE Shared_SRCS "../shared/*.cpp" "../shared/qjson/*.cc")
+file(GLOB Shared_SRCS "../shared/*.cpp" "../shared/server/*.cpp" "../shared/categorize/*.cpp" "../shared/qjson/*.cpp" "../shared/qjson/*.cc")
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..
 ${CMAKE_CURRENT_BINARY_DIR} ${PAM_INCLUDE_DIR}

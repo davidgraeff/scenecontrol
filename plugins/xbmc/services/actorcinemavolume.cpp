@@ -23,11 +23,11 @@ ActorCinemaVolume::ActorCinemaVolume(QObject* parent)
         : AbstractServiceProvider(parent)
 {}
 
-qreal ActorCinemaVolume::value() const {
-    return m_volume;
+qreal ActorCinemaVolume::volume() const {
+	return m_volume;
 }
-void ActorCinemaVolume::setValue(qreal value) {
-    m_volume = value;
+void ActorCinemaVolume::setVolume(qreal value) {
+	m_volume = value;
 }
 bool ActorCinemaVolume::relative() const {
     return m_relative;

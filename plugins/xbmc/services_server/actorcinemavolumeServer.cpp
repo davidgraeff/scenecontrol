@@ -23,7 +23,7 @@
 
 void ActorCinemaVolumeServer::execute()
 {
-    m_plugin->setVolume(service<ActorCinemaVolume>()->value(),service<ActorCinemaVolume>()->relative());
+    m_plugin->setVolume(service<ActorCinemaVolume>()->volume(),service<ActorCinemaVolume>()->relative());
 }
 
 ActorCinemaVolumeServer::ActorCinemaVolumeServer(ActorCinemaVolume* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}

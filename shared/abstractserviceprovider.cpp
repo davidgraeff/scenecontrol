@@ -19,12 +19,11 @@
 
 #include "abstractserviceprovider.h"
 #include "abstractplugin.h"
-#include <QUuid>
 
 AbstractServiceProvider::AbstractServiceProvider ( QObject* parent )
         : QObject ( parent ), m_delay(0)
 {
-    m_id = QUuid::createUuid().toString().remove ( QLatin1Char ( '{' ) ).remove ( QLatin1Char ( '}' ) );
+    m_id = QString();
 }
 
 QString AbstractServiceProvider::id() const

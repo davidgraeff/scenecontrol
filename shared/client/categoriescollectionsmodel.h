@@ -92,7 +92,7 @@ public Q_SLOTS:
     virtual void stateTrackerChanged(AbstractStateTracker* );
     void childsChanged(Collection*);
 Q_SIGNALS:
-    void itemMoved(const QModelIndex& newindex);
+	void itemFocus(const QModelIndex& newindex);
 private:
     //QList< AbstractServiceProvider* > m_items;
     QList< CategoryItem* > m_catitems;

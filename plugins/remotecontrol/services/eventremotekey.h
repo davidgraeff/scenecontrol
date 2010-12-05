@@ -34,11 +34,13 @@ class EventRemoteKey : public AbstractServiceProvider
     Q_PROPERTY(int channel READ channel WRITE setChannel);
     Q_CLASSINFO("channel_statetracker_id", "RemoteControlKeyStateTracker")
     Q_CLASSINFO("channel_statetracker_property", "channel")
+    Q_CLASSINFO("channel_min", "-1");
+    Q_CLASSINFO("channel_max", "1000");
     Q_PROPERTY(int repeat READ repeat WRITE setRepeat)
-    Q_CLASSINFO("repeat_min", "-1");
+    Q_CLASSINFO("repeat_min", "0");
     Q_CLASSINFO("repeat_max", "1000");
     Q_PROPERTY(int repeatinit READ repeatinit WRITE setRepeatinit)
-    Q_CLASSINFO("repeatinit_min", "-1");
+    Q_CLASSINFO("repeatinit_min", "0");
     Q_CLASSINFO("repeatinit_max", "1000");
 public:
     EventRemoteKey(QObject* parent = 0);

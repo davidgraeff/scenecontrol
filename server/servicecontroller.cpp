@@ -125,6 +125,11 @@ QList<AbstractStateTracker*> ServiceController::stateTracker()
 bool ServiceController::generate ( const QVariantMap& json, bool loading )
 {
     const QString id = json.value ( QLatin1String ( "id" ) ).toString();
+    if (loading && id.isEmpty()) {
+		const QString filename = serviceFilename(json.value ( QLatin1String ( "type" ) ).toByteArray(), id);
+		QFile::remove(filename);
+        qWarning() << "Invalid service file detected and removed" << filename;
+    }
     ExecuteWithBase* service = m_services.value ( id );
     bool remove = json.contains ( QLatin1String ( "remove" ) );
     bool iExecute = json.contains ( QLatin1String ( "iexecute" ) );
@@ -139,7 +144,7 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
         }
         else if (!iExecute )
         {
-            updateService(service, json, false);
+            updateService(service);
             return true;
         }
         return false;
@@ -197,25 +202,24 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
     }
     else
     {
-        updateService(service, json, true, loading);
+        updateService(service, true, loading);
         m_services.insert ( service->base()->id(), service );
         m_servicesList.append ( service );
     }
     return true;
 }
 
-void ServiceController::updateService(ExecuteWithBase* service, const QVariantMap& json, bool newid, bool loading)
+void ServiceController::updateService(ExecuteWithBase* service, bool newid, bool loading)
 {
     ExecuteService* exservice = dynamic_cast<ExecuteService*>(service);
     if (exservice) removeFromExecuteProfiles ( exservice );
 
     // Generate uinque ids amoung all existing ids
-    if (newid) {
-        QString nid = json.value ( QLatin1String ( "id" ), QString() ).toString();
-        while (m_services.contains ( nid ))
-        {
+    if (newid && !loading) {
+        QString nid;
+        do {
             nid = QUuid::createUuid().toString().remove ( QLatin1Char ( '{' ) ).remove ( QLatin1Char ( '}' ) );
-        };
+        } while (m_services.contains ( nid ));
         service->base()->setId ( nid );
     }
 
@@ -246,9 +250,9 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
     // propagate to all clients, so that those remove this provider, too.
     emit serviceSync ( service );
 
-    if ( !QFile::remove ( serviceFilename ( service ) ) ||
-            QFileInfo(serviceFilename ( service )).exists() )
-        qWarning() << "Couldn't remove file" << serviceFilename ( service );
+    if ( !QFile::remove ( serviceFilename ( service->type(), service->id() ) ) ||
+            QFileInfo(serviceFilename ( service->type(), service->id() )).exists() )
+        qWarning() << "Couldn't remove file" << serviceFilename ( service->type(), service->id() );
 
     // collection: remove all childs
     if (service->type() == Collection::staticMetaObject.className()) {
@@ -260,7 +264,16 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
         foreach (ExecuteService* s, childs_linked) {
             removeFromDisk(s);
         }
-    } else if (service->type() != Category::staticMetaObject.className()) {
+	} else if (service->type() == Category::staticMetaObject.className()) {
+		// go through every service and if it belongs to the to-be-deleted categorie then change its parentid
+		foreach(ExecuteWithBase* s, m_servicesList) {
+			if (s->base()->parentid() == service->id()) {
+				s->base()->setParentid(QString());
+				saveToDisk(s);
+				emit serviceSync ( s->base() );
+			}
+		}
+    } else {
         ExecuteService* exservice = dynamic_cast<ExecuteService*>(eservice);
         // Not true for categories that are only ExecuteWithBase
         if (exservice) removeFromExecuteProfiles ( exservice );
@@ -285,7 +298,7 @@ void ServiceController::saveToDisk ( ExecuteWithBase* eservice )
         return;
     }
 
-    const QString path = serviceFilename ( service );
+    const QString path = serviceFilename ( service->type(), service->id() );
 
     QFile file ( path );
     if ( !file.open ( QIODevice::ReadWrite | QIODevice::Truncate ) )
@@ -309,10 +322,9 @@ void ServiceController::saveToDisk ( ExecuteWithBase* eservice )
     emit serviceSync ( service );
 }
 
-QString ServiceController::serviceFilename ( AbstractServiceProvider* service )
+QString ServiceController::serviceFilename ( const QByteArray& type, const QString& id )
 {
-    Q_ASSERT(service);
-    return m_savedir.absoluteFilePath ( QString::fromAscii ( service->type() +"-" ) + service->id() );
+    return m_savedir.absoluteFilePath ( QString::fromAscii ( type +"-" ) + id );
 }
 
 
