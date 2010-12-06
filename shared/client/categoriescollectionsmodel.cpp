@@ -209,28 +209,35 @@ QModelIndex CategoriesCollectionsModel::index(int row, int column, const QModelI
 
 bool CategoriesCollectionsModel::removeRows ( int row, int count, const QModelIndex &parent )
 {
-    CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)parent.internalPointer());
-    if (!cat) { // remove categories
-        for ( int i=row+count-1;i>=row;--i )
-        {
-            if (m_catitems[row]->category) { // do not remove the predefined categories
-                Category* c = m_catitems[row]->category;
-                c->setProperty("remove",true);
-                emit changeService(c);
-            }
-        }
-    } else { // remove profiles
-        for ( int i=row+count-1;i>=row;--i )
-        {
-            Collection* c = cat->m_profiles[i]->profile;
-            c->setProperty("remove",true);
-            emit changeService(c);
-        }
-    }
-    QModelIndex ifrom = createIndex ( row,0, parent.internalPointer() );
-    QModelIndex ito = createIndex ( row+count-1,columnCount(), parent.internalPointer() );
-    emit dataChanged ( ifrom,ito );
+	QModelIndexList list;
+	for (int i=row;i<row+count;++i)
+		list.append(index(row,0,parent));
+	
+	removeRows(list);
     return true;
+}
+
+bool CategoriesCollectionsModel::removeRows ( QModelIndexList list )
+{
+	qSort(list.begin(), list.end());
+	
+	for (int i = list.count() - 1; i > -1; --i) {
+		CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)list[i].parent().internalPointer());
+		if (!cat) { // remove categories
+			if (m_catitems[list[i].row()]->category) { // do not remove the predefined categories
+                Category* c = m_catitems[list[i].row()]->category;
+				c->setProperty("remove",true);
+				emit changeService(c);
+			}
+		} else { // remove profiles
+			Collection* c = cat->m_profiles[list[i].row()]->profile;
+			c->setProperty("remove",true);
+			emit changeService(c);
+		}
+	}
+	
+	emit dataChanged ( list.first(),list.last() );
+	return true;
 }
 
 void CategoriesCollectionsModel::addedCategory(Category* category)

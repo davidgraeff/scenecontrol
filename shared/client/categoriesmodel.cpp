@@ -95,6 +95,22 @@ bool CategoriesModel::removeRows ( int row, int count, const QModelIndex & )
     return true;
 }
 
+bool CategoriesModel::removeRows ( QModelIndexList list )
+{
+	qSort(list.begin(), list.end());
+	
+	for (int i = list.count() - 1; i > -1; --i) {
+		Category* p = get(list[i].row());
+		if (p) {
+			p->setProperty("remove",1);
+			emit changeService(p);
+		}
+	}
+	
+	emit dataChanged ( list.first(),list.last() );
+	return true;
+}
+
 Qt::ItemFlags CategoriesModel::flags ( const QModelIndex& index ) const
 {
     if ( !index.isValid() )

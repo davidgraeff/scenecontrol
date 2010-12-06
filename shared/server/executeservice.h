@@ -31,6 +31,7 @@ public:
     virtual bool checkcondition() = 0;
     virtual void execute() = 0;
     virtual void dataUpdate() = 0;
+	virtual void nameUpdate() {}
 Q_SIGNALS:
     void trigger();
 };

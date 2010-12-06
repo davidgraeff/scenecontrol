@@ -50,7 +50,6 @@ ServiceController::ServiceController ()
         qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
 
         connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
-        connect(plugin,SIGNAL(pluginobjectChanged(ExecuteWithBase*)),SLOT(pluginobjectChanged(ExecuteWithBase*)));
         connect(plugin,SIGNAL(executeService(AbstractServiceProvider*)),SLOT(pluginexecuteService(AbstractServiceProvider*)));
         m_plugins.append ( plugin );
         QStringList provides = plugin->base()->registerServices();
@@ -126,8 +125,8 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
 {
     const QString id = json.value ( QLatin1String ( "id" ) ).toString();
     if (loading && id.isEmpty()) {
-		const QString filename = serviceFilename(json.value ( QLatin1String ( "type" ) ).toByteArray(), id);
-		QFile::remove(filename);
+        const QString filename = serviceFilename(json.value ( QLatin1String ( "type" ) ).toByteArray(), id);
+        QFile::remove(filename);
         qWarning() << "Invalid service file detected and removed" << filename;
     }
     ExecuteWithBase* service = m_services.value ( id );
@@ -211,9 +210,6 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
 
 void ServiceController::updateService(ExecuteWithBase* service, bool newid, bool loading)
 {
-    ExecuteService* exservice = dynamic_cast<ExecuteService*>(service);
-    if (exservice) removeFromExecuteProfiles ( exservice );
-
     // Generate uinque ids amoung all existing ids
     if (newid && !loading) {
         QString nid;
@@ -223,23 +219,14 @@ void ServiceController::updateService(ExecuteWithBase* service, bool newid, bool
         service->base()->setId ( nid );
     }
 
+    ExecuteService* exservice = dynamic_cast<ExecuteService*>(service);
     if (exservice) {
+        removeFromExecuteProfiles ( exservice );
         exservice->dataUpdate();
         addToExecuteProfiles ( exservice );
+		exservice->nameUpdate();
     }
     if (!loading) saveToDisk ( service );
-}
-
-void ServiceController::pluginobjectChanged(ExecuteWithBase* service) {
-    if ( service->property("remove").isValid() )
-    {
-        removeFromDisk ( service );
-    }
-    else if (!m_services.contains ( service->base()->id() ))
-    {
-        m_services.insert ( service->base()->id(), service );
-        m_servicesList.append ( service );
-    }
 }
 
 void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
@@ -264,15 +251,15 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
         foreach (ExecuteService* s, childs_linked) {
             removeFromDisk(s);
         }
-	} else if (service->type() == Category::staticMetaObject.className()) {
-		// go through every service and if it belongs to the to-be-deleted categorie then change its parentid
-		foreach(ExecuteWithBase* s, m_servicesList) {
-			if (s->base()->parentid() == service->id()) {
-				s->base()->setParentid(QString());
-				saveToDisk(s);
-				emit serviceSync ( s->base() );
-			}
-		}
+    } else if (service->type() == Category::staticMetaObject.className()) {
+        // go through every service and if it belongs to the to-be-deleted categorie then change its parentid
+        foreach(ExecuteWithBase* s, m_servicesList) {
+            if (s->base()->parentid() == service->id()) {
+                s->base()->setParentid(QString());
+                saveToDisk(s);
+                emit serviceSync ( s->base() );
+            }
+        }
     } else {
         ExecuteService* exservice = dynamic_cast<ExecuteService*>(eservice);
         // Not true for categories that are only ExecuteWithBase
@@ -370,7 +357,7 @@ void ServiceController::pluginexecuteService(AbstractServiceProvider* service) {
     generate(QJson::QObjectHelper::qobject2qvariant(service));
 }
 void ServiceController::executeservice(ExecuteService* service) {
-    if (service->base()->type() == ActorSystemServer::staticMetaObject.className()) {
+    if (service->base()->type() == ActorSystem::staticMetaObject.className()) {
 
         switch (((ActorSystem*)service->base())->action()) {
         case ActorSystem::RestartSystem:
@@ -386,7 +373,7 @@ void ServiceController::executeservice(ExecuteService* service) {
             break;
         };
     }
-    if (service->base()->type() == ActorCollectionServer::staticMetaObject.className()) {
+    if (service->base()->type() == ActorCollection::staticMetaObject.className()) {
         switch (((ActorCollection*)service->base())->action()) {
         case ActorCollection::StartProfile:
             runProfile(((ActorCollection*)service->base())->profileid());

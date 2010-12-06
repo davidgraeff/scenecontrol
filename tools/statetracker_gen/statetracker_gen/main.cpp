@@ -58,6 +58,7 @@ int main(int argc, char** argv)
     list<string> propery_names;
     list<string> propery_types;
     int i=0;
+    cout << "Now properties. Break with .\n";
     while (!abort) {
         string name;
         string type;

@@ -29,6 +29,7 @@ class AbstractServiceProvider : public QObject
     Q_PROPERTY(QString parentid READ parentid WRITE setParentid);
     Q_PROPERTY(QByteArray type READ type);
     Q_PROPERTY(int delay READ delay WRITE setDelay);
+	Q_PROPERTY(QString stringname READ toString WRITE setString);
 	Q_ENUMS(ProvidedService);
 public:
 	// Types that this class objects can be

@@ -28,6 +28,7 @@
 #include "shared/abstractserviceprovider.h"
 #include <QSettings>
 #include "config.h"
+#include <qtextcodec.h>
 
 NetworkController* network = 0;
 
@@ -69,7 +70,8 @@ int main(int argc, char *argv[])
     qapp.setApplicationName(QLatin1String(ABOUT_PRODUCT));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
     qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
-
+	QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
+	
 	QDir::home();
     QDir m_savedir = QFileInfo ( QSettings().fileName() ).absoluteDir();
     m_savedir.mkpath ( m_savedir.absolutePath() );

@@ -1,0 +1,20 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x14\x00p\x00u\x00l\x00s\x00e\x00a\x00u\x00d\x00i\x00o)
+
+[CMake]
+BuildDirs=/home/david/Entwicklung/roomcontrol/build/plugins/pulseaudio
+CMakeDir=/usr/share/cmake-2.8/Modules
+Current CMake Binary=file:///usr/bin/cmake
+CurrentBuildDir=file:///home/david/Entwicklung/roomcontrol/build/plugins/pulseaudio
+CurrentBuildType=RelWithDebInfo
+CurrentInstallDir=file:///usr/
+Extra Arguments=
+ProjectRootRelative=./
+
+[MakeBuilder]
+Install As Root=true
+Number Of Jobs=6
+Su Command=1
+
+[Project]
+VersionControlSupport=kdevgit

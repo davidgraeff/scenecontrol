@@ -76,8 +76,8 @@ public:
     virtual QVariant headerData ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
 
-//	virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
     virtual bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
+	bool removeRows ( QModelIndexList list );
 
     AbstractServiceProvider* get(const QModelIndex & index) ;
     QModelIndex indexOf ( const QString& id ) ;
@@ -94,7 +94,6 @@ public Q_SLOTS:
 Q_SIGNALS:
 	void itemFocus(const QModelIndex& newindex);
 private:
-    //QList< AbstractServiceProvider* > m_items;
     QList< CategoryItem* > m_catitems;
 	QString m_focusid;
 };

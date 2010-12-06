@@ -116,6 +116,22 @@ bool ServiceProviderTreeModel::removeRows ( int row, int count, const QModelInde
     return true;
 }
 
+bool ServiceProviderTreeModel::removeRows ( QModelIndexList list )
+{
+	qSort(list.begin(), list.end());
+	
+	for (int i = list.count() - 1; i > -1; --i) {
+		AbstractServiceProvider* p = get(list[i]);
+		if (p) {
+			p->setProperty("remove",1);
+			emit changeService(p);
+		}
+	}
+	
+	emit dataChanged ( list.first(),list.last() );
+	return true;
+}
+
 QModelIndex ServiceProviderTreeModel::indexOf(const QString& id) {
     for (int i=0;i<m_events.size();++i)
         if (m_events[i]->id()==id) {

@@ -31,7 +31,9 @@ Working Directory=
 isExecutable=false
 
 [MakeBuilder]
+Install As Root=true
 Number Of Jobs=6
+Su Command=1
 
 [Project]
 VersionControlSupport=kdevgit

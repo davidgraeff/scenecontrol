@@ -35,8 +35,6 @@ public:
 	virtual AbstractPlugin* base() = 0;
 Q_SIGNALS:
 	void stateChanged(AbstractStateTracker*);
-	// evaluate "remove" and add to services if not existing
-	void pluginobjectChanged(ExecuteWithBase*);
 	/*
 	 * Service will be provided to the server and propagated to the correct plugin.
 	 * This mechanism allows inter-plugin communication. The handed over service object

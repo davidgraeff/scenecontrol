@@ -26,8 +26,6 @@ class ActorLed : public AbstractServiceProvider
     Q_OBJECT
     Q_PROPERTY(unsigned int channel READ channel WRITE setChannel);
     Q_CLASSINFO("channel_model", "ChannelsModel")
-    Q_CLASSINFO("channel_model_displaytype", "0");
-    Q_CLASSINFO("channel_model_savetype", "32");
     Q_PROPERTY(ActorLed::fadetypeEnum fadetype READ fadetype WRITE setFadetype);
     Q_PROPERTY(ActorLed::assignmentEnum assignment READ assignment WRITE setAssignment);
     Q_PROPERTY(int value READ value WRITE setValue);
