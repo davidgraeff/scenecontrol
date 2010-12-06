@@ -41,7 +41,8 @@ public:
         NextSubtitleCmd,
         NextLanguageCmd,
         FastForwardCmd,
-        FastRewindCmd
+        FastRewindCmd,
+		DumpMediaInfoCmd
     };
 
     ActorPlaylistCmd(QObject* parent = 0);
@@ -83,7 +84,9 @@ public:
                 return tr("Vorspulen");
             case 12:
                 return tr("Zurückspulen");
-            default:
+			case 13:
+				return tr("Medieninfo speichern");
+			default:
                 return tr("Kommando");
             }
         default:

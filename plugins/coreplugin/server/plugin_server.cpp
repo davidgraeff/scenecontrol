@@ -115,8 +115,8 @@ void myPluginExecute::backup_create(const QString& name)
     QDir sourcedir = m_savedir;
     QStringList files = sourcedir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     files.removeAll(QLatin1String("name.txt"));
-                    qDebug() << "Backup" << files.size() << "files to" << destdir.path();
-                    foreach ( QString file, files )
+    qDebug() << "Backup" << files.size() << "files to" << destdir.path();
+    foreach ( QString file, files )
     {
         QFile::remove ( destdir.absoluteFilePath ( file ) );
         if ( !QFile::copy ( sourcedir.absoluteFilePath ( file ), destdir.absoluteFilePath ( file ) ) )

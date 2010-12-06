@@ -211,8 +211,9 @@ void myPluginExecute::keySlot(const QString &t, const QString &keyname, uint cha
 }
 
 void myPluginExecute::keyEventDestroyed(QObject* obj) {
-    EventRemoteKeyServer* event = qobject_cast<EventRemoteKeyServer*>(obj);
-    Q_ASSERT(event);
+	if (m_keyevents.isEmpty()) return;
+	EventRemoteKeyServer* event = qobject_cast<EventRemoteKeyServer*>(obj);
+	if (!event) return;
     EventRemoteKey* base = (EventRemoteKey*)event->base();
     Q_ASSERT(base);
     QMap<QString, QList<EventRemoteKeyServer*> >::iterator it = m_keyevents.find(base->key());
@@ -224,7 +225,6 @@ void myPluginExecute::keyEventDestroyed(QObject* obj) {
 
 void myPluginExecute::registerKeyEvent(EventRemoteKeyServer* event) {
     EventRemoteKey* base = (EventRemoteKey*)event->base();
-    qDebug() << __FUNCTION__ << base->key();// << getBackTrace().join(QLatin1String("\n"));
     // first remove if already registered
     QMap<QString, QList<EventRemoteKeyServer*> >::iterator it = m_keyevents.begin();
     for (;it != m_keyevents.end();++it) {
@@ -247,4 +247,7 @@ bool myPluginExecute::isRegistered(EventRemoteKeyServer* event) {
     EventRemoteKey* base = (EventRemoteKey*)event->base();
     QList<EventRemoteKeyServer*> list = m_keyevents.value(base->key());
     return list.contains(event);
+}
+void myPluginExecute::clear() {
+	m_keyevents.clear();
 }

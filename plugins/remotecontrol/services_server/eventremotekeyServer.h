@@ -32,6 +32,7 @@ public:
         return true;
     }
     virtual void dataUpdate() ;
+    virtual void nameUpdate();
     virtual void execute() ;
     void keySlot(QString keycode,QString keyname,uint channel,int pressed);
     void stopRepeat() ;

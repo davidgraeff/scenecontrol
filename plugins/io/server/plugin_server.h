@@ -36,6 +36,7 @@ public:
     virtual void refresh() ;
     virtual ExecuteWithBase* createExecuteService(const QString& id);
     virtual QList<AbstractStateTracker*> stateTracker();
+    virtual void clear(){}
     virtual AbstractPlugin* base() {
         return m_base;
     }

@@ -34,6 +34,7 @@ public:
 	virtual ExecuteWithBase* createExecuteService(const QString& id);
 	virtual QList<AbstractStateTracker*> stateTracker();
 	virtual AbstractPlugin* base() { return m_base; }
+	virtual void clear(){}
 private:
         AbstractPlugin* m_base;
 };

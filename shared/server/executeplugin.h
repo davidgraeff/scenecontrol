@@ -33,9 +33,13 @@ public:
 	virtual ExecuteWithBase* createExecuteService(const QString& id) = 0;
 	virtual QList<AbstractStateTracker*> stateTracker() = 0;
 	virtual AbstractPlugin* base() = 0;
+	/**
+	 * Called before all services are deleted to tidy up
+	 */
+	virtual void clear() = 0;
 Q_SIGNALS:
 	void stateChanged(AbstractStateTracker*);
-	/*
+	/**
 	 * Service will be provided to the server and propagated to the correct plugin.
 	 * This mechanism allows inter-plugin communication. The handed over service object
 	 * will get an iExecute flag and be freed by the server after execution.

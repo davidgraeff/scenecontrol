@@ -111,7 +111,8 @@ int main(int argc, char *argv[])
     qDebug() << "Shutdown: Network server";
     delete network;
     network = 0;
-    delete services;
+	qDebug() << "Shutdown: Service Controller";
+	delete services;
     services = 0;
 
     // restart program

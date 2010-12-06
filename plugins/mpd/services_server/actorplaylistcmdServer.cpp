@@ -49,6 +49,9 @@ void ActorPlaylistCmdServer::execute()
     } else if (base->cmd() == ActorPlaylistCmd::PrevPlaylistCmd)
     {
         mc->previousPlaylist();
+    } else if (base->cmd() == ActorPlaylistCmd::DumpMediaInfoCmd)
+    {
+        mc->dumpMediaInfo();
     }
 }
 

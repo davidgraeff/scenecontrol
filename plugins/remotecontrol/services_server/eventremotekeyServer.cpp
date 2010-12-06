@@ -57,3 +57,10 @@ void EventRemoteKeyServer::stopRepeat() {
     m_timer.stop();
 }
 void EventRemoteKeyServer::execute() {}
+
+void EventRemoteKeyServer::nameUpdate() {
+	EventRemoteKey* base = service<EventRemoteKey>();
+	
+	base->setString(tr("Fernbedienungstaste %1 %2").arg(base->key()).arg(
+		(base->pressed()?tr("gedrückt"):tr("losgelassen"))));
+}

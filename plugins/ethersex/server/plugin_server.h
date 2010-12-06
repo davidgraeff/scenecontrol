@@ -36,6 +36,7 @@ public:
 	virtual QList<AbstractStateTracker*> stateTracker();
 	virtual AbstractPlugin* base() { return m_base; }
 	Controller* controller() { return m_Controller; }
+	virtual void clear(){}
 private:
         AbstractPlugin* m_base;
 	Controller* m_Controller;

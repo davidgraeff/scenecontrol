@@ -37,6 +37,7 @@ public:
     myPluginExecute();
     virtual ~myPluginExecute();
     virtual void refresh() ;
+	virtual void clear();
     virtual ExecuteWithBase* createExecuteService(const QString& id);
     virtual QList<AbstractStateTracker*> stateTracker();
     virtual AbstractPlugin* base() {
@@ -64,6 +65,7 @@ private Q_SLOTS:
     void deviceRemoved(const QString& uid);
     void keySlot(const QString &keycode, const QString &keyname, uint channel, int pressed);
     void keyEventDestroyed ( QObject * obj);
+	
 };
 
 #endif // myPLUGINSERVER_H

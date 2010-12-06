@@ -26,11 +26,14 @@
 #include <shared/abstractplugin.h>
 #include <statetracker/playliststatetracker.h>
 #include <shared/qjson/qobjecthelper.h>
+#include <QDir>
+#include <QApplication>
+#include <QDateTime>
 
 #define MPD_PORT 6600
 #define MPD_SERVER "192.168.1.2"
 
-MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0), m_terminate(false)
+MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0)
 {
     m_mediaStateTracker = new MediaStateTracker(this);
     m_volumestateTracker = new MusicVolumeStateTracker(this);
@@ -62,6 +65,7 @@ MediaController::~MediaController()
 
 void MediaController::slotconnected() {
     if (m_terminate) return;
+    needCurrentSong = StatusNoNeed;
     needstatus = StatusNeed;
     needPlaylists = StatusNeed;
 }
@@ -140,6 +144,9 @@ void MediaController::slotreadyRead()
             else if (needPlaylists==StatusFetching) {
                 needPlaylists=StatusNoNeed;
                 checkPlaylists();
+            } else if (needCurrentSong==StatusFetching) {
+                needCurrentSong=StatusNoNeed;
+				saveMediaInfo();
             }
             // Need
             if (needstatus==StatusNeed) {
@@ -148,53 +155,68 @@ void MediaController::slotreadyRead()
             } else if (needPlaylists==StatusNeed) {
                 m_mpdstatus->write("listplaylists\n");
                 needPlaylists = StatusFetching;
+            } else if (needCurrentSong==StatusNeed) {
+                m_mpdstatus->write("currentsong\n");
+                needCurrentSong = StatusFetching;
             } else {
                 m_mpdstatus->write("idle\n");
             }
             continue;
         }
 
-        if (args[1]=="state:" && args.size()==2) {
-            if (args[2]=="play") {
-                m_mediastate = MediaStateTracker::PlayState;
-                m_mediaStateTracker->setState(m_mediastate);
-                m_fakepos.start();
+        if (needCurrentSong == StatusFetching) {
+            if (args[0]=="file:" && args.size()==2) {
+                m_trackfile = QString::fromUtf8(args[1]);
+            } else if (args[0]=="Title:" && args.size()==2) {
+				m_tracktitle = QString::fromUtf8(args[1]);
+            } else if (args[0]=="Name:" && args.size()==2) {
+				m_trackname = QString::fromUtf8(args[1]);
             }
-            else if (args[1]=="pause") {
-                m_mediastate = MediaStateTracker::PauseState;
-                m_mediaStateTracker->setState(m_mediastate);
-                m_fakepos.stop();
+        } else if (needstatus == StatusFetching) {
+            if (args[0]=="state:" && args.size()==2) {
+                if (args[1]=="play") {
+                    m_mediastate = MediaStateTracker::PlayState;
+                    m_mediaStateTracker->setState(m_mediastate);
+                    m_fakepos.start();
+                }
+                else if (args[1]=="pause") {
+                    m_mediastate = MediaStateTracker::PauseState;
+                    m_mediaStateTracker->setState(m_mediastate);
+                    m_fakepos.stop();
+                }
+                else if (args[1]=="stopped") {
+                    m_mediastate = MediaStateTracker::StopState;
+                    m_mediaStateTracker->setState(m_mediastate);
+                    m_fakepos.stop();
+                }
+            } else if (args[0] == "volume:" && args.size()==2) {
+                m_volume = args[1].toInt();
+                m_volumestateTracker->setVolume(m_volume);
+                emit stateChanged(m_volumestateTracker);
+            } else if (args[0] == "time:" && args.size()==2) {
+                QList<QByteArray> l = args[1].split(':');
+                if (l.size()==1) l.append(0);
+                const int current = l[0].toInt();
+                const int total = l[1].toInt();
+                m_mediaStateTracker->setPosition(current);
+                m_mediaStateTracker->setTotal(total);
+                if (m_totaltime!=total || m_currenttime!=current) needsync = true;
+                m_currenttime = current;
+                m_totaltime = total;
+            } else if (args[0] == "song:" && args.size()==2) {
+                const int trackno = args[1].toInt();
+                if (m_totaltime!=trackno) needsync = true;
+                m_mediaStateTracker->setTrack(trackno);
             }
-            else if (args[1]=="stopped") {
-                m_mediastate = MediaStateTracker::StopState;
-                m_mediaStateTracker->setState(m_mediastate);
-                m_fakepos.stop();
+        } else if (needPlaylists == StatusFetching) {
+            if (args[0] == "playlist:" && args.size()==2 ) {
+                args.removeAt(0);
+                QByteArray filename;
+                foreach (QByteArray s, args) filename.append(s);
+                m_tempplaylists.append(QString::fromUtf8(filename));
+            } else if (args[0] == "Last-Modified:" && args.size()==2) {
+                m_tempplaylists.append(QString::fromAscii(args[1]));
             }
-        } else if (args[0] == "volume:" && args.size()==2) {
-            m_volume = args[1].toInt();
-            m_volumestateTracker->setVolume(m_volume);
-            emit stateChanged(m_volumestateTracker);
-        } else if (args[0] == "time:" && args.size()==2) {
-            QList<QByteArray> l = args[1].split(':');
-            if (l.size()==1) l.append(0);
-            const int current = l[0].toInt();
-            const int total = l[1].toInt();
-            m_mediaStateTracker->setPosition(current);
-            m_mediaStateTracker->setTotal(total);
-            if (m_totaltime!=total || m_currenttime!=current) needsync = true;
-            m_currenttime = current;
-            m_totaltime = total;
-        } else if (args[0] == "song:" && args.size()==2) {
-            const int trackno = args[1].toInt();
-            if (m_totaltime!=trackno) needsync = true;
-            m_mediaStateTracker->setTrack(trackno);
-        } else if (args[0] == "playlist:" && args.size()==2 && needPlaylists==StatusFetching) {
-            args.removeAt(0);
-            QByteArray filename;
-            foreach (QByteArray s, args) filename.append(s);
-            m_tempplaylists.append(QString::fromUtf8(filename));
-        } else if (args[0] == "Last-Modified:" && args.size()==2) {
-            m_tempplaylists.append(QString::fromAscii(args[1]));
         } else if (args[0] == "changed:" && args.size()==2) {
             if (args[1] == "stored_playlist")
                 needPlaylists = StatusNeed;
@@ -251,7 +273,7 @@ void MediaController::setPlaylist(const QString& name)
     m_currentplaylist = name;
     m_mediaStateTracker->setPlaylistid(name);
     emit stateChanged(m_mediaStateTracker);
-	addToCommandQueue("clear\n");
+    addToCommandQueue("clear\n");
     addToCommandQueue("load "+ name.toUtf8() + "\n");
 }
 
@@ -335,11 +357,6 @@ MediaStateTracker::EnumMediaState MediaController::state()
     return m_mediastate;
 }
 
-int MediaController::count()
-{
-    return m_playlists.count();
-}
-
 void MediaController::updatefakepos() {
     m_currenttime+=1000;
 }
@@ -385,5 +402,24 @@ void MediaController::checkPlaylists() {
     }
 
     m_tempplaylists.clear();
+}
+void MediaController::dumpMediaInfo() {
+    needCurrentSong = StatusNeed;
+    m_mpdstatus->write("noidle\n");
+}
+
+void MediaController::saveMediaInfo() {
+	QDir m_savedir = QDir(qApp->property("settingspath").value<QString>());
+	m_savedir = m_savedir.filePath ( QLatin1String("mediainfo") );
+	if ( !m_savedir.exists() && !m_savedir.mkpath ( m_savedir.absolutePath() ) )
+	{
+		qDebug() << "MPD: saveMediaInfo failed in" << m_savedir;
+		return;
+	}
+	
+	QFile namefile(m_savedir.absoluteFilePath ( QDateTime::currentDateTime().toString() ));
+	namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
+	namefile.write("File: "+m_trackfile.toUtf8()+"\nTitle: "+m_tracktitle.toUtf8()+"\nName: "+m_trackname.toUtf8());
+	namefile.close();
 }
 

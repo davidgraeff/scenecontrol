@@ -42,7 +42,6 @@ public:
      * Return current active playlist or an empty string if no valid playlist is set
      */
     QString currentplaylist();
-
     /**
      * Set active playlist. Resync object
      */
@@ -71,31 +70,49 @@ public:
     qint64 getTrackPosition();
     qint64 getTrackDuration();
 
+	// state
     MediaStateTracker::EnumMediaState state();
 
+	// volume
     void setVolume(int newvol, bool relative = false);
     int volume() const;
 
-    int count();
-    void checkPlaylists();
-
-    void addToCommandQueue(const QByteArray& cmd);
+    void dumpMediaInfo();
 private:
-    QList<QByteArray> m_commandqueue;
+	myPluginExecute* m_plugin;
+	bool m_terminate;
+	
+	// command queue
+	void addToCommandQueue(const QByteArray& cmd);
+	QList<QByteArray> m_commandqueue;
+	bool m_mpdchannelfree;
+	
+	// build playlist statetrackers
     QList< QString > m_tempplaylists;
-    myPluginExecute* m_plugin;
-    QList<PlaylistStateTracker*> m_playlists;
-    QString m_currentplaylist;
+	QString m_currentplaylist;
+	void checkPlaylists();
+	
+	// state trackers
     MediaStateTracker *m_mediaStateTracker;
     MusicVolumeStateTracker* m_volumestateTracker;
+	QList<PlaylistStateTracker*> m_playlists;
+	int indexOfPlaylist(const QString& name);
+	
+	// current media state
     MediaStateTracker::EnumMediaState m_mediastate;
     qint64 m_currenttime;
     qint64 m_totaltime;
     int m_volume;
     QTimer m_fakepos;
+	QString m_tracktitle;
+	QString m_trackfile;
+	QString m_trackname;
+	
+	// sockets
     QTcpSocket* m_mpdstatus;
 	QTcpSocket* m_mpdcmd;
-    bool m_terminate;
+	
+	// commands for status socket
     enum StatusEnum {
         StatusNoNeed,
         StatusNeed,
@@ -103,8 +120,10 @@ private:
     };
     StatusEnum needstatus;
     StatusEnum needPlaylists;
-    bool m_mpdchannelfree;
-    int indexOfPlaylist(const QString& name);
+	StatusEnum needCurrentSong;
+
+	// dump media info
+	void saveMediaInfo();
 private Q_SLOTS:
     void slotreadyRead ();
     void slotconnected();

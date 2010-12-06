@@ -107,8 +107,12 @@ ServiceController::ServiceController ()
 
 ServiceController::~ServiceController()
 {
-    qDeleteAll ( m_servicesList );
-    qDeleteAll ( m_plugins );
+	foreach ( ExecutePlugin* plugin, m_plugins )
+	{
+		plugin->clear();
+	}
+	qDeleteAll(m_servicesList);
+	qDeleteAll(m_plugins);
 }
 
 QList<AbstractStateTracker*> ServiceController::stateTracker()

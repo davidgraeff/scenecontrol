@@ -1,6 +1,6 @@
 project(RoomControlServer)
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 find_package(Qt4 REQUIRED)
 find_package(PAM REQUIRED)
 #find_package(QJSON REQUIRED)
