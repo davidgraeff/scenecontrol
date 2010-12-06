@@ -28,3 +28,9 @@ void ActorCurtainServer::execute()
 }
 
 ActorCurtainServer::ActorCurtainServer(ActorCurtain* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+
+void ActorCurtainServer::nameUpdate() {
+    ActorCurtain* base = service<ActorCurtain>();
+
+    base->setString(tr("Rollo auf %1 setzen").arg(base->value()));
+}

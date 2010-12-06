@@ -30,3 +30,8 @@ void ActorModeServer::execute() {
 	m_plugin->setMode(m_base->mode());
 }
 void ActorModeServer::dataUpdate() {}
+void ActorModeServer::nameUpdate() {
+	ActorMode* base = service<ActorMode>();
+	
+	base->setString(tr("Mode setzen auf %1").arg(base->mode()));
+}

@@ -36,3 +36,9 @@ bool ActorEventServer::checkcondition() {
     return true;
 }
 void ActorEventServer::dataUpdate() {}
+
+void ActorEventServer::nameUpdate() {
+	ActorEvent* base = service<ActorEvent>();
+	
+	base->setString(tr("Ereignis %1 auslösen\n%2").arg(base->title()).arg(base->filename()));
+}

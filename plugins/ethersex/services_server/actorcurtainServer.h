@@ -25,14 +25,17 @@ class ActorCurtain;
 class myPluginExecute;
 class ActorCurtainServer : public ExecuteService
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  ActorCurtainServer(ActorCurtain* base, myPluginExecute* plugin, QObject* parent = 0);
-  virtual bool checkcondition(){return true;}
-  virtual void dataUpdate(){}
-  virtual void execute();
+    ActorCurtainServer(ActorCurtain* base, myPluginExecute* plugin, QObject* parent = 0);
+    virtual bool checkcondition() {
+        return true;
+    }
+    virtual void dataUpdate() {}
+    virtual void execute();
+    virtual void nameUpdate();
 private:
-  myPluginExecute* m_plugin;
+    myPluginExecute* m_plugin;
 };
 
 #endif // ActorCurtainServer_h

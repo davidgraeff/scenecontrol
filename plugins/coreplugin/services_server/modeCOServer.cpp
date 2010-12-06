@@ -29,3 +29,9 @@ bool ConditionModeServer::checkcondition() {
 void ConditionModeServer::execute() {
 }
 void ConditionModeServer::dataUpdate() {}
+
+void ConditionModeServer::nameUpdate() {
+	ConditionMode* base = service<ConditionMode>();
+	
+	base->setString(tr("Modus ist %1").arg(base->mode()));
+}

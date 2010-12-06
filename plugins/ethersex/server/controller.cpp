@@ -306,3 +306,8 @@ int Controller::countChannels()
 {
     return m_channelvalues.size();
 }
+
+QString Controller::getChannelName(uint channel) {
+	if (channel>=(uint)m_channelnames.size()) return QString();
+	return m_channelnames[channel]->value();
+}

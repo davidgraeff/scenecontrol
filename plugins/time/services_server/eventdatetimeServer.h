@@ -32,6 +32,7 @@ public:
     virtual bool checkcondition();
     virtual void dataUpdate();
     virtual void execute();
+    virtual void nameUpdate();
   private:
     QTimer m_timer;
   private Q_SLOTS:

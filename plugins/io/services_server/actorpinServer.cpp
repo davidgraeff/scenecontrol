@@ -32,3 +32,16 @@ void ActorPinServer::execute()
 }
 
 ActorPinServer::ActorPinServer(ActorPin* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+
+void ActorPinServer::nameUpdate() {
+	ActorPin* base = service<ActorPin>();
+	
+	QString pinname = m_plugin->controller()->getPinName(base->pin());
+	
+	if (base->value()==ActorPin::PinToggle)
+		base->setString(tr("Umschalten von Pin %1").arg(pinname));
+	else if (base->value()==ActorPin::PinOn)
+		base->setString(tr("Ein von Pin %1").arg(pinname));
+	else if (base->value()==ActorPin::PinOff)
+		base->setString(tr("Aus von Pin %1").arg(pinname));
+}

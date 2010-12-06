@@ -53,3 +53,8 @@ void EventDateTimeServer::timeout()
 
 bool EventDateTimeServer::checkcondition() {return true;}
 void EventDateTimeServer::execute() {}
+
+void EventDateTimeServer::nameUpdate() {
+	EventDateTime* base = service<EventDateTime>();
+	base->setString(tr("Zeitereignis am %1").arg(base->datetime()));
+}

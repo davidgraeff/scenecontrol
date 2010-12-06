@@ -37,3 +37,18 @@ void ActorLedServer::execute()
 
 
 ActorLedServer::ActorLedServer(ActorLed* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+
+void ActorLedServer::nameUpdate() {
+	ActorLed* base = service<ActorLed>();
+	
+	QString channelname = m_plugin->controller()->getChannelName(base->channel());
+	
+	if (base->assignment()==ActorLed::ValueAbsolute)
+		base->setString(tr("Lichtkanal %1\nWert: %2").arg(channelname).arg(base->value()));
+	else if (base->assignment()==ActorLed::ValueRelative)
+		base->setString(tr("Lichtkanal %1\nRelative Änderung: %2").arg(channelname).arg(base->value()));
+	else if (base->assignment()==ActorLed::ValueMultiplikator)
+		base->setString(tr("Lichtkanal %1\nMultiplikator: %2").arg(channelname).arg(base->value()));
+	else if (base->assignment()==ActorLed::ValueInverse)
+		base->setString(tr("Lichtkanal %1\nWert umkehren").arg(channelname));
+}

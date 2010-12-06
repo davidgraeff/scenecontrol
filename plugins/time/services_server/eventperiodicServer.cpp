@@ -78,3 +78,16 @@ void EventPeriodicServer::dataUpdate() {
     timeout(true);
 }
 void EventPeriodicServer::execute() {}
+
+void EventPeriodicServer::nameUpdate() {
+    EventPeriodic* base = service<EventPeriodic>();
+    QString days;
+    for (int i=0;i<7;++i) {
+        if (base->days() & (1<<i)) {
+            days.append(QDate::shortDayName(i+1));
+            days.append(QLatin1String(","));
+        }
+    }
+    days.chop(1);
+    base->setString(tr("Periodisch um %1\nan: %2").arg(base->time()).arg(days));
+}
