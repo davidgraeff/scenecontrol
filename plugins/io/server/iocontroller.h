@@ -42,7 +42,6 @@ public:
     void togglePin ( uint pin );
     bool getPin(unsigned int pin) const;
     int countPins();
-    void setLedState(bool state);
     QList<AbstractStateTracker*> getStateTracker();
 private:
 	QString m_pluginname;

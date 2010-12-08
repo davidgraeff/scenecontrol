@@ -164,10 +164,6 @@ QList< AbstractStateTracker* > IOController::getStateTracker() {
 int IOController::countPins() {
     return m_values.size();
 }
-void IOController::setLedState(bool state) {
-    const char t1[] = {(state)?0xcf:0xdf};
-    m_serial->write(t1, sizeof(t1));
-}
 
 QString IOController::getPinName(uint pin) {
     if (pin>=(uint)m_names.size()) return QString();
