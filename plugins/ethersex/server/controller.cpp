@@ -73,7 +73,7 @@ void Controller::readyRead_curtain()
         udpcurtain_answer* ans = ( udpcurtain_answer* ) buffer.data();
         m_curtainStateTracker->setCurtain(ans->position);
         m_curtainStateTracker->setCurtainMax(ans->max);
-	emit stateChanged(m_curtainStateTracker);
+        emit stateChanged(m_curtainStateTracker);
         buffer = buffer.mid ( sizeof(udpcurtain_answer) );
     }
 }
@@ -145,7 +145,8 @@ void Controller::readyRead_lights()
     if ( ! m_udpSocket_lights->bytesAvailable() ) return;
     QByteArray buffer = m_udpSocket_lights->readAll();
     QSettings settings;
-    while ( buffer.size() >1 )
+	settings.beginGroup ( QLatin1String("channelnames") );
+	while ( buffer.size() >1 )
     {
         if (!buffer.startsWith("stella"))
         {
@@ -153,7 +154,6 @@ void Controller::readyRead_lights()
             break;
         }
 
-        settings.beginGroup ( QLatin1String("channelnames") );
         udpstella_answer* ans = ( udpstella_answer* ) buffer.data();
         for ( int i=0;i<ans->channels;++i )
         {
@@ -166,19 +166,20 @@ void Controller::readyRead_lights()
                 m_channelvalues.append(cv);
                 cv->setChannel(i);
                 cv->setValue(newvalue);
-		emit stateChanged(cv);
+                emit stateChanged(cv);
                 ChannelNameStateTracker* cn = new ChannelNameStateTracker();
                 m_channelnames.append(cn);
                 cn->setChannel(i);
                 cn->setValue(name);
-		emit stateChanged(cn);
+                emit stateChanged(cn);
             }
             else if ( m_channelvalues[i]->value() != newvalue )
             {
                 m_channelvalues[i]->setValue(newvalue);
-		emit stateChanged(m_channelvalues[i]);
+                emit stateChanged(m_channelvalues[i]);
             }
         }
+        emit dataLoadingComplete();
         buffer = buffer.mid ( ans->channels+7 );
     }
 }
@@ -308,6 +309,6 @@ int Controller::countChannels()
 }
 
 QString Controller::getChannelName(uint channel) {
-	if (channel>=(uint)m_channelnames.size()) return QString();
-	return m_channelnames[channel]->value();
+    if (channel>=(uint)m_channelnames.size()) return QString();
+    return m_channelnames[channel]->value();
 }

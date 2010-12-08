@@ -20,6 +20,7 @@
 #include "eventremotekeyServer.h"
 #include "services/eventremotekey.h"
 #include "server/plugin_server.h"
+#include <QDebug>
 
 EventRemoteKeyServer::EventRemoteKeyServer(EventRemoteKey* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {
     connect(&m_timer,SIGNAL(timeout()),SLOT(retrigger()));
@@ -33,8 +34,10 @@ void EventRemoteKeyServer::keySlot(QString,QString keyname,uint channel,int pres
     if (base->pressed() != pressed) {
         return;
     }
+    
     if (base->key() != keyname) return;
     emit trigger();
+	
     if (base->repeat()) {
         m_dorepeat=true;
         m_plugin->setRepeatingEvent(this);
@@ -59,8 +62,8 @@ void EventRemoteKeyServer::stopRepeat() {
 void EventRemoteKeyServer::execute() {}
 
 void EventRemoteKeyServer::nameUpdate() {
-	EventRemoteKey* base = service<EventRemoteKey>();
-	
-	base->setString(tr("Fernbedienungstaste %1 %2").arg(base->key()).arg(
-		(base->pressed()?tr("gedrückt"):tr("losgelassen"))));
+    EventRemoteKey* base = service<EventRemoteKey>();
+
+    base->setString(tr("Taste %1 %2").arg(base->key()).arg(
+                        (base->pressed()?tr("gedrückt"):tr("losgelassen"))));
 }

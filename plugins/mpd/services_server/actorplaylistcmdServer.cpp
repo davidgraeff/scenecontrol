@@ -54,4 +54,8 @@ void ActorPlaylistCmdServer::execute()
         mc->dumpMediaInfo();
     }
 }
-
+void ActorPlaylistCmdServer::nameUpdate() {
+	ActorPlaylistCmd* base = service<ActorPlaylistCmd>();
+	
+	base->setString(tr("MPD Kommando: %1").arg(base->translate(0,base->cmd())));
+}

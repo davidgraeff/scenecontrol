@@ -23,6 +23,7 @@ myPluginExecute::myPluginExecute() : ExecutePlugin() {
   m_base = new myPlugin();
   m_Controller = new Controller();
   connect(m_Controller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
+  connect(m_Controller,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
 }
 
 myPluginExecute::~myPluginExecute() {
@@ -53,4 +54,7 @@ ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 
 QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
     return m_Controller->getStateTracker();
+}
+void myPluginExecute::dataLoadingComplete() {
+    emit pluginLoadingComplete(this);
 }

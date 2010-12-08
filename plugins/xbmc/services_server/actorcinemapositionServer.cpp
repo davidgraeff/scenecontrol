@@ -26,3 +26,8 @@ void ActorCinemaPositionServer::execute()
     m_plugin->setVolume(service<ActorCinemaPosition>()->value(),service<ActorCinemaPosition>()->relative());
 }
 ActorCinemaPositionServer::ActorCinemaPositionServer(ActorCinemaPosition* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+void ActorCinemaPositionServer::nameUpdate() {
+	ActorCinemaPosition* base = service<ActorCinemaPosition>();
+	
+	base->setString(tr("XBMC Position: %1").arg(base->value()));
+}

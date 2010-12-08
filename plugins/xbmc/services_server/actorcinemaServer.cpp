@@ -25,4 +25,11 @@ void ActorCinemaServer::execute()
 {
     m_plugin->setCommand(service<ActorCinema>()->cmd());
 }
+
 ActorCinemaServer::ActorCinemaServer(ActorCinema* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+
+void ActorCinemaServer::nameUpdate() {
+    ActorCinema* base = service<ActorCinema>();
+
+    base->setString(tr("XBMC Kommando: %1").arg(base->translate(0,base->cmd())));
+}

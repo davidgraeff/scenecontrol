@@ -45,5 +45,11 @@ Q_SIGNALS:
 	 * will get an iExecute flag and be freed by the server after execution.
 	 */
 	void executeService(AbstractServiceProvider*);
+	
+	/**
+	 * Plugin loading finished. This will make the server update all names of this plugins services
+	 * and redistribute them to the clients (without saving to disk).
+	 */
+	void pluginLoadingComplete(ExecutePlugin*);
 };
 Q_DECLARE_INTERFACE(ExecutePlugin, "com.roomcontrol.ServerPlugin/1.0")

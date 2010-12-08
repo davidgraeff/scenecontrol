@@ -146,7 +146,7 @@ void MediaController::slotreadyRead()
                 checkPlaylists();
             } else if (needCurrentSong==StatusFetching) {
                 needCurrentSong=StatusNoNeed;
-				saveMediaInfo();
+                saveMediaInfo();
             }
             // Need
             if (needstatus==StatusNeed) {
@@ -168,9 +168,9 @@ void MediaController::slotreadyRead()
             if (args[0]=="file:" && args.size()==2) {
                 m_trackfile = QString::fromUtf8(args[1]);
             } else if (args[0]=="Title:" && args.size()==2) {
-				m_tracktitle = QString::fromUtf8(args[1]);
+                m_tracktitle = QString::fromUtf8(args[1]);
             } else if (args[0]=="Name:" && args.size()==2) {
-				m_trackname = QString::fromUtf8(args[1]);
+                m_trackname = QString::fromUtf8(args[1]);
             }
         } else if (needstatus == StatusFetching) {
             if (args[0]=="state:" && args.size()==2) {
@@ -245,7 +245,10 @@ QList<AbstractStateTracker*> MediaController::getStateTracker()
 void MediaController::nextPlaylist()
 {
     int i = indexOfPlaylist(m_currentplaylist);
-    if (i == -1) return;
+    if (i == -1) {
+        if (m_playlists.size()) i=0;
+        else return;
+    }
     i += 1;
     if (i>=m_playlists.size()) i = 0;
     setPlaylistByIndex(i);
@@ -254,7 +257,10 @@ void MediaController::nextPlaylist()
 void MediaController::previousPlaylist()
 {
     int i = indexOfPlaylist(m_currentplaylist);
-    if (i == -1) return;
+    if (i == -1) {
+        if (m_playlists.size()) i=0;
+        else return;
+    }
     i -= 1;
     if (i<0) i = m_playlists.size()-1;
     setPlaylistByIndex(i);
@@ -358,7 +364,7 @@ MediaStateTracker::EnumMediaState MediaController::state()
 }
 
 void MediaController::updatefakepos() {
-    m_currenttime+=1000;
+    m_currenttime+=1;
 }
 
 int MediaController::indexOfPlaylist(const QString& name) {
@@ -409,17 +415,17 @@ void MediaController::dumpMediaInfo() {
 }
 
 void MediaController::saveMediaInfo() {
-	QDir m_savedir = QDir(qApp->property("settingspath").value<QString>());
-	m_savedir = m_savedir.filePath ( QLatin1String("mediainfo") );
-	if ( !m_savedir.exists() && !m_savedir.mkpath ( m_savedir.absolutePath() ) )
-	{
-		qDebug() << "MPD: saveMediaInfo failed in" << m_savedir;
-		return;
-	}
-	
-	QFile namefile(m_savedir.absoluteFilePath ( QDateTime::currentDateTime().toString() ));
-	namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
-	namefile.write("File: "+m_trackfile.toUtf8()+"\nTitle: "+m_tracktitle.toUtf8()+"\nName: "+m_trackname.toUtf8());
-	namefile.close();
+    QDir m_savedir = QDir(qApp->property("settingspath").value<QString>());
+    m_savedir = m_savedir.filePath ( QLatin1String("mediainfo") );
+    if ( !m_savedir.exists() && !m_savedir.mkpath ( m_savedir.absolutePath() ) )
+    {
+        qDebug() << "MPD: saveMediaInfo failed in" << m_savedir;
+        return;
+    }
+
+    QFile namefile(m_savedir.absoluteFilePath ( QDateTime::currentDateTime().toString() ));
+    namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
+    namefile.write("File: "+m_trackfile.toUtf8()+"\nTitle: "+m_tracktitle.toUtf8()+"\nName: "+m_trackname.toUtf8());
+    namefile.close();
 }
 

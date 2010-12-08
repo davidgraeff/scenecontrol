@@ -31,6 +31,7 @@ public:
     virtual void execute();
     virtual bool checkcondition();
     virtual void dataUpdate();
+    virtual void nameUpdate();
 private:
 };
 #endif // ServiceWOLExecute_H

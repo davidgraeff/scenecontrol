@@ -37,11 +37,12 @@ void ActorPinServer::nameUpdate() {
 	ActorPin* base = service<ActorPin>();
 	
 	QString pinname = m_plugin->controller()->getPinName(base->pin());
+	if (pinname.isEmpty()) pinname = QString::number(base->pin());
 	
 	if (base->value()==ActorPin::PinToggle)
-		base->setString(tr("Umschalten von Pin %1").arg(pinname));
+		base->setString(tr("Pin %1\nUmschalten").arg(pinname));
 	else if (base->value()==ActorPin::PinOn)
-		base->setString(tr("Ein von Pin %1").arg(pinname));
+		base->setString(tr("Pin %1\nEinschalten").arg(pinname));
 	else if (base->value()==ActorPin::PinOff)
-		base->setString(tr("Aus von Pin %1").arg(pinname));
+		base->setString(tr("Pin %1\nAusschalten").arg(pinname));
 }

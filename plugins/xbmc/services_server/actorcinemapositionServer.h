@@ -25,14 +25,17 @@ class ActorCinemaPosition;
 class myPluginExecute;
 class ActorCinemaPositionServer : public ExecuteService
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  ActorCinemaPositionServer(ActorCinemaPosition* base, myPluginExecute* plugin, QObject* parent = 0);
-  virtual bool checkcondition(){return true;}
-  virtual void dataUpdate(){}
-  virtual void execute();
+    ActorCinemaPositionServer(ActorCinemaPosition* base, myPluginExecute* plugin, QObject* parent = 0);
+    virtual bool checkcondition() {
+        return true;
+    }
+    virtual void dataUpdate() {}
+    virtual void execute();
+    virtual void nameUpdate();
 private:
-  myPluginExecute* m_plugin;
+    myPluginExecute* m_plugin;
 };
 
 #endif // ActorCinemaPositionServer_h

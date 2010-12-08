@@ -31,3 +31,8 @@ void ActorProjectorServer::execute() {
     ActorProjector* base = service<ActorProjector>();
     m_plugin->setCommand(base->cmd());
 }
+void ActorProjectorServer::nameUpdate() {
+	ActorProjector* base = service<ActorProjector>();
+	
+	base->setString(tr("Projektor: %1").arg(base->translate(0,base->cmd())));
+}

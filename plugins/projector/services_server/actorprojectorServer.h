@@ -31,6 +31,7 @@ public:
     virtual bool checkcondition();
     virtual void dataUpdate();
     virtual void execute();
+    virtual void nameUpdate();
 private:
     myPluginExecute* m_plugin;
 };

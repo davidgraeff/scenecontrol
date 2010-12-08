@@ -17,8 +17,9 @@ Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
 myPluginExecute::myPluginExecute() : ExecutePlugin() {
   m_base = new myPlugin();
-  m_IOController = new IOController();
+  m_IOController = new IOController(this);
   connect(m_IOController,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
+  connect(m_IOController,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
 }
 
 myPluginExecute::~myPluginExecute() {
@@ -45,4 +46,7 @@ ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 
 QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
     return m_IOController->getStateTracker();
+}
+void myPluginExecute::dataLoadingComplete() {
+    emit pluginLoadingComplete(this);
 }

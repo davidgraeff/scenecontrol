@@ -22,7 +22,9 @@
 
 #include <QObject>
 #include <shared/server/qextserialport.h>
+#include <QTimer>
 
+class myPluginExecute;
 class AbstractStateTracker;
 class PinNameStateTracker;
 class PinValueStateTracker;
@@ -32,7 +34,7 @@ class IOController : public QObject
 {
     Q_OBJECT
 public:
-    IOController();
+    IOController(myPluginExecute* plugin);
     ~IOController();
     QString getPinName ( uint pin );
     void setPin ( uint pin, bool value );
@@ -43,16 +45,27 @@ public:
     void setLedState(bool state);
     QList<AbstractStateTracker*> getStateTracker();
 private:
+	QString m_pluginname;
     QList<PinValueStateTracker*> m_values;
     QList<PinNameStateTracker*> m_names;
     QByteArray m_buffer;
-    void getPins();
+	void determinePins(const QByteArray& data);
     int m_pins;
-    QextSerialPort m_serial;
-public slots:
+    // rs232 special
+    QextSerialPort* m_serial;
+    QTimer m_panicTimer;
+    int m_bufferpos;
+    enum readStateEnum {
+        ReadOK,
+        ReadEnd
+    };
+    readStateEnum m_readState;
+private slots:
     void readyRead();
+    void panicTimeout();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
+    void dataLoadingComplete();
 };
 
 #endif // IOCONTROLLER_H

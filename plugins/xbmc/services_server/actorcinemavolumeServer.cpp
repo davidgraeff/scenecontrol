@@ -28,3 +28,8 @@ void ActorCinemaVolumeServer::execute()
 
 ActorCinemaVolumeServer::ActorCinemaVolumeServer(ActorCinemaVolume* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 
+void ActorCinemaVolumeServer::nameUpdate() {
+	ActorCinemaVolume* base = service<ActorCinemaVolume>();
+	
+	base->setString(tr("XBMC Lautstärke: %1").arg(base->volume()));
+}

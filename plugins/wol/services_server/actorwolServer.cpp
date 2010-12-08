@@ -47,3 +47,8 @@ bool ServiceWOLExecute::checkcondition() {
     return true;
 }
 void ServiceWOLExecute::dataUpdate() {}
+void ServiceWOLExecute::nameUpdate() {
+	ActorWOL* base = service<ActorWOL>();
+	
+	base->setString(tr("WOL: %1").arg(base->mac()));
+}

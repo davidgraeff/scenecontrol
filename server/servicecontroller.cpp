@@ -51,6 +51,7 @@ ServiceController::ServiceController ()
 
         connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
         connect(plugin,SIGNAL(executeService(AbstractServiceProvider*)),SLOT(pluginexecuteService(AbstractServiceProvider*)));
+		connect(plugin,SIGNAL(pluginLoadingComplete(ExecutePlugin*)),SLOT(pluginLoadingComplete(ExecutePlugin*)));
         m_plugins.append ( plugin );
         QStringList provides = plugin->base()->registerServices();
         foreach ( QString provide, provides )
@@ -107,12 +108,12 @@ ServiceController::ServiceController ()
 
 ServiceController::~ServiceController()
 {
-	foreach ( ExecutePlugin* plugin, m_plugins )
-	{
-		plugin->clear();
-	}
-	qDeleteAll(m_servicesList);
-	qDeleteAll(m_plugins);
+    foreach ( ExecutePlugin* plugin, m_plugins )
+    {
+        plugin->clear();
+    }
+    qDeleteAll(m_servicesList);
+    qDeleteAll(m_plugins);
 }
 
 QList<AbstractStateTracker*> ServiceController::stateTracker()
@@ -224,11 +225,13 @@ void ServiceController::updateService(ExecuteWithBase* service, bool newid, bool
     }
 
     ExecuteService* exservice = dynamic_cast<ExecuteService*>(service);
-    if (exservice) {
+    if (exservice && !loading) {
         removeFromExecuteProfiles ( exservice );
-        exservice->dataUpdate();
         addToExecuteProfiles ( exservice );
-		exservice->nameUpdate();
+    }
+    if (exservice) {
+        exservice->dataUpdate();
+        exservice->nameUpdate();
     }
     if (!loading) saveToDisk ( service );
 }
@@ -355,11 +358,13 @@ void ServiceController::stopProfile(const QString& id) {
     if (!p) return;
     p->stop();
 }
+
 void ServiceController::pluginexecuteService(AbstractServiceProvider* service) {
     Q_ASSERT(service);
     service->setProperty("iexecute",1);
     generate(QJson::QObjectHelper::qobject2qvariant(service));
 }
+
 void ServiceController::executeservice(ExecuteService* service) {
     if (service->base()->type() == ActorSystem::staticMetaObject.className()) {
 
@@ -391,4 +396,15 @@ void ServiceController::executeservice(ExecuteService* service) {
     }
     else
         service->execute();
+}
+
+void ServiceController::pluginLoadingComplete(ExecutePlugin* plugin) {
+	for (int i=0;i<m_servicesList.size();++i) {
+		if (m_plugin_provider.value(QString::fromAscii(m_servicesList[i]->base()->type())) != plugin) continue;
+		ExecuteService* exservice = dynamic_cast<ExecuteService*>(m_servicesList[i]);
+		if (exservice) {
+			exservice->nameUpdate();
+			emit serviceSync ( exservice->base() );
+		}
+	}
 }

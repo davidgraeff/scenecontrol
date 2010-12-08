@@ -25,8 +25,8 @@ class ConditionMode : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(QString mode READ mode WRITE setMode);
-    Q_CLASSINFO("mode_statetracker_id", "ModeStateTracker")
-    Q_CLASSINFO("mode_statetracker_property", "mode")
+	Q_CLASSINFO("mode_statetracker_id", "RemoteControlKeyStateTracker")
+	Q_CLASSINFO("mode_statetracker_property", "key")
 public:
 	ConditionMode(QObject* parent=0);
 	virtual QString service_name(){return tr("Modusbedingung");}

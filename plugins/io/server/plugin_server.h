@@ -46,6 +46,8 @@ public:
 private:
     AbstractPlugin* m_base;
     IOController* m_IOController;
+	private Q_SLOTS:
+		void dataLoadingComplete();
 };
 
 #endif // myPLUGINSERVER_H

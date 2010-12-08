@@ -216,7 +216,8 @@ void myPluginExecute::keyEventDestroyed(QObject* obj) {
 	if (!event) return;
     EventRemoteKey* base = (EventRemoteKey*)event->base();
     Q_ASSERT(base);
-    QMap<QString, QList<EventRemoteKeyServer*> >::iterator it = m_keyevents.find(base->key());
+	qDebug()<<__FUNCTION__<<base;
+	QMap<QString, QList<EventRemoteKeyServer*> >::iterator it = m_keyevents.find(base->key());
     it.value().removeAll(event);
     if (it.value().isEmpty())
       m_keyevents.remove(base->key());

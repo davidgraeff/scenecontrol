@@ -30,6 +30,7 @@ public:
   virtual bool checkcondition(){return true;}
   virtual void dataUpdate(){}
   virtual void execute();
+  
 private:
   myPluginExecute* m_plugin;
 };

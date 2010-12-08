@@ -32,8 +32,8 @@ class ActorCinemaVolume : public AbstractServiceProvider
     Q_PROPERTY(bool relative READ relative WRITE setRelative);
 public:
     ActorCinemaVolume(QObject* parent = 0);
-	virtual QString service_name(){return tr("Abspiellautstärke Cinema setzen");}
-	virtual QString service_desc(){return tr("Setzt die Abspiellautstärke der aktuellen Vorführung");}
+	virtual QString service_name(){return tr("Abspiellautstärke Xmbc setzen");}
+	virtual QString service_desc(){return tr("Setzt die Abspiellautstärke von Xmbc");}
     virtual QString translate(int propindex, int enumindex = -1) {
         Q_UNUSED(enumindex);
         switch (propindex) {

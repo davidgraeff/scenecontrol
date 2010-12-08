@@ -24,7 +24,7 @@
 
 ActorPlaylistPositionServer::ActorPlaylistPositionServer(ActorPlaylistPosition* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 void ActorPlaylistPositionServer::execute() {
-  ActorPlaylistPosition* base = service<ActorPlaylistPosition>();
+    ActorPlaylistPosition* base = service<ActorPlaylistPosition>();
     m_plugin->mediacontroller()->setTrackPosition(base->value(), base->relative());
 }
 

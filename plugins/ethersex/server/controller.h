@@ -119,6 +119,7 @@ private Q_SLOTS:
     void reconnect_curtain();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
+	void dataLoadingComplete();
 };
 
 #endif // LEDCONTROLLER_H

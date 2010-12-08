@@ -65,6 +65,7 @@ public Q_SLOTS:
     void runProfile(const QString& id);
     void stopProfile(const QString& id) ;
 	void pluginexecuteService(AbstractServiceProvider*);
+	void pluginLoadingComplete(ExecutePlugin*);
     void executeservice(ExecuteService* service);
 Q_SIGNALS:
     void systemStarted();

@@ -29,3 +29,11 @@ bool ActorCollectionServer::checkcondition() {
 void ActorCollectionServer::execute() {
 }
 void ActorCollectionServer::dataUpdate() {}
+void ActorCollectionServer::nameUpdate() {
+	ActorCollection* base = service<ActorCollection>();
+	
+	if (base->action()==ActorCollection::StartProfile)
+		base->setString(tr("Starte Profil %1").arg(base->profileid()));
+	else if (base->action()==ActorCollection::CancelProfile)
+		base->setString(tr("Beende Profil %1").arg(base->profileid()));
+}
