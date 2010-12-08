@@ -29,7 +29,7 @@
 #include <shared/abstractplugin.h>
 
 #define DEVICE "/dev/ttyUSB1"
-Controller::Controller(myPluginExecute* plugin) : m_pluginname(plugin->base()->name())
+Controller::Controller(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_channels(0), m_bufferpos(0), m_readState(ReadOK)
 {
     m_curtainStateTracker = new CurtainStateTracker();
     QSettings settings;
@@ -53,6 +53,7 @@ Controller::Controller(myPluginExecute* plugin) : m_pluginname(plugin->base()->n
     // panic counter
     m_panicTimer.setInterval(60000);
     connect(&m_panicTimer,SIGNAL(timeout()),SLOT(panicTimeout()));
+	m_panicTimer.start();
 }
 
 Controller::~Controller()
@@ -96,8 +97,8 @@ void Controller::readyRead()
 
 void Controller::determineChannels(const QByteArray& data)
 {
-    if (data.isEmpty() || data.size() != (int)m_buffer[0]+3) {
-        qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)m_buffer[0]+3):0)<<data.size();
+	if (data.isEmpty() || data.size() != (int)data[2]+3) {
+		qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[2]+3):0)<<data.size();
         return;
     }
     QSettings settings;
@@ -109,10 +110,10 @@ void Controller::determineChannels(const QByteArray& data)
     m_values.clear();
     m_names.clear();
     // set new
-	m_curtainStateTracker->setCurtain((uint)m_buffer[0]);
-	m_curtainStateTracker->setCurtainMax((uint)m_buffer[1]);
+	m_curtainStateTracker->setCurtain((uint)data[0]);
+	m_curtainStateTracker->setCurtainMax((uint)data[1]);
 	emit stateChanged(m_curtainStateTracker);
-    m_channels = (int)m_buffer[2];
+	m_channels = (int)data[2];
     for ( int i=0;i<m_channels;++i )
     {
         const QString name = settings.value ( QLatin1String("channel")+QString::number( i ),
@@ -120,7 +121,7 @@ void Controller::determineChannels(const QByteArray& data)
         ChannelValueStateTracker* cv = new ChannelValueStateTracker();
         m_values.append(cv);
         cv->setChannel(i);
-		cv->setValue(m_buffer[i+3]);
+		cv->setValue(data[i+3]);
         emit stateChanged(cv);
         ChannelNameStateTracker* cn = new ChannelNameStateTracker();
         m_names.append(cn);
@@ -245,4 +246,16 @@ int Controller::countChannels()
 QString Controller::getChannelName(uint channel) {
     if (channel>=(uint)m_names.size()) return QString();
     return m_names[channel]->value();
+}
+
+void Controller::panicTimeout() {
+	const char t1[] = {0x00};
+	if (!m_serial->isOpen() || m_serial->write(t1, sizeof(t1)) == -1) {
+		qWarning()<< "IO: Failed to reset panic counter. Try reconnection";
+		m_serial->close();
+		const char t1[] = {0xef};
+		if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1,  sizeof(t1))) {
+			qWarning() << "IO: rs232 init fehler";
+		}
+	}
 }

@@ -50,6 +50,7 @@ IOController::IOController(myPluginExecute* plugin) : m_pluginname(plugin->base(
     // panic counter
     m_panicTimer.setInterval(60000);
     connect(&m_panicTimer,SIGNAL(timeout()),SLOT(panicTimeout()));
+	m_panicTimer.start();
 }
 
 IOController::~IOController() {
@@ -89,8 +90,8 @@ void IOController::readyRead() {
 }
 
 void IOController::determinePins(const QByteArray& data) {
-    if (data.isEmpty() || data.size() != (int)m_buffer[0]+1) {
-		qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)m_buffer[0]+1):0)<<data.size();
+	if (data.isEmpty() || data.size() != (int)data[0]+1) {
+		qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[0]+1):0)<<data.size();
         return;
     }
     QSettings settings;
@@ -102,7 +103,7 @@ void IOController::determinePins(const QByteArray& data) {
     m_values.clear();
     m_names.clear();
     // set new
-    m_pins = (int)m_buffer[0];
+	m_pins = (int)data[0];
     for ( int i=0;i<m_pins;++i )
     {
         const QString name = settings.value ( QLatin1String("pin")+QString::number( i ),
@@ -110,7 +111,7 @@ void IOController::determinePins(const QByteArray& data) {
         PinValueStateTracker* cv = new PinValueStateTracker();
         m_values.append(cv);
         cv->setPin(i);
-		cv->setValue(m_buffer[i+1]);
+		cv->setValue(data[i+1]);
         emit stateChanged(cv);
         PinNameStateTracker* cn = new PinNameStateTracker();
         m_names.append(cn);
@@ -174,7 +175,7 @@ QString IOController::getPinName(uint pin) {
 }
 
 void IOController::panicTimeout() {
-    const char t1[] = {0xbf};
+    const char t1[] = {0x00};
     if (!m_serial->isOpen() || m_serial->write(t1, sizeof(t1)) == -1) {
         qWarning()<< "IO: Failed to reset panic counter. Try reconnection";
         m_serial->close();
