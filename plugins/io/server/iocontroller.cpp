@@ -79,7 +79,7 @@ void IOController::readyRead() {
             if (m_buffer.size()<=i+1) break;
             if (m_buffer[i] == 'E' && m_buffer[i+1] == 'N' && m_buffer[i+2] == 'D') {
                 m_readState = ReadOK;
-                determinePins(m_buffer.mid(0,i-1));
+                determinePins(m_buffer.mid(0,i));
                 m_buffer.remove(0,i+3);
                 m_bufferpos = 0;
                 break;
@@ -89,7 +89,6 @@ void IOController::readyRead() {
 }
 
 void IOController::determinePins(const QByteArray& data) {
-	qDebug() << __FUNCTION__;
     if (data.isEmpty() || data.size() != (int)m_buffer[0]+1) {
 		qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)m_buffer[0]+1):0)<<data.size();
         return;
@@ -111,7 +110,7 @@ void IOController::determinePins(const QByteArray& data) {
         PinValueStateTracker* cv = new PinValueStateTracker();
         m_values.append(cv);
         cv->setPin(i);
-        cv->setValue(0);
+		cv->setValue(m_buffer[i+1]);
         emit stateChanged(cv);
         PinNameStateTracker* cn = new PinNameStateTracker();
         m_names.append(cn);
@@ -124,11 +123,13 @@ void IOController::determinePins(const QByteArray& data) {
 
 bool IOController::getPin(unsigned int pin) const
 {
+	if (( unsigned int )m_values.size()<=pin) return false;
     return m_values.at(pin)->value();
 }
 
 void IOController::setPin ( uint pin, bool value )
 {
+	if (( unsigned int )m_values.size()<=pin) return;
     m_values[pin]->setValue(value);
     emit stateChanged(m_values[pin]);
     char a[] = {(value?0xf0:0x00) | (unsigned char)pin};
@@ -148,6 +149,7 @@ void IOController::setPinName ( uint pin, const QString& name )
 
 void IOController::togglePin ( uint pin )
 {
+	if (( unsigned int )m_values.size()<=pin) return;
     setPin ( pin, !m_values[pin]->value() );
 }
 

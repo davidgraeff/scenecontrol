@@ -21,7 +21,7 @@ Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
 myPluginExecute::myPluginExecute() : ExecutePlugin() {
   m_base = new myPlugin();
-  m_Controller = new Controller();
+  m_Controller = new Controller(this);
   connect(m_Controller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
   connect(m_Controller,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
 }

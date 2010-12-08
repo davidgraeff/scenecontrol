@@ -17,9 +17,7 @@
 
 */
 
-#ifndef LEDCONTROLLER_H
-#define LEDCONTROLLER_H
-
+#pragma once
 #include <QObject>
 #include <QMap>
 #include <QStringList>
@@ -28,32 +26,12 @@
 #include <QVariantMap>
 #include <stdint.h>
 
-/**
-Daten von ethersex abfragen und cachen
-*/
-
+class QextSerialPort;
+class myPluginExecute;
 class CurtainStateTracker;
 class ChannelNameStateTracker;
 class AbstractStateTracker;
 class ChannelValueStateTracker;
-struct udpstella_packet
-{
-    uint8_t type;    // see above
-    uint8_t channel; // if port: pin
-    uint8_t value;
-};
-
-struct udpcurtain_answer {
-    char id[7];
-    uint8_t position;
-    uint8_t max;
-};
-
-struct udpstella_answer {
-    char id[6];
-    uint8_t channels;
-    uint8_t channel[16];
-};
 
 enum stella_fade_function
 {
@@ -72,9 +50,8 @@ public:
     /**
     Daten von ethersex abrufen
     */
-    Controller();
+	Controller(myPluginExecute* plugin);
     ~Controller();
-    void connectTo(QHostAddress host, int udpLed, int udpCurtain);
     void refresh();
     QList<AbstractStateTracker*> getStateTracker();
     void setCurtain(unsigned int position);
@@ -89,37 +66,27 @@ public:
     void setChannelRelative ( uint channel, int value, uint fade );
     unsigned int getChannel(unsigned int channel) const;
 private:
-    // LIGHTS //
-    int m_udpport_lights;
-    QHostAddress m_host;
-    QUdpSocket* m_udpSocket_lights;
-    QTimer m_sendTimer_lights;
-    QTimer m_tryReconnectTimer_lights;
-    QMap<uint, udpstella_packet > m_queue_lights;
-    QList<ChannelValueStateTracker*> m_channelvalues;
-    QList<ChannelNameStateTracker*> m_channelnames;
-    // CURTAIN //
-    int m_udpport_curtain;
-    QUdpSocket* m_udpSocket_curtain;
-    QTimer m_tryReconnectTimer_curtain;
+	QString m_pluginname;
+    QList<ChannelValueStateTracker*> m_values;
+    QList<ChannelNameStateTracker*> m_names;
     CurtainStateTracker* m_curtainStateTracker;
+	int m_channels;
+	QByteArray m_buffer;
+	void determineChannels(const QByteArray& data);
+	// rs232 special
+	QextSerialPort* m_serial;
+	QTimer m_panicTimer;
+	int m_bufferpos;
+	enum readStateEnum {
+		ReadOK,
+		ReadEnd
+	};
+	readStateEnum m_readState;
 private Q_SLOTS:
     // LIGHTS //
-    void sendTimeout_lights();
-    void readyRead_lights();
-    void disconnected_lights();
-    void connected_lights();
-    void error_lights(QAbstractSocket::SocketError);
-    void reconnect_lights();
-    // CURTAIN //
-    void readyRead_curtain();
-    void disconnected_curtain();
-    void connected_curtain();
-    void error_curtain(QAbstractSocket::SocketError);
-    void reconnect_curtain();
+    void readyRead();
+	void panicTimeout();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
 	void dataLoadingComplete();
 };
-
-#endif // LEDCONTROLLER_H
