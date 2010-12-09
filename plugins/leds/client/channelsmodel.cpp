@@ -175,6 +175,8 @@ void ChannelsModel::setValue ( int i, unsigned int value )
     ActorLed* a = new ActorLed();
     a->setChannel(i);
     a->setValue(value);
+	a->setAssignment(ActorLed::ValueAbsolute);
+	a->setFadetype(ActorLed::FadeTypeFade);
 	emit executeService(a);
 }
 

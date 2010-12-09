@@ -25,12 +25,12 @@
 #include <statetracker/pinnamestatetracker.h>
 #include <services/actorpin.h>
 #include <services/actorpinname.h>
-
+#include "kicon.h"
 
 PinsModel::PinsModel (QObject* parent) : ClientModel ( parent )
 {
-    this->iconOn = QIcon ( QLatin1String(":/green") );
-    this->iconOff = QIcon ( QLatin1String(":/red") );
+    this->iconOn = KIcon ( QLatin1String("flag-green") );
+    this->iconOff = KIcon ( QLatin1String("flag-red") );
 }
 
 PinsModel::~PinsModel()
@@ -96,7 +96,7 @@ int PinsModel::rowCount ( const QModelIndex & ) const
 
 int PinsModel::columnCount ( const QModelIndex & ) const
 {
-    return 2;
+    return 1;
 }
 
 QVariant PinsModel::data ( const QModelIndex & index, int role ) const
@@ -106,22 +106,21 @@ QVariant PinsModel::data ( const QModelIndex & index, int role ) const
 	if ( role==Qt::UserRole) return m_itemnames.at(index.row())->pin();
     if ( role==Qt::DisplayRole || role==Qt::EditRole )
     {
-        if ( index.column() ==0 )
-            if (m_itemnames.size() <= index.row())
-                return QLatin1String("not loaded");
-            else
-                return m_itemnames.at(index.row())->value();
-        else if ( index.column() ==1 ) {
-            return (m_itemvalues.at(index.row())->value()?
-                    QLatin1String("An"):QLatin1String("Aus"));
-        }
+		if (m_itemnames.size() <= index.row())
+			return QLatin1String("not loaded");
+		else
+			return m_itemnames.at(index.row())->value();
     }
-    else if ( role==Qt::DecorationRole  && index.column() == 0)
+    else if ( role==Qt::DecorationRole )
     {
         if (m_itemvalues.at(index.row())->value() )
             return this->iconOn;
         else
             return this->iconOff;
+	}
+    else if ( role==Qt::CheckStateRole )
+    {
+        return (m_itemvalues.at(index.row())->value()?Qt::Checked:Qt::Unchecked);
     }
 
     return QVariant();
@@ -136,10 +135,6 @@ QVariant PinsModel::headerData ( int section, Qt::Orientation orientation, int r
         {
             return tr ( "Name" );
         }
-        else  if ( role == Qt::DisplayRole && section==1 )
-        {
-            return tr ( "Zustand" );
-        }
     }
 
     return QAbstractListModel::headerData ( section, orientation, role );
@@ -149,13 +144,19 @@ bool PinsModel::setData ( const QModelIndex& index, const QVariant& value, int r
 {
     if ( !index.isValid()) return false;
 
-    if ( index.column() ==0 && role == Qt::EditRole )
+    if ( role == Qt::EditRole )
     {
         QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
         PinNameStateTracker* t= m_itemnames[index.row() ];
         if ( newname.isEmpty() || newname == t->value() ) return false;
 
         setName(t->pin(),newname);
+
+        return true;
+    } else if ( role == Qt::CheckStateRole )
+    {
+		PinNameStateTracker* t= m_itemnames[index.row() ];
+        setValue(t->pin(), (value.toInt()==Qt::Checked));
 
         return true;
     }
@@ -168,10 +169,7 @@ Qt::ItemFlags PinsModel::flags ( const QModelIndex& index ) const
     if ( !index.isValid() )
         return 0;
 
-    if (index.column()==1)
-        return QAbstractListModel::flags ( index );
-
-    return QAbstractListModel::flags ( index ) | Qt::ItemIsEditable;
+    return QAbstractListModel::flags ( index ) | Qt::ItemIsEditable | Qt::ItemIsUserCheckable;
 }
 
 void PinsModel::setValue ( int i, unsigned int value )

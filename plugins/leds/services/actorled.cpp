@@ -20,7 +20,7 @@
 #include "actorled.h"
 
 ActorLed::ActorLed(QObject* parent)
-        : AbstractServiceProvider(parent)
+        : AbstractServiceProvider(parent), m_channel(0), m_fadetype(FadeTypeImmediately), m_assignment(ValueAbsolute), m_value(0)
 {}
 
 unsigned int ActorLed::channel() const

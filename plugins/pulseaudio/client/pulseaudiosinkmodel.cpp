@@ -73,14 +73,16 @@ bool PulseAudioSinkModel::setData ( const QModelIndex& index, const QVariant& va
         m_items[index.row()].volume = v;
         ActorPulseSink* service = new ActorPulseSink();
         service->setAssignment(ActorPulseSink::VolumeAbsolute);
+		service->setSinkid(m_items.at(index.row()).name);
         service->setMute(ActorPulseSink::MuteNoChangeSink);
         service->setVolume(v);
 		emit executeService(service);
         return true;
     } else if (index.column()==0 && role == Qt::CheckStateRole)
     {
-        m_items[index.row()].mute = (value.toInt()==Qt::Checked);
+        m_items[index.row()].mute = (value.toInt()==Qt::Unchecked);
 		ActorPulseSink* service = new ActorPulseSink();
+		service->setSinkid(m_items.at(index.row()).name);
 		service->setAssignment(ActorPulseSink::NoVolumeSet);
 		if (m_items[index.row()].mute)
 			service->setMute(ActorPulseSink::MuteSink);
@@ -97,7 +99,7 @@ bool PulseAudioSinkModel::setData ( const QModelIndex& index, const QVariant& va
 Qt::ItemFlags PulseAudioSinkModel::flags ( const QModelIndex& index ) const
 {
     if ( !index.isValid() )
-        return Qt::ItemIsDropEnabled;
+        return QAbstractListModel::flags ( index );
 
     switch (index.column()) {
     case 0:
@@ -115,18 +117,18 @@ QVariant PulseAudioSinkModel::data ( const QModelIndex & index, int role ) const
 
     if ( role==Qt::DisplayRole || role == Qt::EditRole )
     {
-        if ( index.column() ==0 )
+        if ( index.column() == 0 )
             return m_items.at(index.row()).name;
-        else if ( index.column() ==1 )
+        else if ( index.column() == 1 )
             return m_items.at(index.row()).volume;
     }
     else if (role ==Qt::ToolTipRole)
     {
         return m_items.at(index.row()).name;
     }
-    else if ( role==Qt::CheckStateRole )
+    else if ( index.column() == 0 && role==Qt::CheckStateRole )
     {
-        return (m_items.at(index.row()).mute?Qt::Checked:Qt::Unchecked);
+        return (m_items.at(index.row()).mute?Qt::Unchecked:Qt::Checked);
     }
     else if ( role==Qt::UserRole )
 	{

@@ -1,3 +1,6 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x08\x00l\x00e\x00d\x00s)
+
 [CMake]
 BuildDirs=/home/david/Entwicklung/roomcontrol/build/plugins/leds
 CMakeDir=/usr/share/cmake-2.8/Modules

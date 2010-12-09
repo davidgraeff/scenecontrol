@@ -48,7 +48,7 @@ IOController::IOController(myPluginExecute* plugin) : m_pluginname(plugin->base(
         qWarning() << "IO: rs232 init fehler";
     }
     // panic counter
-    m_panicTimer.setInterval(60000);
+    m_panicTimer.setInterval(40000);
     connect(&m_panicTimer,SIGNAL(timeout()),SLOT(panicTimeout()));
 	m_panicTimer.start();
 }

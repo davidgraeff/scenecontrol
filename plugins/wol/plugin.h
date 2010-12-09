@@ -26,6 +26,7 @@
 class myPlugin : public QObject, public AbstractPlugin
 {
   Q_OBJECT
+  Q_INTERFACES(AbstractPlugin)
 public:
 	myPlugin();
 	virtual ~myPlugin();

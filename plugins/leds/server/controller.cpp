@@ -121,7 +121,8 @@ void Controller::determineChannels(const QByteArray& data)
         ChannelValueStateTracker* cv = new ChannelValueStateTracker();
         m_values.append(cv);
         cv->setChannel(i);
-		cv->setValue(data[i+3]);
+		const int value = (uint8_t)data[i+3];
+		cv->setValue(value);
         emit stateChanged(cv);
         ChannelNameStateTracker* cn = new ChannelNameStateTracker();
         m_names.append(cn);
@@ -163,6 +164,7 @@ void Controller::setChannelName ( uint channel, const QString& name )
     emit stateChanged(m_names[channel]);
 
     QSettings settings;
+	settings.beginGroup(m_pluginname);
     settings.beginGroup ( QLatin1String("channelnames") );
     settings.setValue ( QLatin1String("channel")+QString::number ( channel ), name );
 }

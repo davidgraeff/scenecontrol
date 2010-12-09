@@ -1,2 +1,5 @@
 /usr/include/qt4/QtCore/
+/usr/include/qt4/QtGui/
+/usr/include/qt4/QtNetwork/
+/usr/include/KDE/
 /home/david/Entwicklung/roomcontrol/
