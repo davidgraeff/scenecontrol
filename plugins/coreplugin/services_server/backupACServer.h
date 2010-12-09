@@ -32,6 +32,7 @@ public:
 	virtual bool checkcondition();
 	virtual void execute();
 	virtual void dataUpdate();
+    virtual void nameUpdate();
 private:
 	ActorBackup* m_base;
 	myPluginExecute* m_plugin;

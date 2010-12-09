@@ -61,24 +61,26 @@ void ExecuteCollection::executiontimeout()
     const int nextTimePoint = m_actors_delays[m_currentExecution];
     m_executionTimer.start ( 1000* ( nextTimePoint-currentTimePoint ) );
 }
-void ExecuteCollection::run() {
-    if ( !service<Collection>()->enabled() ) return;
-	
+void ExecuteCollection::run(bool ignoreConditions) {
+	if (!ignoreConditions && !service<Collection>()->enabled() ) return;
+
     // check conditions
-    foreach ( ExecuteService* service, m_childs_linked )
-    {
-        if ((service->base()->service() == AbstractServiceProvider::ConditionService ) && !service->checkcondition() )
+    if (!ignoreConditions) {
+        foreach ( ExecuteService* service, m_childs_linked )
         {
-			return;
+            if ((service->base()->service() == AbstractServiceProvider::ConditionService ) && !service->checkcondition() )
+            {
+                return;
+            }
         }
     }
-	
-	m_executionTimer.stop();
+
+    m_executionTimer.stop();
     m_currentExecution = 0;
     m_actors_linked_map.clear();
-	foreach ( ExecuteService* service, m_childs_linked )
+    foreach ( ExecuteService* service, m_childs_linked )
     {
-		if ( (service->base()->service() == AbstractServiceProvider::ActionService ) )
+        if ( (service->base()->service() == AbstractServiceProvider::ActionService ) )
             m_actors_linked_map.insert ( service->base()->delay(), service );
     }
     if ( m_actors_linked_map.isEmpty() ) return;

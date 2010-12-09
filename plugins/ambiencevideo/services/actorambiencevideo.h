@@ -47,7 +47,7 @@ public:
     };
     ActorAmbienceVideo(QObject* parent = 0);
     virtual QString service_name() {
-        return tr("AmbienceVideo steuern");
+        return tr("Ambience Video starten");
     }
     virtual QString service_desc() {
         return tr("Zeigt die angegebene Videodatei auf dem entsprechendem Display (-1=alle)");

@@ -34,6 +34,8 @@ public:
 	virtual void execute();
 	virtual void dataUpdate();
     virtual void nameUpdate();
+	public Q_SLOTS:
+		void serviceChanged(AbstractServiceProvider*);
 private:
 	ActorCollection* m_base;
 	myPluginExecute* m_plugin;

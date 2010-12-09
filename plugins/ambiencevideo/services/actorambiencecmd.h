@@ -40,7 +40,7 @@ public:
     };
     ActorAmbienceCmd(QObject* parent = 0);
     virtual QString service_name() {
-        return tr("AmbienceVideo Kommando");
+        return tr("Ambience Video steuern");
     }
     virtual QString service_desc() {
         return tr("Setzt das angegebene Kommando ab");
@@ -67,7 +67,7 @@ public:
                 return tr("Kommando");
             }
         case 1:
-            return tr("Wiederherstellungszeit");
+			return tr("Wiederherstellungszeit in s");
         default:
             return QString();
         }

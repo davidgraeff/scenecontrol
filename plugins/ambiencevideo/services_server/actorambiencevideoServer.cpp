@@ -24,11 +24,15 @@
 
 void ActorAmbienceVideoServer::execute()
 {
-	ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
-	m_plugin->mediacontroller()->setDisplay(base->display());
-	m_plugin->mediacontroller()->setClickActions(base->onleftclick(),base->onrightclick(), base->restoretime());
-	m_plugin->mediacontroller()->setVolume(base->volume());
-	m_plugin->mediacontroller()->setFilename(base->filename());
+    ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
+    m_plugin->mediacontroller()->setDisplay(base->display());
+    m_plugin->mediacontroller()->setClickActions(base->onleftclick(),base->onrightclick(), base->restoretime());
+    m_plugin->mediacontroller()->setVolume(base->volume());
+    m_plugin->mediacontroller()->setFilename(base->filename());
 }
 
 ActorAmbienceVideoServer::ActorAmbienceVideoServer(ActorAmbienceVideo* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+void ActorAmbienceVideoServer::nameUpdate() {
+	ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
+	base->setString(tr("Ambience Video\n%1").arg(base->filename()));
+}

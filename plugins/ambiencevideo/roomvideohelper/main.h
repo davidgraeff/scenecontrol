@@ -8,6 +8,7 @@
 #include <QMouseEvent>
 #include <qfile.h>
 #include <QTimer>
+#include <QSocketNotifier>
 
 class MediaPlayer : public Phonon::VideoWidget {
     Q_OBJECT
@@ -22,12 +23,15 @@ private:
     QDataStream stream;
 	QTimer restoretimer;
 	int m_screen;
+    QByteArray m_buffer;
+    int m_bufferpos;
+    QSocketNotifier* notifier;
     void smallWindow() ;
     void fullscreenWindow();
 	void setSceenState(int state);
     virtual void mousePressEvent(QMouseEvent* );
 public slots:
-    void readyRead();
+    void readyRead(int);
     void prefinishMarkReached(qint32);
     void restoreTimeout();
 };

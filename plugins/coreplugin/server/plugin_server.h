@@ -54,6 +54,7 @@ public:
     void backup_restore(const QString& id);
     void backup_remove(const QString& id);
     EventController* eventcontroller() {return m_eventcontroller;}
+    void dataLoadingComplete();
 private:
     BackupStateTracker* m_BackupStateTracker;
     SystemStateTracker* m_SystemStateTracker;

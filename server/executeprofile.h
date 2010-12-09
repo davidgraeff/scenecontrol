@@ -38,7 +38,7 @@ public:
     /** Called by a child, that register itself as a child for this profile */
     void registerChild ( ExecuteService* provider);
     void stop();
-    void run();
+	void run(bool ignoreConditions=false);
     QSet<ExecuteService*> m_childs_linked;
 private Q_SLOTS:
     void eventTriggered();

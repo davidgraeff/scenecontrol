@@ -24,13 +24,13 @@ class EventSystem : public AbstractServiceProvider
 {
     Q_OBJECT
     Q_PROPERTY(EventSystem::systemEnum system READ system WRITE setSystem)
+	Q_ENUMS(systemEnum);
 public:
   	enum systemEnum
 	{
 		ServerStarted,
 		ServerGoingToStop
 	};
-	Q_ENUMS(systemEnum);
 	
     EventSystem(QObject* parent = 0);
 	virtual QString service_name(){return tr("Serverereignis");}

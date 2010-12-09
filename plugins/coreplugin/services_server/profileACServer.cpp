@@ -20,20 +20,27 @@
 #include "profileACServer.h"
 #include <coreplugin/services/profileAC.h>
 #include <coreplugin/server/plugin_server.h>
-#include <../server/servicecontroller.h>
+#include <QDebug>
+#include <shared/categorize/profile.h>
 
 ActorCollectionServer::ActorCollectionServer(ActorCollection* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {}
 bool ActorCollectionServer::checkcondition() {
-	return true;
+    return true;
 }
 void ActorCollectionServer::execute() {
 }
 void ActorCollectionServer::dataUpdate() {}
-void ActorCollectionServer::nameUpdate() {
-	ActorCollection* base = service<ActorCollection>();
-	
-	if (base->action()==ActorCollection::StartProfile)
-		base->setString(tr("Starte Profil %1").arg(base->profileid()));
-	else if (base->action()==ActorCollection::CancelProfile)
-		base->setString(tr("Beende Profil %1").arg(base->profileid()));
+void ActorCollectionServer::nameUpdate() {}
+
+void ActorCollectionServer::serviceChanged(AbstractServiceProvider* service) {
+	if (m_base->profileid() != service->id() || service->type() != Collection::staticMetaObject.className()) return;
+	Collection* collection = dynamic_cast<Collection*>(service);
+	if (!collection) return;
+    if (m_base->action()==ActorCollection::StartProfile)
+        m_base->setString(tr("Starte Profil %1").arg(collection->name()));
+    else if (m_base->action()==ActorCollection::CancelProfile)
+		m_base->setString(tr("Beende Profil %1").arg(collection->name()));
+#ifndef _IS_ROOMSERVER
+    m_plugin->dataLoadingComplete();
+#endif
 }

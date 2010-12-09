@@ -28,14 +28,15 @@ class EventSystemServer : public ExecuteService
 {
     Q_OBJECT
 public:
-	EventSystemServer(EventSystem* base, myPluginExecute* plugin, QObject* parent = 0);
+    EventSystemServer(EventSystem* base, myPluginExecute* plugin, QObject* parent = 0);
     virtual bool checkcondition();
     virtual void execute();
     virtual void dataUpdate();
+    virtual void nameUpdate();
 private:
-	EventSystem* m_base;
-	myPluginExecute* m_plugin;
-Q_SIGNALS:
+    EventSystem* m_base;
+    myPluginExecute* m_plugin;
+public Q_SLOTS:
 	void systemStarted();
 };
 

@@ -50,8 +50,9 @@ ServiceController::ServiceController ()
         qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
 
         connect(plugin,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(statetrackerSync(AbstractStateTracker*)));
+        connect(this,SIGNAL(serviceSync(AbstractServiceProvider*)),plugin,SIGNAL(_serviceChanged(AbstractServiceProvider*)));
         connect(plugin,SIGNAL(executeService(AbstractServiceProvider*)),SLOT(pluginexecuteService(AbstractServiceProvider*)));
-		connect(plugin,SIGNAL(pluginLoadingComplete(ExecutePlugin*)),SLOT(pluginLoadingComplete(ExecutePlugin*)));
+        connect(plugin,SIGNAL(pluginLoadingComplete(ExecutePlugin*)),SLOT(pluginLoadingComplete(ExecutePlugin*)));
         m_plugins.append ( plugin );
         QStringList provides = plugin->base()->registerServices();
         foreach ( QString provide, provides )
@@ -163,9 +164,9 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
         return false;
     }
 
-    if (type.toUtf8() == Category::staticMetaObject.className()) {
+    if (type.toAscii() == Category::staticMetaObject.className()) {
         service = new ExecuteWithBase(new Category(), this);
-    } else if (type.toUtf8() == Collection::staticMetaObject.className()) {
+    } else if (type.toAscii() == Collection::staticMetaObject.className()) {
         service = new ExecuteCollection(new Collection(), this);
     } else {
         ExecutePlugin* eplugin = m_plugin_provider.value ( type );
@@ -186,16 +187,6 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
 
     QJson::QObjectHelper::qvariant2qobject ( json, service->base() );
 
-    if (service->base()->type() == EventSystemServer::staticMetaObject.className()) {
-        connect(this, SIGNAL(systemStarted()), (EventSystemServer*)service, SIGNAL(systemStarted()));
-    }
-
-    // connect executecollection signals
-    ExecuteCollection* collection = dynamic_cast<ExecuteCollection*>(service);
-    if (collection) {
-        connect(collection,SIGNAL(executeservice(ExecuteService*)),SLOT(executeservice(ExecuteService*)));
-    }
-
     // check if it is an immediately to execute actor
     if ( iExecute )
     {
@@ -203,13 +194,27 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
         Q_ASSERT(exservice);
         executeservice(exservice);
         delete exservice;
+        return true;
     }
-    else
-    {
-        updateService(service, true, loading);
-        m_services.insert ( service->base()->id(), service );
-        m_servicesList.append ( service );
+
+    // send systemStarted event to corePlugin service
+    if (service->metaObject()->className() == EventSystemServer::staticMetaObject.className()) {
+        connect(this, SIGNAL(systemStarted()), (EventSystemServer*)service, SLOT(systemStarted()));
     }
+
+    ExecuteCollection* collection = dynamic_cast<ExecuteCollection*>(service);
+    if (collection) {
+        // connect executecollection signals
+        connect(collection,SIGNAL(executeservice(ExecuteService*)),SLOT(executeservice(ExecuteService*)));
+		// to update names e.g. coreplugin:execute collection needs the collection names
+        foreach(ExecutePlugin* plugin, m_plugins) {
+			plugin->serverserviceChanged(collection->base());
+        }
+    }
+
+    updateService(service, true, loading);
+    m_services.insert ( service->base()->id(), service );
+    m_servicesList.append ( service );
     return true;
 }
 
@@ -346,11 +351,11 @@ void ServiceController::removeFromExecuteProfiles ( ExecuteService* service )
     p->removeChild(service);
 }
 
-void ServiceController::runProfile ( const QString& id )   // only run if enabled
+void ServiceController::runProfile ( const QString& id, bool ignoreConditions )   // only run if enabled
 {
     ExecuteCollection* p = dynamic_cast<ExecuteCollection*>(m_services.value(id));
     if (!p) return;
-    p->run();
+    p->run(ignoreConditions);
 }
 
 void ServiceController::stopProfile(const QString& id) {
@@ -385,7 +390,7 @@ void ServiceController::executeservice(ExecuteService* service) {
     if (service->base()->type() == ActorCollection::staticMetaObject.className()) {
         switch (((ActorCollection*)service->base())->action()) {
         case ActorCollection::StartProfile:
-            runProfile(((ActorCollection*)service->base())->profileid());
+            runProfile(((ActorCollection*)service->base())->profileid(),true);
             break;
         case ActorCollection::CancelProfile:
             stopProfile(((ActorCollection*)service->base())->profileid());
@@ -399,12 +404,12 @@ void ServiceController::executeservice(ExecuteService* service) {
 }
 
 void ServiceController::pluginLoadingComplete(ExecutePlugin* plugin) {
-	for (int i=0;i<m_servicesList.size();++i) {
-		if (m_plugin_provider.value(QString::fromAscii(m_servicesList[i]->base()->type())) != plugin) continue;
-		ExecuteService* exservice = dynamic_cast<ExecuteService*>(m_servicesList[i]);
-		if (exservice) {
-			exservice->nameUpdate();
-			emit serviceSync ( exservice->base() );
-		}
-	}
+    for (int i=0;i<m_servicesList.size();++i) {
+        if (m_plugin_provider.value(QString::fromAscii(m_servicesList[i]->base()->type())) != plugin) continue;
+        ExecuteService* exservice = dynamic_cast<ExecuteService*>(m_servicesList[i]);
+        if (exservice) {
+            exservice->nameUpdate();
+            emit serviceSync ( exservice->base() );
+        }
+    }
 }

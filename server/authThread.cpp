@@ -28,6 +28,7 @@ char* pwdptr;
 int su_conv(int num_msg,const struct pam_message **msgm,
             struct pam_response **resp,void *appdata)
 {
+	Q_UNUSED(appdata);
     int count;
     struct pam_response *r;
 

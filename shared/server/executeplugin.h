@@ -27,29 +27,36 @@ class AbstractPlugin;
 class ExecuteWithBase;
 class ExecutePlugin : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	virtual void refresh() = 0;
-	virtual ExecuteWithBase* createExecuteService(const QString& id) = 0;
-	virtual QList<AbstractStateTracker*> stateTracker() = 0;
-	virtual AbstractPlugin* base() = 0;
-	/**
-	 * Called before all services are deleted to tidy up
-	 */
-	virtual void clear() = 0;
+    virtual void refresh() = 0;
+    virtual ExecuteWithBase* createExecuteService(const QString& id) = 0;
+    virtual QList<AbstractStateTracker*> stateTracker() = 0;
+    virtual AbstractPlugin* base() = 0;
+    /**
+     * Called before all services are deleted to tidy up
+     */
+    virtual void clear() = 0;
+	void serverserviceChanged(AbstractServiceProvider* service) {emit _serviceChanged(service);}
 Q_SIGNALS:
-	void stateChanged(AbstractStateTracker*);
 	/**
-	 * Service will be provided to the server and propagated to the correct plugin.
-	 * This mechanism allows inter-plugin communication. The handed over service object
-	 * will get an iExecute flag and be freed by the server after execution.
+	 * For internal use in plugins only. Server service changes.
 	 */
-	void executeService(AbstractServiceProvider*);
+	void _serviceChanged(AbstractServiceProvider*);
 	
-	/**
-	 * Plugin loading finished. This will make the server update all names of this plugins services
-	 * and redistribute them to the clients (without saving to disk).
-	 */
-	void pluginLoadingComplete(ExecutePlugin*);
+    void stateChanged(AbstractStateTracker*);
+
+    /**
+     * Service will be provided to the server and propagated to the correct plugin.
+     * This mechanism allows inter-plugin communication. The handed over service object
+     * will get an iExecute flag and be freed by the server after execution.
+     */
+    void executeService(AbstractServiceProvider*);
+
+    /**
+     * Plugin loading finished. This will make the server update all names of this plugins services
+     * and redistribute them to the clients (without saving to disk).
+     */
+    void pluginLoadingComplete(ExecutePlugin*);
 };
 Q_DECLARE_INTERFACE(ExecutePlugin, "com.roomcontrol.ServerPlugin/1.0")

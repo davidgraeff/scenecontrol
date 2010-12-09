@@ -44,3 +44,7 @@ void ActorBackupServer::execute() {
 	};
 }
 void ActorBackupServer::dataUpdate() {}
+
+void ActorBackupServer::nameUpdate() {
+	m_base->setString(tr("Backup %1").arg(m_base->translate(0,m_base->action())));
+}

@@ -66,7 +66,9 @@ ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
     if (idb == ActorSystem::staticMetaObject.className()) {
         return new ActorSystemServer((ActorSystem*)service, this);
     } else if (idb == ActorCollection::staticMetaObject.className()) {
-        return new ActorCollectionServer((ActorCollection*)service, this);
+		ActorCollectionServer* a = new ActorCollectionServer((ActorCollection*)service, this);
+		connect(this,SIGNAL(_serviceChanged(AbstractServiceProvider*)),a,SLOT(serviceChanged(AbstractServiceProvider*)));
+        return a;
     } else if (idb == ActorBackup::staticMetaObject.className()) {
         return new ActorBackupServer((ActorBackup*)service, this);
     } else if (idb == EventSystem::staticMetaObject.className()) {
@@ -216,4 +218,6 @@ void myPluginExecute::volumeChanged(qreal) {
     m_EventVolumeStateTracker->setVolume(m_eventcontroller->volume()*100);
     emit stateChanged(m_EventVolumeStateTracker);
 }
-
+void myPluginExecute::dataLoadingComplete() {
+	emit pluginLoadingComplete(this);
+}

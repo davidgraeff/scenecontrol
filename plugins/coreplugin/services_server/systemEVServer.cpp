@@ -21,24 +21,35 @@
 #include <coreplugin/server/plugin_server.h>
 #include <coreplugin/services/systemEV.h>
 #include <../server/servicecontroller.h>
-
+#include <QDebug>
 
 void EventSystemServer::execute() {}
 bool EventSystemServer::checkcondition() {
     return true;
 }
 void EventSystemServer::dataUpdate() {
-	disconnect(this, SIGNAL(systemStarted()), this, SIGNAL(trigger()));
-	switch (m_base->system()) {
-		case 0:
-			connect(this, SIGNAL(systemStarted()),SIGNAL(trigger()));
-			break;
-		case 1:
-			break;
-		default:
-			break;
-	};
 }
-EventSystemServer::EventSystemServer(EventSystem* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_base(base), m_plugin(plugin) {
-    dataUpdate();
+
+EventSystemServer::EventSystemServer(EventSystem* base, myPluginExecute* plugin, QObject* parent) :
+        ExecuteService(base, parent), m_base(base), m_plugin(plugin) {
+
+}
+
+void EventSystemServer::nameUpdate() {
+    EventSystem* base = service<EventSystem>();
+    switch (m_base->system()) {
+    case EventSystem::ServerStarted:
+        base->setString(tr("Server startet"));
+        break;
+    case EventSystem::ServerGoingToStop:
+        base->setString(tr("Server beendet"));
+        break;
+    default:
+        break;
+    };
+}
+void EventSystemServer::systemStarted() {
+	if (m_base->system()==EventSystem::ServerStarted) {
+		emit trigger();
+	}	
 }

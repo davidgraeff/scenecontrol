@@ -62,7 +62,7 @@ private:
 
     QDir m_savedir;
 public Q_SLOTS:
-    void runProfile(const QString& id);
+    void runProfile(const QString& id, bool ignoreConditions);
     void stopProfile(const QString& id) ;
 	void pluginexecuteService(AbstractServiceProvider*);
 	void pluginLoadingComplete(ExecutePlugin*);

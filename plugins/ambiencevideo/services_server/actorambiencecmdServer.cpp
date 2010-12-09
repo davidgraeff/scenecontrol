@@ -51,3 +51,9 @@ void ActorAmbienceCmdServer::execute()
 }
 
 ActorAmbienceCmdServer::ActorAmbienceCmdServer(ActorAmbienceCmd* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+
+void ActorAmbienceCmdServer::nameUpdate() {
+	ActorAmbienceCmd* base = service<ActorAmbienceCmd>();
+	
+	base->setString(tr("Ambience Video Kommando\n%1").arg(base->translate(0,base->cmd())));
+}

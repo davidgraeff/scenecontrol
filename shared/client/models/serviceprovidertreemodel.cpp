@@ -212,7 +212,8 @@ bool ServiceProviderTreeModel::setData(const QModelIndex& index, const QVariant&
     int v = value.toInt();
     if (!service || role!=Qt::EditRole || v<0 || v==service->delay()) return false;
     service->setDelay(v);
-    emit serviceChanged(service);
+	emit changeService(service);
+	service->setDelay(-1);
     return true;
 }
 

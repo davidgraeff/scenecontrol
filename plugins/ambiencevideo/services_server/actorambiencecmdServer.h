@@ -24,13 +24,16 @@ class ActorAmbienceCmd;
 class myPluginExecute;
 class ActorAmbienceCmdServer : public ExecuteService
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-	ActorAmbienceCmdServer(ActorAmbienceCmd* base, myPluginExecute* plugin, QObject* parent = 0);
-  virtual bool checkcondition(){return true;}
-  virtual void dataUpdate(){}
-  virtual void execute();
+    ActorAmbienceCmdServer(ActorAmbienceCmd* base, myPluginExecute* plugin, QObject* parent = 0);
+    virtual bool checkcondition() {
+        return true;
+    }
+    virtual void dataUpdate() {}
+    virtual void nameUpdate();
+    virtual void execute();
 private:
-  myPluginExecute* m_plugin;
+    myPluginExecute* m_plugin;
 };
 

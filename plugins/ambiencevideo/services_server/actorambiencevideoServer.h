@@ -24,13 +24,16 @@ class ActorAmbienceVideo;
 class myPluginExecute;
 class ActorAmbienceVideoServer : public ExecuteService
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-	ActorAmbienceVideoServer(ActorAmbienceVideo* base, myPluginExecute* plugin, QObject* parent = 0);
-  virtual bool checkcondition(){return true;}
-  virtual void dataUpdate(){}
-  virtual void execute();
+    ActorAmbienceVideoServer(ActorAmbienceVideo* base, myPluginExecute* plugin, QObject* parent = 0);
+    virtual bool checkcondition() {
+        return true;
+    }
+    virtual void dataUpdate() {}
+    virtual void nameUpdate();
+    virtual void execute();
 private:
-  myPluginExecute* m_plugin;
+    myPluginExecute* m_plugin;
 };
 

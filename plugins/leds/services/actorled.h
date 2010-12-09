@@ -99,9 +99,9 @@ public:
     ActorLed::assignmentEnum assignment() const;
 private:
     unsigned int m_channel;
-    int m_value;
     ActorLed::fadetypeEnum m_fadetype;
     ActorLed::assignmentEnum m_assignment;
+	int m_value;
 };
 
 #endif // ACTORSERVICEPROVIDER_H
