@@ -15,6 +15,7 @@ MediaPlayer::MediaPlayer(QWidget *parent)
     m_media->setPrefinishMark(500);
     m_aoutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
     m_screen = 0;
+    setAspectRatio(AspectRatioWidget);
 
     Phonon::createPath(m_media, m_aoutput);
     Phonon::createPath(m_media, this);
@@ -42,6 +43,7 @@ void MediaPlayer::readyRead(int) {
         smallWindow();
     } else if (args[0] == "stop") {
         restoretimer.stop();
+        m_media->stop();
         hide();
     } else if (args[0] == "display" && args.size()==2) {
         m_screen = args[1].toInt();
@@ -57,11 +59,14 @@ void MediaPlayer::readyRead(int) {
         restoretimer.setInterval(args[3].toInt());
     } else if (args[0] == "displaystate" && args.size()==2) {
         setSceenState(args[1].toInt());
-    } else if (args[0] == "play" && args.size()==2) {
+    } else if (args[0] == "play" && args.size()>1) {
+        const QUrl filename = QUrl(QString::fromUtf8(line.mid(6)));
         fullscreenWindow();
-        m_media->setCurrentSource(QUrl(QString::fromUtf8(args[1])));
-		this->setAspectRatio(AspectRatioWidget);
-        m_media->play();
+        if (m_media->currentSource().url()!=filename) {
+            m_media->setCurrentSource(filename);
+            m_media->play();
+        } else if (m_media->state()!=Phonon::PlayingState)
+            m_media->play();
     }
 }
 
@@ -70,7 +75,7 @@ void MediaPlayer::prefinishMarkReached(qint32) {
 }
 
 void MediaPlayer::mousePressEvent(QMouseEvent*event) {
-    ActorAmbienceVideo::EnumOnClick i;
+    ActorAmbienceVideo::EnumOnClick i=ActorAmbienceVideo::OnClickClose;
     if (event->button()==Qt::LeftButton) {
         i = leftclick;
     } else if (event->button()==Qt::RightButton) {
@@ -106,36 +111,44 @@ void MediaPlayer::smallWindow() {
 
 void MediaPlayer::fullscreenWindow() {
     showFullScreen();
-	QCursor cursor;
-	cursor.setShape(Qt::BlankCursor);
-	setCursor(cursor);
+    QCursor cursor;
+    cursor.setShape(Qt::BlankCursor);
+    setCursor(cursor);
+	setVisible(true);
 }
 
 void MediaPlayer::restoreTimeout() {
-	fullscreenWindow();
+    fullscreenWindow();
 }
 void MediaPlayer::setSceenState(int state) {
-    QByteArray b;
-    b.append("xset -display :");
-    b.append(QByteArray::number(m_screen));
-    b.append(" dpms force ");
+    QByteArray xsetdpms;
+	xsetdpms.append("xset -display :");
+	xsetdpms.append(QByteArray::number(m_screen));
+	xsetdpms.append(" dpms force ");
+	QByteArray xsetreset;
+	xsetreset.append("xset -display :");
+	xsetreset.append(QByteArray::number(m_screen));
+	xsetreset.append(" s reset");
+	QByteArray xsetnoblank;
+	xsetnoblank.append("xset -display :");
+	xsetnoblank.append(QByteArray::number(m_screen));
+	xsetnoblank.append(" -dpms");
+	
 	switch (state) {
     case 0:
-        b.append("off");
-        if (system(b.constData()) != 0)
+		xsetdpms.append("off");
+		if (system(xsetdpms.constData()) != 0)
             qWarning() << "dmps screen off may have failed";
         break;
     case 1:
-        b.append("on");
-        if (system(b.constData()) != 0)
+		xsetdpms.append("on");
+		if (system(xsetdpms.constData()) != 0)
             qWarning() << "dmps screen on may have failed";
-		b.clear();
-		b.append("xset -display :");
-		b.append(QByteArray::number(m_screen));
-		b.append(" s reset");
-		if (system(b.constData()) != 0)
-			qWarning() << "dmps screen on may have failed (reset)";
-        break;
+		if (system(xsetreset.constData()) != 0)
+            qWarning() << "dmps screen on may have failed (reset)";
+		if (system(xsetnoblank.constData()) != 0)
+			qWarning() << "deactivation of dmps may have failed";
+		break;
     default:
         break;
     }
