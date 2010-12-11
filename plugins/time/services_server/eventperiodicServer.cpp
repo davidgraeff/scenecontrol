@@ -25,8 +25,6 @@
 
 void EventPeriodicServer::timeout(bool aftersync)
 {
-    EventPeriodic* base = service<EventPeriodic>();
-    QTime m_time = QDateTime::fromString(base->time(),Qt::ISODate).time();
     // timer triggered this timeout
     if (!aftersync && !m_aftertrigger)  {
         emit trigger();
@@ -37,7 +35,10 @@ void EventPeriodicServer::timeout(bool aftersync)
     }
     m_aftertrigger = false;
 
-    QDateTime datetime = QDateTime::currentDateTime();
+	EventPeriodic* base = service<EventPeriodic>();
+	QTime m_time = QDateTime::fromString(base->time(),Qt::ISODate).time();
+	m_time.setHMS(m_time.hour(),m_time.minute(),0);
+	QDateTime datetime = QDateTime::currentDateTime();
     datetime.setTime ( m_time );
     int dow = QDate::currentDate().dayOfWeek() - 1;
     int offsetdays = 0;
