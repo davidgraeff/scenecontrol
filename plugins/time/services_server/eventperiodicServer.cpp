@@ -26,7 +26,7 @@
 void EventPeriodicServer::timeout(bool aftersync)
 {
     EventPeriodic* base = service<EventPeriodic>();
-    QTime m_time = QTime::fromString(base->time(),Qt::ISODate);
+    QTime m_time = QDateTime::fromString(base->time(),Qt::ISODate).time();
     // timer triggered this timeout
     if (!aftersync && !m_aftertrigger)  {
         emit trigger();
@@ -36,8 +36,6 @@ void EventPeriodicServer::timeout(bool aftersync)
         return;
     }
     m_aftertrigger = false;
-
-    if ( !m_time.isValid() ) return;
 
     QDateTime datetime = QDateTime::currentDateTime();
     datetime.setTime ( m_time );
@@ -59,12 +57,14 @@ void EventPeriodicServer::timeout(bool aftersync)
         dow = (dow+1) % 7;
     }
 
-    if ( offsetdays < 8 )
-    {
-        const int sec = QDateTime::currentDateTime().secsTo (datetime.addDays ( offsetdays ));
-        m_timer.start(sec*1000);
-        qDebug() << "Periodic alarm: Armed" << sec;
+    if ( offsetdays >= 8 ) {
+        return;
+		qWarning()<<"Periodic alarm: Failure with weekday offset"<<offsetdays<<datetime.toString(Qt::DefaultLocaleShortDate);
     }
+
+    const int sec = QDateTime::currentDateTime().secsTo (datetime.addDays ( offsetdays ));
+    m_timer.start(sec*1000);
+	qDebug() << "Periodic alarm: " << datetime.addDays ( offsetdays ).toString(Qt::DefaultLocaleShortDate);
 }
 EventPeriodicServer::EventPeriodicServer(EventPeriodic* base, myPluginExecute*, QObject* parent) : ExecuteService(base, parent), m_aftertrigger(false)
 {
