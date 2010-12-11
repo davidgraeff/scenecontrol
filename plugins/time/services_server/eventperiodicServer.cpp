@@ -89,5 +89,6 @@ void EventPeriodicServer::nameUpdate() {
         }
     }
     days.chop(1);
-    base->setString(tr("Periodisch um %1\nan: %2").arg(base->time()).arg(days));
+	const QString time = QDateTime::fromString(base->time(),Qt::ISODate).time().toString(Qt::DefaultLocaleShortDate);
+    base->setString(tr("Periodisch um %1\nan: %2").arg(time).arg(days));
 }
