@@ -110,12 +110,19 @@ void MediaController::slotreadyRead2()
         QList<QByteArray> args = line.split(' ');
 
         if (args[0] == "OK") {
-            if (m_commandqueue.size()) {
-                m_mpdcmd->write(m_commandqueue.takeFirst());
-            } else
-                m_mpdchannelfree = true;
+            writeCommandQueueItem();
+        } else {
+            QTimer::singleShot(1000, this, SLOT(writeCommandQueueItem()));
         }
     }
+}
+
+void MediaController::writeCommandQueueItem()
+{
+    if (m_commandqueue.size()) {
+        m_mpdcmd->write(m_commandqueue.takeFirst());
+    } else
+        m_mpdchannelfree = true;
 }
 
 void MediaController::addToCommandQueue(const QByteArray& cmd) {

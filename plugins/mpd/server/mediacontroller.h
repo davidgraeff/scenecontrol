@@ -125,7 +125,8 @@ private:
 	// dump media info
 	void saveMediaInfo();
 private Q_SLOTS:
-    void slotreadyRead ();
+	void writeCommandQueueItem();
+	void slotreadyRead ();
     void slotconnected();
     void slotdisconnected();
     void sloterror(QAbstractSocket::SocketError e);
