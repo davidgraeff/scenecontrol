@@ -70,9 +70,9 @@ int main(int argc, char *argv[])
     qapp.setApplicationName(QLatin1String(ABOUT_PRODUCT));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
     qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
-	QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
-	
-	QDir::home();
+    QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
+
+    QDir::home();
     QDir m_savedir = QFileInfo ( QSettings().fileName() ).absoluteDir();
     m_savedir.mkpath ( m_savedir.absolutePath() );
     m_savedir.mkdir ( QLatin1String ( ABOUT_PRODUCT ) );
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     qapp.setProperty("settingspath",m_savedir.path());
     qapp.setProperty("pluginspath",QLatin1String (ROOM_SYSTEM_SERVERPLUGINS));
 
-	const QLatin1String servicename = QLatin1String(ROOM_SERVICENAME);
+    const QLatin1String servicename = QLatin1String(ROOM_SERVICENAME);
     QDBusConnection dbusconnection = QDBusConnection::connectToBus(QDBusConnection::SessionBus, servicename);
     if ( !dbusconnection.isConnected() )
     {
@@ -95,24 +95,24 @@ int main(int argc, char *argv[])
 
     qInstallMsgHandler(myMessageOutput);
 
-	qDebug() << QCoreApplication::applicationName().toAscii().data() << ":" << QCoreApplication::applicationVersion().toAscii().data();
-	
-	network = new NetworkController(dbusconnection);
+    qDebug() << QCoreApplication::applicationName().toAscii().data() << ":" << QCoreApplication::applicationVersion().toAscii().data();
+
+    network = new NetworkController(dbusconnection);
     ServiceController* services = new ServiceController();
-	network->setServiceController(services);
-	network->connect(services,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
-	network->connect(services,SIGNAL(statetrackerSync(AbstractStateTracker*)),SLOT(statetrackerSync(AbstractStateTracker*)));
+    network->setServiceController(services);
+    network->connect(services,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
+    network->connect(services,SIGNAL(statetrackerSync(AbstractStateTracker*)),SLOT(statetrackerSync(AbstractStateTracker*)));
     network->start();
 
-	int r = 0;
+    int r = 0;
     if (argc<=1 || strcmp("--shutdown", argv[1])!=0)
-	qapp.exec();
+        r = qapp.exec();
     network->dbus()->unregisterService(servicename);
     qDebug() << "Shutdown: Network server";
     delete network;
     network = 0;
-	qDebug() << "Shutdown: Service Controller";
-	delete services;
+    qDebug() << "Shutdown: Service Controller";
+    delete services;
     services = 0;
 
     // restart program

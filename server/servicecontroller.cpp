@@ -317,7 +317,7 @@ void ServiceController::saveToDisk ( ExecuteWithBase* eservice )
         file.write ( json );
     }
     file.close();
-    qDebug() << __FUNCTION__ << json;
+    //qDebug() << __FUNCTION__ << json;
     emit serviceSync ( service );
 }
 
