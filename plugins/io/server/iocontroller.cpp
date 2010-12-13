@@ -171,11 +171,11 @@ QString IOController::getPinName(uint pin) {
 }
 
 void IOController::panicTimeout() {
-    const char t1[] = {0x00};
+    const char t1[] = {0xff};
     if (!m_serial->isOpen() || m_serial->write(t1, sizeof(t1)) == -1) {
         qWarning()<< "IO: Failed to reset panic counter. Try reconnection";
         m_serial->close();
-		const char t1[] = {0xef};
+		const char t1[] = {0xff};
 		if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1,  sizeof(t1))) {
             qWarning() << "IO: rs232 init fehler";
         }
