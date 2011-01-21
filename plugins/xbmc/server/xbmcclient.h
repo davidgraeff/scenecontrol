@@ -723,7 +723,7 @@ private:
   int           m_Socket;
   unsigned int  m_UID;
 public:
-  CXBMCClient(const char *IP = "127.0.0.1", int Port = 9777, int Socket = -1, unsigned int UID = 0)
+  CXBMCClient(const char *IP = "127.0.0.1", int Port = STD_PORT, int Socket = -1, unsigned int UID = 0)
   {
     m_Addr = CAddress(IP, Port);
     if (Socket == -1)

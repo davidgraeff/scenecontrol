@@ -30,18 +30,27 @@ if (DEFINED USE_SERIALPORT)
   set(SRCS_SERVER ${SRCS_SERVER} ${PLUGINDIR}/shared/qextserialport.cpp)
 endif()
 
-macro(build_lib)
 ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
-QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_SERVER_H} ${SharedServer_SRCS_H})
-add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER})
-QT4_WRAP_CPP(SRCS_MOCS_CLIENT ${SRCS_CLIENT_H} ${SharedClient_SRCS_H})
-add_library(${PROJECT_NAME}_client SHARED ${SRCS_CLIENT} ${SharedClient_SRCS} ${SRCS_MOCS_CLIENT})
-endmacro(build_lib)
 
-macro(install_lib)
+macro(build_client_lib)
+	QT4_WRAP_CPP(SRCS_MOCS_CLIENT ${SRCS_CLIENT_H} ${SharedClient_SRCS_H})
+	add_library(${PROJECT_NAME}_client SHARED ${SRCS_CLIENT} ${SharedClient_SRCS} ${SRCS_MOCS_CLIENT})
+endmacro(build_client_lib)
+
+macro(build_server_lib)
+	QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_SERVER_H} ${SharedServer_SRCS_H})
+	add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER})
+endmacro(build_server_lib)
+
 set(SERVERNAME "RoomControlServer")
 SET(ROOM_SYSTEM_CLIENTPLUGINS "lib/${SERVERNAME}/plugins/client" CACHE STRING "Set the directory where client plugins are located")
 SET(ROOM_SYSTEM_SERVERPLUGINS "lib/${SERVERNAME}/plugins/server" CACHE STRING "Set the directory where server plugins are located")
-INSTALL(TARGETS ${PROJECT_NAME}_server DESTINATION ${ROOM_SYSTEM_SERVERPLUGINS} CONFIGURATIONS Debug Release RelWithDebInfo)
-INSTALL(TARGETS ${PROJECT_NAME}_client DESTINATION ${ROOM_SYSTEM_CLIENTPLUGINS} CONFIGURATIONS Debug Release RelWithDebInfo)
-endmacro(install_lib)
+
+macro(install_client_lib)
+	INSTALL(TARGETS ${PROJECT_NAME}_client DESTINATION ${ROOM_SYSTEM_CLIENTPLUGINS} CONFIGURATIONS Debug Release RelWithDebInfo)
+endmacro()
+
+macro(install_server_lib)
+	INSTALL(TARGETS ${PROJECT_NAME}_server DESTINATION ${ROOM_SYSTEM_SERVERPLUGINS} CONFIGURATIONS Debug Release RelWithDebInfo)
+endmacro()
+

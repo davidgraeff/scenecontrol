@@ -3,7 +3,7 @@ get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 project(room${targetname})
 
 find_package(Qt4 REQUIRED)
-find_package(KDE4 REQUIRED)
+find_package(KDE4 QUIET)
 include(KDE4Defaults)
 include(MacroLibrary)
 

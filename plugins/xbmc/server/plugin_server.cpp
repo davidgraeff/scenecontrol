@@ -129,7 +129,7 @@ myPluginExecute::myPluginExecute() : ExecutePlugin() {
     m_CinemaStateTracker = new CinemaStateTracker();
     m_CinemaPositionStateTracker = new CinemaPositionStateTracker();
     m_CinemaVolumeStateTracker = new CinemaVolumeStateTracker();
-    m_xbmcClient = new CXBMCClient();
+    m_xbmcClient = new CXBMCClient("127.0.0.1", 9777);
     m_xbmcClient->SendHELO(QCoreApplication::applicationName().toLatin1().constData(), ICON_NONE);
 }
 
