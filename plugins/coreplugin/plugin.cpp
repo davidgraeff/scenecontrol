@@ -7,10 +7,6 @@
 #include "statetracker/systemST.h"
 #include "services/modeAC.h"
 #include "statetracker/modeST.h"
-#include "services/actorevent.h"
-#include "services/actoreventvolume.h"
-#include "statetracker/eventST.h"
-#include "statetracker/eventvolumeST.h"
 #include "services/modeCO.h"
 #include "services/modeEV.h"
 
@@ -22,17 +18,13 @@ QStringList myPlugin::registerServices() const {
            QString::fromAscii(ActorCollection::staticMetaObject.className()) <<
            QString::fromAscii(ActorMode::staticMetaObject.className()) <<
            QString::fromAscii(ConditionMode::staticMetaObject.className()) <<
-           QString::fromAscii(EventMode::staticMetaObject.className()) <<
-           QString::fromAscii(ActorEvent::staticMetaObject.className()) <<
-           QString::fromAscii(ActorEventVolume::staticMetaObject.className());
+           QString::fromAscii(EventMode::staticMetaObject.className());
 
 }
 QStringList myPlugin::registerStateTracker() const {
     return QStringList() <<
            QString::fromAscii(SystemStateTracker::staticMetaObject.className()) <<
            QString::fromAscii(ModeStateTracker::staticMetaObject.className()) <<
-           QString::fromAscii(EventStateTracker::staticMetaObject.className()) <<
-           QString::fromAscii(EventVolumeStateTracker::staticMetaObject.className()) <<
            QString::fromAscii(BackupStateTracker::staticMetaObject.className());
 }
 
@@ -44,10 +36,6 @@ AbstractStateTracker* myPlugin::createStateTracker(const QString& id) {
         return new ModeStateTracker();
     } else if (idb == BackupStateTracker::staticMetaObject.className()) {
         return new BackupStateTracker();
-    } else if (idb == EventStateTracker::staticMetaObject.className()) {
-        return new EventStateTracker();
-    } else if (idb == EventVolumeStateTracker::staticMetaObject.className()) {
-        return new EventVolumeStateTracker();
     }
     return 0;
 }
@@ -65,10 +53,6 @@ AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
         return new EventMode();
     } else if (idb == ActorBackup::staticMetaObject.className()) {
         return new ActorBackup();
-    } else if (idb == ActorEvent::staticMetaObject.className()) {
-        return new ActorEvent();
-    } else if (idb == ActorEventVolume::staticMetaObject.className()) {
-        return new ActorEventVolume();
     } else if (idb == EventSystem::staticMetaObject.className()) {
         return new EventSystem();
     }

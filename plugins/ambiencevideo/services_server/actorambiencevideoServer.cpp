@@ -19,20 +19,25 @@
 
 #include "actorambiencevideoServer.h"
 #include "server/plugin_server.h"
-#include "server/mediacontroller.h"
 #include <services/actorambiencevideo.h>
+#include <server/externalclient.h>
+#include <shared/abstractplugin.h>
 
 void ActorAmbienceVideoServer::execute()
 {
     ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
-    m_plugin->mediacontroller()->setDisplay(base->display());
-    m_plugin->mediacontroller()->setClickActions(base->onleftclick(),base->onrightclick(), base->restoretime());
-    m_plugin->mediacontroller()->setVolume(base->volume());
-    m_plugin->mediacontroller()->setFilename(base->filename());
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        client->setDisplay(base->display());
+        client->setClickActions(base->onleftclick(),base->onrightclick(), base->restoretime());
+        client->setVolume(base->volume());
+        client->setFilename(base->filename());
+    }
 }
 
 ActorAmbienceVideoServer::ActorAmbienceVideoServer(ActorAmbienceVideo* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+
 void ActorAmbienceVideoServer::nameUpdate() {
-	ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
-	base->setString(tr("Ambience Video\n%1").arg(base->filename()));
+    ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
+    base->setString(tr("%1\n%2").arg(m_plugin->base()->name()).arg(base->filename()));
 }

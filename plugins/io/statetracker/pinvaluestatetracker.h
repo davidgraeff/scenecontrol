@@ -24,16 +24,16 @@
 class PinValueStateTracker : public AbstractStateTracker
 {
     Q_OBJECT
-    Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
+    Q_PROPERTY(QString pin READ pin WRITE setPin);
     Q_PROPERTY(bool value READ value WRITE setValue);
 public:
     PinValueStateTracker(QObject* parent = 0);
-    unsigned int pin() const;
-    void setPin(unsigned int value);
+    QString pin() const;
+    void setPin(QString value);
     bool value() const;
     void setValue(bool value);
 private:
-    unsigned int m_pin;
+    QString m_pin;
     bool m_value;
 };
 

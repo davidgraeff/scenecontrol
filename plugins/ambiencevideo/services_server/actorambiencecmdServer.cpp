@@ -19,41 +19,44 @@
 
 #include "actorambiencecmdServer.h"
 #include "server/plugin_server.h"
-#include "server/mediacontroller.h"
+#include "server/externalclient.h"
 #include <services/actorambiencecmd.h>
+#include <shared/abstractplugin.h>
 
 void ActorAmbienceCmdServer::execute()
 {
     ActorAmbienceCmd* base = service<ActorAmbienceCmd>();
-    switch (base->cmd()) {
-    case ActorAmbienceCmd::CloseFullscreen:
-        m_plugin->mediacontroller()->closeFullscreen();
-        break;
-	case ActorAmbienceCmd::ScreenOff:
-		m_plugin->mediacontroller()->setDisplayState(0);
-		break;
-	case ActorAmbienceCmd::ScreenOn:
-		m_plugin->mediacontroller()->setDisplayState(1);
-		break;
-	case ActorAmbienceCmd::ScreenToggle:
-		m_plugin->mediacontroller()->setDisplayState(2);
-		break;
-	case ActorAmbienceCmd::HideVideo:
-		m_plugin->mediacontroller()->hideVideo();
-		break;
-	case ActorAmbienceCmd::StopVideo:
-		m_plugin->mediacontroller()->stop();
-		break;
-	default:
-        break;
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        switch (base->cmd()) {
+        case ActorAmbienceCmd::CloseFullscreen:
+            client->closeFullscreen();
+            break;
+        case ActorAmbienceCmd::ScreenOff:
+            client->setDisplayState(0);
+            break;
+        case ActorAmbienceCmd::ScreenOn:
+            client->setDisplayState(1);
+            break;
+        case ActorAmbienceCmd::ScreenToggle:
+            client->setDisplayState(2);
+            break;
+        case ActorAmbienceCmd::HideVideo:
+            client->hideVideo();
+            break;
+        case ActorAmbienceCmd::StopVideo:
+            client->stopvideo();
+            break;
+        default:
+            break;
+        }
     }
-
 }
 
 ActorAmbienceCmdServer::ActorAmbienceCmdServer(ActorAmbienceCmd* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 
 void ActorAmbienceCmdServer::nameUpdate() {
-	ActorAmbienceCmd* base = service<ActorAmbienceCmd>();
-	
-	base->setString(tr("Ambience Video Kommando\n%1").arg(base->translate(0,base->cmd())));
+    ActorAmbienceCmd* base = service<ActorAmbienceCmd>();
+
+    base->setString(tr("%1 Kommando\n%2").arg(m_plugin->base()->name()).arg(base->translate(0,base->cmd())));
 }

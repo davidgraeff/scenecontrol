@@ -35,12 +35,12 @@ class ChannelValueStateTracker;
 
 enum stella_fade_function
 {
-  STELLA_SET_IMMEDIATELY,
-  STELLA_SET_FADE,
-  STELLA_SET_FLASHY,
-  STELLA_SET_IMMEDIATELY_RELATIVE,
-  STELLA_SET_MOODLIGHTED, // only relevant for udp stella protocoll
-  STELLA_GETALL = 255
+    STELLA_SET_IMMEDIATELY,
+    STELLA_SET_FADE,
+    STELLA_SET_FLASHY,
+    STELLA_SET_IMMEDIATELY_RELATIVE,
+    STELLA_SET_MOODLIGHTED, // only relevant for udp stella protocoll
+    STELLA_GETALL = 255
 };
 
 class Controller : public QObject
@@ -50,9 +50,10 @@ public:
     /**
     Daten von ethersex abrufen
     */
-	Controller(myPluginExecute* plugin);
+    Controller(myPluginExecute* plugin);
     ~Controller();
     void refresh();
+    void connectToLeds(const QString& url);
     QList<AbstractStateTracker*> getStateTracker();
     void setCurtain(unsigned int position);
     unsigned int getCurtain();
@@ -66,27 +67,27 @@ public:
     void setChannelRelative ( uint channel, int value, uint fade );
     unsigned int getChannel(unsigned int channel) const;
 private:
-	QString m_pluginname;
+    QString m_pluginname;
     QList<ChannelValueStateTracker*> m_values;
     QList<ChannelNameStateTracker*> m_names;
     CurtainStateTracker* m_curtainStateTracker;
-	int m_channels;
-	QByteArray m_buffer;
-	void determineChannels(const QByteArray& data);
-	// rs232 special
-	QextSerialPort* m_serial;
-	QTimer m_panicTimer;
-	int m_bufferpos;
-	enum readStateEnum {
-		ReadOK,
-		ReadEnd
-	};
-	readStateEnum m_readState;
+    int m_channels;
+    QByteArray m_buffer;
+    void determineChannels(const QByteArray& data);
+    QTimer m_panicTimer;
+    int m_bufferpos;
+    enum readStateEnum {
+        ReadOK,
+        ReadEnd
+    };
+    readStateEnum m_readState;
+    // rs232 special
+    QextSerialPort* m_serial;
 private Q_SLOTS:
     // LIGHTS //
     void readyRead();
-	void panicTimeout();
+    void panicTimeout();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
-	void dataLoadingComplete();
+    void dataLoadingComplete();
 };

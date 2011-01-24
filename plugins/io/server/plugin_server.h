@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef myPLUGINSERVER_H
-#define myPLUGINSERVER_H
+#pragma once
 #include <QObject>
 #include <QStringList>
 #include "shared/server/executeplugin.h"
@@ -34,6 +33,7 @@ public:
     myPluginExecute();
     virtual ~myPluginExecute();
     virtual void refresh() ;
+    virtual void setSetting(const QString& name, const QVariant& value);
     virtual ExecuteWithBase* createExecuteService(const QString& id);
     virtual QList<AbstractStateTracker*> stateTracker();
     virtual void clear(){}
@@ -49,5 +49,3 @@ private:
 private Q_SLOTS:
     void dataLoadingComplete();
 };
-
-#endif // myPLUGINSERVER_H

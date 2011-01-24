@@ -32,7 +32,8 @@ public:
     myPluginExecute();
     virtual ~myPluginExecute();
     virtual void refresh() ;
-	virtual void clear(){}
+    virtual void clear() {}
+    virtual void setSetting(const QString& name, const QVariant& value);
     virtual ExecuteWithBase* createExecuteService(const QString& id);
     virtual QList<AbstractStateTracker*> stateTracker();
     virtual AbstractPlugin* base() {

@@ -16,22 +16,32 @@
 #include "services_server/conditioncurtainServer.h"
 #include "services_server/conditionledServer.h"
 #include "controller.h"
+#include "configplugin.h"
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
 myPluginExecute::myPluginExecute() : ExecutePlugin() {
-  m_base = new myPlugin();
-  m_Controller = new Controller(this);
-  connect(m_Controller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
-  connect(m_Controller,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
+    m_base = new myPlugin();
+    m_Controller = new Controller(this);
+    connect(m_Controller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
+    connect(m_Controller,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
+    _config(this);
 }
 
 myPluginExecute::~myPluginExecute() {
-  //delete m_base;
-  delete m_Controller;
+    //delete m_base;
+    delete m_Controller;
 }
 
 void myPluginExecute::refresh() {}
+
+void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
+    ExecutePlugin::setSetting(name, value);
+    if (name == QLatin1String("serialport")) {
+        const QString device = value.toString();
+        m_Controller->connectToLeds(device);
+    }
+}
 
 ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 {

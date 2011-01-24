@@ -28,38 +28,16 @@
 #include <shared/server/qextserialport.h>
 #include <shared/abstractplugin.h>
 
-#define DEVICE "/dev/ttyUSB1"
-Controller::Controller(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_channels(0), m_bufferpos(0), m_readState(ReadOK)
+Controller::Controller(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_channels(0), m_bufferpos(0), m_readState(ReadOK), m_serial(0)
 {
     m_curtainStateTracker = new CurtainStateTracker();
-    QSettings settings;
-    settings.beginGroup(m_pluginname);
-    m_serial = new QextSerialPort(settings.value(QLatin1String("device"),QLatin1String(DEVICE)).toString(),QextSerialPort::EventDriven);
-    m_serial->setBaudRate(BAUD115200);
-    m_serial->setFlowControl(FLOW_OFF);
-    m_serial->setParity(PAR_NONE);
-    m_serial->setDataBits(DATA_8);
-    m_serial->setStopBits(STOP_1);
-    connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
-    // Open device and ask for pins
-    if (!QFile::exists(QLatin1String(DEVICE))) {
-        qWarning() << m_pluginname << "device not found"<<DEVICE;
-        return;
-    }
-    const char t1[] = {0xef};
-    if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1, sizeof(t1))) {
-        qWarning() << m_pluginname << "rs232 init fehler";
-    }
-    // panic counter
-    m_panicTimer.setInterval(60000);
-    connect(&m_panicTimer,SIGNAL(timeout()),SLOT(panicTimeout()));
-	m_panicTimer.start();
 }
 
 Controller::~Controller()
 {
     qDeleteAll(m_values);
     qDeleteAll(m_names);
+    delete m_serial;
     delete m_curtainStateTracker;
 }
 
@@ -97,8 +75,8 @@ void Controller::readyRead()
 
 void Controller::determineChannels(const QByteArray& data)
 {
-	if (data.isEmpty() || data.size() != (int)data[2]+3) {
-		qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[2]+3):0)<<data.size();
+    if (data.isEmpty() || data.size() != (int)data[2]+3) {
+        qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[2]+3):0)<<data.size();
         return;
     }
     QSettings settings;
@@ -110,10 +88,10 @@ void Controller::determineChannels(const QByteArray& data)
     m_values.clear();
     m_names.clear();
     // set new
-	m_curtainStateTracker->setCurtain((uint)data[0]);
-	m_curtainStateTracker->setCurtainMax((uint)data[1]);
-	emit stateChanged(m_curtainStateTracker);
-	m_channels = (int)data[2];
+    m_curtainStateTracker->setCurtain((uint)data[0]);
+    m_curtainStateTracker->setCurtainMax((uint)data[1]);
+    emit stateChanged(m_curtainStateTracker);
+    m_channels = (int)data[2];
     for ( int i=0;i<m_channels;++i )
     {
         const QString name = settings.value ( QLatin1String("channel")+QString::number( i ),
@@ -121,8 +99,8 @@ void Controller::determineChannels(const QByteArray& data)
         ChannelValueStateTracker* cv = new ChannelValueStateTracker();
         m_values.append(cv);
         cv->setChannel(i);
-		const int value = (uint8_t)data[i+3];
-		cv->setValue(value);
+        const int value = (uint8_t)data[i+3];
+        cv->setValue(value);
         emit stateChanged(cv);
         ChannelNameStateTracker* cn = new ChannelNameStateTracker();
         m_names.append(cn);
@@ -146,6 +124,7 @@ QList<AbstractStateTracker*> Controller::getStateTracker()
 
 void Controller::setCurtain(unsigned int position)
 {
+    if (!m_serial) return;
     m_curtainStateTracker->setCurtain(position);
     emit stateChanged(m_curtainStateTracker);
     const char t1[] = {0xdf, position};
@@ -164,7 +143,7 @@ void Controller::setChannelName ( uint channel, const QString& name )
     emit stateChanged(m_names[channel]);
 
     QSettings settings;
-	settings.beginGroup(m_pluginname);
+    settings.beginGroup(m_pluginname);
     settings.beginGroup ( QLatin1String("channelnames") );
     settings.setValue ( QLatin1String("channel")+QString::number ( channel ), name );
 }
@@ -177,6 +156,7 @@ unsigned int Controller::getChannel(unsigned int channel) const
 
 void Controller::setChannel ( uint channel, uint value, uint fade )
 {
+    if (!m_serial) return;
     if ( channel>= ( unsigned int ) m_values.size() ) return;
     value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
     m_values[channel]->setValue(value);
@@ -251,13 +231,43 @@ QString Controller::getChannelName(uint channel) {
 }
 
 void Controller::panicTimeout() {
-	const char t1[] = {0x00};
-	if (!m_serial->isOpen() || m_serial->write(t1, sizeof(t1)) == -1) {
-		qWarning()<< "IO: Failed to reset panic counter. Try reconnection";
-		m_serial->close();
-		const char t1[] = {0xef};
-		if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1,  sizeof(t1))) {
-			qWarning() << "IO: rs232 init fehler";
-		}
-	}
+    if (!m_serial) return;
+    const char t1[] = {0x00};
+    if (!m_serial->isOpen() || m_serial->write(t1, sizeof(t1)) == -1) {
+        qWarning()<< "IO: Failed to reset panic counter. Try reconnection";
+        m_serial->close();
+        const char t1[] = {0xef};
+        if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1,  sizeof(t1))) {
+            qWarning() << "IO: rs232 init fehler";
+        }
+    }
+}
+void Controller::connectToLeds(const QString& device) {
+    // disable old
+    m_panicTimer.stop();
+    delete m_serial;
+    m_serial = 0;
+    // create new
+    QSettings settings;
+    settings.beginGroup(m_pluginname);
+    m_serial = new QextSerialPort(device,QextSerialPort::EventDriven);
+    m_serial->setBaudRate(BAUD115200);
+    m_serial->setFlowControl(FLOW_OFF);
+    m_serial->setParity(PAR_NONE);
+    m_serial->setDataBits(DATA_8);
+    m_serial->setStopBits(STOP_1);
+    connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
+    // Open device and ask for pins
+    if (!QFile::exists(device)) {
+        qWarning() << m_pluginname << "device not found"<<device;
+        return;
+    }
+    const char t1[] = {0xef};
+    if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1, sizeof(t1))) {
+        qWarning() << m_pluginname << "rs232 init fehler";
+    }
+    // panic counter
+    m_panicTimer.setInterval(60000);
+    connect(&m_panicTimer,SIGNAL(timeout()),SLOT(panicTimeout()));
+    m_panicTimer.start();
 }

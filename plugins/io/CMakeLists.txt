@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.6)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/")
 find_package(RoomServerPlugins REQUIRED)
 
-SET(CONFIG_${PROJECT_NAME}_SERVERS "192.168.0.20;192.168.0.21" CACHE STRING "Servers")
-SET(CONFIG_${PROJECT_NAME}_PORT "1751" CACHE STRING "Port")
+SET(CONFIG_${PROJECT_NAME}_AUTOCONFIG "255.255.255.255:1075:1077:netz:netz" CACHE STRING "Autoconfiguation NET-PwrCtrl (Subnet:send:listen:user:pwd")
+SET(CONFIG_AUTOCONFIG ${CONFIG_${PROJECT_NAME}_AUTOCONFIG})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
 SET(DEBFOUND TRUE)

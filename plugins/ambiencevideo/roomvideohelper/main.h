@@ -9,31 +9,35 @@
 #include <qfile.h>
 #include <QTimer>
 #include <QSocketNotifier>
+#include <QTcpSocket>
+#include <QTcpServer>
 
 class MediaPlayer : public Phonon::VideoWidget {
     Q_OBJECT
 public:
     MediaPlayer(QWidget *parent=0);
 private:
-    Phonon::MediaObject *m_media;
-    Phonon::AudioOutput *m_aoutput;
+    Phonon::MediaObject *m_videomedia;
+    Phonon::MediaObject *m_eventmedia;
+    Phonon::AudioOutput *m_outputvideo;
+    Phonon::AudioOutput *m_outputevents;
     ActorAmbienceVideo::EnumOnClick leftclick;
     ActorAmbienceVideo::EnumOnClick rightclick;
-    QFile inFile;
-    QDataStream stream;
-	QTimer restoretimer;
-	int m_screen;
+    QTimer restoretimer;
+    int m_screen;
     QByteArray m_buffer;
     int m_bufferpos;
-    QSocketNotifier* notifier;
+    QTcpSocket* m_socket;
+    QTcpServer m_tcpserver;
     void smallWindow() ;
     void fullscreenWindow();
-	void setSceenState(int state);
+    void setSceenState(int state);
     virtual void mousePressEvent(QMouseEvent* );
 public slots:
-    void readyRead(int);
+    void readyRead();
     void prefinishMarkReached(qint32);
     void restoreTimeout();
+    void newConnection();
 };
 
 

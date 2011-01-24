@@ -17,12 +17,12 @@
  *
  */
 
-#ifndef myPLUGINSERVER_H
-#define myPLUGINSERVER_H
+#pragma once
 #include <QObject>
 #include <QStringList>
 #include "shared/server/executeplugin.h"
 
+class ExternalClient;
 class MediaController;
 class myPluginExecute : public ExecutePlugin
 {
@@ -32,16 +32,15 @@ public:
     myPluginExecute();
     virtual ~myPluginExecute();
     virtual void refresh() ;
-	virtual void clear(){}
+    virtual void clear() {}
+    virtual void setSetting(const QString& name, const QVariant& value);
     virtual ExecuteWithBase* createExecuteService(const QString& id);
     virtual QList<AbstractStateTracker*> stateTracker();
     virtual AbstractPlugin* base() {
         return m_base;
     }
-    MediaController* mediacontroller();
+    QList<ExternalClient*> specificClients(const QString& host);
 private:
     AbstractPlugin* m_base;
-    MediaController* m_mediacontroller;
+    QList<ExternalClient*> m_clients;
 };
-
-#endif // myPLUGINSERVER_H

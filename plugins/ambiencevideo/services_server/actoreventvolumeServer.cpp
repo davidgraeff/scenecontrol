@@ -18,9 +18,9 @@
 */
 
 #include "actoreventvolumeServer.h"
-#include <coreplugin/server/plugin_server.h>
-#include <coreplugin/services/actoreventvolume.h>
-#include <coreplugin/server/eventcontroller.h>
+#include <server/plugin_server.h>
+#include <services/actoreventvolume.h>
+#include <server/externalclient.h>
 
 ActorEventVolumeServer::ActorEventVolumeServer(ActorEventVolume* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 
@@ -28,7 +28,10 @@ ActorEventVolumeServer::ActorEventVolumeServer(ActorEventVolume* base, myPluginE
 void ActorEventVolumeServer::execute()
 {
     ActorEventVolume* base = service<ActorEventVolume>();
-    m_plugin->eventcontroller()->setVolume(base->volume()/100.0,base->relative());
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        client->setVolume(base->volume(),base->relative());
+    }
 }
 
 bool ActorEventVolumeServer::checkcondition() {

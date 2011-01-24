@@ -18,18 +18,22 @@
 */
 
 #include "actoreventServer.h"
-#include <coreplugin/services/actorevent.h>
-#include <coreplugin/server/eventcontroller.h>
-#include <coreplugin/server/plugin_server.h>
+#include <services/actorevent.h>
+#include <server/plugin_server.h>
+#include <server/externalclient.h>
 
 ActorEventServer::ActorEventServer(ActorEvent* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
 
 void ActorEventServer::execute()
 {
     ActorEvent* base = service<ActorEvent>();
-    m_plugin->eventcontroller()->setFilename(base->filename());
-    m_plugin->eventcontroller()->setTitle(base->title());
-    m_plugin->eventcontroller()->play();
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        if (base->filename().size())
+            client->playEvent(base->filename());
+        if (base->title().size())
+            client->showMessage(base->duration(),base->title());
+    }
 }
 
 bool ActorEventServer::checkcondition() {
@@ -38,7 +42,7 @@ bool ActorEventServer::checkcondition() {
 void ActorEventServer::dataUpdate() {}
 
 void ActorEventServer::nameUpdate() {
-	ActorEvent* base = service<ActorEvent>();
-	
-	base->setString(tr("Ereignis %1 auslösen\n%2").arg(base->title()).arg(base->filename()));
+    ActorEvent* base = service<ActorEvent>();
+
+    base->setString(tr("Ereignis %1 auslösen\n%2").arg(base->title()).arg(base->filename()));
 }

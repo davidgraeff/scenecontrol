@@ -20,6 +20,9 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
+#include <QString>
+#include <QVariant>
+#include <QMap>
 
 class AbstractServiceProvider;
 class AbstractStateTracker;
@@ -34,16 +37,41 @@ public:
     virtual QList<AbstractStateTracker*> stateTracker() = 0;
     virtual AbstractPlugin* base() = 0;
     /**
-     * Called before all services are deleted to tidy up
+     * Called by server process before all services are deleted.
+     * Tidy up here.
      */
     virtual void clear() = 0;
-	void serverserviceChanged(AbstractServiceProvider* service) {emit _serviceChanged(service);}
+    /**
+     * Called by server process if a service changed.
+     * \param service the changed service
+     */
+    void serverserviceChanged(AbstractServiceProvider* service) {
+        emit _serviceChanged(service);
+    }
+    /**
+     * Called by server process if a setting is changed. Subclass
+     * this method (and call the base implementation) to react on
+     * changes.
+     * \param name Name of the setting
+     * \param value Value of the setting
+     */
+    virtual void setSetting(const QString& name, const QVariant& value) {
+        m_settings.insert(name, value);
+    }
+    void registerSetting(const char* name, const QVariant& value) {
+      setSetting(QString::fromAscii(name), value);
+    }
+    const QVariantMap getSettings() const {
+        return m_settings;
+    }
+private:
+    QVariantMap m_settings;
 Q_SIGNALS:
-	/**
-	 * For internal use in plugins only. Server service changes.
-	 */
-	void _serviceChanged(AbstractServiceProvider*);
-	
+    /**
+     * For internal use in plugins only. Server service changes.
+     */
+    void _serviceChanged(AbstractServiceProvider*);
+
     void stateChanged(AbstractStateTracker*);
 
     /**

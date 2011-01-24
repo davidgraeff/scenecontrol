@@ -23,6 +23,7 @@
 class ActorAmbienceCmd : public AbstractServiceProvider
 {
     Q_OBJECT
+    Q_PROPERTY(QString host READ host WRITE setHost)
     Q_PROPERTY(EnumAmbienceCmd cmd READ cmd WRITE setCmd)
     Q_ENUMS(EnumAmbienceCmd);
     Q_PROPERTY(int restoretime READ restoretime WRITE setRestoretime)
@@ -50,6 +51,8 @@ public:
         Q_UNUSED(enumindex);
         switch (propindex) {
         case 0:
+            return tr("Host (leer=alle)");
+        case 1:
             switch (enumindex) {
             case 0:
                 return tr("Vollbild temporär aufheben");
@@ -66,8 +69,8 @@ public:
             default:
                 return tr("Kommando");
             }
-        case 1:
-			return tr("Wiederherstellungszeit in s");
+        case 2:
+            return tr("Wiederherstellungszeit in s");
         default:
             return QString();
         }
@@ -79,15 +82,24 @@ public:
     void setCmd( EnumAmbienceCmd m ) {
         m_cmd = m;
     }
+
+    QString host() const {
+        return m_host;
+    }
+
+    void setHost( QString m ) {
+        m_host = m;
+    }
     
     int restoretime() const {
-		return m_restoretime;
-	}
-	
-	void setRestoretime( int v ) {
-		m_restoretime = v;
-	}
+        return m_restoretime;
+    }
+
+    void setRestoretime( int v ) {
+        m_restoretime = v;
+    }
 private:
     EnumAmbienceCmd m_cmd;
-	int m_restoretime;
+    QString m_host;
+    int m_restoretime;
 };

@@ -6,33 +6,39 @@
 #include <sys/prctl.h>
 #include <QSocketNotifier>
 #include <stdio.h>
+#include "configexternal.h"
 
 MediaPlayer::MediaPlayer(QWidget *parent)
-        : Phonon::VideoWidget(parent), m_bufferpos(0)
+        : Phonon::VideoWidget(parent), m_bufferpos(0), m_socket(0)
 {
-    m_media = new Phonon::MediaObject(this);
-    connect(m_media,SIGNAL(prefinishMarkReached(qint32)), SLOT(prefinishMarkReached(qint32)));
-    m_media->setPrefinishMark(500);
-    m_aoutput = new Phonon::AudioOutput(Phonon::VideoCategory, this);
+    m_videomedia = new Phonon::MediaObject(this);
+    m_eventmedia = new Phonon::MediaObject(this);
+    connect(m_videomedia,SIGNAL(prefinishMarkReached(qint32)), SLOT(prefinishMarkReached(qint32)));
+    m_videomedia->setPrefinishMark(500);
+    m_outputvideo = new Phonon::AudioOutput(Phonon::VideoCategory, this);
+    m_outputevents = new Phonon::AudioOutput(Phonon::NotificationCategory, this);
     m_screen = 0;
     setAspectRatio(AspectRatioWidget);
 
-    Phonon::createPath(m_media, m_aoutput);
-    Phonon::createPath(m_media, this);
-    inFile.open(stdin,QIODevice::ReadOnly);
-    //stream.setDevice(&inFile);
-    notifier = new QSocketNotifier(inFile.handle(),QSocketNotifier::Read,this);
-    connect(notifier, SIGNAL(activated(int)), this, SLOT(readyRead(int)));
+    Phonon::createPath(m_videomedia, m_outputvideo);
+    Phonon::createPath(m_videomedia, this);
+
+    Phonon::createPath(m_eventmedia, m_outputevents);
 
     connect(&restoretimer,SIGNAL(timeout()),SLOT(restoreTimeout()));
     restoretimer.setInterval(30000);
+
+    connect(&m_tcpserver,SIGNAL(newConnection()),SLOT(newConnection()));
+    m_tcpserver.listen(QHostAddress::Any,CONFIG_LISTENPORT);
 }
 
-void MediaPlayer::readyRead(int) {
-    notifier->setEnabled(false);
-    QByteArray line = inFile.readLine();
+void MediaPlayer::readyRead() {
+    if (!m_socket->canReadLine()) {
+        if (m_socket->bytesAvailable()>1000) m_socket->readAll();
+        return;
+    }
+    QByteArray line = m_socket->readLine();
     line.chop(1);
-    notifier->setEnabled(true);
 
     QList<QByteArray> args = line.split(' ');
     if (args.size()==0) return;
@@ -41,37 +47,55 @@ void MediaPlayer::readyRead(int) {
         restoretimer.start();
     } else if (args[0] == "closeFullscreen") {
         smallWindow();
-    } else if (args[0] == "stop") {
+    } else if (args[0] == "stopvideo") {
         restoretimer.stop();
-        m_media->stop();
+        m_videomedia->stop();
         hide();
+    } else if (args[0] == "stopevent") {
+        m_eventmedia->stop();
     } else if (args[0] == "display" && args.size()==2) {
         m_screen = args[1].toInt();
-    } else if (args[0] == "volume_relative" && args.size()==2) {
-        qreal vol = m_aoutput->volume();
+    } else if (args[0] == "videovolume_relative" && args.size()==2) {
+        qreal vol = m_outputvideo->volume();
         vol += args[1].toDouble();
-        m_aoutput->setVolume(vol);
-    } else if (args[0] == "volume" && args.size()==2) {
-        m_aoutput->setVolume(args[1].toDouble());
+        m_outputvideo->setVolume(vol);
+    } else if (args[0] == "eventvolume_relative" && args.size()==2) {
+        qreal vol = m_outputevents->volume();
+        vol += args[1].toDouble();
+        m_outputevents->setVolume(vol);
+    } else if (args[0] == "videovolume" && args.size()==2) {
+        m_outputvideo->setVolume(args[1].toDouble());
+    } else if (args[0] == "eventvolume" && args.size()==2) {
+        m_outputevents->setVolume(args[1].toDouble());
     } else if (args[0] == "clickactions" && args.size()==4) {
         leftclick = (ActorAmbienceVideo::EnumOnClick)args[1].toInt();
         rightclick = (ActorAmbienceVideo::EnumOnClick)args[2].toInt();
         restoretimer.setInterval(args[3].toInt());
     } else if (args[0] == "displaystate" && args.size()==2) {
         setSceenState(args[1].toInt());
-    } else if (args[0] == "play" && args.size()>1) {
+    } else if (args[0] == "showmessage" && args.size()==3) {
+        const int duration = args[1].toInt();
+        const QString title = QString::fromUtf8(line.mid(2+args[0].count()+args[1].count()));
+    } else if (args[0] == "playvideo" && args.size()>1) {
         const QUrl filename = QUrl(QString::fromUtf8(line.mid(6)));
         fullscreenWindow();
-        if (m_media->currentSource().url()!=filename) {
-            m_media->setCurrentSource(filename);
-            m_media->play();
-        } else if (m_media->state()!=Phonon::PlayingState)
-            m_media->play();
+        if (m_videomedia->currentSource().url()!=filename) {
+            m_videomedia->setCurrentSource(filename);
+            m_videomedia->play();
+        } else if (m_videomedia->state()!=Phonon::PlayingState)
+            m_videomedia->play();
+    } else if (args[0] == "playevent" && args.size()>1) {
+        const QUrl filename = QUrl(QString::fromUtf8(line.mid(1+args[0].count())));
+        if (m_eventmedia->currentSource().url()!=filename) {
+            m_eventmedia->setCurrentSource(filename);
+            m_eventmedia->play();
+        } else if (m_eventmedia->state()!=Phonon::PlayingState)
+            m_eventmedia->play();
     }
 }
 
 void MediaPlayer::prefinishMarkReached(qint32) {
-    m_media->seek(0);
+    m_videomedia->seek(0);
 }
 
 void MediaPlayer::mousePressEvent(QMouseEvent*event) {
@@ -114,44 +138,47 @@ void MediaPlayer::fullscreenWindow() {
     QCursor cursor;
     cursor.setShape(Qt::BlankCursor);
     setCursor(cursor);
-	setVisible(true);
+    setVisible(true);
 }
 
 void MediaPlayer::restoreTimeout() {
     fullscreenWindow();
 }
 void MediaPlayer::setSceenState(int state) {
+#ifdef _WIN32
+    qWarning() << "screen states not supported within windows";
+#else
     QByteArray xsetdpms;
-	xsetdpms.append("xset -display :");
-	xsetdpms.append(QByteArray::number(m_screen));
-	xsetdpms.append(" dpms force ");
-	QByteArray xsetreset;
-	xsetreset.append("xset -display :");
-	xsetreset.append(QByteArray::number(m_screen));
-	xsetreset.append(" s reset");
-	QByteArray xsetnoblank;
-	xsetnoblank.append("xset -display :");
-	xsetnoblank.append(QByteArray::number(m_screen));
-	xsetnoblank.append(" -dpms");
-	
-	switch (state) {
+    xsetdpms.append("xset -display :");
+    xsetdpms.append(QByteArray::number(m_screen));
+    xsetdpms.append(" dpms force ");
+    QByteArray xsetreset;
+    xsetreset.append("xset -display :");
+    xsetreset.append(QByteArray::number(m_screen));
+    xsetreset.append(" s reset");
+    QByteArray xsetnoblank;
+    xsetnoblank.append("xset -display :");
+    xsetnoblank.append(QByteArray::number(m_screen));
+    xsetnoblank.append(" -dpms");
+    switch (state) {
     case 0:
-		xsetdpms.append("off");
-		if (system(xsetdpms.constData()) != 0)
+        xsetdpms.append("off");
+        if (system(xsetdpms.constData()) != 0)
             qWarning() << "dmps screen off may have failed";
         break;
     case 1:
-		xsetdpms.append("on");
-		if (system(xsetdpms.constData()) != 0)
+        xsetdpms.append("on");
+        if (system(xsetdpms.constData()) != 0)
             qWarning() << "dmps screen on may have failed";
-		if (system(xsetreset.constData()) != 0)
+        if (system(xsetreset.constData()) != 0)
             qWarning() << "dmps screen on may have failed (reset)";
-		if (system(xsetnoblank.constData()) != 0)
-			qWarning() << "deactivation of dmps may have failed";
-		break;
+        if (system(xsetnoblank.constData()) != 0)
+            qWarning() << "deactivation of dmps may have failed";
+        break;
     default:
         break;
     }
+#endif
 }
 
 static void catch_int(int)
@@ -174,5 +201,11 @@ int main(int argc, char **argv)
     MediaPlayer mw;
     mw.hide();
     return app.exec();
+}
+
+void MediaPlayer::newConnection() {
+    if (m_socket) delete m_socket;
+    m_socket = m_tcpserver.nextPendingConnection();
+    connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
 }
 

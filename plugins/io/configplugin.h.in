@@ -1,0 +1,3 @@
+void _config(ExecutePlugin* plugin) {
+  plugin->registerSetting("autoconfig", QLatin1String("@CONFIG_AUTOCONFIG@"));
+}

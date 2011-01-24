@@ -19,13 +19,25 @@
 
 #include "actorambiencevolumeServer.h"
 #include "server/plugin_server.h"
-#include "server/mediacontroller.h"
+#include <shared/abstractplugin.h>
 #include <services/actorambiencevolume.h>
+#include <server/externalclient.h>
 
 void ActorAmbienceVolumeServer::execute()
 {
-	ActorAmbienceVolume* base = service<ActorAmbienceVolume>();
-    m_plugin->mediacontroller()->setVolume(base->volume(),base->relative());
+    ActorAmbienceVolume* base = service<ActorAmbienceVolume>();
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        client->setVolume(base->volume(),base->relative());
+    }
 }
 
 ActorAmbienceVolumeServer::ActorAmbienceVolumeServer(ActorAmbienceVolume* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {}
+
+void ActorAmbienceVolumeServer::nameUpdate() {
+    ActorAmbienceVolume* base = service<ActorAmbienceVolume>();
+    if (base->relative())
+      base->setString(tr("%1\nRelative Lautstärke Änderung: %2").arg(m_plugin->base()->name()).arg(base->volume()));
+    else
+      base->setString(tr("%1\nNeue Lautstärke: %2").arg(m_plugin->base()->name()).arg(base->volume()));
+}

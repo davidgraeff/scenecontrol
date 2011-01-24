@@ -206,9 +206,9 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
     if (collection) {
         // connect executecollection signals
         connect(collection,SIGNAL(executeservice(ExecuteService*)),SLOT(executeservice(ExecuteService*)));
-		// to update names e.g. coreplugin:execute collection needs the collection names
+        // to update names e.g. coreplugin:execute collection needs the collection names
         foreach(ExecutePlugin* plugin, m_plugins) {
-			plugin->serverserviceChanged(collection->base());
+            plugin->serverserviceChanged(collection->base());
         }
     }
 

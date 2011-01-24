@@ -23,12 +23,12 @@ ActorPinName::ActorPinName(QObject* parent)
         : AbstractServiceProvider(parent)
 {}
 
-unsigned int ActorPinName::pin() const
+QString ActorPinName::pin() const
 {
     return m_pin;
 }
 
-void ActorPinName::setPin(unsigned int value)
+void ActorPinName::setPin(QString value)
 {
     m_pin = value;
 }

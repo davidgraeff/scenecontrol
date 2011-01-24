@@ -1,0 +1,16 @@
+[Buildset]
+BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x16\x00r\x00o\x00o\x00m\x00c\x00o\x00n\x00t\x00r\x00o\x00l)
+
+[CMake]
+BuildDirs=/home/david/Entwicklung/roomcontrol/build
+CMakeDir=/usr/share/cmake-2.8/Modules
+CurrentBuildDir=file:///home/david/Entwicklung/roomcontrol/build
+CurrentInstallDir=
+Extra Arguments=
+ProjectRootRelative=./
+
+[MakeBuilder]
+Number Of Jobs=1
+
+[Project]
+VersionControlSupport=kdevgit

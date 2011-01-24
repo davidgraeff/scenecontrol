@@ -58,7 +58,7 @@ void PinsModel::stateTrackerChanged(AbstractStateTracker* tracker)
 		p->setPin(original->pin());
 		p->setValue(original->value());
         if (!m_assignment.contains(p->pin())) {
-            beginInsertRows(QModelIndex(), p->pin(), p->pin());
+            beginInsertRows(QModelIndex(),m_itemvalues.size() ,m_itemvalues.size());
             m_assignment.insert(p->pin(), m_itemvalues.size());
             m_itemvalues.append(p);
             m_itemnames.append(new PinNameStateTracker());
@@ -172,43 +172,46 @@ Qt::ItemFlags PinsModel::flags ( const QModelIndex& index ) const
     return QAbstractListModel::flags ( index ) | Qt::ItemIsEditable | Qt::ItemIsUserCheckable;
 }
 
-void PinsModel::setValue ( int i, unsigned int value )
+void PinsModel::setValue ( const QString& pin, unsigned int value )
 {
     ActorPin* a = new ActorPin();
-    a->setPin(i);
+    a->setPin(pin);
     a->setValue((ActorPin::ActorPinEnum)value);
 	emit executeService(a);
 }
 
-void PinsModel::setName ( int i, const QString& value )
+void PinsModel::setName ( const QString& pin, const QString& value )
 {
     ActorPinName* a = new ActorPinName();
-    a->setPin(i);
+    a->setPin(pin);
     a->setPinname(value);
     emit executeService(a);
 }
 
-QString PinsModel::getName ( int i )
+/*
+QString PinsModel::getName ( const QString& pin )
 {
     if (i<0 || i>=m_itemnames.size()) return QString();
     return m_itemnames.at ( i )->value();
 }
 
-int PinsModel::getValue ( int i ) const
+int PinsModel::getValue ( const QString& pin ) const
 {
     if (i<0 || i>=m_itemvalues.size()) return 0;
     return m_itemvalues.at ( i )->value();
 }
 
-void PinsModel::toggle ( int i )
+void PinsModel::toggle ( const QString& pin )
 {
     if (i<0 || i>=m_itemvalues.size()) return;
     setValue(i, ( m_itemvalues.at ( i )->value() ?0:1 ));
 }
+*/
+
 void PinsModel::serviceRemoved(AbstractServiceProvider*) {}
 void PinsModel::serviceChanged(AbstractServiceProvider*) {}
 
 int PinsModel::indexOf(const QVariant& data) {
-    if (data.type()!=QVariant::UInt) return -1;
-    return m_assignment.value(data.toUInt(), -1);
+    if (data.type()!=QVariant::String) return -1;
+    return m_assignment.value(data.toString(), -1);
 }

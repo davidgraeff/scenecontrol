@@ -17,6 +17,7 @@
 #include "services_server/actorplaylisttrackServer.h"
 #include "services_server/actorplaylistpositionServer.h"
 #include "services_server/actorplaylistcmdServer.h"
+#include "configplugin.h"
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
@@ -24,6 +25,7 @@ myPluginExecute::myPluginExecute() : ExecutePlugin() {
     m_base = new myPlugin();
     m_mediacontroller = new MediaController(this);
     connect(m_mediacontroller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
+    _config(this);
 }
 
 myPluginExecute::~myPluginExecute() {
@@ -32,6 +34,13 @@ myPluginExecute::~myPluginExecute() {
 }
 
 void myPluginExecute::refresh() {}
+
+void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
+    ExecutePlugin::setSetting(name, value);
+    if (name == QLatin1String("server")) {
+      m_mediacontroller->connectToMpd(value.toString());
+    }
+}
 
 ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 {

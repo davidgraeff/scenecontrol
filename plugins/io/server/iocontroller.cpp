@@ -26,131 +26,120 @@
 #include <qfile.h>
 #include "plugin_server.h"
 #include <shared/abstractplugin.h>
-
-#define DEVICE "/dev/ttyUSB0"
-IOController::IOController(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_pins(0), m_bufferpos(0), m_readState(ReadOK) {
-    QSettings settings;
-    settings.beginGroup(m_pluginname);
-    m_serial = new QextSerialPort(settings.value(QLatin1String("device"),QLatin1String(DEVICE)).toString(),QextSerialPort::EventDriven);
-    m_serial->setBaudRate(BAUD115200);
-    m_serial->setFlowControl(FLOW_OFF);
-    m_serial->setParity(PAR_NONE);
-    m_serial->setDataBits(DATA_8);
-    m_serial->setStopBits(STOP_1);
-    connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
-    // Open device and ask for pins
-    if (!QFile::exists(QLatin1String(DEVICE))) {
-        qWarning() << "IO: device not found"<<DEVICE;
-        return;
-    }
-    const char t1[] = {0xef};
-    if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1, sizeof(t1))) {
-        qWarning() << "IO: rs232 init fehler";
-    }
-    // panic counter
-    m_panicTimer.setInterval(40000);
-    connect(&m_panicTimer,SIGNAL(timeout()),SLOT(panicTimeout()));
-	m_panicTimer.start();
+#include <QUdpSocket>
+#include <QThread>
+IOController::IOController(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_listenSocket(0) {
+    m_writesocket = new QUdpSocket(this);
 }
 
 IOController::~IOController() {
-    delete m_serial;
     qDeleteAll(m_values);
     qDeleteAll(m_names);
+}
+
+void IOController::connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd) {
+    m_sendPort = portSend;
+    m_user = user;
+    m_pwd = pwd;
+    delete m_listenSocket;
+    m_listenSocket = new QUdpSocket(this);
+    connect(m_listenSocket,SIGNAL(readyRead()),SLOT(readyRead()));
+    m_listenSocket->bind(QHostAddress::Broadcast,portListen);
+
+    QByteArray str("wer da?");
+    str.append(0x0D);
+    str.append(0x0A);
+    m_writesocket->writeDatagram(str, QHostAddress::Broadcast, portSend);
 }
 
 void IOController::readyRead() {
+	if (!m_listenSocket->hasPendingDatagrams()) {
+		return;
+	}
     QByteArray bytes;
-    bytes.resize(m_serial->bytesAvailable());
-    m_serial->read(bytes.data(), bytes.size());
-    m_buffer.append(bytes);
-    if (m_readState==ReadOK) {
-        for (int i=m_bufferpos;i<m_buffer.size();++i) {
-            if (m_buffer.size()<=i) break;
-            if (m_buffer[i] == 'O' && m_buffer[i+1] == 'K') {
-                m_readState = ReadEnd;
-                m_buffer.remove(0,i+2);
-                m_bufferpos = 0;
-                break;
-            }
-        }
-    }
-    if (m_readState == ReadEnd) {
-        for (int i=m_bufferpos;i<m_buffer.size();++i) {
-            if (m_buffer.size()<=i+1) break;
-            if (m_buffer[i] == 'E' && m_buffer[i+1] == 'N' && m_buffer[i+2] == 'D') {
-                m_readState = ReadOK;
-                determinePins(m_buffer.mid(0,i));
-                m_buffer.remove(0,i+3);
-                m_bufferpos = 0;
-                break;
-            }
-        }
-    }
-}
-
-void IOController::determinePins(const QByteArray& data) {
-	if (data.isEmpty() || data.size() != (int)data[0]+1) {
-		qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[0]+1):0)<<data.size();
-        return;
-    }
+    bytes.resize(1000);
+    const int read = m_listenSocket->readDatagram(bytes.data(), 1000);
+    if (read == -1) return;
+    bytes.resize(read-2);
+    const QList<QByteArray> cmd = bytes.split(':');
+    if (cmd[0] != "NET-PwrCtrl") return;
+    //cmd[2] = ip
+    //cmd[6] .. ende -2
     QSettings settings;
     settings.beginGroup(m_pluginname);
     settings.beginGroup ( QLatin1String("pinnames") );
-    // clear old
-    qDeleteAll(m_values);
-    qDeleteAll(m_names);
-    m_values.clear();
-    m_names.clear();
     // set new
-	m_pins = (int)data[0];
-    for ( int i=0;i<m_pins;++i )
+    int pins = cmd.size()-2;
+    unsigned char activated = ~cmd[cmd.size()-2].toInt();
+    const QHostAddress host = QHostAddress(QString::fromAscii(cmd[2]));
+    for ( int i=6;i<pins;++i )
     {
-        const QString name = settings.value ( QLatin1String("pin")+QString::number( i ),
-                                              tr("IO %1").arg( i ) ).toString();
-        PinValueStateTracker* cv = new PinValueStateTracker();
-        m_values.append(cv);
-        cv->setPin(i);
-		cv->setValue(data[i+1]);
-        emit stateChanged(cv);
-        PinNameStateTracker* cn = new PinNameStateTracker();
-        m_names.append(cn);
-        cn->setPin(i);
+        if (!(activated & (1 << (i-6)))) continue;
+        const QStringList data = QString::fromLatin1(cmd[i]).split(QLatin1Char(','));
+        const QString initialname = data[0];
+        const int value = data[1].toInt();
+        const QString name = settings.value ( initialname, initialname ).toString();
+        const bool alreadyinside = m_mapPinToHost.contains(initialname);
+        m_mapPinToHost[initialname] = QPair<QHostAddress,uint>(host,i-5);
+        PinValueStateTracker* cv = (alreadyinside ? m_values[initialname] : new PinValueStateTracker());
+        PinNameStateTracker* cn =  (alreadyinside ? m_names[initialname] : new PinNameStateTracker());
+        bool changed = false;
+        if (!alreadyinside || (m_values[initialname]->value() != value)) changed = true;
+        cv->setPin(initialname);
+        cv->setValue(value);
+        m_values[initialname] = cv;
+        if (changed) emit stateChanged(cv);
+        changed = false;
+        if (!alreadyinside || (m_names[initialname]->value() != name)) changed = true;
+        cn->setPin(initialname);
         cn->setValue(name);
-        emit stateChanged(cn);
+        m_names[initialname] = cn;
+        if (changed) emit stateChanged(cn);
     }
     emit dataLoadingComplete();
 }
 
-bool IOController::getPin(unsigned int pin) const
+bool IOController::getPin(const QString& pin) const
 {
-	if (( unsigned int )m_values.size()<=pin) return false;
-    return m_values.at(pin)->value();
+    if (!m_values.contains(pin)) return false;
+    return m_values[pin]->value();
 }
 
-void IOController::setPin ( uint pin, bool value )
+void IOController::setPin ( const QString& pin, bool value )
 {
-	if (( unsigned int )m_values.size()<=pin) return;
-    m_values[pin]->setValue(value);
-    emit stateChanged(m_values[pin]);
-    char a[] = {(value?0xf0:0x00) | (unsigned char)pin};
-    m_serial->write(a, 1);
+    if (!m_mapPinToHost.contains(pin)) return;
+    QPair<QHostAddress,uint> p = m_mapPinToHost[pin];
+
+    //SENDEN
+    QByteArray str;
+    str.append( (value?"Sw_on":"Sw_off") );
+    str.append(QByteArray::number(p.second));
+    str.append(m_user.toLatin1());
+    str.append(m_pwd.toLatin1());
+    m_writesocket->writeDatagram(str, p.first, m_sendPort);
+
+    // kein stateChanged: wird über readyRead mitgeteilt
+    //if (!m_values.contains(pin)) return;
+    //m_values[pin]->setValue(value);
+    //emit stateChanged(m_values[pin]);
 }
 
-void IOController::setPinName ( uint pin, const QString& name )
+void IOController::setPinName ( const QString& pin, const QString& name )
 {
-    if ( pin>= ( unsigned int ) m_names.size() ) return;
+    if ( !m_names.contains(pin) ) return;
     m_names[pin]->setValue(name);
-    emit stateChanged(m_names[pin]);
+
     QSettings settings;
-	settings.beginGroup(m_pluginname);
+    settings.beginGroup(m_pluginname);
     settings.beginGroup ( QLatin1String("pinnames") );
-    settings.setValue ( QLatin1String("pin")+QString::number ( pin ), name );
+    settings.setValue ( pin, name );
+
+    emit stateChanged(m_names[pin]);
 }
 
-void IOController::togglePin ( uint pin )
+void IOController::togglePin ( const QString& pin )
 {
-	if (( unsigned int )m_values.size()<=pin) return;
+    if (!m_values.contains(pin)) return;
     setPin ( pin, !m_values[pin]->value() );
 }
 
@@ -165,19 +154,7 @@ int IOController::countPins() {
     return m_values.size();
 }
 
-QString IOController::getPinName(uint pin) {
-    if (pin>=(uint)m_names.size()) return QString();
+QString IOController::getPinName(const QString& pin) {
+    if (!m_names.contains(pin)) return QString();
     return m_names[pin]->value();
-}
-
-void IOController::panicTimeout() {
-    const char t1[] = {0xff};
-    if (!m_serial->isOpen() || m_serial->write(t1, sizeof(t1)) == -1) {
-        qWarning()<< "IO: Failed to reset panic counter. Try reconnection";
-        m_serial->close();
-		const char t1[] = {0xef};
-		if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1,  sizeof(t1))) {
-            qWarning() << "IO: rs232 init fehler";
-        }
-    }
 }

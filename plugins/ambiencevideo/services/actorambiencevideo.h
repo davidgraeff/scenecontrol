@@ -23,6 +23,7 @@
 class ActorAmbienceVideo : public AbstractServiceProvider
 {
     Q_OBJECT
+    Q_PROPERTY(QString host READ host WRITE setHost)
     Q_PROPERTY(QString filename READ filename WRITE setFilename)
     Q_CLASSINFO("filename_props", "filename");
     Q_PROPERTY(EnumOnClick onleftclick READ onleftclick WRITE setOnleftclick)
@@ -57,8 +58,10 @@ public:
         Q_UNUSED(enumindex);
         switch (propindex) {
         case 0:
-            return tr("Dateiname");
+            return tr("Host (leer=alle)");
         case 1:
+            return tr("Dateiname");
+        case 2:
             switch (enumindex) {
             case 0:
                 return tr("Vollbild temporär aufheben");
@@ -71,7 +74,7 @@ public:
             default:
                 return tr("Bei Linksklick");
             }
-        case 2:
+        case 3:
             switch (enumindex) {
             case 0:
                 return tr("Vollbild temporär aufheben");
@@ -84,16 +87,25 @@ public:
             default:
                 return tr("Bei Rechtsklick");
             }
-        case 3:
-            return tr("Lautstärke");
         case 4:
+            return tr("Lautstärke");
+        case 5:
             return tr("Anzeigenummer");
-		case 5:
-			return tr("Wideerherstellungszeit in s");
-		default:
+        case 6:
+            return tr("Wideerherstellungszeit in s");
+        default:
             return QString();
         }
     }
+
+    QString host() const {
+        return m_host;
+    }
+
+    void setHost( QString m ) {
+        m_host = m;
+    }
+
     const QString& filename() const {
         return m_filename;
     }
@@ -130,19 +142,20 @@ public:
     void setDisplay( int v ) {
         m_display = v;
     }
-    
+
     int restoretime() const {
-		return m_restoretime;
-	}
-	
-	void setRestoretime( int v ) {
-		m_restoretime = v;
-	}
+        return m_restoretime;
+    }
+
+    void setRestoretime( int v ) {
+        m_restoretime = v;
+    }
 private:
     QString m_filename;
+    QString m_host;
     EnumOnClick m_onleftclick;
     EnumOnClick m_onrightclick;
     qreal m_volume;
     int m_display;
-	int m_restoretime;
+    int m_restoretime;
 };

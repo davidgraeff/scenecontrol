@@ -12,6 +12,7 @@
 #include "services_server/actorpinServer.h"
 #include "services_server/actorpinnameServer.h"
 #include "services_server/conditionpinServer.h"
+#include "configplugin.h"
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
@@ -20,6 +21,7 @@ myPluginExecute::myPluginExecute() : ExecutePlugin() {
   m_IOController = new IOController(this);
   connect(m_IOController,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
   connect(m_IOController,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
+  _config(this);
 }
 
 myPluginExecute::~myPluginExecute() {
@@ -28,6 +30,15 @@ myPluginExecute::~myPluginExecute() {
 }
 
 void myPluginExecute::refresh() {}
+
+void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
+    ExecutePlugin::setSetting(name, value);
+    if (name == QLatin1String("autoconfig")) {
+        QStringList data = value.toString().split(QLatin1Char(':'));
+	if (data.size()>=5)
+	  m_IOController->connectToIOs(data[1].toInt(), data[2].toInt(), data[3], data[4]);
+    }
+}
 
 ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 {

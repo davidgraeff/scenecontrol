@@ -22,6 +22,7 @@
 #include <QTimer>
 #include <QTcpSocket>
 #include <statetracker/mediastatetracker.h>
+#include <QUrl>
 
 class MusicVolumeStateTracker;
 class PlaylistStateTracker;
@@ -70,49 +71,51 @@ public:
     qint64 getTrackPosition();
     qint64 getTrackDuration();
 
-	// state
+    // state
     MediaStateTracker::EnumMediaState state();
 
-	// volume
+    // volume
     void setVolume(int newvol, bool relative = false);
     int volume() const;
 
     void dumpMediaInfo();
+    void connectToMpd(const QUrl& url);
 private:
-	myPluginExecute* m_plugin;
-	bool m_terminate;
-	
-	// command queue
-	void addToCommandQueue(const QByteArray& cmd);
-	QList<QByteArray> m_commandqueue;
-	bool m_mpdchannelfree;
-	
-	// build playlist statetrackers
+    myPluginExecute* m_plugin;
+    QUrl m_mpdurl;
+    bool m_terminate;
+
+    // command queue
+    void addToCommandQueue(const QByteArray& cmd);
+    QList<QByteArray> m_commandqueue;
+    bool m_mpdchannelfree;
+
+    // build playlist statetrackers
     QList< QString > m_tempplaylists;
-	QString m_currentplaylist;
-	void checkPlaylists();
-	
-	// state trackers
+    QString m_currentplaylist;
+    void checkPlaylists();
+
+    // state trackers
     MediaStateTracker *m_mediaStateTracker;
     MusicVolumeStateTracker* m_volumestateTracker;
-	QList<PlaylistStateTracker*> m_playlists;
-	int indexOfPlaylist(const QString& name);
-	
-	// current media state
+    QList<PlaylistStateTracker*> m_playlists;
+    int indexOfPlaylist(const QString& name);
+
+    // current media state
     MediaStateTracker::EnumMediaState m_mediastate;
     qint64 m_currenttime;
     qint64 m_totaltime;
     int m_volume;
     QTimer m_fakepos;
-	QString m_tracktitle;
-	QString m_trackfile;
-	QString m_trackname;
-	
-	// sockets
+    QString m_tracktitle;
+    QString m_trackfile;
+    QString m_trackname;
+
+    // sockets
     QTcpSocket* m_mpdstatus;
-	QTcpSocket* m_mpdcmd;
-	
-	// commands for status socket
+    QTcpSocket* m_mpdcmd;
+
+    // commands for status socket
     enum StatusEnum {
         StatusNoNeed,
         StatusNeed,
@@ -120,21 +123,21 @@ private:
     };
     StatusEnum needstatus;
     StatusEnum needPlaylists;
-	StatusEnum needCurrentSong;
+    StatusEnum needCurrentSong;
 
-	// dump media info
-	void saveMediaInfo();
+    // dump media info
+    void saveMediaInfo();
 private Q_SLOTS:
-	void writeCommandQueueItem();
-	void slotreadyRead ();
+    void writeCommandQueueItem();
+    void slotreadyRead ();
     void slotconnected();
     void slotdisconnected();
     void sloterror(QAbstractSocket::SocketError e);
-	void slotreadyRead2();
-	void slotconnected2();
-	void slotdisconnected2();
-	void sloterror2(QAbstractSocket::SocketError e);
-	void updatefakepos();
+    void slotreadyRead2();
+    void slotconnected2();
+    void slotdisconnected2();
+    void sloterror2(QAbstractSocket::SocketError e);
+    void updatefakepos();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
 };

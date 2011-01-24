@@ -4,6 +4,7 @@ find_package(RoomServerPlugins REQUIRED)
 set(USE_SERIALPORT)
 
 SET(CONFIG_${PROJECT_NAME}_SERIALPORT "/dev/ttyUSB0" CACHE STRING "Serialport")
+SET(CONFIG_SERIALPORT ${CONFIG_${PROJECT_NAME}_SERIALPORT})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
 SET(DEBFOUND TRUE)

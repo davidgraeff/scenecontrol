@@ -2,57 +2,47 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QCoreApplication>
+#include "shared/server/executeservice.h"
 #include "services/systemAC.h"
 #include "services/profileAC.h"
 #include "services/backupAC.h"
 #include "services/systemEV.h"
+#include <services/modeAC.h>
+#include <services/modeCO.h>
+#include <services/modeEV.h>
 #include "statetracker/systemST.h"
 #include "statetracker/backupST.h"
+#include "statetracker/modeST.h"
 #include "services_server/systemACServer.h"
 #include "services_server/profileACServer.h"
 #include "services_server/backupACServer.h"
 #include "services_server/systemEVServer.h"
-#include "shared/server/executeservice.h"
-#include "statetracker/modeST.h"
-#include "statetracker/eventST.h"
-#include "statetracker/eventvolumeST.h"
-#include "services/actorevent.h"
-#include "services/actoreventvolume.h"
-#include "services_server/actoreventServer.h"
-#include "services_server/actoreventvolumeServer.h"
-#include "eventcontroller.h"
+#include <services_server/modeACServer.h>
+#include <services_server/modeCOServer.h>
+#include <services_server/modeEVServer.h>
 #include <QApplication>
 #include <QtPlugin>
-#include <services_server/modeACServer.h>
-#include <services/modeAC.h>
-#include <services/modeCO.h>
-#include <services_server/modeCOServer.h>
-#include <services/modeEV.h>
-#include <services_server/modeEVServer.h>
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
-myPluginExecute::myPluginExecute( QObject* parent) : m_eventcontroller(new EventController()) {
+myPluginExecute::myPluginExecute( QObject* parent) {
     Q_UNUSED(parent);
     m_base = new myPlugin();
+    m_ModeStateTracker = new ModeStateTracker();
+    m_ModeStateTracker->setMode(m_mode);
     m_BackupStateTracker = new BackupStateTracker();
     m_SystemStateTracker = new SystemStateTracker();
-    m_ModeStateTracker = new ModeStateTracker();
-    m_EventStateTracker = new EventStateTracker();
-    m_EventVolumeStateTracker = new EventVolumeStateTracker();
+    m_SystemStateTracker->setApp(QCoreApplication::applicationVersion());
+    m_SystemStateTracker->setMin(QCoreApplication::applicationVersion());
+    m_SystemStateTracker->setMax(QCoreApplication::applicationVersion());
     m_savedir = QDir(qApp->property("settingspath").value<QString>());
-    connect(m_eventcontroller,SIGNAL(finished(QString,QString)),SLOT(finished(QString,QString)));
-    connect(m_eventcontroller,SIGNAL(started(QString,QString)),SLOT(started(QString,QString)));
-    connect(m_eventcontroller,SIGNAL(volumeChanged(qreal)),SLOT(volumeChanged(qreal)));
+    backups_changed();
 }
 
 myPluginExecute::~myPluginExecute() {
     delete m_BackupStateTracker;
     delete m_SystemStateTracker;
     delete m_ModeStateTracker;
-    delete m_EventStateTracker;
-    delete m_EventVolumeStateTracker;
-    delete m_eventcontroller;
     delete m_base;
 }
 
@@ -73,10 +63,6 @@ ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
         return new ActorBackupServer((ActorBackup*)service, this);
     } else if (idb == EventSystem::staticMetaObject.className()) {
         return new EventSystemServer((EventSystem*)service, this);
-    } else if (idb == ActorEvent::staticMetaObject.className()) {
-        return new ActorEventServer((ActorEvent*)service, this);
-    } else if (idb == ActorEventVolume::staticMetaObject.className()) {
-        return new ActorEventVolumeServer((ActorEventVolume*)service, this);
     } else if (idb == ActorMode::staticMetaObject.className()) {
         return new ActorModeServer((ActorMode*)service, this);
     } else if (idb == ConditionMode::staticMetaObject.className()) {
@@ -89,20 +75,9 @@ ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 
 QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
     QList<AbstractStateTracker*> a;
-    m_SystemStateTracker->setApp(QCoreApplication::applicationVersion());
-    m_SystemStateTracker->setMin(QCoreApplication::applicationVersion());
-    m_SystemStateTracker->setMax(QCoreApplication::applicationVersion());
-    backups_changed();
-    m_ModeStateTracker->setMode(m_mode);
-    m_EventStateTracker->setFilename(m_eventcontroller->filename());
-    m_EventStateTracker->setTitle(m_eventcontroller->title());
-    m_EventStateTracker->setState(m_eventcontroller->state());
-    m_EventVolumeStateTracker->setVolume(m_eventcontroller->volume()*100);
     a.append(m_SystemStateTracker);
     a.append(m_BackupStateTracker);
     a.append(m_ModeStateTracker);
-    a.append(m_EventStateTracker);
-    a.append(m_EventVolumeStateTracker);
     return a;
 }
 
@@ -201,22 +176,6 @@ void myPluginExecute::setMode(const QString& mode) {
     m_mode = mode;
     m_ModeStateTracker->setMode(mode);
     emit stateChanged(m_ModeStateTracker);
-}
-void myPluginExecute::started(const QString& eventTitle, const QString& filename) {
-    m_EventStateTracker->setFilename(filename);
-    m_EventStateTracker->setTitle(eventTitle);
-    m_EventStateTracker->setState(1);
-    emit stateChanged(m_EventStateTracker);
-}
-void myPluginExecute::finished(const QString& eventTitle, const QString& filename) {
-    m_EventStateTracker->setFilename(filename);
-    m_EventStateTracker->setTitle(eventTitle);
-    m_EventStateTracker->setState(0);
-    emit stateChanged(m_EventStateTracker);
-}
-void myPluginExecute::volumeChanged(qreal) {
-    m_EventVolumeStateTracker->setVolume(m_eventcontroller->volume()*100);
-    emit stateChanged(m_EventVolumeStateTracker);
 }
 void myPluginExecute::dataLoadingComplete() {
 	emit pluginLoadingComplete(this);

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 project(${targetname}Plugin)
 find_package(Qt4 REQUIRED)
+find_package(Qt4 4.7.0 COMPONENTS QtCore QtGui REQUIRED)
 
 set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set(SHAREDDIR "${ROOTDIR}/shared")

@@ -23,42 +23,48 @@
 #include <QUuid>
 #include <QTimer>
 
-#include <QTcpSocket>
 #include <qprocess.h>
 #include <services/actorambiencevideo.h>
+#include <QtNetwork/QTcpSocket>
+#include <QtNetwork/QHostAddress>
+#include <QUrl>
 
 class AbstractStateTracker;
 class ExecuteWithBase;
 class myPluginExecute;
 class AbstractServiceProvider;
 
-class MediaController : public QObject
+class ExternalClient : public QTcpSocket
 {
     Q_OBJECT
 public:
-    MediaController(myPluginExecute* plugin);
-    ~MediaController();
+    ExternalClient(myPluginExecute* plugin, const QUrl& address);
+    ~ExternalClient();
     QList<AbstractStateTracker*> getStateTracker();
 
     void hideVideo();
     void closeFullscreen();
     void setFilename(const QString& filename);
-	void setVolume(qreal newvol, bool relative = false);
+    void stopvideo();
+    void setVolume(qreal newvol, bool relative = false);
     void setDisplay(int display);
-	void setClickActions(ActorAmbienceVideo::EnumOnClick leftclick, ActorAmbienceVideo::EnumOnClick rightclick, int restoretime);
+    void setClickActions(ActorAmbienceVideo::EnumOnClick leftclick, ActorAmbienceVideo::EnumOnClick rightclick, int restoretime);
     void setDisplayState(int state);
-	void stop();
+    void stopevent();
 
+    void showMessage(int duration, const QString& msg);
+    void playEvent(const QString& filename);
+    void setVolumeEvent(qreal newvol, bool relative = false);
 private:
     myPluginExecute* m_plugin;
-    QProcess* m_playerprocess;
-	int m_display;
+    QTimer m_reconnect;
+    QUrl m_address;
+    int m_display;
+    bool m_alreadyWarnedNoHost;
 private Q_SLOTS:
     void slotreadyRead ();
     void slotconnected();
-    void slotdisconnected(int);
-    void sloterror(QProcess::ProcessError e);
-    void readyReadStandardError() ;
-Q_SIGNALS:
-    void stateChanged(AbstractStateTracker*);
+    void slotdisconnected();
+    void sloterror(QAbstractSocket::SocketError);
+    void reconnectTimeout();
 };

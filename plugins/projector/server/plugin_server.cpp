@@ -9,36 +9,46 @@
 #include "services/actorprojector.h"
 #include "services_server/actorprojectorServer.h"
 #include <qfile.h>
+#include "configplugin.h"
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
-#define DEVICE "/dev/ttyS0"
-myPluginExecute::myPluginExecute() : ExecutePlugin(),
-        m_serial(QLatin1String(DEVICE),QextSerialPort::EventDriven) {
+myPluginExecute::myPluginExecute() : ExecutePlugin(), m_serial(0) {
     m_base = new myPlugin();
-    m_ProjectorStateTracker = new ProjectorStateTracker();
-    m_serial.setBaudRate(BAUD19200);
-    m_serial.setFlowControl(FLOW_OFF);
-    m_serial.setParity(PAR_NONE);
-    m_serial.setDataBits(DATA_8);
-    m_serial.setStopBits(STOP_1);
-    connect(&m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
     buffer[3] = '\r';
-    if (!QFile::exists(QLatin1String(DEVICE))) {
-        qWarning() << "Projector: device not found"<<DEVICE;
-        return;
-    }
-    if (!m_serial.open(QIODevice::ReadWrite)) {
-        qWarning() << "Projector: rs232 init fehler";
-    }
+    m_ProjectorStateTracker = new ProjectorStateTracker();
+    _config(this);
 }
 
 myPluginExecute::~myPluginExecute() {
     //delete m_base;
+    delete m_serial;
     delete m_ProjectorStateTracker;
 }
 
 void myPluginExecute::refresh() {}
+
+void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
+    ExecutePlugin::setSetting(name, value);
+    if (name == QLatin1String("serialport")) {
+        delete m_serial;
+	const QString device = value.toString();
+        m_serial = new QextSerialPort(device,QextSerialPort::EventDriven);
+        m_serial->setBaudRate(BAUD19200);
+        m_serial->setFlowControl(FLOW_OFF);
+        m_serial->setParity(PAR_NONE);
+        m_serial->setDataBits(DATA_8);
+        m_serial->setStopBits(STOP_1);
+        connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
+        if (!QFile::exists(device)) {
+            qWarning() << m_base->name() << "device not found" << device;
+            return;
+        }
+        if (!m_serial->open(QIODevice::ReadWrite)) {
+            qWarning() << m_base->name() << "init fehler";
+        }
+    }
+}
 
 ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 {
@@ -59,6 +69,7 @@ QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
 }
 
 void myPluginExecute::setCommand(ActorProjector::ProjectorControl c) {
+  if (!m_serial) return;
     switch (c) {
     case ActorProjector::ProjectorOn:
         strncpy(buffer, "C00", 3);
@@ -82,8 +93,8 @@ void myPluginExecute::setCommand(ActorProjector::ProjectorControl c) {
         return;
     };
 
-    if (!m_serial.write(buffer,4)) {
-        qWarning() << "projector send failed\n";
+    if (!m_serial->write(buffer,4)) {
+        qWarning() << m_base->name() << "send failed\n";
         return;
     }
 
@@ -93,7 +104,7 @@ void myPluginExecute::setCommand(ActorProjector::ProjectorControl c) {
 
 void myPluginExecute::readyRead() {
     QByteArray bytes;
-    int a = m_serial.bytesAvailable();
+    int a = m_serial->bytesAvailable();
     bytes.resize(a);
-    m_serial.read(bytes.data(), bytes.size());
+    m_serial->read(bytes.data(), bytes.size());
 }

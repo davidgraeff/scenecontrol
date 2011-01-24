@@ -23,12 +23,12 @@ PinValueStateTracker::PinValueStateTracker(QObject* parent)
 : AbstractStateTracker(parent)
 {}
 
-unsigned int PinValueStateTracker::pin() const
+QString PinValueStateTracker::pin() const
 {
     return m_pin;
 }
 
-void PinValueStateTracker::setPin(unsigned int value)
+void PinValueStateTracker::setPin(QString value)
 {
     m_pin = value;
 }

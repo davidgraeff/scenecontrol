@@ -23,7 +23,11 @@
 class ActorEvent : public AbstractServiceProvider
 {
     Q_OBJECT
+    Q_PROPERTY(QString host READ host WRITE setHost)
     Q_PROPERTY(QString title READ title WRITE setTitle);
+    Q_PROPERTY(int duration READ duration WRITE setDuration);
+    Q_CLASSINFO("duration_min", "0");
+    Q_CLASSINFO("duration_max", "10");
     Q_PROPERTY(QString filename READ filename WRITE setFilename);
     Q_CLASSINFO("filename_props", "filename")
 public:
@@ -34,9 +38,13 @@ public:
         Q_UNUSED(enumindex);
         switch (propindex) {
         case 0:
-            return tr("Titel");
+            return tr("Host (leer=alle)");
         case 1:
-            return tr("Dateiname");
+            return tr("Nachricht");
+        case 2:
+            return tr("Anzeigedauer in s");
+        case 3:
+            return tr("Datei abspielen");
         default:
             return QString();
         }
@@ -45,7 +53,23 @@ public:
     QString title();
     void setFilename(const QString& v);
     QString filename();
+    QString host() const {
+        return m_host;
+    }
+
+    void setHost( QString m ) {
+        m_host = m;
+    }
+    int duration() const {
+        return m_duration;
+    }
+
+    void setDuration( int m ) {
+        m_duration = m;
+    }
 private:
     QString m_eventTitle;
     QString m_filename;
+    QString m_host;
+    int m_duration;
 };

@@ -30,9 +30,6 @@
 #include <QApplication>
 #include <QDateTime>
 
-#define MPD_PORT 6600
-#define MPD_SERVER "192.168.1.2"
-
 MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0)
 {
     m_mediaStateTracker = new MediaStateTracker(this);
@@ -45,15 +42,12 @@ MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_
     connect (m_mpdstatus, SIGNAL(disconnected()),SLOT(slotdisconnected()));
     connect (m_mpdstatus, SIGNAL(connected()),SLOT(slotconnected()));
     connect (m_mpdstatus, SIGNAL(readyRead()),SLOT(slotreadyRead()));
-    m_mpdstatus->connectToHost(QLatin1String(MPD_SERVER),MPD_PORT);
 
     m_mpdcmd = new QTcpSocket();
     connect (m_mpdcmd, SIGNAL(error(QAbstractSocket::SocketError)),SLOT(sloterror2(QAbstractSocket::SocketError)));
     connect (m_mpdcmd, SIGNAL(disconnected()),SLOT(slotdisconnected2()));
     connect (m_mpdcmd, SIGNAL(connected()),SLOT(slotconnected2()));
     connect (m_mpdcmd, SIGNAL(readyRead()),SLOT(slotreadyRead2()));
-    m_mpdcmd->connectToHost(QLatin1String(MPD_SERVER),MPD_PORT);
-
 }
 
 MediaController::~MediaController()
@@ -61,6 +55,13 @@ MediaController::~MediaController()
     m_terminate = true;
     m_mpdstatus->disconnectFromHost();
     qDeleteAll(m_playlists);
+}
+
+void MediaController::connectToMpd(const QUrl& url)
+{
+    m_mpdurl = url;
+    m_mpdstatus->connectToHost(m_mpdurl.host(),m_mpdurl.port());
+    m_mpdcmd->connectToHost(m_mpdurl.host(),m_mpdurl.port());
 }
 
 void MediaController::slotconnected() {
@@ -74,7 +75,7 @@ void MediaController::slotdisconnected()
 {
     if (m_terminate) return;
     qWarning()<<"Connection to mpd lost. Try reconnect (status channel)";
-    m_mpdstatus->connectToHost(QLatin1String(MPD_SERVER),MPD_PORT);
+    m_mpdstatus->connectToHost(m_mpdurl.host(),m_mpdurl.port());
 }
 
 void MediaController::sloterror(QAbstractSocket::SocketError)
@@ -92,7 +93,7 @@ void MediaController::slotdisconnected2()
 {
     if (m_terminate) return;
     qWarning()<<"Connection to mpd lost. Try reconnect (cmd channel)";
-    m_mpdcmd->connectToHost(QLatin1String(MPD_SERVER),MPD_PORT);
+    m_mpdcmd->connectToHost(m_mpdurl.host(),m_mpdurl.port());
 }
 
 void MediaController::sloterror2(QAbstractSocket::SocketError)

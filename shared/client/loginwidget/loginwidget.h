@@ -10,7 +10,7 @@
 #include <kstatusnotifieritem.h>
 #include <QTimer>
 #include <QSortFilterProxyModel>
-#include <KWallet/Wallet>
+#include <kwallet.h>
 
 class AbstractServiceProvider;
 class NetworkController;

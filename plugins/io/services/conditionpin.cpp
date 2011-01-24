@@ -24,12 +24,12 @@ ConditionPin::ConditionPin(QObject* parent)
 {  
 }
 
-unsigned int ConditionPin::pin() const
+QString ConditionPin::pin() const
 {
     return m_pin;
 }
 
-void ConditionPin::setPin(unsigned int value)
+void ConditionPin::setPin(QString value)
 {
     m_pin = value;
 }

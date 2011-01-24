@@ -38,6 +38,7 @@ public:
     myPluginExecute();
     virtual ~myPluginExecute();
     virtual void refresh() ;
+    virtual void setSetting(const QString& name, const QVariant& value);
     virtual ExecuteWithBase* createExecuteService(const QString& id);
     virtual QList<AbstractStateTracker*> stateTracker();
 	virtual void clear(){}
@@ -46,7 +47,7 @@ public:
     }
     void setCommand(ActorProjector::ProjectorControl c);
 private:
-    QextSerialPort m_serial;
+    QextSerialPort* m_serial;
     AbstractPlugin* m_base;
     char buffer[4];
     ProjectorStateTracker* m_ProjectorStateTracker;

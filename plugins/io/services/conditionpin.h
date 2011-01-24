@@ -24,7 +24,7 @@
 class ConditionPin : public AbstractServiceProvider
 {
     Q_OBJECT
-    Q_PROPERTY(unsigned int pin READ pin WRITE setPin);
+    Q_PROPERTY(QString pin READ pin WRITE setPin);
     Q_CLASSINFO("pin_model", "PinsModel")
     Q_CLASSINFO("pin_model_displaytype", "0");
     Q_CLASSINFO("pin_model_savetype", "32");
@@ -44,12 +44,12 @@ public:
             return QString();
         }
     }
-    unsigned int pin() const;
-    void setPin(unsigned int value);
+    QString pin() const;
+    void setPin(QString value);
     bool value() const;
     void setValue(bool value);
 private:
-    unsigned int m_pin;
+    QString m_pin;
     bool m_value;
 };
 

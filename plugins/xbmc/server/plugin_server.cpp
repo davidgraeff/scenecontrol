@@ -123,21 +123,23 @@ Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 #include "services_server/actorcinemaServer.h"
 #include "services_server/actorcinemavolumeServer.h"
 #include "services_server/actorcinemapositionServer.h"
+#include "configplugin.h"
+#include <QUrl>
 
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-  m_base = new myPlugin();
+myPluginExecute::myPluginExecute() : ExecutePlugin(), m_xbmcClient(0) {
+    m_base = new myPlugin();
     m_CinemaStateTracker = new CinemaStateTracker();
     m_CinemaPositionStateTracker = new CinemaPositionStateTracker();
     m_CinemaVolumeStateTracker = new CinemaVolumeStateTracker();
-    m_xbmcClient = new CXBMCClient("127.0.0.1", 9777);
-    m_xbmcClient->SendHELO(QCoreApplication::applicationName().toLatin1().constData(), ICON_NONE);
+    _config(this);
 }
 
 myPluginExecute::~myPluginExecute() {
-  //delete m_base;
-    m_xbmcClient->SendNOTIFICATION(QCoreApplication::applicationName().toLatin1().constData(),
-                                   tr("Server wird beendet").toLatin1().constData(),
-                                   ICON_NONE);
+    //delete m_base;
+    if (m_xbmcClient)
+        m_xbmcClient->SendNOTIFICATION(QCoreApplication::applicationName().toLatin1().constData(),
+                                       tr("Server wird beendet").toLatin1().constData(),
+                                       ICON_NONE);
     delete m_xbmcClient;
     delete m_CinemaStateTracker;
     delete m_CinemaPositionStateTracker;
@@ -145,6 +147,16 @@ myPluginExecute::~myPluginExecute() {
 }
 
 void myPluginExecute::refresh() {}
+
+void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
+    ExecutePlugin::setSetting(name, value);
+    if (name == QLatin1String("server")) {
+        delete m_xbmcClient;
+	QUrl url(value.toString());
+        m_xbmcClient = new CXBMCClient(url.host().toAscii(), url.port());
+        m_xbmcClient->SendHELO(QCoreApplication::applicationName().toLatin1().constData(), ICON_NONE);
+    }
+}
 
 ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
 {
@@ -172,7 +184,7 @@ QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
 void myPluginExecute::setCommand(int cmd)
 {
     switch (cmd) {
-      case ActorCinema::PlayCmd:
+    case ActorCinema::PlayCmd:
         m_xbmcClient->SendACTION("play",ACTION_BUTTON);
         break;
     case ActorCinema::PauseCmd:
@@ -239,12 +251,12 @@ void myPluginExecute::setCommand(int cmd)
 
 void myPluginExecute::setPosition ( int pos, bool relative )
 {
-  Q_UNUSED(pos);
-  Q_UNUSED(relative);
+    Q_UNUSED(pos);
+    Q_UNUSED(relative);
 }
 
 void myPluginExecute::setVolume ( int vol, bool relative )
 {
-  Q_UNUSED(vol);
-  Q_UNUSED(relative);
+    Q_UNUSED(vol);
+    Q_UNUSED(relative);
 }

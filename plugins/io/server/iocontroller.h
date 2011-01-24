@@ -17,13 +17,13 @@
 
 */
 
-#ifndef IOCONTROLLER_H
-#define IOCONTROLLER_H
-
+#pragma once
 #include <QObject>
-#include <shared/server/qextserialport.h>
 #include <QTimer>
+#include <QHostAddress>
+#include <QPair>
 
+class QUdpSocket;
 class myPluginExecute;
 class AbstractStateTracker;
 class PinNameStateTracker;
@@ -36,35 +36,27 @@ class IOController : public QObject
 public:
     IOController(myPluginExecute* plugin);
     ~IOController();
-    QString getPinName ( uint pin );
-    void setPin ( uint pin, bool value );
-    void setPinName ( uint pin, const QString& name );
-    void togglePin ( uint pin );
-    bool getPin(unsigned int pin) const;
+    QString getPinName ( const QString& pin );
+    void setPin ( const QString& pin, bool value );
+    void setPinName ( const QString& pin, const QString& name );
+    void togglePin ( const QString& pin );
+    bool getPin( const QString& pin ) const;
     int countPins();
     QList<AbstractStateTracker*> getStateTracker();
+    void connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd);
 private:
-	QString m_pluginname;
-    QList<PinValueStateTracker*> m_values;
-    QList<PinNameStateTracker*> m_names;
-    QByteArray m_buffer;
-	void determinePins(const QByteArray& data);
-    int m_pins;
-    // rs232 special
-    QextSerialPort* m_serial;
-    QTimer m_panicTimer;
-    int m_bufferpos;
-    enum readStateEnum {
-        ReadOK,
-        ReadEnd
-    };
-    readStateEnum m_readState;
+    QString m_pluginname;
+    QMap<QString, PinValueStateTracker*> m_values;
+    QMap<QString, PinNameStateTracker*> m_names;
+    QMap< QString, QPair<QHostAddress,uint> > m_mapPinToHost;
+    int m_sendPort;
+    QString m_user;
+    QString m_pwd;
+    QUdpSocket *m_listenSocket;
+    QUdpSocket *m_writesocket;
 private slots:
     void readyRead();
-    void panicTimeout();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
     void dataLoadingComplete();
 };
-
-#endif // IOCONTROLLER_H

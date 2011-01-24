@@ -24,13 +24,16 @@ class ActorAmbienceVolume;
 class myPluginExecute;
 class ActorAmbienceVolumeServer : public ExecuteService
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
-	ActorAmbienceVolumeServer(ActorAmbienceVolume* base, myPluginExecute* plugin, QObject* parent = 0);
-  virtual bool checkcondition(){return true;}
-  virtual void dataUpdate(){}
-  virtual void execute();
+    ActorAmbienceVolumeServer(ActorAmbienceVolume* base, myPluginExecute* plugin, QObject* parent = 0);
+    virtual bool checkcondition() {
+        return true;
+    }
+    virtual void dataUpdate() {}
+    virtual void nameUpdate();
+    virtual void execute();
 private:
-  myPluginExecute* m_plugin;
+    myPluginExecute* m_plugin;
 };
 

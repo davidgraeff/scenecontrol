@@ -43,12 +43,13 @@ public:
     virtual Qt::ItemFlags flags ( const QModelIndex& index ) const;
     virtual QVariant headerData ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
 
-    void setValue ( int i, unsigned int value );
-    void setName ( int i, const QString& value );
+    void setValue ( const QString& pin, unsigned int value );
+    void setName ( const QString& pin, const QString& value );
+    /*
     QString getName ( int i );
     int getValue ( int i ) const;
     void toggle( int i );
-	
+        */
     virtual int indexOf(const QVariant& data);
 public Q_SLOTS:
     void stateTrackerChanged(AbstractStateTracker*);
@@ -59,7 +60,7 @@ public Q_SLOTS:
 private:
     QList<PinValueStateTracker*> m_itemvalues;
     QList<PinNameStateTracker*> m_itemnames;
-    QMap<uint,int> m_assignment; // pin id -> list id
+    QMap<QString,int> m_assignment; // pin id -> list id
     QIcon iconOn;
     QIcon iconOff;
 };

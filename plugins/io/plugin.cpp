@@ -47,7 +47,7 @@ myPlugin::~myPlugin() {
   qDebug() <<"free";
 }
 QString myPlugin::name() const {
-    return QLatin1String("Steckdosen");
+    return QLatin1String("Steckdosen NET-PwrCtrl");
 }
 QString myPlugin::version() const {
     return QLatin1String("1.0");
