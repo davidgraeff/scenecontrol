@@ -34,6 +34,7 @@ ExternalClient::ExternalClient(myPluginExecute* plugin, const QUrl& address) : m
     connect(this, SIGNAL(readyRead()), SLOT(slotreadyRead()));
     m_reconnect.setInterval(60000);
     m_reconnect.start();
+    reconnectTimeout();
 }
 
 ExternalClient::~ExternalClient()
@@ -66,7 +67,7 @@ void ExternalClient::sloterror(QAbstractSocket::SocketError e)
         if (m_alreadyWarnedNoHost) return;
         m_alreadyWarnedNoHost = true;
     }
-    qWarning() << m_plugin->base()->name() << errorString();
+    qWarning() << m_plugin->base()->name() << m_url << errorString();
 }
 
 void ExternalClient::slotreadyRead()

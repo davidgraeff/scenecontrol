@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/")
 find_package(RoomServerPlugins REQUIRED)
 
-SET(CONFIG_${PROJECT_NAME}_AUTOCONFIG "255.255.255.255:1075:1077:netz:netz" CACHE STRING "Autoconfiguation NET-PwrCtrl (Subnet:send:listen:user:pwd")
+SET(CONFIG_${PROJECT_NAME}_AUTOCONFIG "1075:1077:netz:netz" CACHE STRING "Autoconfiguation NET-PwrCtrl (send port:listen port:user:pwd")
 SET(CONFIG_AUTOCONFIG ${CONFIG_${PROJECT_NAME}_AUTOCONFIG})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 

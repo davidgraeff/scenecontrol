@@ -35,8 +35,8 @@ void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
     ExecutePlugin::setSetting(name, value);
     if (name == QLatin1String("autoconfig")) {
         QStringList data = value.toString().split(QLatin1Char(':'));
-	if (data.size()>=5)
-	  m_IOController->connectToIOs(data[1].toInt(), data[2].toInt(), data[3], data[4]);
+        if (data.size()>=4)
+          m_IOController->connectToIOs(data[0].toInt(), data[1].toInt(), data[2], data[3]);
     }
 }
 
