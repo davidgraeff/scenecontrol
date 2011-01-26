@@ -30,6 +30,9 @@
 #include <QThread>
 IOController::IOController(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_listenSocket(0) {
     m_writesocket = new QUdpSocket(this);
+    connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
+    m_cacheTimer.setInterval(50);
+    m_cacheTimer.setSingleShot(true);
 }
 
 IOController::~IOController() {
@@ -74,13 +77,14 @@ void IOController::readyRead() {
     const QHostAddress host = QHostAddress(QString::fromAscii(cmd[2]));
     for ( int i=6;i<pins;++i )
     {
-        if (!(activated & (1 << (i-6)))) continue;
+        const int pin = i-6;
+        if (!(activated & (1 << pin))) continue;
         const QStringList data = QString::fromLatin1(cmd[i]).split(QLatin1Char(','));
         const QString initialname = data[0];
         const int value = data[1].toInt();
         const QString name = settings.value ( initialname, initialname ).toString();
         const bool alreadyinside = m_mapPinToHost.contains(initialname);
-        m_mapPinToHost[initialname] = QPair<QHostAddress,uint>(host,i-5);
+        m_mapPinToHost[initialname] = QPair<QHostAddress,uint>(host,pin);
         PinValueStateTracker* cv = (alreadyinside ? m_values[initialname] : new PinValueStateTracker());
         PinNameStateTracker* cn =  (alreadyinside ? m_names[initialname] : new PinNameStateTracker());
         bool changed = false;
@@ -95,6 +99,12 @@ void IOController::readyRead() {
         cn->setValue(name);
         m_names[initialname] = cn;
         if (changed) emit stateChanged(cn);
+        // update cache
+        if (value)
+            m_cache[host.toString()] |= (unsigned char)(1 << pin);
+        else
+            m_cache[host.toString()] &= (unsigned char)~(1 << pin);
+
     }
     emit dataLoadingComplete();
 }
@@ -110,18 +120,12 @@ void IOController::setPin ( const QString& pin, bool value )
     if (!m_mapPinToHost.contains(pin)) return;
     QPair<QHostAddress,uint> p = m_mapPinToHost[pin];
 
-    //SENDEN
-    QByteArray str;
-    str.append( (value?"Sw_on":"Sw_off") );
-    str.append(QByteArray::number(p.second));
-    str.append(m_user.toLatin1());
-    str.append(m_pwd.toLatin1());
-    m_writesocket->writeDatagram(str, p.first, m_sendPort);
+    if (value)
+        m_cache[p.first.toString()] |= (unsigned char)(1 << p.second);
+    else
+        m_cache[p.first.toString()] &= (unsigned char)~(1 << p.second);
 
-    // kein stateChanged: wird über readyRead mitgeteilt
-    //if (!m_values.contains(pin)) return;
-    //m_values[pin]->setValue(value);
-    //emit stateChanged(m_values[pin]);
+    if (!m_cacheTimer.isActive()) m_cacheTimer.start();
 }
 
 void IOController::setPinName ( const QString& pin, const QString& name )
@@ -141,6 +145,20 @@ void IOController::togglePin ( const QString& pin )
 {
     if (!m_values.contains(pin)) return;
     setPin ( pin, !m_values[pin]->value() );
+}
+
+void IOController::cacheToDevice()
+{
+    QMap<QString, unsigned char>::const_iterator it = m_cache.constBegin();
+    for (;it != m_cache.constEnd(); ++it) {
+        //SENDEN
+        QByteArray str;
+        str.append( "Sw" );
+        str.append(it.value());
+        str.append(m_user.toLatin1());
+        str.append(m_pwd.toLatin1());
+        m_writesocket->writeDatagram(str, QHostAddress(it.key()), m_sendPort);
+    }
 }
 
 QList< AbstractStateTracker* > IOController::getStateTracker() {

@@ -54,8 +54,11 @@ private:
     QString m_pwd;
     QUdpSocket *m_listenSocket;
     QUdpSocket *m_writesocket;
+    QTimer m_cacheTimer;
+    QMap<QString, unsigned char> m_cache;
 private slots:
     void readyRead();
+    void cacheToDevice();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
     void dataLoadingComplete();
