@@ -58,6 +58,10 @@ void Controller::readyRead()
                 break;
             }
         }
+        if (m_readState==ReadOK && m_buffer.size()>4) {
+            m_buffer.clear();
+            qWarning() << m_pluginname << "Propably connected to wrong device!" << m_buffer.size();
+        }
     }
     if (m_readState == ReadEnd) {
         for (int i=m_bufferpos;i<m_buffer.size();++i) {
@@ -92,6 +96,7 @@ void Controller::determineChannels(const QByteArray& data)
     m_curtainStateTracker->setCurtainMax((uint)data[1]);
     emit stateChanged(m_curtainStateTracker);
     m_channels = (int)data[2];
+    qDebug() << __FUNCTION__ << m_channels;
     for ( int i=0;i<m_channels;++i )
     {
         const QString name = settings.value ( QLatin1String("channel")+QString::number( i ),
@@ -250,6 +255,12 @@ void Controller::connectToLeds(const QString& device) {
     // create new
     QSettings settings;
     settings.beginGroup(m_pluginname);
+    // Open device and ask for pins
+    if (!QFile::exists(device)) {
+        qWarning() << m_pluginname << "device not found"<<device;
+        return;
+    }
+
     m_serial = new QextSerialPort(device,QextSerialPort::EventDriven);
     m_serial->setBaudRate(BAUD115200);
     m_serial->setFlowControl(FLOW_OFF);
@@ -257,11 +268,7 @@ void Controller::connectToLeds(const QString& device) {
     m_serial->setDataBits(DATA_8);
     m_serial->setStopBits(STOP_1);
     connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
-    // Open device and ask for pins
-    if (!QFile::exists(device)) {
-        qWarning() << m_pluginname << "device not found"<<device;
-        return;
-    }
+
     const char t1[] = {0xef};
     if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1, sizeof(t1))) {
         qWarning() << m_pluginname << "rs232 init fehler";
