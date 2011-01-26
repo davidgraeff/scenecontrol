@@ -29,24 +29,29 @@
 #include <QSettings>
 #include "config.h"
 #include <qtextcodec.h>
+#include <time.h>
 
 NetworkController* network = 0;
 
 void myMessageOutput(QtMsgType type, const char *msg)
 {
     if (network) network->log(msg);
+    time_t rawtime;
+    tm * ptm;
+    time ( &rawtime );
+    ptm = gmtime ( &rawtime );
     switch (type) {
     case QtDebugMsg:
-        fprintf(stderr, "%s\n", msg);
+        fprintf(stderr, "[%2d:%02d] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
         break;
     case QtWarningMsg:
-        fprintf(stderr, "\033[33mWarning: %s\033[0m\n", msg);
+        fprintf(stderr, "[%2d:%02d] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
         break;
     case QtCriticalMsg:
-        fprintf(stderr, "\033[31mCritical: %s\033[0m\n", msg);
+        fprintf(stderr, "[%2d:%02d] \033[31mCritical: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
         break;
     case QtFatalMsg:
-        fprintf(stderr, "\033[31mFatal: %s\033[0m\n", msg);
+        fprintf(stderr, "[%2d:%02d] \033[31mFatal: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
         abort();
     }
 }

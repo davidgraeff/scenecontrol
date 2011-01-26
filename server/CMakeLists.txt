@@ -7,21 +7,6 @@ find_package(PAM REQUIRED)
 
 OPTION(BUILD_SERVER "Build server" ON)
 IF (BUILD_SERVER)
-	MACRO (TODAY RESULT)
-	    IF (WIN32)
-		EXECUTE_PROCESS(COMMAND "date" "/T" OUTPUT_VARIABLE ${RESULT})
-		string(REGEX REPLACE "(..)/(..)/..(..).*" "\\3\\2\\1"
-	${RESULT} ${${RESULT}})
-	    ELSEIF(UNIX)
-		EXECUTE_PROCESS(COMMAND "date" "+%d/%m/%Y" OUTPUT_VARIABLE ${RESULT})
-		string(REGEX REPLACE "(..)/(..)/..(..).*" "\\3\\2\\1"
-	${RESULT} ${${RESULT}})
-	    ELSE (WIN32)
-		MESSAGE(SEND_ERROR "date not implemented")
-		SET(${RESULT} 000000)
-	    ENDIF (WIN32)
-	ENDMACRO (TODAY)
-
 	IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	  SET(CMAKE_INSTALL_PREFIX
 	    "/usr" CACHE PATH "RoomControlServer install prefix" FORCE
@@ -41,8 +26,7 @@ IF (BUILD_SERVER)
 	ADD_DEFINITIONS(-D_IS_ROOMSERVER -D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
 
 	# prepare configuration file
-	today(ROOM_VERSION)
-	SET(ROOM_VERSION "2.0 ${ROOM_VERSION}")
+	SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
 	SET(ROOM_SYSTEM_CLIENTPLUGINS "lib/${PROJECT_NAME}/plugins/client" CACHE STRING "Set the directory where client plugins are located")
 	SET(ROOM_SYSTEM_SERVERPLUGINS "lib/${PROJECT_NAME}/plugins/server" CACHE STRING "Set the directory where server plugins are located")
 	SET(ROOM_SYSTEM_CERTIFICATES "lib/${PROJECT_NAME}/certificates" CACHE STRING "Set the directory where ssl certificates are located")

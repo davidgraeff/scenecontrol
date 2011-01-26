@@ -85,11 +85,7 @@ ServiceController::ServiceController ()
             continue;
         }
 
-        if ( !generate ( result, true ) )
-        {
-            qWarning() << "Json file content not recognised" << file;
-            continue;
-        }
+        generate ( result, true );
     }
 
     // link execute_services to execute_collections
@@ -130,8 +126,8 @@ QList<AbstractStateTracker*> ServiceController::stateTracker()
 bool ServiceController::generate ( const QVariantMap& json, bool loading )
 {
     const QString id = json.value ( QLatin1String ( "id" ) ).toString();
+    const QString filename = serviceFilename(json.value ( QLatin1String ( "type" ) ).toByteArray(), id);
     if (loading && id.isEmpty()) {
-        const QString filename = serviceFilename(json.value ( QLatin1String ( "type" ) ).toByteArray(), id);
         QFile::remove(filename);
         qWarning() << "Invalid service file detected and removed" << filename;
     }
@@ -160,7 +156,7 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
     const QString type = json.value ( QLatin1String ( "type" ), QString() ).toString();
     if ( type.isEmpty())
     {
-        qWarning() << __FUNCTION__ << "detected json object without type" << json;
+        qWarning() << "Service file without type" << filename;
         return false;
     }
 
@@ -172,7 +168,7 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
         ExecutePlugin* eplugin = m_plugin_provider.value ( type );
         if ( !eplugin )
         {
-            qWarning() << __FUNCTION__ << "no plugin for json object" << json;
+            qWarning() << "No plugin found!" << id << type;
             return false;
         }
 
@@ -181,7 +177,7 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
 
     if ( !service )
     {
-        qWarning() << __FUNCTION__ << "no service from plugin for json object" << json;
+        qWarning() <<  "No service found!" << id << type;
         return false;
     }
 
