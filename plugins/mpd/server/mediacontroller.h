@@ -79,10 +79,11 @@ public:
     int volume() const;
 
     void dumpMediaInfo();
-    void connectToMpd(const QUrl& url);
+    void connectToMpd(const QString& hostport);
 private:
     myPluginExecute* m_plugin;
-    QUrl m_mpdurl;
+    QString m_mpdhost;
+    int m_mpdport;
     bool m_terminate;
 
     // command queue
@@ -114,6 +115,7 @@ private:
     // sockets
     QTcpSocket* m_mpdstatus;
     QTcpSocket* m_mpdcmd;
+    QTimer m_reconnect;
 
     // commands for status socket
     enum StatusEnum {
@@ -138,6 +140,7 @@ private Q_SLOTS:
     void slotdisconnected2();
     void sloterror2(QAbstractSocket::SocketError e);
     void updatefakepos();
+    void reconnectTimeout();
 Q_SIGNALS:
     void stateChanged(AbstractStateTracker*);
 };
