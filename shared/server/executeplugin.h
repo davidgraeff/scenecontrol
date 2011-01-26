@@ -23,6 +23,7 @@
 #include <QString>
 #include <QVariant>
 #include <QMap>
+#include <cstdlib> //getenv
 
 class AbstractServiceProvider;
 class AbstractStateTracker;
@@ -45,9 +46,7 @@ public:
      * Called by server process if a service changed.
      * \param service the changed service
      */
-    void serverserviceChanged(AbstractServiceProvider* service) {
-        emit _serviceChanged(service);
-    }
+    void serverserviceChanged(AbstractServiceProvider* service);
     /**
      * Called by server process if a setting is changed. Subclass
      * this method (and call the base implementation) to react on
@@ -55,15 +54,9 @@ public:
      * \param name Name of the setting
      * \param value Value of the setting
      */
-    virtual void setSetting(const QString& name, const QVariant& value) {
-        m_settings.insert(name, value);
-    }
-    void registerSetting(const char* name, const QVariant& value) {
-      setSetting(QString::fromAscii(name), value);
-    }
-    const QVariantMap getSettings() const {
-        return m_settings;
-    }
+    virtual void setSetting(const QString& name, const QVariant& value);
+    virtual void registerSetting(const char* name, const QVariant& value);
+    const QVariantMap getSettings() const;
 private:
     QVariantMap m_settings;
 Q_SIGNALS:
