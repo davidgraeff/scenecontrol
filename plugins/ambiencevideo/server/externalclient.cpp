@@ -25,16 +25,21 @@
 #include "plugin_server.h"
 #include <shared/abstractplugin.h>
 
-ExternalClient::ExternalClient(myPluginExecute* plugin, const QUrl& address) : m_plugin(plugin), m_address(address), m_alreadyWarnedNoHost(false)
+ExternalClient::ExternalClient(myPluginExecute* plugin, const QString& host, int port) : m_plugin(plugin), m_alreadyWarnedNoHost(false)
 {
     connect(&m_reconnect,SIGNAL(timeout()),SLOT(reconnectTimeout()));
+    m_reconnect.setInterval(60000);
+
     connect(this, SIGNAL(connected()), SLOT(slotconnected()));
     connect(this, SIGNAL(disconnected()), SLOT(slotdisconnected()));
     connect(this, SIGNAL(error(QAbstractSocket::SocketError)), SLOT(sloterror(QAbstractSocket::SocketError)));
     connect(this, SIGNAL(readyRead()), SLOT(slotreadyRead()));
-    m_reconnect.setInterval(60000);
-    m_reconnect.start();
+
+    m_host = host;
+    m_port = port;
+
     reconnectTimeout();
+    m_reconnect.start();
 }
 
 ExternalClient::~ExternalClient()
@@ -44,19 +49,20 @@ ExternalClient::~ExternalClient()
 
 
 void ExternalClient::reconnectTimeout() {
-    connectToHost(m_address.host(),m_address.port());
+    if (state() == UnconnectedState)
+        connectToHost(m_host,m_port);
 }
 
 void ExternalClient::slotconnected()
 {
     m_alreadyWarnedNoHost = false;
     m_reconnect.stop();
-    qDebug()<< m_plugin->base()->name() << "connected to"<<m_address.host()<<m_address.port();
+    qDebug()<< m_plugin->base()->name() << "connected to"<<m_host<<m_port;
 }
 
 void ExternalClient::slotdisconnected()
 {
-    qDebug()<< m_plugin->base()->name() << "disconnected from"<<m_address.host()<<m_address.port();
+    qDebug()<< m_plugin->base()->name() << "disconnected from"<<m_host<<m_port;
     disconnectFromHost();
     m_reconnect.start();
 }
@@ -67,7 +73,7 @@ void ExternalClient::sloterror(QAbstractSocket::SocketError e)
         if (m_alreadyWarnedNoHost) return;
         m_alreadyWarnedNoHost = true;
     }
-    qWarning() << m_plugin->base()->name() << m_url << errorString();
+    qWarning() << m_plugin->base()->name() << m_host << m_port << errorString();
 }
 
 void ExternalClient::slotreadyRead()

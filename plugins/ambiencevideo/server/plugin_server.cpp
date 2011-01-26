@@ -68,8 +68,10 @@ void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
         qDeleteAll(m_clients);
         m_clients.clear();
         QStringList strings = value.toString().split(QLatin1Char(';'));
-        foreach(QString url, strings) {
-            m_clients.append(new ExternalClient(this,url));
+        foreach(QString address, strings) {
+            const QStringList data(address.split(QLatin1Char(':')));
+            if (data.size()!=2) continue;
+            m_clients.append(new ExternalClient(this,data[0], data[1].toInt()));
         }
     }
 }

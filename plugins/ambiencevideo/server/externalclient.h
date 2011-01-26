@@ -38,7 +38,7 @@ class ExternalClient : public QTcpSocket
 {
     Q_OBJECT
 public:
-    ExternalClient(myPluginExecute* plugin, const QUrl& address);
+    ExternalClient(myPluginExecute* plugin, const QString& host, int port);
     ~ExternalClient();
     QList<AbstractStateTracker*> getStateTracker();
 
@@ -58,7 +58,8 @@ public:
 private:
     myPluginExecute* m_plugin;
     QTimer m_reconnect;
-    QUrl m_address;
+    QString m_host;
+    int m_port;
     int m_display;
     bool m_alreadyWarnedNoHost;
 private Q_SLOTS:
