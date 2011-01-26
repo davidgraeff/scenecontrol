@@ -33,6 +33,10 @@ void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
     if (name == QLatin1String("serialport")) {
         delete m_serial;
 	const QString device = value.toString();
+        if (!QFile::exists(device)) {
+            qWarning() << m_base->name() << "device not found" << device;
+            return;
+        }
         m_serial = new QextSerialPort(device,QextSerialPort::EventDriven);
         m_serial->setBaudRate(BAUD19200);
         m_serial->setFlowControl(FLOW_OFF);
@@ -40,10 +44,6 @@ void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
         m_serial->setDataBits(DATA_8);
         m_serial->setStopBits(STOP_1);
         connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
-        if (!QFile::exists(device)) {
-            qWarning() << m_base->name() << "device not found" << device;
-            return;
-        }
         if (!m_serial->open(QIODevice::ReadWrite)) {
             qWarning() << m_base->name() << "init fehler";
         }
