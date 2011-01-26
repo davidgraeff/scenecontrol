@@ -152,8 +152,9 @@ void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
     ExecutePlugin::setSetting(name, value);
     if (name == QLatin1String("server")) {
         delete m_xbmcClient;
-	QUrl url(value.toString());
-        m_xbmcClient = new CXBMCClient(url.host().toAscii(), url.port());
+        const QStringList data(value.toString().split(QLatin1Char(':')));
+        if (data.size()!=2) return;
+        m_xbmcClient = new CXBMCClient(data[0].toAscii(), data[1].toInt());
         m_xbmcClient->SendHELO(QCoreApplication::applicationName().toLatin1().constData(), ICON_NONE);
     }
 }
