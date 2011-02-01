@@ -37,6 +37,7 @@ class CorePluginClient : public ClientPlugin
 public:
     CorePluginClient(QObject* parent = 0);
     virtual ~CorePluginClient();
+    virtual void init();
     virtual AbstractPlugin* base() {
         return m_base;
     }

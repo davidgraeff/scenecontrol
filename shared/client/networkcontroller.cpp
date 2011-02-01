@@ -26,20 +26,33 @@
 #include "config.h"
 #include <shared/categorize/category.h>
 #include <shared/categorize/profile.h>
-#include <shared/client/models/collectionsmodel.h>
-#include <shared/client/models/categoriescollectionsmodel.h>
+#include "servicestorage.h"
+#include "modelstorage.h"
 
 #define __FUNCTION__ __FUNCTION__
 
+NetworkController* NetworkController::m_instance = 0;
+
+NetworkController* NetworkController::instance() {
+    if (!m_instance) m_instance=new NetworkController();
+    return m_instance;
+}
+
 NetworkController::NetworkController()
 {
+    // init storages
+    m_servicestorage = ServiceStorage::instance(true);
+    connect(m_servicestorage,SIGNAL(serviceExecute(AbstractServiceProvider*)),SLOT(executeService(AbstractServiceProvider*)));
+    connect(m_servicestorage,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
+    m_modelstorage = ModelStorage::instance(true);
+
+    // init network
     networkstate =  NotConnectedState;
     m_bufferpos=0;
     m_bufferBrakes=0;
     connect(&serverTimeout,SIGNAL(timeout()),SLOT(timeout()));
     serverTimeout.setSingleShot(true);
     serverTimeout.setInterval(5000);
-
     setPeerVerifyMode(QSslSocket::VerifyNone);
 
     connect ( this, SIGNAL ( readyRead() ), SLOT ( slotreadyRead() ) );
@@ -58,9 +71,10 @@ NetworkController::~NetworkController()
         qDebug() << "Unload plugin" << p->base()->name();
         delete p;
     }
+    delete m_servicestorage;
+    delete m_modelstorage;
     m_plugin_provider.clear();
     m_plugins.clear();
-    m_models.clear();
 }
 
 void NetworkController::slotconnected()
@@ -78,11 +92,8 @@ void NetworkController::slotdisconnected()
     serverTimeout.stop();
     networkstate =  NotConnectedState;
     // First clear plugins and models and then delete services
-    emit clearPlugins();
-    qDeleteAll(m_services);
+    m_servicestorage->clear();
     m_buffer.clear();
-    m_services.clear();
-    m_servicesList.clear();
 }
 
 void NetworkController::timeout()
@@ -262,7 +273,7 @@ void NetworkController::authenticate(const QString& user, const QString& pwd) {
 
 bool NetworkController::generate(const QVariantMap& data) {
     const QString id = data.value ( QLatin1String ( "id" ) ).toString();
-    AbstractServiceProvider* service = m_services.value ( id );
+    AbstractServiceProvider* service = m_servicestorage->get(id);
     bool remove = data.contains ( QLatin1String ( "remove" ) );
 
     if ( service )
@@ -270,15 +281,13 @@ bool NetworkController::generate(const QVariantMap& data) {
         QJson::QObjectHelper::qvariant2qobject ( data, service );
         if ( remove )
         {
-            m_services.remove(service->id());
-            m_servicesList.removeAll(service);
-            emit serviceRemoved(service);
+            m_servicestorage->removeService(service, true);
             delete service;
             return true;
         }
         else
         {
-            emit serviceChanged(service);
+            m_servicestorage->serviceUpdated(service);
             return true;
         }
         return false;
@@ -312,12 +321,10 @@ bool NetworkController::generate(const QVariantMap& data) {
 
     if (service) {
         QJson::QObjectHelper::qvariant2qobject ( data, service );
-        m_services.insert ( service->id(), service );
-        m_servicesList.append ( service );
-        emit serviceChanged(service);
+        m_servicestorage->addService(service);
     } else if (statetracker) {
         QJson::QObjectHelper::qvariant2qobject ( data, statetracker );
-        emit stateTrackerChanged(statetracker);
+        m_servicestorage->stateTrackerState(statetracker);
     } else {
         qWarning() << __FUNCTION__ << "no service/statetracker from plugin for json object" << data;
         return false;
@@ -349,13 +356,9 @@ void NetworkController::loadPlugins() {
             continue;
         }
         qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
+	plugin->setStorages(m_servicestorage, m_modelstorage);
+	plugin->init();
 
-        connect(this, SIGNAL(clearPlugins()), plugin, SIGNAL(clear()));
-        connect(this, SIGNAL(stateTrackerChanged(AbstractStateTracker*)), plugin, SIGNAL(stateTrackerChanged(AbstractStateTracker*)));
-        connect(this, SIGNAL(serviceChanged(AbstractServiceProvider*)), plugin,SIGNAL(serviceChanged(AbstractServiceProvider*)));
-        connect(this, SIGNAL(serviceRemoved(AbstractServiceProvider*)), plugin, SIGNAL(serviceRemoved(AbstractServiceProvider*)));
-        connect(plugin, SIGNAL(changeService(AbstractServiceProvider*)), SLOT(serviceSync(AbstractServiceProvider*)));
-        connect(plugin, SIGNAL(executeService(AbstractServiceProvider*)), SLOT(executeService(AbstractServiceProvider*)));
         m_plugins.append ( plugin );
         QStringList provides = plugin->base()->registerServices();
         offered_services += provides.size();
@@ -364,45 +367,13 @@ void NetworkController::loadPlugins() {
         {
             m_plugin_provider.insert ( provide, plugin );
         }
-        QList<ClientModel*> models = plugin->models();
-        foreach ( ClientModel* model, models )
-        {
-            m_models.insert ( model->id(), model );
-        }
-
-        {
-            CategoriesCollectionsModel* pm = new CategoriesCollectionsModel(this);
-            registerClientModel(pm);
-            m_models.insert(pm->id(), pm);
-        }
-
-        {
-            CollectionsModel* pm = new CollectionsModel(this);
-            registerClientModel(pm);
-            m_models.insert(pm->id(), pm);
-        }
     }
 }
-ClientModel* NetworkController::model(const QString& id) {
-    return m_models.value(id);
-}
 
-void NetworkController::registerClientModel(ClientModel* model) {
-    connect(model, SIGNAL(changeService(AbstractServiceProvider*)), SLOT(serviceSync(AbstractServiceProvider*)));
-    connect(model, SIGNAL(executeService(AbstractServiceProvider*)), SLOT(executeService(AbstractServiceProvider*)));
-    connect(this, SIGNAL(serviceChanged(AbstractServiceProvider*)), model, SLOT(serviceChanged(AbstractServiceProvider*)));
-    connect(this, SIGNAL(serviceRemoved(AbstractServiceProvider*)), model, SLOT(serviceRemoved(AbstractServiceProvider*)));
-    connect(this, SIGNAL(stateTrackerChanged(AbstractStateTracker*)), model, SLOT(stateTrackerChanged(AbstractStateTracker*)));
-    connect(this, SIGNAL(clearPlugins()), model, SLOT(clear()));
-    foreach(AbstractServiceProvider* service, m_servicesList)
-    model->serviceChanged(service);
-}
 QStringList NetworkController::supportedPlugins() {
     return m_supportedPlugins;
 }
-QMap< QString, ClientModel* > NetworkController::models() {
-    return m_models;
-}
-QMap< QString, ClientPlugin* > NetworkController::plugin_providers() {
+
+QMap< QString, ClientPlugin* > NetworkController::plugin_providers() const {
     return m_plugin_provider;
 }

@@ -38,6 +38,7 @@ class myPluginClient : public ClientPlugin
 public:
     myPluginClient(QObject* parent = 0);
     virtual ~myPluginClient();
+    virtual void init();
     virtual AbstractPlugin* base() {
         return m_base;
     }

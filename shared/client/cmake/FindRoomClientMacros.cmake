@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-project(room${targetname})
+project(${targetname})
 
 find_package(Qt4 4.7.0 REQUIRED)
 find_package(KDE4 4.4 REQUIRED)
@@ -62,5 +62,5 @@ file(GLOB_RECURSE GUI_RC *.qrc)
 qt4_wrap_ui(UI_H ${UI_FILES} ${UIKDE_FILES})
 QT4_ADD_RESOURCES(RC_SRC ${GUI_RC})
 
-set(SRCS_H ${SRCS_H} ${SHAREDCLIENTDIR}/clientplugin.h ${SHAREDCLIENTDIR}/networkcontroller.h ${UI_H} ${Shared_SRCS_H} ${SharedKDE_SRCS_H})
-set(SRCS ${SRCS} ${SHAREDCLIENTDIR}/networkcontroller.cpp ${Shared_SRCS} ${RC_SRC} ${SharedKDE_SRCS_SRCS})
+set(SRCS_H ${SRCS_H} ${SHAREDCLIENTDIR}/clientplugin.h ${SHAREDCLIENTDIR}/networkcontroller.h ${SHAREDCLIENTDIR}/servicestorage.h ${SHAREDCLIENTDIR}/modelstorage.h ${UI_H} ${Shared_SRCS_H} ${SharedKDE_SRCS_H})
+set(SRCS ${SRCS} ${SHAREDCLIENTDIR}/clientplugin.cpp ${SHAREDCLIENTDIR}/networkcontroller.cpp ${SHAREDCLIENTDIR}/servicestorage.cpp ${SHAREDCLIENTDIR}/modelstorage.cpp ${Shared_SRCS} ${RC_SRC} ${SharedKDE_SRCS_SRCS})

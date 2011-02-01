@@ -4,16 +4,19 @@
 #include <QtPlugin>
 #include <plugin.h>
 #include "channelsmodel.h"
+#include <shared/client/modelstorage.h>
 
 Q_EXPORT_PLUGIN2(libroomclient, myPluginClient)
 
 myPluginClient::myPluginClient(QObject* parent) {
     Q_UNUSED(parent);
     m_base = new myPlugin();
-	addModel(new ChannelsModel());
 }
 
 myPluginClient::~myPluginClient() {
     //delete m_base;
-    qDeleteAll(m_models);
+}
+void myPluginClient::init() {
+    ModelStorage* modelstorage = ModelStorage::instance();
+    modelstorage->registerClientModel(new ChannelsModel());
 }

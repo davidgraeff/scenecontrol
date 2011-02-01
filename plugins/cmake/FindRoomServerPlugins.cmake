@@ -14,8 +14,8 @@ set(Shared_SRCS ${Shared_SRCS} "${SHAREDDIR}/abstractserviceprovider.cpp" "${SHA
 
 set(SharedServer_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/server/executeservice.h" "${SHAREDDIR}/server/executeWithBase.h" "${SHAREDDIR}/server/executeplugin.h")
 set(SharedServer_SRCS ${Shared_SRCS} "${SHAREDDIR}/server/executeservice.cpp" "${SHAREDDIR}/server/executeWithBase.cpp")
-set(SharedClient_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/client/clientplugin.h")
-set(SharedClient_SRCS ${Shared_SRCS})
+set(SharedClient_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/client/clientplugin.h" "${SHAREDDIR}/client/servicestorage.h" "${SHAREDDIR}/client/modelstorage.h")
+set(SharedClient_SRCS ${Shared_SRCS} "${SHAREDDIR}/client/clientplugin.cpp" "${SHAREDDIR}/client/servicestorage.cpp" "${SHAREDDIR}/client/modelstorage.cpp")
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
 
@@ -34,13 +34,13 @@ endif()
 ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
 
 macro(build_client_lib)
-	QT4_WRAP_CPP(SRCS_MOCS_CLIENT ${SRCS_CLIENT_H} ${SharedClient_SRCS_H})
-	add_library(${PROJECT_NAME}_client SHARED ${SRCS_CLIENT} ${SharedClient_SRCS} ${SRCS_MOCS_CLIENT})
+	QT4_WRAP_CPP(SRCS_MOCS_CLIENT ${SRCS_CLIENT_H} ${SharedClient_SRCS_H} ${ADD_H})
+	add_library(${PROJECT_NAME}_client SHARED ${SRCS_CLIENT} ${SharedClient_SRCS} ${SRCS_MOCS_CLIENT} ${ADD_CPP})
 endmacro(build_client_lib)
 
 macro(build_server_lib)
 	QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_SERVER_H} ${SharedServer_SRCS_H})
-	add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER})
+	add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER} ${ARGN})
 endmacro(build_server_lib)
 
 set(SERVERNAME "RoomControlServer")

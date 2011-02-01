@@ -17,24 +17,19 @@
 
 */
 
-#pragma once
-#include <QObject>
-#include <QStringList>
-#include "abstractstatetracker.h"
-#include "abstractserviceprovider.h"
+#include "clientplugin.h"
+#include "servicestorage.h"
+#include "modelstorage.h"
 
-class AbstractPlugin
-{
-public:
-    virtual ~AbstractPlugin() {}
-    virtual QString name() const = 0;
-    virtual QString version() const = 0;
-    /**
-     * Return all Actions, Conditions, Events and StateTracker
-     */
-    virtual QStringList registerServices() const = 0;
-    virtual QStringList registerStateTracker() const = 0;
-    virtual AbstractStateTracker* createStateTracker(const QString& id) = 0;
-    virtual AbstractServiceProvider* createServiceProvider(const QString& id) = 0;
-};
-Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/1.0")
+QString ClientModel::getQML() {
+    return QString();
+}
+
+QString ClientModel::id() {
+    return QString::fromAscii(metaObject()->className());
+}
+
+void ClientPlugin::setStorages(ServiceStorage* servicestorage, ModelStorage* modelstorage) {
+    ServiceStorage::instance(servicestorage);
+    ModelStorage::instance(modelstorage);
+}

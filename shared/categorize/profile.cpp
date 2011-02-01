@@ -22,3 +22,15 @@
 Collection::Collection(QObject* parent)
 : AbstractServiceProvider(parent), m_enabled(true)
 {}
+QString Collection::name() const {
+    return m_name;
+}
+void Collection::setName(const QString& cmd) {
+    m_name = cmd;
+}
+bool Collection::enabled() const {
+    return m_enabled;
+}
+void Collection::setEnabled(bool e) {
+    m_enabled = e;
+}

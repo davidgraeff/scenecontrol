@@ -17,8 +17,8 @@
 
 */
 
-#ifndef SERVICEPROVIDERPROFILE_H
-#define SERVICEPROVIDERPROFILE_H
+#pragma once
+
 #include <QSet>
 #include <QTimer>
 #include <QMap>
@@ -32,30 +32,17 @@ class Collection : public AbstractServiceProvider
     Q_PROPERTY ( bool enabled READ enabled WRITE setEnabled )
 public:
     Collection(QObject* parent = 0);
-	virtual QString service_name(){return tr("Profile");}
-	virtual QString service_desc(){return tr("Services müssen Profilen zugeordnet sein.");}
-    QString name() const
-    {
-        return m_name;
+    virtual QString service_name() {
+        return tr("Profile");
     }
-    void setName ( const QString& cmd )
-    {
-        m_name = cmd;
+    virtual QString service_desc() {
+        return tr("Services müssen Profilen zugeordnet sein.");
     }
-
-    bool enabled() const
-    {
-        return m_enabled;
-    }
-
-    void setEnabled ( bool e )
-    {
-        m_enabled = e;
-    }
-
+    QString name() const;
+    void setName ( const QString& cmd );
+    bool enabled() const;
+    void setEnabled ( bool e );
 private:
     QString m_name;
     bool m_enabled;
 };
-
-#endif // SERVICEPROVIDERPROFILE_H

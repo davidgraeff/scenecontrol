@@ -9,7 +9,7 @@ ENDIF (NOT CMAKE_BUILD_TYPE)
 INCLUDE(InstallRequiredSystemLibraries)
 SET(CPACK_GENERATOR "DEB")
 SET(CPACK_PACKAGE_NAME "roomcontrol")
-SET(CPACK_PACKAGE_VERSION "1.0.18")
+SET(CPACK_PACKAGE_VERSION "1.0.22")
 SET(CPACK_PACKAGE_CONTACT "David Gräff <david.graeff>")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The roomcontrol server, cli client, editor, data viewer and all plugins")
 SET(CPACK_PACKAGE_DESCRIPTION "Plugin orientierte Steuersoftware für Raumautomatisierung. Plugins für

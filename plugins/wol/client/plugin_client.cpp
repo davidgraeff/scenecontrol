@@ -13,5 +13,5 @@ myPluginClient::myPluginClient(QObject* parent) {
 
 myPluginClient::~myPluginClient() {
     //delete m_base;
-    qDeleteAll(m_models);
 }
+void myPluginClient::init() {}

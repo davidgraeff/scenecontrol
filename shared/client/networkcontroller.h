@@ -5,8 +5,7 @@
  *      Author: David Gräff
  */
 
-#ifndef TCPSERVER_H_
-#define TCPSERVER_H_
+#pragma once
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QByteArray>
@@ -15,6 +14,8 @@
 #include <QDBusConnection>
 #include <QTimer>
 
+class ModelStorage;
+class ServiceStorage;
 class ClientModel;
 class AbstractStateTracker;
 class ClientPlugin;
@@ -25,19 +26,17 @@ class AbstractServiceProvider;
 class NetworkController: public QSslSocket {
     Q_OBJECT
 public:
-    NetworkController();
+    static NetworkController* instance();
     virtual ~NetworkController();
     void start(const QString& ip, int port);
     void authenticate(const QString& user, const QString& pwd);
     void start();
     QString serverversion();
     QStringList supportedPlugins();
-    ClientModel* model(const QString& id) ;
-    QMap<QString, ClientModel*> models();
-    void registerClientModel(ClientModel* model) ;
-    QMap<QString, ClientPlugin*> plugin_providers();
+    QMap<QString, ClientPlugin*> plugin_providers() const;
     void loadPlugins();
 private:
+    NetworkController();
     QByteArray getNextJson();
     QByteArray m_buffer;
     int m_bufferpos;
@@ -56,16 +55,14 @@ private:
         TransferingState,
         ConnectedState
     } networkstate;
-    // service providers and stateTracker
-    QList<AbstractServiceProvider*> m_servicesList;
-    QMap<QString, AbstractServiceProvider*> m_services;
+    ServiceStorage* m_servicestorage;
+    ModelStorage* m_modelstorage;
 
     // plugins
     QList<ClientPlugin*> m_plugins;
     QMap<QString, ClientPlugin*> m_plugin_provider;
-    QMap<QString, ClientModel*> m_models;
     bool generate(const QVariantMap& data);
-
+    static NetworkController* m_instance;
 private Q_SLOTS:
     void slotreadyRead ();
     void timeout();
@@ -88,10 +85,5 @@ Q_SIGNALS:
     void logmsg(const QString& log);
     void auth_required(int timeout_ms);
     //plugins
-    void stateTrackerChanged(AbstractStateTracker*);
-    void serviceRemoved(AbstractServiceProvider*);
-    void serviceChanged(AbstractServiceProvider*);
     void clearPlugins();
 };
-
-#endif /* TCPSERVER_H_ */
