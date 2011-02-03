@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <shared/abstractserviceprovider.h>
 #include <shared/categorize/profile.h>
+#include <servicestorage.h>
 
 ServiceProviderModel::ServiceProviderModel ( const QString& title, QObject* parent )
         : ClientModel ( parent ), m_title(title)
@@ -82,10 +83,7 @@ bool ServiceProviderModel::removeRows ( int row, int count, const QModelIndex & 
 {
     QString str;
     for ( int i=row+count-1;i>=row;--i )
-    {
-        m_items[i]->setProperty("remove",1);
-        emit changeService(m_items.at ( i ));
-    }
+        ServiceStorage::instance()->deleteService(m_items[i]);
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );
     emit dataChanged ( ifrom,ito );
@@ -149,10 +147,10 @@ QString ServiceProviderModel::getName ( int i ) const
 }
 
 int ServiceProviderModel::indexOf ( const QVariant& data )
-{    
-	if (data.type()!=QVariant::String) return -1;
+{
+    if (data.type()!=QVariant::String) return -1;
     const QString id = data.toString();
-	
+
     for (int i=0;i<m_items.size();++i)
         if (m_items[i]->id() == id) return i;
     return -1;

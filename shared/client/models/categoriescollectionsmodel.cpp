@@ -21,6 +21,7 @@
 #include <QDebug>
 #include <shared/categorize/profile.h>
 #include <shared/categorize/category.h>
+#include <servicestorage.h>
 
 CategoryItem::~CategoryItem() {
     qDeleteAll(m_profiles.begin(),m_profiles.end());
@@ -144,18 +145,18 @@ bool CategoriesCollectionsModel::setData ( const QModelIndex& index, const QVari
         if ( newname.isEmpty() || newname == currentname ) return false;
         if (cat && cat->category) {
             cat->category->setName(newname);
-            emit changeService(cat->category);
+            ServiceStorage::instance()->serviceHasChanged(cat->category);
         }
         else if (p && p->profile) {
             p->profile->setName(newname);
-            emit changeService(p->profile);
+            ServiceStorage::instance()->serviceHasChanged(p->profile);
         }
         QModelIndex index = createIndex ( index.row(),0,0 );
         emit dataChanged ( index,index );
         return true;
     } else if ( role == Qt::CheckStateRole && p && p->profile) {
         p->profile->setEnabled(value.toInt()==Qt::Checked);
-        emit changeService(p->profile);
+        ServiceStorage::instance()->serviceHasChanged(p->profile);
         QModelIndex index = createIndex ( index.row(),0,0 );
         emit dataChanged ( index,index );
         return true;
@@ -209,35 +210,31 @@ QModelIndex CategoriesCollectionsModel::index(int row, int column, const QModelI
 
 bool CategoriesCollectionsModel::removeRows ( int row, int count, const QModelIndex &parent )
 {
-	QModelIndexList list;
-	for (int i=row;i<row+count;++i)
-		list.append(index(row,0,parent));
-	
-	removeRows(list);
+    QModelIndexList list;
+    for (int i=row;i<row+count;++i)
+        list.append(index(row,0,parent));
+
+    removeRows(list);
     return true;
 }
 
 bool CategoriesCollectionsModel::removeRows ( QModelIndexList list )
 {
-	qSort(list.begin(), list.end());
-	
-	for (int i = list.count() - 1; i > -1; --i) {
-		CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)list[i].parent().internalPointer());
-		if (!cat) { // remove categories
-			if (m_catitems[list[i].row()]->category) { // do not remove the predefined categories
-                Category* c = m_catitems[list[i].row()]->category;
-				c->setProperty("remove",true);
-				emit changeService(c);
-			}
-		} else { // remove profiles
-			Collection* c = cat->m_profiles[list[i].row()]->profile;
-			c->setProperty("remove",true);
-			emit changeService(c);
-		}
-	}
-	
-	emit dataChanged ( list.first(),list.last() );
-	return true;
+    qSort(list.begin(), list.end());
+
+    for (int i = list.count() - 1; i > -1; --i) {
+        CategoryItem* cat = qobject_cast<CategoryItem*>((QObject*)list[i].parent().internalPointer());
+        if (!cat && m_catitems[list[i].row()]->category) { // remove categories // do not remove the predefined categories
+            Category* c = m_catitems[list[i].row()]->category;
+            ServiceStorage::instance()->deleteService(c);
+        } else { // remove profiles
+            Collection* c = cat->m_profiles[list[i].row()]->profile;
+            ServiceStorage::instance()->deleteService(c);
+        }
+    }
+
+    emit dataChanged ( list.first(),list.last() );
+    return true;
 }
 
 void CategoriesCollectionsModel::addedCategory(Category* category)
@@ -262,12 +259,12 @@ void CategoriesCollectionsModel::addedCategory(Category* category)
     // currently visible at the unassigned-category. Reassign now
     for (int i=m_catitems[0]->m_profiles.size()-1;i>=0;--i) {
         if (m_catitems[0]->m_profiles[i]->profile->parentid()==category->id()) {
-            emit serviceChanged(m_catitems[0]->m_profiles[i]->profile);
+            ServiceStorage::instance()->serviceHasChanged(m_catitems[0]->m_profiles[i]->profile);
         }
     }
 
     if (m_focusid == category->name()) {
-		emit itemFocus(createIndex(row,0,newitem));
+        emit itemFocus(createIndex(row,0,newitem));
         m_focusid = QString();
     }
 }
@@ -299,7 +296,7 @@ void CategoriesCollectionsModel::addedProfile(Collection* profile)
     endInsertRows();
 
     if (m_focusid == profile->name()) {
-		emit itemFocus(createIndex(row,0,newitem));
+        emit itemFocus(createIndex(row,0,newitem));
         m_focusid = QString();
     }
 
@@ -394,14 +391,14 @@ void CategoriesCollectionsModel::serviceChanged ( AbstractServiceProvider* provi
             for (int i=0;i<m_catitems.size();++i)
                 m_catitems[i]->pos = i;
             endInsertRows();
-			if (indicateMovement) emit itemFocus(createIndex(row, 0, item));
+            if (indicateMovement) emit itemFocus(createIndex(row, 0, item));
         } else if (p) {
             // Remove from old category
             CategoryItem* oldCategory = p->category;
             beginRemoveRows (parent, oldrow, oldrow );
             Collection* item = oldCategory->m_profiles[oldrow]->profile;
             oldCategory->removeProfile(oldrow);
-			p = 0;
+            p = 0;
             endRemoveRows();
 
             // add to new category
@@ -410,7 +407,7 @@ void CategoriesCollectionsModel::serviceChanged ( AbstractServiceProvider* provi
             p = newCategory->insertProfile(item, row);
             endInsertRows();
 
-			emit itemFocus(createIndex(row, 0, p));
+            emit itemFocus(createIndex(row, 0, p));
         }
     } else {
         emit dataChanged ( index,index );

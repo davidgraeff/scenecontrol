@@ -303,9 +303,9 @@ bool NetworkController::generate(const QVariantMap& data) {
     }
 
     AbstractStateTracker* statetracker = 0;
-    if (type.toUtf8() == Category::staticMetaObject.className()) {
+    if (type.toAscii() == QByteArray(Category::staticMetaObject.className())) {
         service = new Category();
-    } else if (type.toUtf8() == Collection::staticMetaObject.className()) {
+    } else if (type.toAscii() == QByteArray(Collection::staticMetaObject.className())) {
         service = new Collection();
     } else {
         ClientPlugin* eplugin = m_plugin_provider.value ( type );

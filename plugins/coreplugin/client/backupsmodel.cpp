@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <services/backupAC.h>
 #include <statetracker/backupST.h>
+#include <shared/client/servicestorage.h>
 
 BackupsModel::BackupsModel ( QObject* parent )
         : ClientModel ( parent )
@@ -49,7 +50,7 @@ QVariant BackupsModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
 
-	if ( role==Qt::UserRole) return m_items.at(index.row()).id;
+    if ( role==Qt::UserRole) return m_items.at(index.row()).id;
     if ( role==Qt::DisplayRole || role==Qt::EditRole ) {
         return m_items.at ( index.row() ).name;
     }
@@ -80,8 +81,8 @@ bool BackupsModel::setData ( const QModelIndex& index, const QVariant& value, in
         ActorBackup* p = new ActorBackup();
         p->setBackupid(m_items[index.row() ].id);
         p->setBackupname(m_items[index.row() ].name);
-		p->setAction(ActorBackup::RenameBackup);
-        emit executeService(p);
+        p->setAction(ActorBackup::RenameBackup);
+        ServiceStorage::instance()->executeService(p);
         QModelIndex index = createIndex ( index.row(),0,0 );
         emit dataChanged ( index,index );
         return true;
@@ -93,12 +94,12 @@ bool BackupsModel::removeRows ( int row, int count, const QModelIndex & )
 {
     QString str;
     for ( int i=row+count-1;i>=row;--i ) {
-        
+
         ActorBackup* p = new ActorBackup();
         p->setBackupid(m_items.at ( i ).id);
         p->setBackupname(m_items.at ( i ).name);
-		p->setAction(ActorBackup::RemoveBackup);
-        emit executeService(p);
+        p->setAction(ActorBackup::RemoveBackup);
+	ServiceStorage::instance()->executeService(p);
     }
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );
@@ -122,25 +123,25 @@ void BackupsModel::serviceRemoved ( AbstractServiceProvider* )
 {
 }
 void BackupsModel::stateTrackerChanged(AbstractStateTracker* tracker) {
-	BackupStateTracker* t = qobject_cast<BackupStateTracker*>(tracker);
-	if (!t) return;
-	if (t->backupids().size() != t->backupnames().size()) {
-		qWarning() << "Backups: id size != name size";
-		return;
-	}
-	clear();
-	for(int i=0; i<t->backupids().size(); ++i) {
-		BackupItem b;
-		b.id = t->backupids().at(i);
-		b.name = t->backupnames().at(i);
-		m_items.append(b);
-	}
+    BackupStateTracker* t = qobject_cast<BackupStateTracker*>(tracker);
+    if (!t) return;
+    if (t->backupids().size() != t->backupnames().size()) {
+        qWarning() << "Backups: id size != name size";
+        return;
+    }
+    clear();
+    for (int i=0; i<t->backupids().size(); ++i) {
+        BackupItem b;
+        b.id = t->backupids().at(i);
+        b.name = t->backupnames().at(i);
+        m_items.append(b);
+    }
 }
 
 int BackupsModel::indexOf(const QVariant& data) {
     if (data.type()!=QVariant::String) return -1;
-	const QString id = data.toString();
-	for (int i=0;i<m_items.size();++i)
-		if (m_items[i].id == id) return i;
+    const QString id = data.toString();
+    for (int i=0;i<m_items.size();++i)
+        if (m_items[i].id == id) return i;
     return -1;
 }

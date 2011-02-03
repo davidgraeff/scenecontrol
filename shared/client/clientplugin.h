@@ -34,10 +34,6 @@ class ClientModel : public QAbstractListModel {
     Q_OBJECT
 public:
     ClientModel(QObject* parent = 0) : QAbstractListModel(parent) {}
-    /*
-    Get QML for embedding this model
-    */
-    virtual QString getQML() ;
     virtual QString id() ;
     virtual int indexOf(const QVariant& data) = 0;
 public Q_SLOTS:
@@ -46,8 +42,6 @@ public Q_SLOTS:
     virtual void serviceChanged(AbstractServiceProvider*) = 0;
     virtual void clear() = 0;
 Q_SIGNALS:
-    void changeService(AbstractServiceProvider*);
-    void executeService(AbstractServiceProvider*);
     /*
      * The model want to hint to a special entry.
      * For example if the track in a playlist changed.

@@ -20,6 +20,7 @@
 #include "categoriesmodel.h"
 #include <QDebug>
 #include <shared/categorize/category.h>
+#include <servicestorage.h>
 
 CategoriesModel::CategoriesModel ( QObject* parent )
         : ClientModel ( parent )
@@ -46,7 +47,7 @@ QVariant CategoriesModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
 
-	if ( role == Qt::UserRole ) return m_items[index.row()]->id();
+    if ( role == Qt::UserRole ) return m_items[index.row()]->id();
     else if ( role==Qt::DisplayRole || role==Qt::EditRole ) {
         return m_items[index.row()]->name();
     }
@@ -74,7 +75,7 @@ bool CategoriesModel::setData ( const QModelIndex& index, const QVariant& value,
         QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
         if ( newname.isEmpty() || newname == m_items[index.row() ]->name() ) return false;
         m_items[index.row() ]->setName(newname);
-        emit changeService(m_items[index.row() ]);
+	ServiceStorage::instance()->serviceHasChanged(m_items[index.row() ]);
         QModelIndex index = createIndex ( index.row(),0,0 );
         emit dataChanged ( index,index );
         return true;
@@ -85,10 +86,8 @@ bool CategoriesModel::setData ( const QModelIndex& index, const QVariant& value,
 bool CategoriesModel::removeRows ( int row, int count, const QModelIndex & )
 {
     QString str;
-    for ( int i=row+count-1;i>=row;--i ) {
-		m_items[i]->setProperty("remove",1);
-        emit changeService(m_items[i]);
-    }
+    for ( int i=row+count-1;i>=row;--i )
+        ServiceStorage::instance()->deleteService(m_items[i]);
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );
     emit dataChanged ( ifrom,ito );
@@ -97,18 +96,15 @@ bool CategoriesModel::removeRows ( int row, int count, const QModelIndex & )
 
 bool CategoriesModel::removeRows ( QModelIndexList list )
 {
-	qSort(list.begin(), list.end());
-	
-	for (int i = list.count() - 1; i > -1; --i) {
-		Category* p = get(list[i].row());
-		if (p) {
-			p->setProperty("remove",1);
-			emit changeService(p);
-		}
-	}
-	
-	emit dataChanged ( list.first(),list.last() );
-	return true;
+    qSort(list.begin(), list.end());
+
+    for (int i = list.count() - 1; i > -1; --i) {
+        Category* p = get(list[i].row());
+        ServiceStorage::instance()->deleteService(p);
+    }
+
+    emit dataChanged ( list.first(),list.last() );
+    return true;
 }
 
 Qt::ItemFlags CategoriesModel::flags ( const QModelIndex& index ) const
@@ -121,37 +117,37 @@ Qt::ItemFlags CategoriesModel::flags ( const QModelIndex& index ) const
 
 void CategoriesModel::serviceChanged ( AbstractServiceProvider* service)
 {
-	Category* cat = qobject_cast<Category*>(service);
-	if (!cat) return;
-	int index = m_items.indexOf(cat);
-	int newindex = 0;
-	for (;newindex<m_items.size();++newindex) {
-		if (m_items[newindex]->name()<=cat->name()) break;
-	}
-		
-	if (index == -1) {
-		beginInsertRows(QModelIndex(),newindex,newindex);
-		m_items.insert(newindex, qobject_cast<Category*>(service));
-		endInsertRows();
-	} else if (newindex != index) {
-		beginMoveRows(QModelIndex(),index,index,QModelIndex(),newindex);
-		m_items.move(index, newindex);
-		endMoveRows();
-	} else {
+    Category* cat = qobject_cast<Category*>(service);
+    if (!cat) return;
+    int index = m_items.indexOf(cat);
+    int newindex = 0;
+    for (;newindex<m_items.size();++newindex) {
+        if (m_items[newindex]->name()<=cat->name()) break;
+    }
+
+    if (index == -1) {
+        beginInsertRows(QModelIndex(),newindex,newindex);
+        m_items.insert(newindex, qobject_cast<Category*>(service));
+        endInsertRows();
+    } else if (newindex != index) {
+        beginMoveRows(QModelIndex(),index,index,QModelIndex(),newindex);
+        m_items.move(index, newindex);
+        endMoveRows();
+    } else {
         QModelIndex qindex = createIndex ( index,0,0 );
         emit dataChanged ( qindex,qindex );
-	}
+    }
 }
 
 void CategoriesModel::serviceRemoved ( AbstractServiceProvider* service)
 {
-	Category* cat = qobject_cast<Category*>(service);
-	if (!cat) return;
-	int index = m_items.indexOf(cat);
-	if (index == -1) return;
-	beginRemoveRows(QModelIndex(),index,index);
-	m_items.removeAt(index);
-	endRemoveRows();
+    Category* cat = qobject_cast<Category*>(service);
+    if (!cat) return;
+    int index = m_items.indexOf(cat);
+    if (index == -1) return;
+    beginRemoveRows(QModelIndex(),index,index);
+    m_items.removeAt(index);
+    endRemoveRows();
 }
 
 void CategoriesModel::stateTrackerChanged(AbstractStateTracker*) {
@@ -160,9 +156,9 @@ Category* CategoriesModel::get(int index) {
     return m_items.value(index);
 }
 int CategoriesModel::indexOf(const QVariant& data) {
-	if (data.type()!=QVariant::String) return -1;
+    if (data.type()!=QVariant::String) return -1;
     const QString id = data.toString();
-	
+
     for (int i=0;i<m_items.size();++i)
         if (m_items[i]->id() == id) return i;
     return -1;

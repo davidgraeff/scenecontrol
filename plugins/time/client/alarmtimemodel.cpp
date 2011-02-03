@@ -80,7 +80,7 @@ QVariant AlarmTimeModel::data ( const QModelIndex & index, int role ) const
     if ( !index.isValid() ) return QVariant();
     const AlarmItem item = m_items[index.row()];
     if ( role == Qt::UserRole ) return item.item->id();
-    else if (role==Qt::DisplayRole) {
+    else if (role==Qt::DisplayRole||role==Qt::ToolTipRole) {
         switch (index.column()) {
         case 0:
             return item.parent->name();
@@ -102,7 +102,7 @@ bool AlarmTimeModel::setData ( const QModelIndex& index, const QVariant& value, 
 
     if ( role == Qt::CheckStateRole) {
         item.parent->setEnabled(value.toInt()==Qt::Checked);
-        emit changeService(item.parent);
+	ServiceStorage::instance()->serviceHasChanged(item.parent);
         QModelIndex index = createIndex ( index.row(),0,0 );
         emit dataChanged ( index,index );
         return true;
@@ -115,8 +115,7 @@ bool AlarmTimeModel::removeRows ( int row, int count, const QModelIndex & )
     for ( int i=row+count-1;i>=row;--i )
     {
         AbstractServiceProvider* service = m_items[i].item;
-        service->setProperty("remove",true);
-        emit changeService(service);
+	ServiceStorage::instance()->deleteService(service);
     }
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );
@@ -138,9 +137,8 @@ void AlarmTimeModel::serviceChanged ( AbstractServiceProvider* service )
 {
     // Filter
     Q_ASSERT(service);
-    if (service->metaObject()->className() != EventPeriodic::staticMetaObject.className() &&
-            service->metaObject()->className() != EventDateTime::staticMetaObject.className()) return;
-
+    if (QByteArray(service->metaObject()->className()) != QByteArray(EventPeriodic::staticMetaObject.className()) &&
+      QByteArray(service->metaObject()->className()) != QByteArray(EventDateTime::staticMetaObject.className())) return;
 
     // Find out parent name
     ServiceStorage* servicestorage = ServiceStorage::instance();
@@ -157,7 +155,7 @@ void AlarmTimeModel::serviceChanged ( AbstractServiceProvider* service )
         // Find alphabetic position amoung profiles in the same category
         int row=0;
         for (;row<m_items.size();++row)
-            if (m_items[row].item->toString().toLower() >= service->toString().toLower())
+            if (m_items[row].parent->name().toLower() >= collection->name().toLower())
                 break;
 
         beginInsertRows (QModelIndex(),row,row );
@@ -179,7 +177,7 @@ void AlarmTimeModel::serviceChanged ( AbstractServiceProvider* service )
     for (row=0;row<m_items.size();++row)
     {
         if (index == row) skip = true;
-        if (index != row && m_items[row].item->toString().toLower() >= service->toString())
+        if (index != row && m_items[row].parent->name().toLower() >= collection->name().toLower())
         {
             indicateMovement = true;
             break;

@@ -25,6 +25,7 @@
 #include <statetracker/lednamestatetracker.h>
 #include <services/actorled.h>
 #include <services/actorledname.h>
+#include <shared/client/servicestorage.h>
 
 ChannelsModel::ChannelsModel (QObject* parent) : ClientModel ( parent )
 {
@@ -51,9 +52,9 @@ void ChannelsModel::stateTrackerChanged(AbstractStateTracker* tracker)
             ChannelValueStateTracker::staticMetaObject.className())
     {
         ChannelValueStateTracker* original = (ChannelValueStateTracker*)tracker;
-		ChannelValueStateTracker* p = new ChannelValueStateTracker();
-		p->setChannel(original->channel());
-		p->setValue(original->value());
+        ChannelValueStateTracker* p = new ChannelValueStateTracker();
+        p->setChannel(original->channel());
+        p->setValue(original->value());
         if (!m_assignment.contains(p->channel())) {
             beginInsertRows(QModelIndex(), p->channel(), p->channel());
             m_assignment.insert(p->channel(), m_itemvalues.size());
@@ -72,9 +73,9 @@ void ChannelsModel::stateTrackerChanged(AbstractStateTracker* tracker)
                ChannelNameStateTracker::staticMetaObject.className())
     {
         ChannelNameStateTracker* original = (ChannelNameStateTracker*)tracker;
-		ChannelNameStateTracker* p = new ChannelNameStateTracker();
-		p->setChannel(original->channel());
-		p->setValue(original->value());
+        ChannelNameStateTracker* p = new ChannelNameStateTracker();
+        p->setChannel(original->channel());
+        p->setValue(original->value());
 
         if (!m_assignment.contains(p->channel())) {
         } else {
@@ -101,7 +102,7 @@ QVariant ChannelsModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
 
-	if ( role==Qt::UserRole) return m_itemnames.at(index.row())->channel();
+    if ( role==Qt::UserRole) return m_itemnames.at(index.row())->channel();
     if ( role==Qt::DisplayRole || role==Qt::EditRole )
     {
         if ( index.column() ==0 )
@@ -175,9 +176,10 @@ void ChannelsModel::setValue ( int i, unsigned int value )
     ActorLed* a = new ActorLed();
     a->setChannel(i);
     a->setValue(value);
-	a->setAssignment(ActorLed::ValueAbsolute);
-	a->setFadetype(ActorLed::FadeTypeFade);
-	emit executeService(a);
+    a->setAssignment(ActorLed::ValueAbsolute);
+    a->setFadetype(ActorLed::FadeTypeFade);
+
+    ServiceStorage::instance()->executeService(a);
 }
 
 void ChannelsModel::setName ( int i, const QString& value )
@@ -185,7 +187,7 @@ void ChannelsModel::setName ( int i, const QString& value )
     ActorLedName* a = new ActorLedName();
     a->setChannel(i);
     a->setLedname(value);
-	emit executeService(a);
+    ServiceStorage::instance()->executeService(a);
 }
 
 QString ChannelsModel::getName ( int i )

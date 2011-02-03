@@ -61,8 +61,6 @@ ClientModel* ModelStorage::model(const QString& id) {
 
 void ModelStorage::registerClientModel(ClientModel* model, bool permanent) {
     ServiceStorage* servicestorage = ServiceStorage::instance();
-    connect(model, SIGNAL(changeService(AbstractServiceProvider*)), servicestorage, SIGNAL(serviceSync(AbstractServiceProvider*)));
-    connect(model, SIGNAL(executeService(AbstractServiceProvider*)), servicestorage, SIGNAL(serviceExecute(AbstractServiceProvider*)));
     connect(servicestorage, SIGNAL(serviceChanged(AbstractServiceProvider*)), model, SLOT(serviceChanged(AbstractServiceProvider*)));
     connect(servicestorage, SIGNAL(serviceRemoved(AbstractServiceProvider*)), model, SLOT(serviceRemoved(AbstractServiceProvider*)));
     connect(servicestorage, SIGNAL(stateTrackerChanged(AbstractStateTracker*)), model, SLOT(stateTrackerChanged(AbstractStateTracker*)));

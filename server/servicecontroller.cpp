@@ -160,9 +160,9 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
         return false;
     }
 
-    if (type.toAscii() == Category::staticMetaObject.className()) {
+    if (type.toAscii() == QByteArray(Category::staticMetaObject.className())) {
         service = new ExecuteWithBase(new Category(), this);
-    } else if (type.toAscii() == Collection::staticMetaObject.className()) {
+    } else if (type.toAscii() == QByteArray(Collection::staticMetaObject.className())) {
         service = new ExecuteCollection(new Collection(), this);
     } else {
         ExecutePlugin* eplugin = m_plugin_provider.value ( type );
@@ -194,7 +194,7 @@ bool ServiceController::generate ( const QVariantMap& json, bool loading )
     }
 
     // send systemStarted event to corePlugin service
-    if (service->metaObject()->className() == EventSystemServer::staticMetaObject.className()) {
+    if (QByteArray(service->metaObject()->className()) == QByteArray(EventSystemServer::staticMetaObject.className())) {
         connect(this, SIGNAL(systemStarted()), (EventSystemServer*)service, SLOT(systemStarted()));
     }
 
@@ -250,7 +250,7 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
         qWarning() << "Couldn't remove file" << serviceFilename ( service->type(), service->id() );
 
     // collection: remove all childs
-    if (service->type() == Collection::staticMetaObject.className()) {
+    if (service->type() == QByteArray(Collection::staticMetaObject.className())) {
         // find executecollection
         ExecuteCollection* p = dynamic_cast<ExecuteCollection*>(eservice);
         Q_ASSERT(p);
@@ -259,7 +259,7 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
         foreach (ExecuteService* s, childs_linked) {
             removeFromDisk(s);
         }
-    } else if (service->type() == Category::staticMetaObject.className()) {
+    } else if (service->type() == QByteArray(Category::staticMetaObject.className())) {
         // go through every service and if it belongs to the to-be-deleted categorie then change its parentid
         foreach(ExecuteWithBase* s, m_servicesList) {
             if (s->base()->parentid() == service->id()) {
@@ -367,7 +367,7 @@ void ServiceController::pluginexecuteService(AbstractServiceProvider* service) {
 }
 
 void ServiceController::executeservice(ExecuteService* service) {
-    if (service->base()->type() == ActorSystem::staticMetaObject.className()) {
+    if (service->base()->type() == QByteArray(ActorSystem::staticMetaObject.className())) {
 
         switch (((ActorSystem*)service->base())->action()) {
         case ActorSystem::RestartSystem:
@@ -383,7 +383,7 @@ void ServiceController::executeservice(ExecuteService* service) {
             break;
         };
     }
-    if (service->base()->type() == ActorCollection::staticMetaObject.className()) {
+    if (service->base()->type() == QByteArray(ActorCollection::staticMetaObject.className())) {
         switch (((ActorCollection*)service->base())->action()) {
         case ActorCollection::StartProfile:
             runProfile(((ActorCollection*)service->base())->profileid(),true);

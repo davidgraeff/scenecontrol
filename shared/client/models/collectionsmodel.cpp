@@ -20,6 +20,7 @@
 #include <QStringList>
 #include <QDebug>
 #include <shared/categorize/profile.h>
+#include <servicestorage.h>
 
 CollectionsModel::CollectionsModel ( QObject* parent )
         : ClientModel ( parent )
@@ -86,13 +87,13 @@ bool CollectionsModel::setData ( const QModelIndex& index, const QVariant& value
         QString newname = value.toString().trimmed().replace ( QLatin1Char('\n'),QString() ).replace ( QLatin1Char('\t'),QString() );
         if ( newname.isEmpty() || newname == collection->name() ) return false;
         collection->setName(newname);
-        emit changeService(collection);
+	ServiceStorage::instance()->serviceHasChanged(collection);
         QModelIndex index = createIndex ( index.row(),0,0 );
         emit dataChanged ( index,index );
         return true;
     } else if ( role == Qt::CheckStateRole) {
         collection->setEnabled(value.toInt()==Qt::Checked);
-        emit changeService(collection);
+	ServiceStorage::instance()->serviceHasChanged(collection);
         QModelIndex index = createIndex ( index.row(),0,0 );
         emit dataChanged ( index,index );
         return true;
@@ -103,11 +104,7 @@ bool CollectionsModel::setData ( const QModelIndex& index, const QVariant& value
 bool CollectionsModel::removeRows ( int row, int count, const QModelIndex & )
 {
     for ( int i=row+count-1;i>=row;--i )
-    {
-        Collection* collection = m_collections[i];
-        collection->setProperty("remove",true);
-        emit changeService(collection);
-    }
+	ServiceStorage::instance()->deleteService(m_collections[i]);
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );
     emit dataChanged ( ifrom,ito );

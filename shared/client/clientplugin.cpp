@@ -21,10 +21,6 @@
 #include "servicestorage.h"
 #include "modelstorage.h"
 
-QString ClientModel::getQML() {
-    return QString();
-}
-
 QString ClientModel::id() {
     return QString::fromAscii(metaObject()->className());
 }

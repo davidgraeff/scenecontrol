@@ -26,6 +26,7 @@
 #include <services/actorpin.h>
 #include <services/actorpinname.h>
 #include "kicon.h"
+#include <shared/client/servicestorage.h>
 
 PinsModel::PinsModel (QObject* parent) : ClientModel ( parent )
 {
@@ -54,9 +55,9 @@ void PinsModel::stateTrackerChanged(AbstractStateTracker* tracker)
             PinValueStateTracker::staticMetaObject.className())
     {
         PinValueStateTracker* original = (PinValueStateTracker*)tracker;
-		PinValueStateTracker* p = new PinValueStateTracker();
-		p->setPin(original->pin());
-		p->setValue(original->value());
+        PinValueStateTracker* p = new PinValueStateTracker();
+        p->setPin(original->pin());
+        p->setValue(original->value());
         if (!m_assignment.contains(p->pin())) {
             beginInsertRows(QModelIndex(),m_itemvalues.size() ,m_itemvalues.size());
             m_assignment.insert(p->pin(), m_itemvalues.size());
@@ -75,9 +76,9 @@ void PinsModel::stateTrackerChanged(AbstractStateTracker* tracker)
                PinNameStateTracker::staticMetaObject.className())
     {
         PinNameStateTracker* original = (PinNameStateTracker*)tracker;
-		PinNameStateTracker* p = new PinNameStateTracker();
-		p->setPin(original->pin());
-		p->setValue(original->value());
+        PinNameStateTracker* p = new PinNameStateTracker();
+        p->setPin(original->pin());
+        p->setValue(original->value());
         if (!m_assignment.contains(p->pin())) {
         } else {
             const int listpos = m_assignment.value(p->pin());
@@ -103,13 +104,13 @@ QVariant PinsModel::data ( const QModelIndex & index, int role ) const
 {
     if ( !index.isValid() ) return QVariant();
 
-	if ( role==Qt::UserRole) return m_itemnames.at(index.row())->pin();
+    if ( role==Qt::UserRole) return m_itemnames.at(index.row())->pin();
     if ( role==Qt::DisplayRole || role==Qt::EditRole )
     {
-		if (m_itemnames.size() <= index.row())
-			return QLatin1String("not loaded");
-		else
-			return m_itemnames.at(index.row())->value();
+        if (m_itemnames.size() <= index.row())
+            return QLatin1String("not loaded");
+        else
+            return m_itemnames.at(index.row())->value();
     }
     else if ( role==Qt::DecorationRole )
     {
@@ -117,7 +118,7 @@ QVariant PinsModel::data ( const QModelIndex & index, int role ) const
             return this->iconOn;
         else
             return this->iconOff;
-	}
+    }
     else if ( role==Qt::CheckStateRole )
     {
         return (m_itemvalues.at(index.row())->value()?Qt::Checked:Qt::Unchecked);
@@ -155,7 +156,7 @@ bool PinsModel::setData ( const QModelIndex& index, const QVariant& value, int r
         return true;
     } else if ( role == Qt::CheckStateRole )
     {
-		PinNameStateTracker* t= m_itemnames[index.row() ];
+        PinNameStateTracker* t= m_itemnames[index.row() ];
         setValue(t->pin(), (value.toInt()==Qt::Checked));
 
         return true;
@@ -177,7 +178,7 @@ void PinsModel::setValue ( const QString& pin, unsigned int value )
     ActorPin* a = new ActorPin();
     a->setPin(pin);
     a->setValue((ActorPin::ActorPinEnum)value);
-	emit executeService(a);
+    ServiceStorage::instance()->executeService(a);
 }
 
 void PinsModel::setName ( const QString& pin, const QString& value )
@@ -185,7 +186,7 @@ void PinsModel::setName ( const QString& pin, const QString& value )
     ActorPinName* a = new ActorPinName();
     a->setPin(pin);
     a->setPinname(value);
-    emit executeService(a);
+    ServiceStorage::instance()->executeService(a);
 }
 
 /*

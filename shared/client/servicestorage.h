@@ -40,15 +40,17 @@ public:
     void removeService(AbstractServiceProvider* service, bool emitRemoveSignal);
     // For networkmanager: update service
     void serviceUpdated(AbstractServiceProvider* service);
-    // For networkmanager: update service
+    // For networkmanager: update state tracker
     void stateTrackerState(AbstractStateTracker* state);
 
     // Clear this service storage. Emits the servicesCleared signal.
     void clear();
-    // For plugins: a service has changed. Emits serviceSync signal.
+    // For clients/plugins: a service has changed. Emits serviceSync signal.
     void serviceHasChanged(AbstractServiceProvider* service);
-    // For plugins: remove a service. Sets some properties and emits serviceSync signal.
-    void deleteService(AbstractServiceProvider*);
+    // For clients/plugins: remove a service. Sets some properties and emits serviceSync signal.
+    void deleteService(AbstractServiceProvider* service);
+    // For clients/plugins: execute a service. Emit serviceExecute signal.
+    void executeService(AbstractServiceProvider* service);
 private:
     static ServiceStorage* m_instance;
     ServiceStorage();

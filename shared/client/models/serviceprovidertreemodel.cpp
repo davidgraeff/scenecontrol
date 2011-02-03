@@ -22,6 +22,7 @@
 #include <QDebug>
 #include "kcategorizedsortfilterproxymodel.h"
 #include <shared/abstractserviceprovider.h>
+#include <servicestorage.h>
 
 ServiceProviderTreeModel::ServiceProviderTreeModel ( QObject* parent )
         : ClientModel ( parent )
@@ -50,7 +51,7 @@ QVariant ServiceProviderTreeModel::headerData ( int section, Qt::Orientation ori
         if ( role == Qt::DisplayRole )
         {
             if ( section==0 )
-				return tr("Services");
+                return tr("Services");
             else
                 return tr("Delay");
         }
@@ -75,9 +76,9 @@ QVariant ServiceProviderTreeModel::data ( const QModelIndex & index, int role ) 
             case 'a':
                 return tr("Aktionen");
             default:
-				AbstractServiceProvider* p = static_cast<AbstractServiceProvider*>(index.internalPointer());
-				Q_ASSERT(p);
-				return p->toString();
+                AbstractServiceProvider* p = static_cast<AbstractServiceProvider*>(index.internalPointer());
+                Q_ASSERT(p);
+                return p->toString();
             }
         } else if (index.column()==1) {
             switch (index.internalId())
@@ -88,7 +89,7 @@ QVariant ServiceProviderTreeModel::data ( const QModelIndex & index, int role ) 
                 return QVariant();
             default:
                 AbstractServiceProvider* p = static_cast<AbstractServiceProvider*>(index.internalPointer());
-				Q_ASSERT(p);
+                Q_ASSERT(p);
                 return p->delay();
             }
         }
@@ -100,16 +101,9 @@ QVariant ServiceProviderTreeModel::data ( const QModelIndex & index, int role ) 
 
 bool ServiceProviderTreeModel::removeRows ( int row, int count, const QModelIndex &parent )
 {
-	if (!parent.isValid()) return false;
-    QString str;
+    if (!parent.isValid()) return false;
     for ( int i=row+count-1;i>=row;--i )
-    {
-        AbstractServiceProvider* p = get(parent.child(row,0));
-        if (p) {
-            p->setProperty("remove",1);
-            emit changeService(p);
-        }
-    }
+        ServiceStorage::instance()->deleteService(get(parent.child(row,0)));
     QModelIndex ifrom = createIndex ( row,0 );
     QModelIndex ito = createIndex ( row+count-1,1 );
     emit dataChanged ( ifrom,ito );
@@ -118,18 +112,14 @@ bool ServiceProviderTreeModel::removeRows ( int row, int count, const QModelInde
 
 bool ServiceProviderTreeModel::removeRows ( QModelIndexList list )
 {
-	qSort(list.begin(), list.end());
-	
-	for (int i = list.count() - 1; i > -1; --i) {
-		AbstractServiceProvider* p = get(list[i]);
-		if (p) {
-			p->setProperty("remove",1);
-			emit changeService(p);
-		}
-	}
-	
-	emit dataChanged ( list.first(),list.last() );
-	return true;
+    qSort(list.begin(), list.end());
+
+    for (int i = list.count() - 1; i > -1; --i) {
+        ServiceStorage::instance()->deleteService(get(list[i]));
+    }
+
+    emit dataChanged ( list.first(),list.last() );
+    return true;
 }
 
 QModelIndex ServiceProviderTreeModel::indexOf(const QString& id) {
@@ -153,7 +143,7 @@ void ServiceProviderTreeModel::serviceChanged ( AbstractServiceProvider* provide
     // filter out wrong parentid services
     Q_ASSERT(provider);
     if ((provider->service() ==AbstractServiceProvider::NoneService) ||
-		(m_parentid.size() && provider->parentid()!=m_parentid)) return;
+            (m_parentid.size() && provider->parentid()!=m_parentid)) return;
 
     // Already included?
     QModelIndex index = indexOf ( provider->id());
@@ -170,7 +160,7 @@ void ServiceProviderTreeModel::serviceRemoved ( AbstractServiceProvider* provide
     // filter out wrong parentid services
     Q_ASSERT(provider);
     if ((provider->service() == AbstractServiceProvider::NoneService) ||
-		(m_parentid.size() && provider->parentid()!=m_parentid)) return;
+            (m_parentid.size() && provider->parentid()!=m_parentid)) return;
 
     int pos = m_events.indexOf(provider);
     if (pos!=-1) {
@@ -212,8 +202,8 @@ bool ServiceProviderTreeModel::setData(const QModelIndex& index, const QVariant&
     int v = value.toInt();
     if (!service || role!=Qt::EditRole || v<0 || v==service->delay()) return false;
     service->setDelay(v);
-	emit changeService(service);
-	service->setDelay(-1);
+    ServiceStorage::instance()->serviceHasChanged(service);
+    service->setDelay(-1);
     return true;
 }
 
@@ -250,19 +240,19 @@ int ServiceProviderTreeModel::columnCount(const QModelIndex& parent) const {
 
 
 bool ServiceProviderTreeModel::hasChildren(const QModelIndex& parent) const {
-	if (!parent.isValid()) return 3;
-	// root does know about 3 grouping items
-	switch (parent.internalId())
-	{
-		case 'e':
-			return m_events.size();
-		case 'c':
-			return m_conditions.size();
-		case 'a':
-			return m_actors.size();
-		default:
-			return 0;
-	}
+    if (!parent.isValid()) return 3;
+    // root does know about 3 grouping items
+    switch (parent.internalId())
+    {
+    case 'e':
+        return m_events.size();
+    case 'c':
+        return m_conditions.size();
+    case 'a':
+        return m_actors.size();
+    default:
+        return 0;
+    }
 }
 
 QModelIndex ServiceProviderTreeModel::parent(const QModelIndex& child) const {
@@ -277,7 +267,7 @@ QModelIndex ServiceProviderTreeModel::parent(const QModelIndex& child) const {
     default:
     {
         AbstractServiceProvider* provider = static_cast<AbstractServiceProvider*>(child.internalPointer());
-		Q_ASSERT(provider);
+        Q_ASSERT(provider);
         if (provider->service()==AbstractServiceProvider::EventService)
             return eventsindex(0);
         else if (provider->service()==AbstractServiceProvider::ConditionService)
@@ -338,32 +328,32 @@ AbstractServiceProvider* ServiceProviderTreeModel::get(const QModelIndex& index)
 void ServiceProviderTreeModel::addToList(AbstractServiceProvider* provider) {
     int row=0;
     if (provider->service()==AbstractServiceProvider::EventService) {
-		for (;row<m_events.size();++row)
-			if (m_events[row]->toString().toLower() >= provider->toString().toLower())
+        for (;row<m_events.size();++row)
+            if (m_events[row]->toString().toLower() >= provider->toString().toLower())
                 break;
         beginInsertRows ( eventsindex(0),row,row);
-		m_events.insert (row, provider );
+        m_events.insert (row, provider );
         endInsertRows();
     }
     else if (provider->service()==AbstractServiceProvider::ConditionService)
     {
-		for (;row<m_conditions.size();++row)
-			if (m_conditions[row]->toString().toLower() >= provider->toString().toLower())
+        for (;row<m_conditions.size();++row)
+            if (m_conditions[row]->toString().toLower() >= provider->toString().toLower())
                 break;
         beginInsertRows ( conditionsindex(0),row,row);
-		m_conditions.insert (row, provider );
+        m_conditions.insert (row, provider );
         endInsertRows();
     }
     else if (provider->service()==AbstractServiceProvider::ActionService)
     {
-		for (;row<m_actors.size();++row)
-			if (m_actors[row]->toString().toLower() >= provider->toString().toLower())
+        for (;row<m_actors.size();++row)
+            if (m_actors[row]->toString().toLower() >= provider->toString().toLower())
                 break;
         beginInsertRows ( actorsindex(0),row,row);
-		m_actors.insert (row, provider );
+        m_actors.insert (row, provider );
         endInsertRows();
     } else
-		qWarning()<<__PRETTY_FUNCTION__<<"Failed to get provider servicetype"<<provider->service();
+        qWarning()<<__PRETTY_FUNCTION__<<"Failed to get provider servicetype"<<provider->service();
 
     QModelIndex index = indexOf(provider->id());
     if (!index.isValid()) {
