@@ -25,17 +25,20 @@ LoginWidget::LoginWidget ( NetworkController* network, QWidget* parent )
     ui->linePwd->setEchoMode(QLineEdit::Password);
     ui->btnCancelConnect->setIcon(KIcon(QLatin1String("dialog-cancel")));
     ui->btnConnect->setIcon(KIcon(QLatin1String("network-connect")));
-	setCurrentWidget(ui->pageSettings);
-	
-	QTimer::singleShot(0,this,SLOT(deferredLoading()));
+    setCurrentWidget(ui->pageSettings);
+
+    QTimer::singleShot(0,this,SLOT(deferredLoading()));
 }
 
 LoginWidget::~LoginWidget()
 {
+#ifdef WITHKDE
     delete m_wallet;
+#endif
     delete ui;
 }
 
+#ifdef WITHKDE
 void LoginWidget::walletOpened(bool ok)
 {
 
@@ -48,6 +51,7 @@ void LoginWidget::walletOpened(bool ok)
         ui->chkPwd->setEnabled(false);
 
 }
+#endif
 
 void LoginWidget::reconnectUpdate()
 {
@@ -107,7 +111,7 @@ void LoginWidget::on_btnDisconnect_clicked ( )
 
 void LoginWidget::requestDisconnect()
 {
-	backToConnectPage(tr("Getrennt"));
+    backToConnectPage(tr("Getrennt"));
 }
 
 void LoginWidget::on_btnLogin_clicked() {
@@ -143,10 +147,12 @@ void LoginWidget::auth_success() {
     QSettings settings;
     settings.beginGroup(QLatin1String("login_form"));
     settings.setValue(QLatin1String("save_data"), ui->chkPwd->isChecked());
+#ifdef WITHKDE
     if (ui->chkPwd->isChecked()) {
         m_wallet->writeEntry(QLatin1String("login_user"), ui->lineUser->text().toUtf8());
         m_wallet->writePassword(QLatin1String("login_pwd"), ui->linePwd->text());
     }
+#endif
     m_authTimeoutTimer.stop();
     ui->login_status_label->setText(tr("Synchronisiere Daten..."));
 }
@@ -161,8 +167,10 @@ void LoginWidget::auth_required(int timeout_ms) {
         ui->chkPwd->setChecked(true);
         QString pwd;
         QByteArray user;
+#ifdef WITHKDE
         m_wallet->readEntry(QLatin1String("login_user"), user);
         m_wallet->readPassword(QLatin1String("login_pwd"), pwd);
+#endif
         ui->lineUser->setText(QString::fromUtf8(user));
         ui->linePwd->setText(pwd);
     } else {
@@ -201,44 +209,46 @@ void LoginWidget::on_btnCancelConnect_clicked() {
 }
 
 void LoginWidget::deferredLoading() {
-	QSettings settings;
-	settings.beginGroup("hosts");
-	QStringList hosts = settings.childGroups();
-	
-	m_authTimeoutTimer.setInterval(1000);
-	connect(&m_authTimeoutTimer,SIGNAL(timeout()),SLOT(authTimeoutUpdate()));
-	
-	for (int i=0;i<hosts.size();++i) {
-		settings.beginGroup(hosts[i]);
-		ui->cmbHost->addItem(settings.value("host").toString(), settings.value("port").toInt());
-		settings.endGroup();
-	}
-	
-	//default settings
-	ui->cmbHost->setEditText(settings.value ( "host","127.0.0.1" ).toString());
-	ui->spinPort->setValue(settings.value ( "port", 3101 ).toInt());
-	
-	QCompleter *completer = new QCompleter(hosts, this);
-	completer->setCaseSensitivity(Qt::CaseInsensitive);
-	ui->cmbHost->setCompleter(completer);
-	
-	m_reconnectTime = RECONNECTTIME_INIT;
-	m_reconnectTimer.setInterval(100);
-	connect(&m_reconnectTimer,SIGNAL(timeout()),SLOT(reconnectUpdate()));
-	
-	connect(m_network,SIGNAL(auth_failed()),SLOT(auth_failed()));
-	connect(m_network,SIGNAL(auth_notaccepted()),SLOT(auth_notaccepted()));
-	connect(m_network,SIGNAL(auth_required(int)),SLOT(auth_required(int)));
-	connect(m_network,SIGNAL(auth_success()),SLOT(auth_success()));
-	connect(m_network,SIGNAL(connectedToValidServer()),SLOT(connectedToValidServer()));
-	connect(m_network,SIGNAL(disconnected()),SLOT(serverDisconnected()));
-	connect(m_network,SIGNAL(server_versionmissmatch(QString)),SLOT(server_versionmissmatch(QString)));
-	connect(m_network,SIGNAL(syncComplete()),SLOT(syncComplete()));
-	connect(m_network,SIGNAL(timeoutData()),SLOT(timeoutData()));
-	connect(this, SIGNAL(executeService(AbstractServiceProvider*)), m_network, SLOT(executeService(AbstractServiceProvider*)));
-	
+    QSettings settings;
+    settings.beginGroup("hosts");
+    QStringList hosts = settings.childGroups();
+
+    m_authTimeoutTimer.setInterval(1000);
+    connect(&m_authTimeoutTimer,SIGNAL(timeout()),SLOT(authTimeoutUpdate()));
+
+    for (int i=0;i<hosts.size();++i) {
+        settings.beginGroup(hosts[i]);
+        ui->cmbHost->addItem(settings.value("host").toString(), settings.value("port").toInt());
+        settings.endGroup();
+    }
+
+    //default settings
+    ui->cmbHost->setEditText(settings.value ( "host","127.0.0.1" ).toString());
+    ui->spinPort->setValue(settings.value ( "port", 3101 ).toInt());
+
+    QCompleter *completer = new QCompleter(hosts, this);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    ui->cmbHost->setCompleter(completer);
+
+    m_reconnectTime = RECONNECTTIME_INIT;
+    m_reconnectTimer.setInterval(100);
+    connect(&m_reconnectTimer,SIGNAL(timeout()),SLOT(reconnectUpdate()));
+
+    connect(m_network,SIGNAL(auth_failed()),SLOT(auth_failed()));
+    connect(m_network,SIGNAL(auth_notaccepted()),SLOT(auth_notaccepted()));
+    connect(m_network,SIGNAL(auth_required(int)),SLOT(auth_required(int)));
+    connect(m_network,SIGNAL(auth_success()),SLOT(auth_success()));
+    connect(m_network,SIGNAL(connectedToValidServer()),SLOT(connectedToValidServer()));
+    connect(m_network,SIGNAL(disconnected()),SLOT(serverDisconnected()));
+    connect(m_network,SIGNAL(server_versionmissmatch(QString)),SLOT(server_versionmissmatch(QString)));
+    connect(m_network,SIGNAL(syncComplete()),SLOT(syncComplete()));
+    connect(m_network,SIGNAL(timeoutData()),SLOT(timeoutData()));
+    connect(this, SIGNAL(executeService(AbstractServiceProvider*)), m_network, SLOT(executeService(AbstractServiceProvider*)));
+
+#ifdef WITHKDE
     m_wallet = KWallet::Wallet::openWallet(KWallet::Wallet::NetworkWallet(), winId(), KWallet::Wallet::Asynchronous);
     connect(m_wallet, SIGNAL(walletOpened(bool)), SLOT(walletOpened(bool)));
+#endif
 
     ui->connect_status_label->setText(QString());
     on_btnConnect_clicked();

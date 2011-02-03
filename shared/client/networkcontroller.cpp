@@ -15,7 +15,6 @@
 #include <QLibrary>
 #include <QDebug>
 
-#include <solid/networking.h>
 #include "shared/qjson/qobjecthelper.h"
 #include "shared/qjson/parser.h"
 #include "shared/qjson/serializer.h"
@@ -28,6 +27,10 @@
 #include <shared/categorize/profile.h>
 #include "servicestorage.h"
 #include "modelstorage.h"
+
+#ifdef WITHKDE
+#include <solid/networking.h>
+#endif
 
 #define __FUNCTION__ __FUNCTION__
 
@@ -60,7 +63,9 @@ NetworkController::NetworkController()
     connect ( this, SIGNAL ( disconnected() ), SLOT( slotdisconnected()) );
     connect ( this, SIGNAL ( error(QAbstractSocket::SocketError) ), SLOT( sloterror(QAbstractSocket::SocketError) ));
 
+#ifdef WITHKDE
     connect( Solid::Networking::notifier(), SIGNAL(shouldDisconnect()), SLOT(timeout()) );
+#endif
 }
 
 NetworkController::~NetworkController()
@@ -356,8 +361,8 @@ void NetworkController::loadPlugins() {
             continue;
         }
         qDebug() << "Start: Load Plugin"<<plugin->base()->name() <<plugin->base()->version();
-	plugin->setStorages(m_servicestorage, m_modelstorage);
-	plugin->init();
+        plugin->setStorages(m_servicestorage, m_modelstorage);
+        plugin->init();
 
         m_plugins.append ( plugin );
         QStringList provides = plugin->base()->registerServices();
