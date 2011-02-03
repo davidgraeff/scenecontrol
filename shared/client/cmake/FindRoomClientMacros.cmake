@@ -5,17 +5,19 @@ project(${targetname})
 find_package(Qt4 4.7.0 REQUIRED)
 find_package(KDE4 4.4 QUIET)
 
-IF (KDE4_FOUND)
-	include(KDE4Defaults)
-	include(MacroLibrary)
-	include_directories(${KDE4_INCLUDES} ${KDE4_INCLUDE_DIR})
-	ADD_DEFINITIONS(-DWITHKDE)
-	message("Activate kde4 extensions for client ${targetname}")
-ENDIF()
-
 set (ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set (SHAREDDIR "${ROOTDIR}/shared")
 set (SHAREDCLIENTDIR "${ROOTDIR}/shared/client")
+
+IF (KDE4_FOUND)
+	include(KDE4Defaults)
+	include(MacroLibrary)
+	include_directories("${KDE4_INCLUDES}" "${KDE4_INCLUDE_DIR}")
+	ADD_DEFINITIONS(-DWITHKDE)
+	message("Activate kde4 extensions for client ${targetname}")
+ELSE()
+	include_directories("${SHAREDCLIENTDIR}/nokde")
+ENDIF()
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${ROOTDIR} ${SHAREDCLIENTDIR})
 
