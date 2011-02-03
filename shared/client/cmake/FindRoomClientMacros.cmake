@@ -13,21 +13,6 @@ IF (KDE4_FOUND)
 	message("Activate kde4 extensions for client ${targetname}")
 ENDIF()
 
-MACRO (TODAY RESULT)
-    IF (WIN32)
-        EXECUTE_PROCESS(COMMAND "date" "/T" OUTPUT_VARIABLE ${RESULT})
-        string(REGEX REPLACE "(..)/(..)/..(..).*" "\\3\\2\\1"
-${RESULT} ${${RESULT}})
-    ELSEIF(UNIX)
-        EXECUTE_PROCESS(COMMAND "date" "+%d/%m/%Y" OUTPUT_VARIABLE ${RESULT})
-        string(REGEX REPLACE "(..)/(..)/..(..).*" "\\3\\2\\1"
-${RESULT} ${${RESULT}})
-    ELSE (WIN32)
-        MESSAGE(SEND_ERROR "date not implemented")
-        SET(${RESULT} 000000)
-    ENDIF (WIN32)
-ENDMACRO (TODAY)
-
 set (ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set (SHAREDDIR "${ROOTDIR}/shared")
 set (SHAREDCLIENTDIR "${ROOTDIR}/shared/client")
@@ -37,8 +22,7 @@ include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${ROOTDIR} ${SHAR
 ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
 #-DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII 
 
-today(ROOM_VERSION)
-SET(ROOM_VERSION "2.0 ${ROOM_VERSION}")
+SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
 set(SERVERNAME "RoomControlServer")
 SET(ROOM_SYSTEM_CLIENTPLUGINS "lib/${SERVERNAME}/plugins/client" CACHE STRING "Set the directory where client plugins are located")
 SET(ROOM_NETWORK_MIN_APIVERSION "3.0" CACHE STRING "Minimal compatible version")
