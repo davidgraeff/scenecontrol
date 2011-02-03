@@ -20,7 +20,6 @@
 #include "serviceprovidertreemodel.h"
 #include <QStringList>
 #include <QDebug>
-#include "kcategorizedsortfilterproxymodel.h"
 #include <shared/abstractserviceprovider.h>
 #include <servicestorage.h>
 
