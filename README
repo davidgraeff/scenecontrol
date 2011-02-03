@@ -2,12 +2,12 @@ Raumautomatisierungsoftware:
 ----------------------------
 Plugin orientierte Steuersoftware für Raumautomatisierung. Plugins für
 Steckdosen, Rollo, Led Beleuchtung, PulseAudio, Videoabspielprogramm,
-Beamersteuerung und Zeitbasierte Ereignisse vorhanden und in Benutzung.
+Beamersteuerung und Zeitbasierte Ereignisse sind vorhanden und in Benutzung.
 
 Plattform:
 ----------
-Linux, da das PAM Framework für Clientauthentifizierung genutzt wird und
-diverse Plugins Linuxspezifische Dienste nutzen.
+- Windows ab Vista (Qt4;OpenSSL). Es können nicht alle Plugins genutzt werden (pulseaudio, remotecontrol).
+- Linux ab 2.6.22 (Qt4;OpenSSL;pam;dbus;gstreamer;pulseaudio)
 
 Architektur:
 ------------
@@ -46,16 +46,16 @@ Anwendungsgebiete:
 
 Externe Software:
 --------
-PulseAudio für die Soundsteuerung. GStreamer als Abspielframework.
+Linux: PulseAudio für die Soundsteuerung. GStreamer als Abspielframework.
 Fernbedienungseingaben werden über eine Eigenentwicklung [liri daemon (für X10 433Mhz Funkfernbedienungen)]
 entgegengenommen.
 
 Clients:
 --------
-Die Touchscreen GUI ist über QML (seid Qt 4.7) realisiert. Der Desktopclient nutzt
+Die Touchscreen GUI ist über QML (seid Qt 4.7) realisiert. Die Desktopclients nutzten
 das QWidget-basierte Framework.
 
-Benötigte Packete unter Ubuntu:
--------------------------------
+Benötigte Packete unter Linux/Ubuntu:
+-------------------------------------
 libpam0g-dev
 libqt4-dev

@@ -13,7 +13,7 @@ set(Shared_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/abstractserviceprovider.h" "${S
 set(Shared_SRCS ${Shared_SRCS} "${SHAREDDIR}/abstractserviceprovider.cpp" "${SHAREDDIR}/abstractstatetracker.cpp")
 
 set(SharedServer_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/server/executeservice.h" "${SHAREDDIR}/server/executeWithBase.h" "${SHAREDDIR}/server/executeplugin.h")
-set(SharedServer_SRCS ${Shared_SRCS} "${SHAREDDIR}/server/executeservice.cpp" "${SHAREDDIR}/server/executeWithBase.cpp")
+set(SharedServer_SRCS ${Shared_SRCS} "${SHAREDDIR}/server/executeservice.cpp" "${SHAREDDIR}/server/executeWithBase.cpp" "${SHAREDDIR}/server/executeplugin.cpp")
 set(SharedClient_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/client/clientplugin.h" "${SHAREDDIR}/client/servicestorage.h" "${SHAREDDIR}/client/modelstorage.h")
 set(SharedClient_SRCS ${Shared_SRCS} "${SHAREDDIR}/client/clientplugin.cpp" "${SHAREDDIR}/client/servicestorage.cpp" "${SHAREDDIR}/client/modelstorage.cpp")
 
@@ -39,8 +39,8 @@ macro(build_client_lib)
 endmacro(build_client_lib)
 
 macro(build_server_lib)
-	QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_SERVER_H} ${SharedServer_SRCS_H})
-	add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER} ${ARGN})
+	QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_SERVER_H} ${SharedServer_SRCS_H} ${ADD_H})
+	add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER} ${ADD_CPP})
 endmacro(build_server_lib)
 
 set(SERVERNAME "RoomControlServer")
