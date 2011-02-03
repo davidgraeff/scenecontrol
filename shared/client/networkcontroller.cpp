@@ -281,13 +281,13 @@ bool NetworkController::generate(const QVariantMap& data) {
         QJson::QObjectHelper::qvariant2qobject ( data, service );
         if ( remove )
         {
-            m_servicestorage->removeService(service, true);
+            m_servicestorage->networkRemove(service, true);
             delete service;
             return true;
         }
         else
         {
-            m_servicestorage->serviceUpdated(service);
+            m_servicestorage->networkUpdate(service);
             return true;
         }
         return false;
@@ -321,10 +321,10 @@ bool NetworkController::generate(const QVariantMap& data) {
 
     if (service) {
         QJson::QObjectHelper::qvariant2qobject ( data, service );
-        m_servicestorage->addService(service);
+        m_servicestorage->networkAdd(service);
     } else if (statetracker) {
         QJson::QObjectHelper::qvariant2qobject ( data, statetracker );
-        m_servicestorage->stateTrackerState(statetracker);
+        m_servicestorage->networkUpdate(statetracker);
     } else {
         qWarning() << __FUNCTION__ << "no service/statetracker from plugin for json object" << data;
         return false;

@@ -20,6 +20,7 @@
 #include "servicestorage.h"
 #include <shared/abstractserviceprovider.h>
 #include <QVariant>
+#include <shared/abstractstatetracker.h>
 
 ServiceStorage* ServiceStorage::m_instance = 0;
 
@@ -65,18 +66,18 @@ AbstractServiceProvider* ServiceStorage::get(const QString& id) {
     return m_services.value ( id );
 }
 
-void ServiceStorage::removeService(AbstractServiceProvider* service, bool emitRemoveSignal) {
+void ServiceStorage::networkRemove(AbstractServiceProvider* service, bool emitRemoveSignal) {
     if (!service) return;
     m_services.remove(service->id());
     m_servicesList.removeAll(service);
     if (emitRemoveSignal) emit serviceRemoved(service);
 }
 
-void ServiceStorage::serviceUpdated(AbstractServiceProvider* service) {
+void ServiceStorage::networkUpdate(AbstractServiceProvider* service) {
     emit serviceChanged(service);
 }
 
-void ServiceStorage::addService(AbstractServiceProvider* service) {
+void ServiceStorage::networkAdd(AbstractServiceProvider* service) {
     m_services.insert ( service->id(), service );
     m_servicesList.append ( service );
     emit serviceChanged(service);
@@ -88,7 +89,7 @@ void ServiceStorage::deleteService(AbstractServiceProvider* service) {
     emit serviceSync(service);
 }
 
-void ServiceStorage::stateTrackerState(AbstractStateTracker* state) {
+void ServiceStorage::networkUpdate(AbstractStateTracker* state) {
     emit stateTrackerChanged(state);
 }
 

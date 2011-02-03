@@ -35,13 +35,13 @@ public:
     QMap<QString, AbstractServiceProvider*> services() const;
     AbstractServiceProvider* get(const QString& id);
     // For networkmanager: add new service
-    void addService(AbstractServiceProvider* service);
+    void networkAdd(AbstractServiceProvider* service);
     // For networkmanager: remove service
-    void removeService(AbstractServiceProvider* service, bool emitRemoveSignal);
+    void networkRemove(AbstractServiceProvider* service, bool emitRemoveSignal);
     // For networkmanager: update service
-    void serviceUpdated(AbstractServiceProvider* service);
+    void networkUpdate(AbstractServiceProvider* service);
     // For networkmanager: update state tracker
-    void stateTrackerState(AbstractStateTracker* state);
+    void networkUpdate(AbstractStateTracker* state);
 
     // Clear this service storage. Emits the servicesCleared signal.
     void clear();
@@ -49,7 +49,7 @@ public:
     void serviceHasChanged(AbstractServiceProvider* service);
     // For clients/plugins: remove a service. Sets some properties and emits serviceSync signal.
     void deleteService(AbstractServiceProvider* service);
-    // For clients/plugins: execute a service. Emit serviceExecute signal.
+    // For clients/plugins: execute a service. Emits serviceExecute signal.
     void executeService(AbstractServiceProvider* service);
 private:
     static ServiceStorage* m_instance;
