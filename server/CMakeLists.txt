@@ -5,7 +5,7 @@ find_package(Qt4 4.7.0 COMPONENTS QtCore REQUIRED)
 find_package(PAM QUIET)
 #find_package(QJSON REQUIRED)
 
-IF (PAM_FOUND)
+IF (PAM_FOUND OR WIN32)
 	OPTION(BUILD_SERVER "Build server" ON)
 ENDIF()
 
@@ -22,9 +22,12 @@ IF (BUILD_SERVER)
 	file(GLOB_RECURSE SRCS *.cpp)
 	file(GLOB Shared_SRCS "../shared/*.cpp" "../shared/server/*.cpp" "../shared/categorize/*.cpp" "../shared/qjson/*.cpp" "../shared/qjson/*.cc")
 
+	IF (PAM_FOUND)
+		include_directories(${PAM_INCLUDE_DIR})
+	ENDIF()
+	
 	include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..
-	${CMAKE_CURRENT_BINARY_DIR} ${PAM_INCLUDE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/../plugins/)
+	${CMAKE_CURRENT_BINARY_DIR}	${CMAKE_CURRENT_SOURCE_DIR}/../plugins/)
 
 	ADD_DEFINITIONS(-D_IS_ROOMSERVER -D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
 

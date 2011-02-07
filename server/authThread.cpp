@@ -14,17 +14,25 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
 #include "authThread.h"
+#ifdef __WIN32__ 
+#include <SDKDDKVer.h>
+#include <stdio.h>
+#include <tchar.h>
+#include "Windows.h"
+#else
 #include <security/pam_modules.h>
 #include <security/pam_appl.h>
 #include <sys/param.h>
+#endif
 #include <stdlib.h>
 #include <QDebug>
 
 char* pwdptr;
+
+#ifndef __WIN32__ 
 int su_conv(int num_msg,const struct pam_message **msgm,
             struct pam_response **resp,void *appdata)
 {
@@ -61,6 +69,7 @@ int su_conv(int num_msg,const struct pam_message **msgm,
     *resp = r;
     return PAM_SUCCESS;
 }
+#endif
 
 bool AuthThread::query(QObject* socketptr, const QString& name, const QString& pwd) {
     bool ok = false;
@@ -94,6 +103,15 @@ void AuthThread::run() {
         pwdptr = (char*)p->pwd.constData();
         int retval;
 
+#ifdef __WIN32__
+		HANDLE token = 0;
+		LogonUser(user, ".", pwdptr, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &token);
+		if (token)
+			emit auth_success(p->socketptr,QString::fromUtf8(p->name));
+		else
+			emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
+		CloseHandle(token);
+#else
         /* PAM-Transaktion starten */
         retval = pam_start("other",      /* Dienstname */
                            user,              /* Nutzername */
@@ -134,6 +152,7 @@ void AuthThread::run() {
             pamh = NULL;
             continue;
         }
+#endif
     }
 }
 

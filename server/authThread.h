@@ -15,10 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+	Purpose: Authenticates users on windows XP and later or pam based linux
 */
 
-#ifndef AUTHTHREAD_H
-#define AUTHTHREAD_H
+#pragma once
 #include <QObject>
 #include <QThread>
 #include <QPair>
@@ -50,5 +50,3 @@ Q_SIGNALS:
 	void auth_success(QObject* socketptr, const QString& name);
 	void auth_failed(QObject* socketptr, const QString& name);
 };
-
-#endif // AUTHTHREAD_H
