@@ -2,13 +2,7 @@
 #ifndef _QEXTSERIALPORT_H_
 #define _QEXTSERIALPORT_H_
 
-#include <QtCore/qglobal.h>
-
-#ifdef QEXTSERIALPORT_LIB
-# define QEXTSERIALPORT_EXPORT Q_DECL_EXPORT
-#else
-# define QEXTSERIALPORT_EXPORT Q_DECL_IMPORT
-#endif
+#include "qextserialport_global.h"
 
 /*if all warning messages are turned off, flag portability warnings to be turned off as well*/
 #ifdef _TTY_NOWARN_
@@ -201,7 +195,6 @@ class QEXTSERIALPORT_EXPORT QextSerialPort: public QIODevice
         ~QextSerialPort();
 
         void setPortName(const QString & name);
-		void setPortName(const char* name) ;
         QString portName() const;
 
         /**!
