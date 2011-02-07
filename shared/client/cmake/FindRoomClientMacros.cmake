@@ -75,3 +75,12 @@ QT4_ADD_RESOURCES(RC_SRC ${GUI_RC})
 
 list(APPEND SRCS_H ${SHAREDCLIENTDIR}/clientplugin.h ${SHAREDCLIENTDIR}/networkcontroller.h ${SHAREDCLIENTDIR}/servicestorage.h ${SHAREDCLIENTDIR}/modelstorage.h ${UI_H} ${Shared_SRCS_H} ${SharedKDE_SRCS_H})
 list(APPEND SRCS ${SHAREDCLIENTDIR}/clientplugin.cpp ${SHAREDCLIENTDIR}/networkcontroller.cpp ${SHAREDCLIENTDIR}/servicestorage.cpp ${SHAREDCLIENTDIR}/modelstorage.cpp ${Shared_SRCS} ${RC_SRC} ${SharedKDE_SRCS_SRCS})
+
+macro(install_client)
+	#SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION bin)
+
+	if (XDG_APPS_INSTALL_DIR AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.desktop")
+	install( FILES ${PROJECT_NAME}.desktop DESTINATION ${XDG_APPS_INSTALL_DIR} )
+	endif()
+endmacro()
