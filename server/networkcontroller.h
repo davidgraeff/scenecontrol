@@ -5,15 +5,14 @@
  *      Author: David Gräff
  */
 
-#ifndef TCPSERVER_H_
-#define TCPSERVER_H_
+#pragma once
+
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QByteArray>
 #include <QUuid>
 #include <QStringList>
-#include <QDBusConnection>
 
 #include <QDir>
 #include <QTimer>
@@ -52,17 +51,13 @@ Q_SIGNALS:
 class NetworkController: public QTcpServer {
     Q_OBJECT
 public:
-    NetworkController(QDBusConnection dbusconnection);
+    NetworkController();
     virtual ~NetworkController();
     void setServiceController(ServiceController* controller) ;
     bool start();
     void log(const char* msg);
 
-    // DBUS
-    QDBusConnection* dbus();
-
 private:
-    QDBusConnection m_dbusconnection;
     ServiceController* m_service;
     AuthThread* m_auththread;
     virtual void incomingConnection(int socketDescriptor);
@@ -82,5 +77,3 @@ public Q_SLOTS:
     void serviceSync(AbstractServiceProvider* p);
     void statetrackerSync(AbstractStateTracker* p);
 };
-
-#endif /* TCPSERVER_H_ */

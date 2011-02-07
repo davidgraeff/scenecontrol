@@ -17,8 +17,9 @@
 */
 
 #include "authThread.h"
-#ifdef __WIN32__ 
-#include <SDKDDKVer.h>
+#ifdef _WIN32 
+#define NTDDI_VERSION NTDDI_VISTA
+//#include <SDKDDKVer.h>
 #include <stdio.h>
 #include <tchar.h>
 #include "Windows.h"
@@ -32,7 +33,7 @@
 
 char* pwdptr;
 
-#ifndef __WIN32__ 
+#ifndef _WIN32 
 int su_conv(int num_msg,const struct pam_message **msgm,
             struct pam_response **resp,void *appdata)
 {
@@ -84,12 +85,6 @@ bool AuthThread::query(QObject* socketptr, const QString& name, const QString& p
 }
 
 void AuthThread::run() {
-    /* conversation-Struktur */
-    static struct pam_conv conv = {
-        su_conv,          /* default PAM-conversation */
-        NULL                /* brauchen wir nicht */
-    };
-
     while (1) {
         // get next request
         mutex.lock();
@@ -98,12 +93,10 @@ void AuthThread::run() {
         mutex.unlock();
 
         // check user
-        pam_handle_t *pamh = NULL;
-        const char *user = p->name.constData();
+        char *user = (char*)p->name.constData();
         pwdptr = (char*)p->pwd.constData();
-        int retval;
 
-#ifdef __WIN32__
+#ifdef _WIN32
 		HANDLE token = 0;
 		LogonUser(user, ".", pwdptr, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &token);
 		if (token)
@@ -112,7 +105,17 @@ void AuthThread::run() {
 			emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
 		CloseHandle(token);
 #else
-        /* PAM-Transaktion starten */
+		/* conversation-Struktur */
+		static struct pam_conv conv = {
+			su_conv,          /* default PAM-conversation */
+			NULL                /* brauchen wir nicht */
+		};
+
+        int retval;
+
+		pam_handle_t *pamh = NULL;
+
+		/* PAM-Transaktion starten */
         retval = pam_start("other",      /* Dienstname */
                            user,              /* Nutzername */
                            &conv,             /* conversation-Funktion */

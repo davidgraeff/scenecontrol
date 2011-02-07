@@ -53,8 +53,7 @@ QString ClientConnection::user() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-NetworkController::NetworkController(QDBusConnection dbusconnection)
-        : m_dbusconnection(dbusconnection), m_service(0), m_auththread(new AuthThread())
+NetworkController::NetworkController() : m_service(0), m_auththread(new AuthThread())
 {
     connect(m_auththread,SIGNAL(auth_failed(QObject*,QString)),SLOT(auth_failed(QObject*,QString)),Qt::QueuedConnection);
     connect(m_auththread,SIGNAL(auth_success(QObject*,QString)),SLOT(auth_success(QObject*,QString)),Qt::QueuedConnection);
@@ -282,9 +281,6 @@ void NetworkController::log(const char* msg) {
     cmdbytes.append("\"}");
     foreach ( ClientConnection* c, m_connections )
     if (c->auth()) c->socket->write ( cmdbytes );
-}
-QDBusConnection* NetworkController::dbus() {
-    return &m_dbusconnection;
 }
 
 void NetworkController::setServiceController ( ServiceController* controller ) {

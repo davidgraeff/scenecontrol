@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
     qapp.setProperty("settingspath",m_savedir.path());
     qapp.setProperty("pluginspath",QLatin1String (ROOM_SYSTEM_SERVERPLUGINS));
 
+#ifndef _WIN32
     const QLatin1String servicename = QLatin1String(ROOM_SERVICENAME);
     QDBusConnection dbusconnection = QDBusConnection::connectToBus(QDBusConnection::SessionBus, servicename);
     if ( !dbusconnection.isConnected() )
@@ -97,12 +98,13 @@ int main(int argc, char *argv[])
         qCritical() << "Another instance of this program is already running." << dbusconnection.lastError().name() << dbusconnection.lastError().message();
         return 0;
     }
+#endif
 
     qInstallMsgHandler(myMessageOutput);
 
     qDebug() << QCoreApplication::applicationName().toAscii().data() << ":" << QCoreApplication::applicationVersion().toAscii().data();
 
-    network = new NetworkController(dbusconnection);
+    network = new NetworkController();
     ServiceController* services = new ServiceController();
     network->setServiceController(services);
     network->connect(services,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
@@ -112,10 +114,15 @@ int main(int argc, char *argv[])
     int r = 0;
     if (argc<=1 || strcmp("--shutdown", argv[1])!=0)
         r = qapp.exec();
-    network->dbus()->unregisterService(servicename);
+
+	#ifndef _WIN32
+		dbusconnection->unregisterService(servicename);
+	#endif
+
     qDebug() << "Shutdown: Network server";
     delete network;
     network = 0;
+
     qDebug() << "Shutdown: Service Controller";
     delete services;
     services = 0;
