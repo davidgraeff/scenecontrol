@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 project(${targetname})
+message(STATUS "Configure client: ${targetname}")
 
 find_package(Qt4 4.7.0 REQUIRED)
 find_package(KDE4 4.4 QUIET)
@@ -16,7 +17,7 @@ IF (KDE4_FOUND)
 	ADD_DEFINITIONS(-DWITHKDE)
 	message("Activate kde4 extensions for client ${targetname}")
 ELSE()
-	include_directories("${SHAREDCLIENTDIR}/nokde")
+	include_directories("${SHAREDDIR}/nokde")
 ENDIF()
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${ROOTDIR} ${SHAREDCLIENTDIR})

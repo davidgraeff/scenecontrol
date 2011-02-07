@@ -31,28 +31,28 @@ QextSerialPort::QextSerialPort(QextSerialPort::QueryMode mode)
 {
 
 #ifdef Q_OS_WIN
-    setPortName("COM1");
+    setPortName(QLatin1String("COM1"));
 
 #elif defined(_TTY_IRIX_)
-    setPortName("/dev/ttyf1");
+    setPortName(QLatin1String("/dev/ttyf1"));
 
 #elif defined(_TTY_HPUX_)
-    setPortName("/dev/tty1p0");
+    setPortName(QLatin1String("/dev/tty1p0"));
 
 #elif defined(_TTY_SUN_)
-    setPortName("/dev/ttya");
+    setPortName(QLatin1String("/dev/ttya"));
 
 #elif defined(_TTY_DIGITAL_)
-    setPortName("/dev/tty01");
+    setPortName(QLatin1String("/dev/tty01"));
 
 #elif defined(_TTY_FREEBSD_)
-    setPortName("/dev/ttyd1");
+    setPortName(QLatin1String("/dev/ttyd1"));
 
 #elif defined(_TTY_OPENBSD_)
-    setPortName("/dev/tty00");
+    setPortName(QLatin1String("/dev/tty00"));
 
 #else
-    setPortName("/dev/ttyS0");
+    setPortName(QLatin1String("/dev/ttyS0"));
 #endif
 
     construct();
@@ -221,23 +221,23 @@ QString QextSerialPort::errorString()
 {
     switch(lastErr)
     {
-        case E_NO_ERROR: return "No Error has occurred";
-        case E_INVALID_FD: return "Invalid file descriptor (port was not opened correctly)";
-        case E_NO_MEMORY: return "Unable to allocate memory tables (POSIX)";
-        case E_CAUGHT_NON_BLOCKED_SIGNAL: return "Caught a non-blocked signal (POSIX)";
-        case E_PORT_TIMEOUT: return "Operation timed out (POSIX)";
-        case E_INVALID_DEVICE: return "The file opened by the port is not a valid device";
-        case E_BREAK_CONDITION: return "The port detected a break condition";
-        case E_FRAMING_ERROR: return "The port detected a framing error (usually caused by incorrect baud rate settings)";
-        case E_IO_ERROR: return "There was an I/O error while communicating with the port";
-        case E_BUFFER_OVERRUN: return "Character buffer overrun";
-        case E_RECEIVE_OVERFLOW: return "Receive buffer overflow";
-        case E_RECEIVE_PARITY_ERROR: return "The port detected a parity error in the received data";
-        case E_TRANSMIT_OVERFLOW: return "Transmit buffer overflow";
-        case E_READ_FAILED: return "General read operation failure";
-        case E_WRITE_FAILED: return "General write operation failure";
-        case E_FILE_NOT_FOUND: return "The "+this->portName()+" file doesn't exists";
-        default: return QString("Unknown error: %1").arg(lastErr);
+        case E_NO_ERROR: return tr("No Error has occurred");
+        case E_INVALID_FD: return tr("Invalid file descriptor (port was not opened correctly)");
+        case E_NO_MEMORY: return tr("Unable to allocate memory tables (POSIX)");
+        case E_CAUGHT_NON_BLOCKED_SIGNAL: return tr("Caught a non-blocked signal (POSIX)");
+        case E_PORT_TIMEOUT: return tr("Operation timed out (POSIX)");
+        case E_INVALID_DEVICE: return tr("The file opened by the port is not a valid device");
+        case E_BREAK_CONDITION: return tr("The port detected a break condition");
+        case E_FRAMING_ERROR: return tr("The port detected a framing error (usually caused by incorrect baud rate settings)");
+        case E_IO_ERROR: return tr("There was an I/O error while communicating with the port");
+        case E_BUFFER_OVERRUN: return tr("Character buffer overrun");
+        case E_RECEIVE_OVERFLOW: return tr("Receive buffer overflow");
+        case E_RECEIVE_PARITY_ERROR: return tr("The port detected a parity error in the received data");
+        case E_TRANSMIT_OVERFLOW: return tr("Transmit buffer overflow");
+        case E_READ_FAILED: return tr("General read operation failure");
+        case E_WRITE_FAILED: return tr("General write operation failure");
+        case E_FILE_NOT_FOUND: return tr("The %1 file doesn't exists ").arg(this->portName());
+        default: return tr("Unknown error: %1").arg(lastErr);
     }
 }
 

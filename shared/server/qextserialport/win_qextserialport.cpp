@@ -25,12 +25,12 @@ void QextSerialPort::platformSpecificDestruct() {
 
 QString QextSerialPort::fullPortNameWin(const QString & name)
 {
-    QRegExp rx("^COM(\\d+)");
+    QRegExp rx(QLatin1String("^COM(\\d+)"));
     QString fullName(name);
     if(fullName.contains(rx)) {
         int portnum = rx.cap(1).toInt();
         if(portnum > 9) // COM ports greater than 9 need \\.\ prepended
-            fullName.prepend("\\\\.\\");
+            fullName.prepend(QLatin1String("\\\\.\\"));
     }
     return fullName;
 }
