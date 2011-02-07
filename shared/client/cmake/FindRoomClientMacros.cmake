@@ -22,8 +22,7 @@ ENDIF()
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${ROOTDIR} ${SHAREDCLIENTDIR})
 
-ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
-#-DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII 
+ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION -DQT_NO_CAST_TO_ASCII ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
 
 SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
 set(SERVERNAME "RoomControlServer")
@@ -48,11 +47,31 @@ IF (NOT DEFINED WITHOUT_KDEGUI)
 	file(GLOB_RECURSE UIKDE_FILES "${SHAREDCLIENTDIR}/loginwidget/*.ui")
 ENDIF()
 
+# Under Windows, we also include a resource file to the build
+if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/res.rc")
+    # Make sure that the resource file is seen as an RC file to be compiled with a resource compiler, not a C++ compiler
+    #set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/res.rc LANGUAGE RC)
+    # Add the resource file to the list of sources
+    list(APPEND SRCS ${CMAKE_CURRENT_SOURCE_DIR}/res.rc)
+    # For MinGW, we have to change the compile flags
+      IF(MINGW)
+          # resource compilation for MinGW
+          ADD_CUSTOM_COMMAND( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/icon.o
+			COMMAND windres -I${CMAKE_CURRENT_SOURCE_DIR} -i${CMAKE_CURRENT_SOURCE_DIR}/res.rc -o ${CMAKE_CURRENT_BINARY_DIR}/icon.o )
+		  list(APPEND SRCS ${CMAKE_CURRENT_BINARY_DIR}/icon.o)
+          SET(LINK_FLAGS -Wl,-subsystem,windows)
+      ENDIF(MINGW)
+  
+      IF(WIN32)
+          SET( GUI_TYPE WIN32 )
+      ENDIF( WIN32 )
+ endif(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/res.rc")
+
 #Special files
 file(GLOB_RECURSE UI_FILES *.ui)
 file(GLOB_RECURSE GUI_RC *.qrc)
 qt4_wrap_ui(UI_H ${UI_FILES} ${UIKDE_FILES})
 QT4_ADD_RESOURCES(RC_SRC ${GUI_RC})
 
-set(SRCS_H ${SRCS_H} ${SHAREDCLIENTDIR}/clientplugin.h ${SHAREDCLIENTDIR}/networkcontroller.h ${SHAREDCLIENTDIR}/servicestorage.h ${SHAREDCLIENTDIR}/modelstorage.h ${UI_H} ${Shared_SRCS_H} ${SharedKDE_SRCS_H})
-set(SRCS ${SRCS} ${SHAREDCLIENTDIR}/clientplugin.cpp ${SHAREDCLIENTDIR}/networkcontroller.cpp ${SHAREDCLIENTDIR}/servicestorage.cpp ${SHAREDCLIENTDIR}/modelstorage.cpp ${Shared_SRCS} ${RC_SRC} ${SharedKDE_SRCS_SRCS})
+list(APPEND SRCS_H ${SHAREDCLIENTDIR}/clientplugin.h ${SHAREDCLIENTDIR}/networkcontroller.h ${SHAREDCLIENTDIR}/servicestorage.h ${SHAREDCLIENTDIR}/modelstorage.h ${UI_H} ${Shared_SRCS_H} ${SharedKDE_SRCS_H})
+list(APPEND SRCS ${SHAREDCLIENTDIR}/clientplugin.cpp ${SHAREDCLIENTDIR}/networkcontroller.cpp ${SHAREDCLIENTDIR}/servicestorage.cpp ${SHAREDCLIENTDIR}/modelstorage.cpp ${Shared_SRCS} ${RC_SRC} ${SharedKDE_SRCS_SRCS})

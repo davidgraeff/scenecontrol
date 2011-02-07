@@ -68,12 +68,12 @@ void LoginWidget::on_btnConnect_clicked()
     QSettings settings;
     const QString host = ui->cmbHost->currentText();
     const int port = ui->spinPort->value();
-    settings.beginGroup("hosts");
-    settings.setValue("host", host);
-    settings.setValue("port", port);
+    settings.beginGroup(QLatin1String("hosts"));
+    settings.setValue(QLatin1String("host"), host);
+    settings.setValue(QLatin1String("port"), port);
     settings.beginGroup(host);
-    settings.setValue("host", host);
-    settings.setValue("port", port);
+    settings.setValue(QLatin1String("host"), host);
+    settings.setValue(QLatin1String("port"), port);
     settings.endGroup();
     settings.endGroup();
     m_network->start(host, port);
@@ -82,10 +82,10 @@ void LoginWidget::on_btnConnect_clicked()
 void LoginWidget::on_cmbHost_currentIndexChanged(int)
 {
     QSettings settings;
-    settings.beginGroup("hosts");
+    settings.beginGroup(QLatin1String("hosts"));
     settings.beginGroup(ui->cmbHost->currentText());
     //ui->cmbHost->setEditText(settings.value("host","127.0.0.1").toString());
-    ui->spinPort->setValue(settings.value("port","3101").toInt());
+    ui->spinPort->setValue(settings.value(QLatin1String("port"),3101).toInt());
 }
 
 void LoginWidget::connectedToValidServer()
@@ -102,11 +102,6 @@ void LoginWidget::serverDisconnected()
     if (m_manualDisconnect) return;
     m_reconnectTimer.start();
     backToConnectPage(tr("Not connected"));
-}
-
-void LoginWidget::on_btnDisconnect_clicked ( )
-{
-    backToConnectPage(tr("Getrennt"));
 }
 
 void LoginWidget::requestDisconnect()
@@ -210,7 +205,7 @@ void LoginWidget::on_btnCancelConnect_clicked() {
 
 void LoginWidget::deferredLoading() {
     QSettings settings;
-    settings.beginGroup("hosts");
+    settings.beginGroup(QLatin1String("hosts"));
     QStringList hosts = settings.childGroups();
 
     m_authTimeoutTimer.setInterval(1000);
@@ -218,13 +213,13 @@ void LoginWidget::deferredLoading() {
 
     for (int i=0;i<hosts.size();++i) {
         settings.beginGroup(hosts[i]);
-        ui->cmbHost->addItem(settings.value("host").toString(), settings.value("port").toInt());
+        ui->cmbHost->addItem(settings.value(QLatin1String("host")).toString(), settings.value(QLatin1String("port")).toInt());
         settings.endGroup();
     }
 
     //default settings
-    ui->cmbHost->setEditText(settings.value ( "host","127.0.0.1" ).toString());
-    ui->spinPort->setValue(settings.value ( "port", 3101 ).toInt());
+    ui->cmbHost->setEditText(settings.value ( QLatin1String("host"),QLatin1String("127.0.0.1") ).toString());
+    ui->spinPort->setValue(settings.value ( QLatin1String("port"), 3101 ).toInt());
 
     QCompleter *completer = new QCompleter(hosts, this);
     completer->setCaseSensitivity(Qt::CaseInsensitive);

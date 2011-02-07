@@ -13,7 +13,7 @@ IF (DEBFOUND)
 
 	IF (PLUGIN_${PROJECT_NAME}_CLIENT)
 		build_client_lib()
-		target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 		install_client_lib()
 	ENDIF()
 	IF (PLUGIN_${PROJECT_NAME}_SERVER)

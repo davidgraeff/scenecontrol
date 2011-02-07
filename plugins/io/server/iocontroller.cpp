@@ -20,7 +20,7 @@
 #include "iocontroller.h"
 #include <QDebug>
 #include <QSettings>
-#include "shared/server/qextserialport.h"
+#include "shared/server/qextserialport/qextserialport.h"
 #include "statetracker/pinvaluestatetracker.h"
 #include "statetracker/pinnamestatetracker.h"
 #include <qfile.h>

@@ -2,9 +2,11 @@
 #include <QtGui/QApplication>
 #include <qdesktopwidget.h>
 #include <QUrl>
-#include <signal.h>
-#include <sys/prctl.h>
 #include <QSocketNotifier>
+#include <signal.h>
+#ifndef _WIN32
+#include <sys/prctl.h>
+#endif
 #include <stdio.h>
 #include "configexternal.h"
 
@@ -194,8 +196,10 @@ int main(int argc, char **argv)
     setlocale(LC_ALL, "C");
     signal(SIGINT, catch_int);
     signal(SIGTERM, catch_int);
-    signal(SIGHUP, catch_int);
+#ifndef _WIN32
+    signal(SIGHUP, catch_int)
     prctl(PR_SET_PDEATHSIG, SIGHUP); // quit if parent dies
+#endif
     QApplication app(argc, argv);
     QApplication::setApplicationName(QLatin1String("RoomVideoHelper"));
     MediaPlayer mw;

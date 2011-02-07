@@ -111,7 +111,6 @@ Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 #define ACTION_MUTE                 91
 
 #include <QDebug>
-#include <sys/socket.h>
 #include "xbmcclient.h"
 #include <QCoreApplication>
 #include "statetracker/cinamestatetracker.h"

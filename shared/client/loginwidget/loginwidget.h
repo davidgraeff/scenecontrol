@@ -49,7 +49,6 @@ private slots:
 
     // gui
     void on_btnConnect_clicked();
-    void on_btnDisconnect_clicked();
     void on_btnLogin_clicked();
     void on_btnCancelConnect_clicked();
     void on_cmbHost_currentIndexChanged ( int );
