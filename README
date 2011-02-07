@@ -6,7 +6,8 @@ Beamersteuerung und Zeitbasierte Ereignisse sind vorhanden und in Benutzung.
 
 Plattform:
 ----------
-- Windows ab Vista (Qt4;OpenSSL). Es können nicht alle Plugins genutzt werden (pulseaudio, remotecontrol).
+- Windows ab Vista (Qt4;OpenSSL;Windows API: CryptProtectData, CryptUnprotectData, LogonUser)
+  Einige Plugins sind linux-only: remotecontrol
 - Linux ab 2.6.22 (Qt4;OpenSSL;pam;dbus;gstreamer;pulseaudio)
 
 Architektur:
@@ -46,9 +47,10 @@ Anwendungsgebiete:
 
 Externe Software:
 --------
-Linux: PulseAudio für die Soundsteuerung. GStreamer als Abspielframework.
-Fernbedienungseingaben werden über eine Eigenentwicklung [liri daemon (für X10 433Mhz Funkfernbedienungen)]
-entgegengenommen.
+- PulseAudio für die Soundsteuerung unter Linux.
+- Fernbedienungseingaben werden über eine Eigenentwicklung [liri daemon (für X10 433Mhz Funkfernbedienungen)]
+entgegengenommen. Sobald ein einheitliches Framework für Fernbedienungen über das linux input subsystem
+möglich ist, sollte dieses verwendet werden.
 
 Clients:
 --------
