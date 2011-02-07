@@ -23,7 +23,6 @@
 #include <QStringList>
 #include "shared/server/executeplugin.h"
 
-#include "shared/server/qextserialport.h"
 #include "services/actorprojector.h"
 
 class QextSerialPort;

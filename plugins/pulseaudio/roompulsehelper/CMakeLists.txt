@@ -2,13 +2,13 @@ PROJECT(roompulsehelper)
 cmake_minimum_required(VERSION 2.6)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-find_package(GStreamer QUIET)
+#find_package(GStreamer QUIET)
 find_package(PulseAudio QUIET)
 #find_package(GLIB2 REQUIRED)
 
 OPTION(PLUGIN_${PROJECT_NAME}_EXEC "Plugin executable helper: ${PROJECT_NAME}" ON)
 
-IF (PLUGIN_${PROJECT_NAME}_EXEC AND GSTREAMER_FOUND AND PULSEAUDIO_FOUND)
+IF (PLUGIN_${PROJECT_NAME}_EXEC AND PULSEAUDIO_FOUND)
 	IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 	  SET(CMAKE_INSTALL_PREFIX
 	    "/usr" CACHE PATH "RoomMedia install prefix" FORCE

@@ -3,12 +3,13 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
+#include <qfile.h>
 #include "plugin.h"
+#include "shared/server/executeservice.h"
 #include "statetracker/projectorstatetracker.h"
 #include "services/actorprojector.h"
 #include "services_server/actorprojectorServer.h"
-#include <qfile.h>
+#include "shared/server/qextserialport/qextserialport.h"
 #include "configplugin.h"
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)

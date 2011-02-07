@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 project(${targetname}Plugin)
+message(STATUS "Configure Plugin: ${targetname}")
+
 find_package(Qt4 REQUIRED)
 find_package(Qt4 4.7.0 COMPONENTS QtCore QtGui REQUIRED)
 
-set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+get_filename_component(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+#set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 set(SHAREDDIR "${ROOTDIR}/shared")
 set(PLUGINDIR "${ROOTDIR}/plugins")
 #file(GLOB_RECURSE Shared_SRCS_H "${SHAREDDIR}/services/*.h" )
@@ -19,6 +22,14 @@ set(SharedClient_SRCS ${Shared_SRCS} "${SHAREDDIR}/client/clientplugin.cpp" "${S
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
 
+IF (KDE4_FOUND)
+	include(KDE4Defaults)
+	include(MacroLibrary)
+	include_directories("${KDE4_INCLUDES}" "${KDE4_INCLUDE_DIR}")
+ELSE()
+	include_directories("${SHAREDDIR}/nokde")
+ENDIF()
+
 #client
 file(GLOB_RECURSE SRCS_CLIENT services/*.cpp statetracker/*.cpp client/*.cpp plugin.cpp)
 file(GLOB_RECURSE SRCS_CLIENT_H services/*.h statetracker/*.h client/*.h plugin.h)
@@ -27,8 +38,13 @@ file(GLOB_RECURSE SRCS_CLIENT_H services/*.h statetracker/*.h client/*.h plugin.
 file(GLOB_RECURSE SRCS_SERVER services/*.cpp statetracker/*.cpp services_server/*.cpp server/*.cpp plugin.cpp)
 file(GLOB_RECURSE SRCS_SERVER_H services/*.h statetracker/*.h services_server/*.h server/*.h plugin.h)
 if (DEFINED USE_SERIALPORT)
-  set(SRCS_SERVER_H ${SRCS_SERVER_H} ${PLUGINDIR}/shared/qextserialport.h)
-  set(SRCS_SERVER ${SRCS_SERVER} ${PLUGINDIR}/shared/qextserialport.cpp)
+	LIST(APPEND SRCS_SERVER_H ${SHAREDDIR}/server/qextserialport/qextserialport.h)
+	LIST(APPEND SRCS_SERVER ${SHAREDDIR}/server/qextserialport/qextserialport.cpp)
+	IF (WIN32)
+		LIST(APPEND SRCS_SERVER ${SHAREDDIR}/server/qextserialport/win_qextserialport.cpp)
+	ELSE()
+		LIST(APPEND SRCS_SERVER ${SHAREDDIR}/server/qextserialport/posix_qextserialport.cpp)
+	ENDIF()
 endif()
 
 ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})

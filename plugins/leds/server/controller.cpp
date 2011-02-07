@@ -25,7 +25,7 @@
 #include "plugin_server.h"
 #include <qfile.h>
 #include <QDebug>
-#include <shared/server/qextserialport.h>
+#include <shared/server/qextserialport/qextserialport.h>
 #include <shared/abstractplugin.h>
 
 Controller::Controller(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_channels(0), m_bufferpos(0), m_readState(ReadOK), m_serial(0)
