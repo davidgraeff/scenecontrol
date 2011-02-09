@@ -94,8 +94,6 @@ add_subdirectory(plugins)
 INCLUDE(InstallRequiredSystemLibraries)
 INCLUDE(CPack)
 
-MESSAGE(exe ${CPACK_PACKAGE_EXECUTABLES})
-
 # Installation types
 cpack_add_install_type(Full DISPLAY_NAME "Alles")
 cpack_add_install_type(ServerOnly DISPLAY_NAME "Nur Server und Serverplugins")

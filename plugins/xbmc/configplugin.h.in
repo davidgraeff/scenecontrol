@@ -1,3 +1,3 @@
 void _config(ExecutePlugin* plugin) {
-  plugin->registerSetting("servers", QLatin1String("@CONFIG_SERVERS@"));
+  plugin->registerSetting("server", QLatin1String("@CONFIG_SERVER@"));
 }

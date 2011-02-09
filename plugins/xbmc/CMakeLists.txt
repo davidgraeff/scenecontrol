@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
 
 SET(CONFIG_${PROJECT_NAME}_SERVER "127.0.0.1:9777" CACHE STRING "XBMC Server")
-SET(CONFIG_SERVERS ${CONFIG_${PROJECT_NAME}_SERVERS})
+SET(CONFIG_SERVER ${CONFIG_${PROJECT_NAME}_SERVER})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
 	OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
