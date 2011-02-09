@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 find_package(Qt4 COMPONENTS QtCore REQUIRED)
 
 IF (WIN32)
-	project(modify_install_path)
+	project(modify_registry_path)
 	message(STATUS "Configure registry install path modifier")
 
 	ADD_DEFINITIONS(-Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS})

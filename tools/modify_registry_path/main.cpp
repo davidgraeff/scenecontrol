@@ -21,8 +21,9 @@
 #include <QCoreApplication>
 #include <QStringList>
 #include <QDebug>
-#include <qtextcodec.h>
+#include <QDir>
 #include "config.h"
+#include <Windows.h>
 
 int main(int argc, char *argv[])
 {
@@ -30,22 +31,26 @@ int main(int argc, char *argv[])
     qapp.setApplicationName(QLatin1String("main"));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
     qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
-    QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
 
 	QStringList list = qapp.arguments();
 
-    qDebug() << QCoreApplication::applicationName().toAscii().data() << ":" << QCoreApplication::applicationVersion().toAscii().data();
+	int ii = list.indexOf(QLatin1String("install"));
+	int iu = list.indexOf(QLatin1String("uninstall"));
 
-	int ii = list.indexOf(QLatin1String("--install"));
-	int iu = list.indexOf(QLatin1String("--uninstall"));
-
-	if (ii>=0 && list.size()>=ii+2) {
-	QSettings s;
-	s.setValue(QLatin1String("path"), list.at(ii+1));
+	if (ii>=0) {
+		QDir dir =  QDir::current();
+		dir.cdUp ();
+		QSettings s;
+		s.setValue(QLatin1String("path"), dir.currentPath());
+		return 0;
 	} else if (iu >=0) {
-	QSettings s;
-	s.clear();
+		QSettings s;
+		s.clear();
+	    return 0;
+	} else {
+			Sleep(2000);
+		    qDebug() << "Usage: --install path OR --uninstall";
 	}
 
-    return 0;
+    return 1;
 }

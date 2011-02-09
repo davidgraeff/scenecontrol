@@ -1,16 +1,17 @@
 cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
 
+OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
+
+IF (PLUGIN_${PROJECT_NAME}_CLIENT)
+	build_client_lib()
+	target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY})
+	install_client_lib()
+ENDIF()
+
 SET(DEBFOUND TRUE)
 IF (DEBFOUND)
-	OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
 	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)
-
-	IF (PLUGIN_${PROJECT_NAME}_CLIENT)
-		build_client_lib()
-		target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY})
-		install_client_lib()
-	ENDIF()
 	IF (PLUGIN_${PROJECT_NAME}_SERVER)
 		SET(ADD_CPP "${SHAREDDIR}/categorize/profile.cpp")
 		SET(ADD_H "${SHAREDDIR}/categorize/profile.h")

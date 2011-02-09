@@ -5,16 +5,17 @@ SET(CONFIG_${PROJECT_NAME}_AUTOCONFIG "1075:1077:netz:netz" CACHE STRING "Autoco
 SET(CONFIG_AUTOCONFIG ${CONFIG_${PROJECT_NAME}_AUTOCONFIG})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
+OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
+IF (PLUGIN_${PROJECT_NAME}_CLIENT)
+	build_client_lib()
+	target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+	install_client_lib()
+ENDIF()
+
 SET(DEBFOUND TRUE)
 IF (DEBFOUND)
-	OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
 	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)
 
-	IF (PLUGIN_${PROJECT_NAME}_CLIENT)
-		build_client_lib()
-		target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
-		install_client_lib()
-	ENDIF()
 	IF (PLUGIN_${PROJECT_NAME}_SERVER)
 		build_server_lib()
 		target_link_libraries(${PROJECT_NAME}_server ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES})

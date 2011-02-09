@@ -66,23 +66,19 @@ endmacro(build_server_lib)
 
 macro(install_client_lib)
 	INSTALL(TARGETS ${PROJECT_NAME}_client
-		RUNTIME DESTINATION ${LIBPATH}/client/debug
-		LIBRARY DESTINATION ${LIBPATH}/client/debug
-		CONFIGURATIONS Debug COMPONENT DebugClientPlugins)
-	INSTALL(TARGETS ${PROJECT_NAME}_client
 		RUNTIME DESTINATION ${LIBPATH}/client/
+		COMPONENT ClientPlugins
 		LIBRARY DESTINATION ${LIBPATH}/client/
-		CONFIGURATIONS Release RelWithDebInfo COMPONENT ClientPlugins)
+		COMPONENT ClientPlugins
+		)
 endmacro()
 
 macro(install_server_lib)
 	INSTALL(TARGETS ${PROJECT_NAME}_server
-		RUNTIME DESTINATION ${LIBPATH}/server/debug
-		LIBRARY DESTINATION ${LIBPATH}/server/debug
-		CONFIGURATIONS Debug COMPONENT DebugServerPlugins)
-	INSTALL(TARGETS ${PROJECT_NAME}_server
 		RUNTIME DESTINATION ${LIBPATH}/server/
+		COMPONENT ServerPlugins
 		LIBRARY DESTINATION ${LIBPATH}/server/
-		CONFIGURATIONS Release RelWithDebInfo COMPONENT ServerPlugins)
+		COMPONENT ServerPlugins
+		)
 endmacro()
 

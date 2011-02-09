@@ -54,7 +54,7 @@ public:
      * \param name Name of the setting
      * \param value Value of the setting
      */
-    virtual void setSetting(const QString& name, const QVariant& value);
+    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void registerSetting(const char* name, const QVariant& value);
     const QVariantMap getSettings() const;
 private:
