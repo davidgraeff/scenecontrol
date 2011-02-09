@@ -79,10 +79,6 @@ IF(WIN32)
 		")
 ENDIF(WIN32)
 
-# Distribution via cpack
-INCLUDE(InstallRequiredSystemLibraries)
-INCLUDE(CPack)
-
 # prepare configuration file
 SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
 SET(ROOM_PATHNAME "${PRODUCTID}")
@@ -93,6 +89,12 @@ configure_file(config.h.in config.h @ONLY)
 add_subdirectory(server)
 add_subdirectory(clients)
 add_subdirectory(plugins)
+
+# Distribution via cpack
+INCLUDE(InstallRequiredSystemLibraries)
+INCLUDE(CPack)
+
+MESSAGE(exe ${CPACK_PACKAGE_EXECUTABLES})
 
 # Installation types
 cpack_add_install_type(Full DISPLAY_NAME "Alles")

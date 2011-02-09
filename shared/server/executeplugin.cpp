@@ -1,6 +1,7 @@
 #include "executeplugin.h"
 #include "shared/abstractplugin.h"
 #include <QSettings>
+#include <QString>
 #include <QDebug>
 
 void ExecutePlugin::serverserviceChanged(AbstractServiceProvider* service) {
@@ -17,15 +18,23 @@ void ExecutePlugin::setSetting(const QString& name, const QVariant& value, bool 
 }
 
 void ExecutePlugin::registerSetting(const char* name, const QVariant& value) {
+	QSettings s;
+	s.beginGroup(base()->name());
+	QString oldvalue = s.value(QString::fromAscii(name)).toString();
+
 	QByteArray b;
 	if (base())
 		b.append(base()->name().toUtf8().replace(' ',"").replace('-','_'));
 	b.append('_');
 	b.append(name);
 	char *valueEnv = getenv ( b.data() );
-	if (valueEnv)
+	if (valueEnv) {
 		qDebug() << "Environment variable" << b.data() << valueEnv;
-	setSetting(QString::fromAscii(name), (valueEnv?QString::fromUtf8(valueEnv):value), true);
+		oldvalue = QString::fromUtf8(valueEnv);
+	}
+
+
+	setSetting(QString::fromAscii(name), (oldvalue.size()?oldvalue:value), true);
 }
 
 const QVariantMap ExecutePlugin::getSettings() const {
