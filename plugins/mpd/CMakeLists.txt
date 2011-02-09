@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/")
-find_package(RoomServerPlugins REQUIRED)
+find_package(RoomPlugins REQUIRED)
 
 SET(CONFIG_${PROJECT_NAME}_SERVER "127.0.0.1:6600" CACHE STRING "MPD Server")
 SET(CONFIG_SERVER ${CONFIG_${PROJECT_NAME}_SERVER})

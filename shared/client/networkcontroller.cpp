@@ -20,7 +20,8 @@
 #include "shared/qjson/serializer.h"
 #include "shared/abstractserviceprovider.h"
 #include "shared/client/clientplugin.h"
-#include <shared/abstractplugin.h>
+#include "shared/abstractplugin.h"
+#include "shared/paths.h"
 
 #include "config.h"
 #include <shared/categorize/category.h>
@@ -340,23 +341,22 @@ bool NetworkController::generate(const QVariantMap& data) {
 void NetworkController::loadPlugins() {
     int offered_services = 0;
     ClientPlugin *plugin;
-    QDir pluginsDir = QDir ( QLatin1String ( ROOM_SYSTEM_CLIENTPLUGINS ) );
-    QStringList files = pluginsDir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
+    QStringList files = clientPluginsFiles();
     if (files.empty()) {
-        qDebug() << "No plugins found in" << ROOM_SYSTEM_CLIENTPLUGINS;
+        qDebug() << "No plugins found in" << pluginDir();
     }
     foreach ( QString fileName, files )
     {
-        QPluginLoader* loader = new QPluginLoader ( pluginsDir.absoluteFilePath ( fileName ), this );
+        QPluginLoader* loader = new QPluginLoader ( fileName, this );
         loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
         if (!loader->load()) {
-            qWarning() << "Start: Failed loading" << pluginsDir.absoluteFilePath ( fileName ) << loader->errorString();
+            qWarning() << "Start: Failed loading" << fileName << loader->errorString();
             delete loader;
             continue;
         }
         plugin = dynamic_cast<ClientPlugin*> ( loader->instance() );
         if (!plugin) {
-            qWarning() << "Start: Failed to get instance" << pluginsDir.absoluteFilePath ( fileName );
+            qWarning() << "Start: Failed to get instance" << fileName;
             delete loader;
             continue;
         }

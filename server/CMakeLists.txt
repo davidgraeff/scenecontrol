@@ -1,21 +1,17 @@
-project(roomcontrolserver)
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 find_package(Qt4 4.7.0 COMPONENTS QtCore REQUIRED)
 find_package(PAM QUIET)
 #find_package(QJSON REQUIRED)
+
+project(roomcontrolserver)
+message(STATUS "Configure server")
 
 IF (PAM_FOUND OR WIN32)
 	OPTION(BUILD_SERVER "Build server" ON)
 ENDIF()
 
 IF (BUILD_SERVER)
-	IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	  SET(CMAKE_INSTALL_PREFIX
-	    "/usr" CACHE PATH "RoomControlServer install prefix" FORCE
-	    )
-	ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-
 	file(GLOB_RECURSE SRCS_H *.h)
 	file(GLOB Shared_SRCS_H "../shared/*.h" "../shared/server/*.h" "../shared/categorize/*.h" "../shared/qjson/*.h")
 
@@ -26,17 +22,9 @@ IF (BUILD_SERVER)
 		include_directories(${PAM_INCLUDE_DIR})
 	ENDIF()
 	
-	include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/.." "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/")
+	include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMAKE_BINARY_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/")
 
 	ADD_DEFINITIONS(-D_IS_ROOMSERVER -D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
-
-	# prepare configuration file
-	SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
-	SET(ROOM_SYSTEM_CLIENTPLUGINS "lib/${PROJECT_NAME}/plugins/client" CACHE STRING "Set the directory where client plugins are located")
-	SET(ROOM_SYSTEM_SERVERPLUGINS "lib/${PROJECT_NAME}/plugins/server" CACHE STRING "Set the directory where server plugins are located")
-	SET(ROOM_SYSTEM_CERTIFICATES "lib/${PROJECT_NAME}/certificates" CACHE STRING "Set the directory where ssl certificates are located")
-	#SET(ROOM_USER_DATA_DIR ".config/${PROJECT_NAME}" CACHE STRING "Set the directory where user profiles and services are stored")
-	configure_file(config.h.in config.h @ONLY)
 
 	QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${Shared_SRCS_H} ${SRCS_H}
 	../plugins/coreplugin/services_server/systemACServer.h ../plugins/coreplugin/services/systemAC.h
@@ -53,9 +41,12 @@ IF (BUILD_SERVER)
 	${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}
 	${QT_QTTEST_LIBRARIES} ${QT_QTDBUS_LIBRARIES} ${PAM_LIBRARIES})
 
-	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION bin)
+	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT Server)
+	GET_TARGET_PROPERTY(BINARY_NAME ${PROJECT_NAME} OUTPUT_NAME)
+	SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} ${BINARY_NAME}" CACHE INTERNAL "")
+	
 	FILE(GLOB files "../shared/certificates/*")
-	install( FILES ${files} DESTINATION ${ROOM_SYSTEM_CERTIFICATES} )
+	install( FILES ${files} DESTINATION ${CERTPATH} COMPONENT Server)
 ELSE(BUILD_SERVER)
 	MESSAGE("Not building: Server")
 ENDIF(BUILD_SERVER)

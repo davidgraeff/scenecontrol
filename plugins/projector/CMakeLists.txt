@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/")
 set(USE_SERIALPORT TRUE)
-find_package(RoomServerPlugins REQUIRED)
+find_package(RoomPlugins REQUIRED)
 
 SET(CONFIG_${PROJECT_NAME}_SERIALPORT "/dev/ttyS1" CACHE STRING "Serialport")
 SET(CONFIG_SERIALPORT ${CONFIG_${PROJECT_NAME}_SERIALPORT})

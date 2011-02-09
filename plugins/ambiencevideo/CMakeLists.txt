@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/")
-find_package(RoomServerPlugins REQUIRED)
+find_package(RoomPlugins REQUIRED)
 
 SET(CONFIG_${PROJECT_NAME}_SERVERS "127.0.0.1:1750" CACHE STRING "Servers")
-SET(CONFIG_${PROJECT_NAME}_LISTENPORT "1750" CACHE STRING "Port to listen. For the external helper application")
+SET(CONFIG_${PROJECT_NAME}_LISTENPORT "1750" CACHE INT "Port to listen. For the external helper application")
 SET(CONFIG_SERVERS ${CONFIG_${PROJECT_NAME}_SERVERS})
 SET(CONFIG_LISTENPORT ${CONFIG_${PROJECT_NAME}_LISTENPORT})
 configure_file(configplugin.h.in configplugin.h @ONLY)

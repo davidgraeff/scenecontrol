@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/" "${CMAKE_CURRENT_SOURCE_DIR}")
-find_package(RoomServerPlugins REQUIRED)
+find_package(RoomPlugins REQUIRED)
 find_package(PCSC QUIET)
 
 SET(DEBFOUND ${PCSC_FOUND})

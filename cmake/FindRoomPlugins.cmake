@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 2.8)
+
+# project name
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 project(${targetname}Plugin)
 message(STATUS "Configure Plugin: ${targetname}")
 
-find_package(Qt4 REQUIRED)
+IF (NOT DEFINED PRODUCTID)
+	RETURN()
+ENDIF()
+
 find_package(Qt4 4.7.0 COMPONENTS QtCore QtGui REQUIRED)
 
 get_filename_component(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
@@ -20,7 +25,7 @@ set(SharedServer_SRCS ${Shared_SRCS} "${SHAREDDIR}/server/executeservice.cpp" "$
 set(SharedClient_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/client/clientplugin.h" "${SHAREDDIR}/client/servicestorage.h" "${SHAREDDIR}/client/modelstorage.h")
 set(SharedClient_SRCS ${Shared_SRCS} "${SHAREDDIR}/client/clientplugin.cpp" "${SHAREDDIR}/client/servicestorage.cpp" "${SHAREDDIR}/client/modelstorage.cpp")
 
-include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
+include_directories(${QT_INCLUDES} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
 
 IF (KDE4_FOUND)
 	include(KDE4Defaults)
@@ -59,17 +64,25 @@ macro(build_server_lib)
 	add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER} ${ADD_CPP})
 endmacro(build_server_lib)
 
-set(SERVERNAME "RoomControlServer")
-SET(ROOM_SYSTEM_CLIENTPLUGINS "lib/${SERVERNAME}/plugins/client" CACHE STRING "Set the directory where client plugins are located")
-SET(ROOM_SYSTEM_SERVERPLUGINS "lib/${SERVERNAME}/plugins/server" CACHE STRING "Set the directory where server plugins are located")
-
 macro(install_client_lib)
-	INSTALL(TARGETS ${PROJECT_NAME}_client RUNTIME DESTINATION ${ROOM_SYSTEM_CLIENTPLUGINS}/debug LIBRARY DESTINATION ${ROOM_SYSTEM_CLIENTPLUGINS}/debug CONFIGURATIONS Debug)
-	INSTALL(TARGETS ${PROJECT_NAME}_client RUNTIME DESTINATION ${ROOM_SYSTEM_CLIENTPLUGINS} LIBRARY DESTINATION ${ROOM_SYSTEM_CLIENTPLUGINS} CONFIGURATIONS Release RelWithDebInfo)
+	INSTALL(TARGETS ${PROJECT_NAME}_client
+		RUNTIME DESTINATION ${LIBPATH}/client/debug
+		LIBRARY DESTINATION ${LIBPATH}/client/debug
+		CONFIGURATIONS Debug COMPONENT DebugClientPlugins)
+	INSTALL(TARGETS ${PROJECT_NAME}_client
+		RUNTIME DESTINATION ${LIBPATH}/client/
+		LIBRARY DESTINATION ${LIBPATH}/client/
+		CONFIGURATIONS Release RelWithDebInfo COMPONENT ClientPlugins)
 endmacro()
 
 macro(install_server_lib)
-	INSTALL(TARGETS ${PROJECT_NAME}_server RUNTIME DESTINATION ${ROOM_SYSTEM_SERVERPLUGINS}/debug LIBRARY DESTINATION ${ROOM_SYSTEM_SERVERPLUGINS}/debug CONFIGURATIONS Debug)
-	INSTALL(TARGETS ${PROJECT_NAME}_server RUNTIME DESTINATION ${ROOM_SYSTEM_SERVERPLUGINS} LIBRARY DESTINATION ${ROOM_SYSTEM_SERVERPLUGINS} CONFIGURATIONS Release RelWithDebInfo)
+	INSTALL(TARGETS ${PROJECT_NAME}_server
+		RUNTIME DESTINATION ${LIBPATH}/server/debug
+		LIBRARY DESTINATION ${LIBPATH}/server/debug
+		CONFIGURATIONS Debug COMPONENT DebugServerPlugins)
+	INSTALL(TARGETS ${PROJECT_NAME}_server
+		RUNTIME DESTINATION ${LIBPATH}/server/
+		LIBRARY DESTINATION ${LIBPATH}/server/
+		CONFIGURATIONS Release RelWithDebInfo COMPONENT ServerPlugins)
 endmacro()
 

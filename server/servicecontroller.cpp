@@ -17,12 +17,14 @@
 #include "shared/server/executeservice.h"
 #include "shared/server/executeplugin.h"
 #include "executeprofile.h"
+#include "shared/paths.h"
 #include <QApplication>
 #include <plugins/coreplugin/services_server/systemACServer.h>
 #include <plugins/coreplugin/services/systemAC.h>
 #include <plugins/coreplugin/services_server/systemEVServer.h>
 #include <plugins/coreplugin/services_server/profileACServer.h>
 #include <plugins/coreplugin/services/profileAC.h>
+
 #define __FUNCTION__ __FUNCTION__
 
 ServiceController::ServiceController ()
@@ -30,20 +32,22 @@ ServiceController::ServiceController ()
     int offered_services = 0;
     ExecutePlugin *plugin;
 
-    const QDir pluginsDir = QDir(qApp->property("pluginspath").value<QString>());
-    const QStringList plugins = pluginsDir.entryList ( QDir::Files );
-    foreach ( QString fileName, plugins )
+    const QStringList plugins = serverPluginsFiles();
+    if (plugins.empty())
+        qDebug() << "No plugins found in" << pluginDir();
+
+    foreach ( QString filename, plugins )
     {
-        QPluginLoader* loader = new QPluginLoader ( pluginsDir.absoluteFilePath ( fileName ), this );
+        QPluginLoader* loader = new QPluginLoader ( filename, this );
         loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
         if (!loader->load()) {
-            qWarning() << "Start: Failed loading" << pluginsDir.absoluteFilePath ( fileName ) << loader->errorString();
+            qWarning() << "Start: Failed loading" << filename << loader->errorString();
             delete loader;
             continue;
         }
         plugin = dynamic_cast<ExecutePlugin*> ( loader->instance() );
         if (!plugin) {
-            qWarning() << "Start: Failed to get instance" << pluginsDir.absoluteFilePath ( fileName );
+            qWarning() << "Start: Failed to get instance" << filename;
             delete loader;
             continue;
         }
@@ -63,13 +67,12 @@ ServiceController::ServiceController ()
     }
 
     qDebug() << "Start: Load service provider";
-    m_savedir = QDir(qApp->property("settingspath").value<QString>());
-    QStringList files = m_savedir.entryList ( QDir::Files );
+    QStringList files = serviceFiles();
     QJson::Parser parser;
     foreach ( QString file, files )
     {
         bool ok = true;
-        QFile f ( m_savedir.absoluteFilePath ( file ) );
+        QFile f ( file );
         f.open ( QIODevice::ReadOnly );
         if ( !f.isOpen() )
         {

@@ -72,19 +72,10 @@ int main(int argc, char *argv[])
     signal(SIGTERM, catch_int);
 
     QCoreApplication qapp(argc, argv);
-    qapp.setApplicationName(QLatin1String(ABOUT_PRODUCT));
+    qapp.setApplicationName(QLatin1String("roomcontrolserver"));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
     qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
-
-    QDir::home();
-    QDir m_savedir = QFileInfo ( QSettings().fileName() ).absoluteDir();
-    m_savedir.mkpath ( m_savedir.absolutePath() );
-    m_savedir.mkdir ( QLatin1String ( ABOUT_PRODUCT ) );
-    m_savedir.cd ( QLatin1String ( ABOUT_PRODUCT ) );
-
-    qapp.setProperty("settingspath",m_savedir.path());
-    qapp.setProperty("pluginspath",QLatin1String (ROOM_SYSTEM_SERVERPLUGINS));
 
 #ifndef _WIN32
     const QLatin1String servicename = QLatin1String(ROOM_SERVICENAME);

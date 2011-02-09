@@ -21,9 +21,11 @@
 #include "shared/abstractserviceprovider.h"
 #include "shared/abstractstatetracker.h"
 #include "shared/server/executeservice.h"
+#include "shared/paths.h"
 #include "servicecontroller.h"
 #include "authThread.h"
 #include "config.h"
+
 
 ClientConnection::ClientConnection(QSslSocket* s) {
     bufferpos=0;
@@ -89,14 +91,14 @@ void NetworkController::incomingConnection ( int socketDescriptor )
     QSslSocket *socket = new QSslSocket;
     if ( socket->setSocketDescriptor ( socketDescriptor ) == true )
     {
-        if (!QDir().exists(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.crt"))) {
-            qWarning()<<"Couldn't load local certificate"<<ROOM_SYSTEM_CERTIFICATES"/server.crt";
+        if (!QDir().exists(certificateFile(QLatin1String("server.crt")))) {
+            qWarning()<<"Couldn't load local certificate"<<certificateFile(QLatin1String("server.crt"));
         } else
-            socket->setLocalCertificate(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.crt"));
-        if (!QDir().exists(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.key"))) {
-            qWarning()<<"Couldn't load private key"<<ROOM_SYSTEM_CERTIFICATES"/server.key";
+            socket->setLocalCertificate(certificateFile(QLatin1String("server.crt")));
+        if (!QDir().exists(certificateFile(QLatin1String("server.key")))) {
+            qWarning()<<"Couldn't load private key"<<certificateFile(QLatin1String("server.key"));
         } else
-            socket->setPrivateKey(QLatin1String(ROOM_SYSTEM_CERTIFICATES"/server.key"));
+            socket->setPrivateKey(certificateFile(QLatin1String("server.key")));
 
         socket->setPeerVerifyMode(QSslSocket::VerifyNone);
         socket->startServerEncryption();

@@ -98,7 +98,7 @@ void AuthThread::run() {
 
 #ifdef _WIN32
 		HANDLE token = 0;
-		LogonUser(user, ".", pwdptr, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &token);
+		LogonUser(user, (char*)".", pwdptr, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &token);
 		if (token)
 			emit auth_success(p->socketptr,QString::fromUtf8(p->name));
 		else
