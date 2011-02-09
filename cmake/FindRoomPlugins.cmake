@@ -25,7 +25,7 @@ set(SharedServer_SRCS ${Shared_SRCS} "${SHAREDDIR}/server/executeservice.cpp" "$
 set(SharedClient_SRCS_H ${Shared_SRCS_H} "${SHAREDDIR}/client/clientplugin.h" "${SHAREDDIR}/client/servicestorage.h" "${SHAREDDIR}/client/modelstorage.h")
 set(SharedClient_SRCS ${Shared_SRCS} "${SHAREDDIR}/client/clientplugin.cpp" "${SHAREDDIR}/client/servicestorage.cpp" "${SHAREDDIR}/client/modelstorage.cpp")
 
-include_directories(${QT_INCLUDES} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
+include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
 
 IF (KDE4_FOUND)
 	include(KDE4Defaults)
