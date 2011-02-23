@@ -183,6 +183,7 @@ QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
 
 void myPluginExecute::setCommand(int cmd)
 {
+	if (!m_xbmcClient) return;
     switch (cmd) {
     case ActorCinema::PlayCmd:
         m_xbmcClient->SendACTION("play",ACTION_BUTTON);

@@ -69,7 +69,7 @@ sowie Bedienung über den Browser bei Desktop PCs oder PC Touchscreens zu ermög
 folgen und alle bisherigen Qt Clients ablösen. Es wird vorrangig Webkit als Rendering Engine angepeilt. (Toolkits: Sencha Touch)
 
 Server:
-* Eine erweiterte Session Behandlung (multiple logins, session cookie id, etc) muss in den Server eingebaut werden.
+* Eine erweiterte Session Behandlung (multiple logins/endpoints, session cookie id, etc) muss in den Server eingebaut werden.
 * Eine Webserverfunktionalität (SSL!) muss ergänzt werden.
 * Client Abstrahierung: HTTP oder reines JSon Protokoll
 * Bekannte Sicherungsmaßnahmen (Denial of service, Flooding) müssen ergriffen werden.
