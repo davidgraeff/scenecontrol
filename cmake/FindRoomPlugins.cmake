@@ -27,18 +27,6 @@ set(SharedClient_SRCS ${Shared_SRCS} "${SHAREDDIR}/client/clientplugin.cpp" "${S
 
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
 
-IF (KDE4_FOUND)
-	include(KDE4Defaults)
-	include(MacroLibrary)
-	include_directories("${KDE4_INCLUDES}" "${KDE4_INCLUDE_DIR}")
-ELSE()
-	include_directories("${SHAREDDIR}/nokde")
-ENDIF()
-
-#client
-file(GLOB_RECURSE SRCS_CLIENT services/*.cpp statetracker/*.cpp client/*.cpp plugin.cpp)
-file(GLOB_RECURSE SRCS_CLIENT_H services/*.h statetracker/*.h client/*.h plugin.h)
-
 #server
 file(GLOB_RECURSE SRCS_SERVER services/*.cpp statetracker/*.cpp services_server/*.cpp server/*.cpp plugin.cpp)
 file(GLOB_RECURSE SRCS_SERVER_H services/*.h statetracker/*.h services_server/*.h server/*.h plugin.h)
@@ -54,24 +42,11 @@ endif()
 
 ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS} ${QDBUS_DEFINITIONS})
 
-macro(build_client_lib)
-	QT4_WRAP_CPP(SRCS_MOCS_CLIENT ${SRCS_CLIENT_H} ${SharedClient_SRCS_H} ${ADD_H})
-	add_library(${PROJECT_NAME}_client SHARED ${SRCS_CLIENT} ${SharedClient_SRCS} ${SRCS_MOCS_CLIENT} ${ADD_CPP})
-endmacro(build_client_lib)
 
 macro(build_server_lib)
 	QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_SERVER_H} ${SharedServer_SRCS_H} ${ADD_H})
 	add_library(${PROJECT_NAME}_server SHARED ${SRCS_SERVER} ${SharedServer_SRCS} ${SRCS_MOCS_SERVER} ${ADD_CPP})
 endmacro(build_server_lib)
-
-macro(install_client_lib)
-	INSTALL(TARGETS ${PROJECT_NAME}_client
-		RUNTIME DESTINATION ${LIBPATH}/client/
-		COMPONENT ClientPlugins
-		LIBRARY DESTINATION ${LIBPATH}/client/
-		COMPONENT ClientPlugins
-		)
-endmacro()
 
 macro(install_server_lib)
 	INSTALL(TARGETS ${PROJECT_NAME}_server
@@ -80,5 +55,7 @@ macro(install_server_lib)
 		LIBRARY DESTINATION ${LIBPATH}/server/
 		COMPONENT ServerPlugins
 		)
+	FILE(GLOB files "www/*")
+	install( FILES ${files} DESTINATION ${WWWPATH} COMPONENT ServerPlugins)
 endmacro()
 

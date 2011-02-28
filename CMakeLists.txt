@@ -55,15 +55,17 @@ IF(WIN32)
 	ELSE()
 		SET(LIBPATH "lib")
 	ENDIF()
-	SET(CERTPATH ".")
+	SET(DATAPATH ".")
 ELSE()
 	IF (CMAKE_BUILD_TYPE EQUAL "DEBUG" OR CMAKE_BUILD_TYPE EQUAL "Debug")
 		SET(LIBPATH "lib/debug/${PRODUCTID}")
 	ELSE()
 		SET(LIBPATH "lib/${PRODUCTID}")
 	ENDIF()
-	SET(CERTPATH "shares/${PRODUCTID}")
+	SET(DATAPATH "shares/${PRODUCTID}")
 ENDIF()
+SET(WWWPATH "${DATAPATH}/www")
+SET(CERTPATH "${DATAPATH}/cert")
 
 SET(CONFIG_SERVER_LISTENPORT "3101" CACHE INT "Server Listenport")
 configure_file(config.h.in config.h @ONLY)
@@ -87,7 +89,6 @@ configure_file(config.h.in config.h @ONLY)
 
 # add directories
 add_subdirectory(server)
-add_subdirectory(clients)
 add_subdirectory(plugins)
 
 # Distribution via cpack

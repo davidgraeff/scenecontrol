@@ -6,13 +6,6 @@ SET(CONFIG_${PROJECT_NAME}_SERIALPORT "/dev/ttyS1" CACHE STRING "Serialport")
 SET(CONFIG_SERIALPORT ${CONFIG_${PROJECT_NAME}_SERIALPORT})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
-OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
-IF (PLUGIN_${PROJECT_NAME}_CLIENT)
-	build_client_lib()
-	target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY})
-	install_client_lib()
-ENDIF()
-
 SET(DEBFOUND TRUE)
 IF (DEBFOUND)
 	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)

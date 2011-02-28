@@ -2,13 +2,6 @@ cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
 find_package(PulseAudio QUIET)
 
-OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
-IF (PLUGIN_${PROJECT_NAME}_CLIENT)
-	build_client_lib()
-	target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY})
-	install_client_lib()
-ENDIF()
-
 SET(DEBFOUND ${PULSEAUDIO_FOUND})
 IF (DEBFOUND)
 	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)

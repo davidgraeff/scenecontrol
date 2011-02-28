@@ -54,27 +54,11 @@ möglich ist, sollte dieses verwendet werden.
 
 Clients:
 --------
-Die Desktopclients nutzten das QWidget-basierte Framework.
+Ein Webclient in Html5/CSS3/JS Technologie bedient Desktops und Smartphones mit Touchbedienung. Der Webclient ist
+auf Webkit Browser (Apple iOS Browser, Android Browser, Chrome, etc) ausgelegt und berücksichtigt keine Altbrowser.
+Als Javascript Toolkit wird Sencha Touch benutzt.
 
 Benötigte Packete unter Linux/Ubuntu:
 -------------------------------------
 libpam0g-dev
 libqt4-dev
-
-TODO:
------
-ROOMCONTROL SERVER ALS WEBSERVER:
-Um neuartige Mobiltelefone (Smartphones) mit Touchbedienung unterstützen zu können,
-sowie Bedienung über den Browser bei Desktop PCs oder PC Touchscreens zu ermöglichen soll ein Client in Html5/CSS3/JS Technologie
-folgen und alle bisherigen Qt Clients ablösen. Es wird vorrangig Webkit als Rendering Engine angepeilt. (Toolkits: Sencha Touch)
-
-Server:
-* Eine erweiterte Session Behandlung (multiple logins/endpoints, session cookie id, etc) muss in den Server eingebaut werden.
-* Eine Webserverfunktionalität (SSL!) muss ergänzt werden.
-* Client Abstrahierung: HTTP oder reines JSon Protokoll
-* Bekannte Sicherungsmaßnahmen (Denial of service, Flooding) müssen ergriffen werden.
-* Plugins sollen in eigenen Prozessen laufen. Möglicherweise Named-pipes oder loopback Netzwerk für Kommunikation nutzen.
-
-Client:
-* Statische Html Seiten, CSS, JS
-* Ajax/JSon/Sencha für Inhaltsaufbereitung nutzen

@@ -6,13 +6,6 @@ IF (WIN32)
 	SET(DEBFOUND FALSE)
 ENDIF()
 
-OPTION(PLUGIN_${PROJECT_NAME}_CLIENT "Plugin ${PROJECT_NAME} Client" ON)
-IF (PLUGIN_${PROJECT_NAME}_CLIENT)
-	build_client_lib()
-	target_link_libraries(${PROJECT_NAME}_client ${QT_QTCORE_LIBRARY})
-	install_client_lib()
-ENDIF()
-
 IF (DEBFOUND)
 	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)
 
