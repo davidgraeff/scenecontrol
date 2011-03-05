@@ -18,6 +18,9 @@
 */
 
 #pragma once
+#include <QVariant>
+#include <QMap>
+#include <cstdlib> //getenv
 #include <QObject>
 #include <QStringList>
 #include "abstractstatetracker.h"
@@ -29,6 +32,7 @@ public:
     virtual ~AbstractPlugin() {}
     virtual QString name() const = 0;
     virtual QString version() const = 0;
+    virtual QString description() const = 0;
     /**
      * Return all Actions, Conditions, Events and StateTracker
      */
@@ -36,5 +40,61 @@ public:
     virtual QStringList registerStateTracker() const = 0;
     virtual AbstractStateTracker* createStateTracker(const QString& id) = 0;
     virtual AbstractServiceProvider* createServiceProvider(const QString& id) = 0;
+
+    virtual void refresh() = 0;
+    virtual QList<AbstractStateTracker*> stateTracker() = 0;
+    /**
+     * Called by server process before all services are deleted.
+     * Tidy up here.
+     */
+    virtual void clear() = 0;
+    /**
+     * Called by server process if a service changed.
+     * \param service the changed service
+     */
+    void serverserviceChanged(AbstractServiceProvider* service);
+    /**
+     * Called by server process if a setting is changed. Subclass
+     * this method (and call the base implementation) to react on
+     * changes.
+     * \param name Name of the setting
+     * \param value Value of the setting
+     */
+    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void registerSetting(const char* name, const QVariant& value);
+    const QVariantMap getSettings() const;
+    
+    /**
+     * Implement execution routines for all provided services
+     */
+    virtual void execute(AbstractServiceProvider*);
+
+     /**
+     * Implement check routines for all provided services
+     */
+    virtual bool condition(AbstractServiceProvider*);
+
+private:
+    QVariantMap m_settings;
+Q_SIGNALS:
+    /**
+     * For internal use in plugins only. Server service changes.
+     */
+    void _serviceChanged(AbstractServiceProvider*);
+
+    void stateChanged(AbstractStateTracker*);
+
+    /**
+     * Service will be provided to the server and propagated to the correct plugin.
+     * This mechanism allows inter-plugin communication. The handed over service object
+     * will get an iExecute flag and be freed by the server after execution.
+     */
+    void executeService(AbstractServiceProvider*);
+
+    /**
+     * Plugin loading finished. This will make the server update all services names
+     * and redistribute them to the clients (without saving to disk).
+     */
+    void pluginLoadingComplete(ExecutePlugin*);
 };
-Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/1.0")
+Q_DECLARE_INTERFACE(ExecutePlugin, "com.roomcontrol.ServerPlugin/1.0")
