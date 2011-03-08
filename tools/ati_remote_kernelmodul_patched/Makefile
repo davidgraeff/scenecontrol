@@ -8,5 +8,10 @@ clean:
 patch:
 	patch ati_remote.c ati_remote.c_all_keys_and_keychange.patch
 install:
-	cp 05-atiremote.conf /usr/share/X11/xorg.conf.d/
-	cp 40-atiremote.rules /etc/udev/rules.d/
+	install xorg/05-atiremote.conf /usr/share/X11/xorg.conf.d/
+	install udev/40-atiremote.rules /etc/udev/rules.d/
+	install modprobe.d/atiremote.conf /etc/modprobe.d/
+	install ati_remote.ko /lib/modules/$(KVERSION)/kernel/drivers/input/misc/
+	service udev reload
+unload:
+	rmmod ati_remote
