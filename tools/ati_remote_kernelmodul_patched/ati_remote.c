@@ -291,8 +291,8 @@ static const struct {
 	{KIND_FILTERED, 0xf5, 0x30, EV_KEY, KEY_SELECT, 1},     /* SELECT */
 
 	/* Coloured keys  */
-	{KIND_FILTERED, 0xf7, 0x32, EV_KEY, KEY_PLAYCD, 1}, 	/* TXT Rot */
-	{KIND_FILTERED, 0xf8, 0x33, EV_KEY, KEY_PAUSECD, 1}, 	/* TXT Gr */
+	{KIND_FILTERED, 0xf7, 0x32, EV_KEY, KEY_PROG1, 1}, 	/* TXT Rot */
+	{KIND_FILTERED, 0xf8, 0x33, EV_KEY, KEY_PROG2, 1}, 	/* TXT Gr */
 	{KIND_FILTERED, 0xf9, 0x34, EV_KEY, KEY_PROG3, 1}, 	/* TXT Gelb */
 	{KIND_FILTERED, 0xfa, 0x35, EV_KEY, KEY_PROG4, 1}, 	/* TXT Blau */
 
