@@ -106,7 +106,7 @@
 #define NVIDIA_REMOTE_PRODUCT_ID	0x0005
 #define MEDION_REMOTE_PRODUCT_ID	0x0006
 
-#define DRIVER_VERSION	        "2.2.1"
+#define DRIVER_VERSION	        "2.2.2"
 #define DRIVER_AUTHOR           "Torrey Hoffman <thoffman@arnor.net>"
 #define DRIVER_DESC             "ATI/X10 RF USB Remote Control"
 
@@ -249,24 +249,24 @@ static const struct {
 	{KIND_FILTERED, 0xd9, 0x14, EV_KEY, KEY_8, 1},
 	{KIND_FILTERED, 0xda, 0x15, EV_KEY, KEY_9, 1},
 	{KIND_FILTERED, 0xdc, 0x17, EV_KEY, KEY_0, 1},
-	{KIND_FILTERED, 0xc5, 0x00, EV_KEY, KEY_A, 1},
+	{KIND_FILTERED, 0xc5, 0x00, EV_KEY, KEY_MUTE, 1},/* MUTE  */
 	{KIND_FILTERED, 0xc6, 0x01, EV_KEY, KEY_B, 1},
 	{KIND_FILTERED, 0xde, 0x19, EV_KEY, KEY_C, 1},
-	{KIND_FILTERED, 0xe0, 0x1b, EV_KEY, KEY_D, 1},
-	{KIND_FILTERED, 0xe6, 0x21, EV_KEY, KEY_E, 1},
-	{KIND_FILTERED, 0xe8, 0x23, EV_KEY, KEY_F, 1},
+	{KIND_FILTERED, 0xe0, 0x1b, EV_KEY, KEY_MENU, 1}, /* "menu" */
+	{KIND_FILTERED, 0xe6, 0x21, EV_KEY, KEY_PREVIOUSSONG, 1},
+	{KIND_FILTERED, 0xe8, 0x23, EV_KEY, KEY_NEXTSONG, 1},
 
 	/* "special" keys */
-	{KIND_FILTERED, 0xdd, 0x18, EV_KEY, KEY_KPENTER, 1},    /* "check" */
-	{KIND_FILTERED, 0xdb, 0x16, EV_KEY, KEY_MENU, 1},       /* "menu" */
+	{KIND_FILTERED, 0xdd, 0x18, EV_KEY, KEY_KPENTER, 1},    /* "rec tv" */
+	{KIND_FILTERED, 0xdb, 0x16, EV_KEY, KEY_TEXT, 1},       /* "text" */
 	{KIND_FILTERED, 0xc7, 0x02, EV_KEY, KEY_POWER, 1},      /* Power */
 	{KIND_FILTERED, 0xc8, 0x03, EV_KEY, KEY_TV, 1},         /* TV */
 	{KIND_FILTERED, 0xc9, 0x04, EV_KEY, KEY_DVD, 1},        /* DVD */
 	{KIND_FILTERED, 0xca, 0x05, EV_KEY, KEY_WWW, 1},        /* WEB */
-	{KIND_FILTERED, 0xcb, 0x06, EV_KEY, KEY_BOOKMARKS, 1},  /* "book" */
+	{KIND_FILTERED, 0xcb, 0x06, EV_KEY, KEY_AUDIO, 1},      /* "music" */
 	{KIND_FILTERED, 0xcc, 0x07, EV_KEY, KEY_EDIT, 1},       /* "hand" */
-	{KIND_FILTERED, 0xe1, 0x1c, EV_KEY, KEY_COFFEE, 1},     /* "timer" */
-	{KIND_FILTERED, 0xe5, 0x20, EV_KEY, KEY_FRONT, 1},      /* "max" */
+	{KIND_FILTERED, 0xe1, 0x1c, EV_KEY, KEY_TUNER, 1},     /* "live tv" */
+	{KIND_FILTERED, 0xe5, 0x20, EV_KEY, KEY_LAST, 1},      /* "back" */
 	{KIND_FILTERED, 0xe2, 0x1d, EV_KEY, KEY_LEFT, 1},       /* left */
 	{KIND_FILTERED, 0xe4, 0x1f, EV_KEY, KEY_RIGHT, 1},      /* right */
 	{KIND_FILTERED, 0xe7, 0x22, EV_KEY, KEY_DOWN, 1},       /* down */
@@ -280,21 +280,21 @@ static const struct {
 	{KIND_FILTERED, 0xec, 0x27, EV_KEY, KEY_RECORD, 1},     /* ( o) red */
 	{KIND_FILTERED, 0xea, 0x25, EV_KEY, KEY_PLAY, 1},       /* ( >) */
 	{KIND_FILTERED, 0xe9, 0x24, EV_KEY, KEY_REWIND, 1},     /* (<<) */
-	{KIND_FILTERED, 0xeb, 0x26, EV_KEY, KEY_FORWARD, 1},    /* (>>) */
+	{KIND_FILTERED, 0xeb, 0x26, EV_KEY, KEY_FASTFORWARD, 1},    /* (>>) */
 	{KIND_FILTERED, 0xed, 0x28, EV_KEY, KEY_STOP, 1},       /* ([]) */
-	{KIND_FILTERED, 0xee, 0x29, EV_KEY, KEY_PAUSE, 1},      /* ('') */
+	{KIND_FILTERED, 0xee, 0x29, EV_KEY, KEY_PLAYPAUSE, 1},      /* ('') */
 	{KIND_FILTERED, 0xf0, 0x2b, EV_KEY, KEY_PREVIOUS, 1},   /* (<-) */
 	{KIND_FILTERED, 0xef, 0x2a, EV_KEY, KEY_NEXT, 1},       /* (>+) */
-	{KIND_FILTERED, 0xf2, 0x2D, EV_KEY, KEY_INFO, 1},       /* PLAYING */
+	{KIND_FILTERED, 0xf2, 0x2D, EV_KEY, KEY_VIDEO, 1},       /* video */
 	{KIND_FILTERED, 0xf3, 0x2E, EV_KEY, KEY_HOME, 1},       /* TOP */
-	{KIND_FILTERED, 0xf4, 0x2F, EV_KEY, KEY_END, 1},        /* END */
+	{KIND_FILTERED, 0xf4, 0x2F, EV_KEY, KEY_INFO, 1},        /* info */
 	{KIND_FILTERED, 0xf5, 0x30, EV_KEY, KEY_SELECT, 1},     /* SELECT */
 
 	/* Coloured keys  */
-	{KIND_FILTERED, 0xf7, 0x32, EV_KEY, KEY_PROG1, 1}, 	/* TXT Rot */
-	{KIND_FILTERED, 0xf8, 0x33, EV_KEY, KEY_PROG2, 1}, 	/* TXT Gr */
-	{KIND_FILTERED, 0xf9, 0x34, EV_KEY, KEY_PROG3, 1}, 	/* TXT Gelb */
-	{KIND_FILTERED, 0xfa, 0x35, EV_KEY, KEY_PROG4, 1}, 	/* TXT Blau */
+	{KIND_FILTERED, 0xf7, 0x32, EV_KEY, KEY_RED, 1}, 	/* TXT Rot */
+	{KIND_FILTERED, 0xf8, 0x33, EV_KEY, KEY_GREEN, 1}, 	/* TXT Gr */
+	{KIND_FILTERED, 0xf9, 0x34, EV_KEY, KEY_YELLOW, 1}, 	/* TXT Gelb */
+	{KIND_FILTERED, 0xfa, 0x35, EV_KEY, KEY_BLUE, 1}, 	/* TXT Blau */
 
 	/* More Keys */
 	{KIND_FILTERED, 0xac, 0x37, EV_KEY, KEY_G, 1}, /* Acquire Image */
