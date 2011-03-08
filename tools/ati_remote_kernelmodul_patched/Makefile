@@ -9,3 +9,4 @@ patch:
 	patch ati_remote.c ati_remote.c_all_keys_and_keychange.patch
 install:
 	cp 05-atiremote.conf /usr/share/X11/xorg.conf.d/
+	cp 40-atiremote.rules /etc/udev/rules.d/

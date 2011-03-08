@@ -1,0 +1,1 @@
+KERNEL=="event?", ATTRS{name}=="X10 WTI RF receiver", SYMLINK="input/atiremote"
