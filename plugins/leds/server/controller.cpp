@@ -93,10 +93,24 @@ void Controller::readyRead()
     } //while
 }
 
+void Controller::parseCurtain(unsigned char current, unsigned char max) {
+    m_curtainStateTracker->setCurtain(current);
+    m_curtainStateTracker->setCurtainMax(max);
+    emit stateChanged(m_curtainStateTracker);
+}
+
+void Controller::parseInit(unsigned char protocolversion) {
+     qDebug() <<m_pluginname<< "LED Protocol:" << protocolversion;
+}
+
+void Controller::parseSensors(unsigned char s1, unsigned char s2) {
+
+}
+
 void Controller::parseLeds(const QByteArray& data)
 {
-    if (data.isEmpty() || data.size() != (int)data[2]+3) {
-        qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[2]+3):0)<<data.size();
+    if (data.isEmpty() || data.size() != (int)data[0]+1) {
+        qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[0]+1):0)<<data.size();
         return;
     }
     QSettings settings;
@@ -108,11 +122,8 @@ void Controller::parseLeds(const QByteArray& data)
     m_values.clear();
     m_names.clear();
     // set new
-    m_curtainStateTracker->setCurtain((uint)data[0]);
-    m_curtainStateTracker->setCurtainMax((uint)data[1]);
-    emit stateChanged(m_curtainStateTracker);
-    m_channels = (int)data[2];
-    qDebug() << __FUNCTION__ << m_channels;
+    m_channels = (int)data[0];
+    qDebug() <<m_pluginname<< "LED Channels:" << m_channels;
     for ( int i=0;i<m_channels;++i )
     {
         const QString name = settings.value ( QLatin1String("channel")+QString::number( i ),
@@ -120,7 +131,7 @@ void Controller::parseLeds(const QByteArray& data)
         ChannelValueStateTracker* cv = new ChannelValueStateTracker();
         m_values.append(cv);
         cv->setChannel(i);
-        const int value = (uint8_t)data[i+3];
+        const int value = (uint8_t)data[i+1];
         cv->setValue(value);
         emit stateChanged(cv);
         ChannelNameStateTracker* cn = new ChannelNameStateTracker();
