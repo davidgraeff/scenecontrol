@@ -48,6 +48,7 @@ void Controller::readyRead()
     bytes.resize(m_serial->bytesAvailable());
     m_serial->read(bytes.data(), bytes.size());
     m_buffer.append(bytes);
+    while(m_buffer.size()) {
     if (m_readState==ReadOK) {
         for (int i=m_bufferpos;i<m_buffer.size();++i) {
             if (m_buffer.size()<=i) break;
@@ -58,26 +59,41 @@ void Controller::readyRead()
                 break;
             }
         }
-        if (m_readState==ReadOK && m_buffer.size()>4) {
+        if (m_readState==ReadOK) {
             m_buffer.clear();
-            qWarning() << m_pluginname << "Propably connected to wrong device!" << m_buffer.size();
+            return;
         }
     }
-    if (m_readState == ReadEnd) {
-        for (int i=m_bufferpos;i<m_buffer.size();++i) {
-            if (m_buffer.size()<=i+1) break;
-            if (m_buffer[i] == 'E' && m_buffer[i+1] == 'N' && m_buffer[i+2] == 'D') {
-                m_readState = ReadOK;
-                determineChannels(m_buffer.mid(0,i));
-                m_buffer.remove(0,i+3);
-                m_bufferpos = 0;
+    if (m_readState == ReadEnd && m_buffer.size()>1) {
+        int leds;
+        switch(m_buffer[0]) {
+            case 'S': //sensors
+                if (m_buffer.size()<3) return;
+                parseSensors(m_buffer[1], m_buffer[2]);
+                m_buffer.remove(0,3);
                 break;
-            }
+            case 'M': //curtain motor
+                if (m_buffer.size()<3) return;
+                parseCurtain(m_buffer[1], m_buffer[2]);
+                m_buffer.remove(0,3);
+                break;
+            case 'L': //leds
+                if (m_buffer.size()<3) return;
+                leds = m_buffer[1];
+                parseLeds(m_buffer.mid(1,leds));
+                m_buffer.remove(0,2+leds);
+                break;
+            case 'I': //init
+                if (m_buffer.size()<2) return;
+                parseInit(m_buffer[1]);
+                m_buffer.remove(0,2);
+                break;
         }
     }
+    } //while
 }
 
-void Controller::determineChannels(const QByteArray& data)
+void Controller::parseLeds(const QByteArray& data)
 {
     if (data.isEmpty() || data.size() != (int)data[2]+3) {
         qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[2]+3):0)<<data.size();
