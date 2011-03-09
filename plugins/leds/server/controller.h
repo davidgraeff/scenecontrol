@@ -73,7 +73,10 @@ private:
     CurtainStateTracker* m_curtainStateTracker;
     int m_channels;
     QByteArray m_buffer;
-    void determineChannels(const QByteArray& data);
+    void parseLeds(const QByteArray& data);
+    void parseCurtain(unsigned char current, unsigned char max);
+    void parseInit(unsigned char protocolversion);
+    void parseSensors(unsigned char s1, unsigned char s2);
     QTimer m_panicTimer;
     int m_bufferpos;
     enum readStateEnum {
