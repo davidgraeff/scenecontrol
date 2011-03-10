@@ -17,28 +17,16 @@
 
 */
 
-#ifndef ABSTRACTSTATETRACKER_H
-#define ABSTRACTSTATETRACKER_H
-#include <QObject>
-#include <QStringList>
+#pragma once
+#include <QVariantMap>
+#include <QString>
 
-class AbstractStateTracker : public QObject
+class PluginHelper
 {
-    Q_OBJECT
-    Q_PROPERTY(QString type READ type);
-// 	Q_PROPERTY(QString plugin READ plugin WRITE setPlugin);
 public:
-    AbstractStateTracker(QObject* parent = 0);
-    /**
-      * Free this state tracker and share this info with clients
-      */
-    virtual ~AbstractStateTracker();
-
-    QString type() const;
-    /*	QString plugin() const { return m_plugin; }
-    	void setPlugin(const QString& plugin) { m_plugin = plugin; }*/
+    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void registerSetting(const char* name, const QVariant& value) = 0;
+    const QVariantMap getSettings() const = 0;
 private:
-// 	QString m_plugin;
+    QVariantMap m_settings;
 };
-
-#endif // ABSTRACTSTATETRACKER_H
