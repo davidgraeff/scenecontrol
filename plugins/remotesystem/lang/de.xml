@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+     <titel>Entferntes System kontrollieren</titel>
+     <description>Kontrolliert bestimmte Eigenschaften eines entfernten Systems</description>
+  <remotevolume>
+      <titel>Ereignislautstärke</titel>
+      <description>Setzt die Laustärke für Ereignisse</description>
+      <host><titel>Host (leer=alle)</titel></host>
+      <volume><titel>Lautstärke</titel></volume>
+      <relative><titel>Relativ</titel></relative>
+  </remotevolume>
+  <remotenotification>
+      <titel>Ereignisindikator</titel>
+      <description>Zeigt an und gibt ggfs. eine Mediendatei wieder um ein Ereignis anzuzeigen</description>
+      <host><titel>Host (leer=alle)</titel></host>
+      <duration><titel>Anzeigedauer in ms</titel></duration>
+      <serverfile><titel>Audiodatei</titel></serverfile>
+  </remotenotification>
+  <remotedisplay>
+      <titel>Display</titel>
+      <description>Entfernten Bildschirm ein/ausschalten</description>
+      <host><titel>Host (leer=alle)</titel></host>
+      <state><titel>Aktion</titel><entry>Einschalten</entry><entry>Ausschalten</entry><entry>Umschalten</entry></state>
+  </remotedisplay>
+</plugin>

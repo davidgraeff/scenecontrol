@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="remotesystem" version="1.0">
+  <action id="remotevolume">
+    <ip id="host">127.0.0.1</ip>
+    <double id="volume" min="-1.0" max="1.0" step="0.1">1.0</double>
+    <bool id="relative">1</bool>
+  </action>
+  <action id="remotenotification">
+    <ip id="host">127.0.0.1</ip>
+    <string id="title"></string>
+    <int id="duration" min="0" max="5000" step="100">0</int>
+    <serverfile id="audio"></serverfile>
+  </action>
+  <action id="remotevideo">
+    <ip id="host">127.0.0.1</ip>
+    <double id="volume" min="0.0" max="1.0" step="0.1">1.0</double>
+    <double id="position" min="0.0" step="1.0">0.0</double>
+    <int id="display" min="0" max="10" step="1">0</int>
+    <serverfile id="video"></serverfile>
+  </action>
+  <action id="remotedisplay">
+    <ip id="host">127.0.0.1</ip>
+    <enum id="state" n="3"></enum>
+  </action>
+  <property id="remotevolume">
+    <double id="volume" min="0.0" max="1.0" />
+  </property>
+  <property id="remotenotification">
+    <string id="title"></string>
+    <serverfile id="audio"></serverfile>
+    <enum id="state" n="2" /><!-- shown, hidden -->
+  </property>
+  <property id="remotevideo">
+    <string id="title"></string>
+    <serverfile id="video"></serverfile>
+    <enum id="state" n="3" /><!-- play, pause, stopped, error -->
+  </property>
+</plugin>

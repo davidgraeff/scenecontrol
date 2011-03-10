@@ -19,5 +19,5 @@ IF (DEBFOUND)
 ELSE()
 	MESSAGE("Not building: ${PROJECT_NAME}")
 ENDIF()
-add_subdirectory(roomvideohelper)
+add_subdirectory(remotesystemclient)
 

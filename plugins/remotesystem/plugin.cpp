@@ -33,6 +33,79 @@ myPluginExecute::~myPluginExecute() {
     //delete m_base;
 }
 
+void ActorAmbienceCmdServer::execute()
+{
+    ActorAmbienceCmd* base = service<ActorAmbienceCmd>();
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        switch (base->cmd()) {
+        case ActorAmbienceCmd::CloseFullscreen:
+            client->closeFullscreen();
+            break;
+        case ActorAmbienceCmd::ScreenOff:
+            client->setDisplayState(0);
+            break;
+        case ActorAmbienceCmd::ScreenOn:
+            client->setDisplayState(1);
+            break;
+        case ActorAmbienceCmd::ScreenToggle:
+            client->setDisplayState(2);
+            break;
+        case ActorAmbienceCmd::HideVideo:
+            client->hideVideo();
+            break;
+        case ActorAmbienceCmd::StopVideo:
+            client->stopvideo();
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void ActorAmbienceVideoServer::execute()
+{
+    ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        client->setDisplay(base->display());
+        client->setClickActions(base->onleftclick(),base->onrightclick(), base->restoretime());
+        client->setVolume(base->volume());
+        client->setFilename(base->filename());
+    }
+}
+
+void ActorAmbienceVolumeServer::execute()
+{
+    ActorAmbienceVolume* base = service<ActorAmbienceVolume>();
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        client->setVolume(base->volume(),base->relative());
+    }
+}
+
+void ActorEventServer::execute()
+{
+    ActorEvent* base = service<ActorEvent>();
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        if (base->filename().size())
+            client->playEvent(base->filename());
+        if (base->title().size())
+            client->showMessage(base->duration(),base->title());
+    }
+}
+
+void ActorEventVolumeServer::execute()
+{
+    ActorEventVolume* base = service<ActorEventVolume>();
+    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
+    foreach (ExternalClient* client, clients) {
+        client->setVolume(base->volume(),base->relative());
+    }
+}
+
+
 void myPluginExecute::refresh() {}
 
 ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)

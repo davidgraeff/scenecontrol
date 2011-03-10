@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+     <titel>Cardreader PCSC</titel>
+     <description>Ereignisse bei Änderung eines Kartenleserstatus</description>
+  <cardevent>
+      <titel>Kartenleserereignis</titel>
+      <description>Wird ausgelöst, sobald eine Karte in den Kartenleser eingesteckt oder aus dem Kartenleser entfernt wird</description>
+      <cardid><titel>Kartenid</titel></cardid>
+      <state><titel>Kartenstatus</titel><entry>Eingesteckt</entry><entry>Entfernt</entry></state>
+  </cardevent>
+</plugin>

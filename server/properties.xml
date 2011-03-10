@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<server id="server" version="1.0">
+  <!-- Propagates server condition -->
+  <property id="serverstate">
+    <enum id="state" n="2" /><!-- ready, going offline -->
+  </property>
+  
+  <!-- Propagates all current logins and own logins as well as all endpoints of own logins -->
+  <property id="serverlogins" visibility="session">
+    <int id="all" />
+    <int id="own" />
+    <string id="endpoints" />
+  </property>
+  
+  <!-- Server log entry. Only send to clients that authentificate as a user that is in one of the named unix groups -->
+  <property id="serverlog" visibility="session" group_restriction="adm, roomcontrol_admin">
+    <string id="lastentry" />
+  </property>
+  
+  <!-- Session state -->
+  <property id="session" visibility="session">
+    <enum id="state" n="6" /> <!-- ok, notaccepted(too much clients), missing(require login), failed, timeout, session_closed(leasetime, logout) -->
+  </property>
+  
+  <!-- Server infos -->
+  <property id="serverinfo" visibility="session">
+    <string id="version" />
+    <bool id="auth_required" />
+    <int id="auth_timeout" />
+    <int id="session_timeout" />
+  </property>
+</server>

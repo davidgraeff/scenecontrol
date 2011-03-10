@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="cardreader_pcsc" version="1.0">
+  <event id="cardevent">
+    <string id="cardid" property="card"></string>
+  </event>
+  <property id="cardevent">
+    <string id="cardid"></string>
+    <enum id="state" n="2" /><!-- inside, outside -->
+  </property>
+</plugin>
