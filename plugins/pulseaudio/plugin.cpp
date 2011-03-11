@@ -1,38 +1,57 @@
-#include "plugin.h"
+#include "plugin_server.h"
+#include <QDateTime>
 #include <QDebug>
+#include <QCoreApplication>
+#include <QtPlugin>
+#include "shared/server/executeservice.h"
+#include "plugin.h"
+#include "mediacontroller.h"
 #include "services/actorpulsesink.h"
 #include "statetracker/pulsestatetracker.h"
+#include "services_server/actorpulsesinkServer.h"
 
-QStringList myPlugin::registerServices() const {
-    return QStringList() <<
-           QString::fromAscii(ActorPulseSink::staticMetaObject.className());
+Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
-}
-QStringList myPlugin::registerStateTracker() const {
-    return QStringList() <<
-           QString::fromAscii(PulseStateTracker::staticMetaObject.className());
+myPluginExecute::myPluginExecute() : ExecutePlugin() {
+    m_base = new myPlugin();
+    m_mediacontroller = new MediaController(this);
+    connect(m_mediacontroller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
 }
 
-AbstractStateTracker* myPlugin::createStateTracker(const QString& id) {
-    QByteArray idb = id.toAscii();
-    if (idb == PulseStateTracker::staticMetaObject.className())
-        return new PulseStateTracker();
-    return 0;
+myPluginExecute::~myPluginExecute() {
+    //delete m_base;
+    delete m_mediacontroller;
 }
-AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
+
+void myPluginExecute::refresh() {}
+
+ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
+{
+    AbstractServiceProvider* service = m_base->createServiceProvider(id);
+    if (!service) return 0;
     QByteArray idb = id.toAscii();
     if (idb == ActorPulseSink::staticMetaObject.className())
-        return new ActorPulseSink();
+        return new ActorPulseSinkServer((ActorPulseSink*)service, this);
     return 0;
 }
 
-myPlugin::myPlugin() {
+QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
+    return m_mediacontroller->getStateTracker();
 }
-myPlugin::~myPlugin() {
+MediaController* myPluginExecute::mediacontroller() {
+    return m_mediacontroller;
 }
-QString myPlugin::name() const {
-    return QLatin1String("PulseAudio");
-}
-QString myPlugin::version() const {
-    return QLatin1String("1.0");
+
+void ActorPulseSinkServer::execute()
+{
+    ActorPulseSink* base = service<ActorPulseSink>();
+    if (base->mute()==ActorPulseSink::MuteSink)
+        m_plugin->mediacontroller()->setPAMute(base->sinkid().toAscii(),1);
+    else if (base->mute()==ActorPulseSink::UnmuteSink)
+        m_plugin->mediacontroller()->setPAMute(base->sinkid().toAscii(),0);
+    else if (base->mute()==ActorPulseSink::ToggleSink)
+        m_plugin->mediacontroller()->togglePAMute(base->sinkid().toAscii());
+
+    if (base->assignment()==ActorPulseSink::NoVolumeSet) return;
+    m_plugin->mediacontroller()->setPAVolume(base->sinkid().toAscii(),base->volume(),(base->assignment()==ActorPulseSink::VolumeRelative));
 }

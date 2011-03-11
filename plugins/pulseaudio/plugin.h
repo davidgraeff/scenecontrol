@@ -1,46 +1,47 @@
 /*
  *    RoomControlServer. Home automation for controlling sockets, leds and music.
  *    Copyright (C) 2010  David Gräff
- * 
+ *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
- * 
+ *
  *    This program is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
- * 
+ *
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
-#ifndef myPLUGIN_H
-#define myPLUGIN_H
+#ifndef myPLUGINSERVER_H
+#define myPLUGINSERVER_H
 #include <QObject>
 #include <QStringList>
-#include "shared/abstractplugin.h"
+#include "shared/server/executeplugin.h"
 
-class myPlugin : public QObject, public AbstractPlugin
+class MediaController;
+class myPluginExecute : public ExecutePlugin
 {
-  Q_OBJECT
-  Q_INTERFACES(AbstractPlugin)
+    Q_OBJECT
+    Q_INTERFACES(ExecutePlugin)
 public:
-	myPlugin();
-	virtual ~myPlugin();
-	virtual QString name() const ;
-	virtual QString version() const ;
-	/**
-	 * Return all Actions, Conditions, Events and StateTracker
-	 */
-	virtual QStringList registerServices() const;
-	virtual QStringList registerStateTracker() const;
-	virtual AbstractStateTracker* createStateTracker(const QString& id);
-	virtual AbstractServiceProvider* createServiceProvider(const QString& id);
+    myPluginExecute();
+    virtual ~myPluginExecute();
+    virtual void refresh() ;
+	virtual void clear(){}
+    virtual ExecuteWithBase* createExecuteService(const QString& id);
+    virtual QList<AbstractStateTracker*> stateTracker();
+    virtual AbstractPlugin* base() {
+        return m_base;
+    }
+    MediaController* mediacontroller();
 private:
-	
+    AbstractPlugin* m_base;
+    MediaController* m_mediacontroller;
 };
 
-#endif // myPLUGIN_H
+#endif // myPLUGINSERVER_H

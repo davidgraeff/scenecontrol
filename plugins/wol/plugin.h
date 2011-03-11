@@ -17,31 +17,26 @@
  * 
  */
 
-#ifndef myPLUGIN_H
-#define myPLUGIN_H
+#ifndef myPLUGINSERVER_H
+#define myPLUGINSERVER_H
 #include <QObject>
 #include <QStringList>
-#include "shared/abstractplugin.h"
+#include "shared/server/executeplugin.h"
 
-class myPlugin : public QObject, public AbstractPlugin
+class myPluginExecute : public ExecutePlugin
 {
-  Q_OBJECT
-  Q_INTERFACES(AbstractPlugin)
+	Q_OBJECT
+	Q_INTERFACES(ExecutePlugin)
 public:
-	myPlugin();
-	virtual ~myPlugin();
-	virtual QString name() const ;
-    virtual QString version() const;
-	
-	/**
-	 * Return all Actions, Conditions, Events and StateTracker
-	 */
-	virtual QStringList registerServices() const;
-	virtual QStringList registerStateTracker() const;
-	virtual AbstractStateTracker* createStateTracker(const QString& id);
-	virtual AbstractServiceProvider* createServiceProvider(const QString& id);
+	myPluginExecute();
+	virtual ~myPluginExecute();
+	virtual void refresh() ;
+	virtual ExecuteWithBase* createExecuteService(const QString& id);
+	virtual QList<AbstractStateTracker*> stateTracker();
+	virtual AbstractPlugin* base() { return m_base; }
+	virtual void clear(){}
 private:
-	
+        AbstractPlugin* m_base;
 };
 
-#endif // myPLUGIN_H
+#endif // myPLUGINSERVER_H

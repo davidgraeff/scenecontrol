@@ -1,36 +1,56 @@
+#include "plugin_server.h"
+#include <QDateTime>
+#include <QDebug>
+#include <QCoreApplication>
+#include <QtPlugin>
+#include "shared/server/executeservice.h"
 #include "plugin.h"
 #include "services/actorwol.h"
-#include <QDebug>
+#include "services_server/actorwolServer.h"
 
-QStringList myPlugin::registerServices() const {
-    return QStringList() <<
-	QString::fromAscii(ActorWOL::staticMetaObject.className());
+Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
-}
-QStringList myPlugin::registerStateTracker() const {
-    return QStringList();
+myPluginExecute::myPluginExecute() : ExecutePlugin() {
+  m_base = new myPlugin();
 }
 
-AbstractStateTracker* myPlugin::createStateTracker(const QString& id) {
-  Q_UNUSED(id);
-    return 0;
+myPluginExecute::~myPluginExecute() {
+  //delete m_base;
 }
-AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
+
+
+void ServiceWOLExecute::execute() {
+    ActorWOL* s = service<ActorWOL>();
+    Q_ASSERT(s);
+    QStringList parts = s->mac().split(QLatin1Char(':'));
+    if (parts.size()!=6) return;
+    QByteArray mac;
+    for (int i=0;i<6;++i)
+        mac.append(QByteArray::fromHex(parts[i].toAscii()));
+
+    // 6 mal FF
+    const char header[] = {255,255,255,255,255,255};
+    QByteArray bytes(header);
+    // 16 mal mac
+    for (int i=0;i<16;++i)
+        bytes.append(mac);
+
+    QUdpSocket socket;
+    socket.writeDatagram(bytes,QHostAddress::Broadcast,9);
+}
+
+ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
+{
+    AbstractServiceProvider* service = m_base->createServiceProvider(id);
+    if (!service) return 0;
     QByteArray idb = id.toAscii();
     if (idb == ActorWOL::staticMetaObject.className()) {
-        return new ActorWOL();
+        return new ServiceWOLExecute((ActorWOL*)service, this);
     }
     return 0;
 }
 
-myPlugin::myPlugin() {
-}
-myPlugin::~myPlugin() {
-  qDebug() <<"free";
-}
-QString myPlugin::name() const {
-    return QLatin1String("Wake up on lan");
-}
-QString myPlugin::version() const {
-    return QLatin1String("1.0");
+QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
+    QList<AbstractStateTracker*> a;
+    return a;
 }

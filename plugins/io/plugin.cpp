@@ -1,54 +1,63 @@
-#include "plugin.h"
+#include "plugin_server.h"
+#include <QDateTime>
 #include <QDebug>
+#include <QCoreApplication>
+#include <QtPlugin>
+#include "shared/server/executeservice.h"
+#include "plugin.h"
+#include "iocontroller.h"
 #include "services/actorpin.h"
 #include "services/actorpinname.h"
 #include "services/conditionpin.h"
-#include "statetracker/pinnamestatetracker.h"
-#include "statetracker/pinvaluestatetracker.h"
+#include "services_server/actorpinServer.h"
+#include "services_server/actorpinnameServer.h"
+#include "services_server/conditionpinServer.h"
+#include "configplugin.h"
 
-QStringList myPlugin::registerServices() const {
-    return QStringList() <<
-	QString::fromAscii(ActorPin::staticMetaObject.className())<<
-	QString::fromAscii(ActorPinName::staticMetaObject.className())<<
-	QString::fromAscii(ConditionPin::staticMetaObject.className());
+Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
-}
-QStringList myPlugin::registerStateTracker() const {
-    return QStringList() <<
-	QString::fromAscii(PinNameStateTracker::staticMetaObject.className())<<
-	QString::fromAscii(PinValueStateTracker::staticMetaObject.className());
-
+myPluginExecute::myPluginExecute() : ExecutePlugin() {
+  m_base = new myPlugin();
+  m_IOController = new IOController(this);
+  connect(m_IOController,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
+  connect(m_IOController,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
+  _config(this);
 }
 
-AbstractStateTracker* myPlugin::createStateTracker(const QString& id) {
-    QByteArray idb = id.toAscii();
-    if (idb == PinNameStateTracker::staticMetaObject.className()) {
-        return new PinNameStateTracker();
-    } else if (idb == PinValueStateTracker::staticMetaObject.className()) {
-        return new PinValueStateTracker();
+myPluginExecute::~myPluginExecute() {
+  //delete m_base;
+  delete m_IOController;
+}
+
+void myPluginExecute::refresh() {}
+
+void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
+    ExecutePlugin::setSetting(name, value);
+    if (name == QLatin1String("autoconfig")) {
+        QStringList data = value.toString().split(QLatin1Char(':'));
+        if (data.size()>=4)
+          m_IOController->connectToIOs(data[0].toInt(), data[1].toInt(), data[2], data[3]);
     }
-    return 0;
 }
-AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
+
+ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
+{
+    AbstractServiceProvider* service = m_base->createServiceProvider(id);
+    if (!service) return 0;
     QByteArray idb = id.toAscii();
     if (idb == ActorPin::staticMetaObject.className()) {
-        return new ActorPin();
+        return new ActorPinServer((ActorPin*)service, this);
     } else if (idb == ActorPinName::staticMetaObject.className()) {
-        return new ActorPinName();
+        return new ActorPinNameServer((ActorPinName*)service, this);
     } else if (idb == ConditionPin::staticMetaObject.className()) {
-        return new ConditionPin();
+        return new ConditionPinServer((ConditionPin*)service, this);
     }
     return 0;
 }
 
-myPlugin::myPlugin() {
+QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
+    return m_IOController->getStateTracker();
 }
-myPlugin::~myPlugin() {
-  qDebug() <<"free";
-}
-QString myPlugin::name() const {
-    return QLatin1String("Steckdosen NET-PwrCtrl");
-}
-QString myPlugin::version() const {
-    return QLatin1String("1.0");
+void myPluginExecute::dataLoadingComplete() {
+    emit pluginLoadingComplete(this);
 }

@@ -1,65 +1,70 @@
-#include "plugin.h"
+#include "plugin_server.h"
+#include <QDateTime>
 #include <QDebug>
+#include <QCoreApplication>
+#include <QtPlugin>
+#include "shared/server/executeservice.h"
+#include "plugin.h"
 #include "services/actorcurtain.h"
 #include "services/conditionled.h"
 #include "services/conditioncurtain.h"
 #include "services/actorledname.h"
 #include "services/actorled.h"
-#include "statetracker/curtainstatetracker.h"
-#include "statetracker/lednamestatetracker.h"
-#include "statetracker/ledvaluestatetracker.h"
+#include "services_server/actorcurtainServer.h"
+#include "services_server/actorledServer.h"
+#include "services_server/actorlednameServer.h"
+#include "services_server/conditioncurtainServer.h"
+#include "services_server/conditionledServer.h"
+#include "controller.h"
+#include "configplugin.h"
 
-QStringList myPlugin::registerServices() const {
-    return QStringList() <<
-	QString::fromAscii(ActorCurtain::staticMetaObject.className())<<
-	QString::fromAscii(ActorLed::staticMetaObject.className())<<
-	QString::fromAscii(ActorLedName::staticMetaObject.className())<<
-	QString::fromAscii(ConditionCurtain::staticMetaObject.className())<<
-	QString::fromAscii(ConditionLed::staticMetaObject.className());
+Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
-}
-QStringList myPlugin::registerStateTracker() const {
-    return QStringList() <<
-	QString::fromAscii(CurtainStateTracker::staticMetaObject.className())<<
-	QString::fromAscii(ChannelNameStateTracker::staticMetaObject.className())<<
-	QString::fromAscii(ChannelValueStateTracker::staticMetaObject.className());
+myPluginExecute::myPluginExecute() : ExecutePlugin() {
+    m_base = new myPlugin();
+    m_Controller = new Controller(this);
+    connect(m_Controller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
+    connect(m_Controller,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
+    _config(this);
 }
 
-AbstractStateTracker* myPlugin::createStateTracker(const QString& id) {
-    QByteArray idb = id.toAscii();
-    if (idb == CurtainStateTracker::staticMetaObject.className()) {
-        return new CurtainStateTracker();
-    } else if (idb == ChannelNameStateTracker::staticMetaObject.className()) {
-        return new ChannelNameStateTracker();
-    } else if (idb == ChannelValueStateTracker::staticMetaObject.className()) {
-        return new ChannelValueStateTracker();
+myPluginExecute::~myPluginExecute() {
+    //delete m_base;
+    delete m_Controller;
+}
+
+void myPluginExecute::refresh() {}
+
+void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
+    ExecutePlugin::setSetting(name, value);
+    if (name == QLatin1String("serialport")) {
+        const QString device = value.toString();
+        m_Controller->connectToLeds(device);
     }
-    return 0;
 }
-AbstractServiceProvider* myPlugin::createServiceProvider(const QString& id) {
+
+ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
+{
+    AbstractServiceProvider* service = m_base->createServiceProvider(id);
+    if (!service) return 0;
     QByteArray idb = id.toAscii();
     if (idb == ActorCurtain::staticMetaObject.className()) {
-        return new ActorCurtain();
+        return new ActorCurtainServer((ActorCurtain*)service, this);
     } else if (idb == ActorLed::staticMetaObject.className()) {
-        return new ActorLed();
+        return new ActorLedServer((ActorLed*)service, this);
     } else if (idb == ActorLedName::staticMetaObject.className()) {
-        return new ActorLedName();
+        return new ActorLedNameServer((ActorLedName*)service, this);
     } else if (idb == ConditionCurtain::staticMetaObject.className()) {
-        return new ConditionCurtain();
+        return new ConditionCurtainServer((ConditionCurtain*)service, this);
     } else if (idb == ConditionLed::staticMetaObject.className()) {
-        return new ConditionLed();
+        return new ConditionLedServer((ConditionLed*)service, this);
     }
     return 0;
 }
 
-myPlugin::myPlugin() {
+QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
+    return m_Controller->getStateTracker();
 }
-myPlugin::~myPlugin() {
-  qDebug() <<"free";
-}
-QString myPlugin::name() const {
-    return QLatin1String("Led and curtain");
-}
-QString myPlugin::version() const {
-    return QLatin1String("1.0");
+void myPluginExecute::dataLoadingComplete() {
+    emit pluginLoadingComplete(this);
 }
