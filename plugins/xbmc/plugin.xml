@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="xbmc" version="1.0">
+  <action id="xbmcvolume">
+    <double id="volume" min="-1.0" max="1.0" step="0.1">1.0</double>
+    <bool id="relative">1</bool>
+  </action>
+  <action id="xbmcposition">
+    <int id="position" step="100" />
+    <bool id="relative">1</bool>
+  </action>
+  <action id="xbmccmd">
+    <string id="url" optional="1"/>
+    <enum id="state" /><!--
+    PlayCmd,PauseCmd,StopCmd,
+    NextCmd,PrevCmd,InfoCmd,
+    AspectRatioCmd,NextSubtitleCmd,NextLanguageCmd,
+    NavigationBackCmd,NavigationHomeCmd,NavigationOKCmd,
+    NavigationDownCmd,NavigationUpCmd,NavigationLeftCmd,
+    NavigationRightCmd,NavigationCloseCmd,NavigationContextMenuCmd,
+    FastForwardCmd,FastRewindCmd -->
+  </action>
+  <property id="xbmcvolume">
+    <double id="volume" min="0.0" max="1.0" />
+  </property>
+  <!-- only send this notification if a client changes the position or the player engine made unexspected jumps.
+  It's up to the client to fake the current postion counter -->
+  <property id="xbmcposition">
+    <uint id="position_in_ms" />
+    <uint id="total_in_ms" />
+  </property>
+  <property id="xbmcstate">
+    <string id="url" />
+    <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
+  </property>
+</plugin>

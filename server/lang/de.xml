@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+  <serverstate>
+      <titel>Serverstatus</titel>
+      <description>Serverstatus hat sich geändert</description>
+      <state><titel>Serverstatus</titel><entry>Bereit</entry><entry>Abschalten</entry></state>
+  </serverstate>
+  <servercmd>
+      <titel>Serverkommando</titel>
+      <description>Komamndo an den Server absetzen</description>
+      <state><titel>Kommando</titel><entry>Resynchronisieren</entry><entry>Neustarten</entry><entry>Abschalten</entry></state>
+  </servercmd>
+</plugin>
