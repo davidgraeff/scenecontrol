@@ -38,7 +38,7 @@ public:
      * Cache properties from devices that need a while for responses. This call
      * should not block the server for a longer period!
      */
-    virtual QVariantMap properties() = 0;
+    virtual QMap<QString, QVariantMap> properties() = 0;
     /**
      * Called by server process before it releases all ressources and finish.
      * Tidy up here.
@@ -49,9 +49,9 @@ public:
      * This plugin has to register its interest in one or more properties to the server by
      * using the AbstractServer Interface before.
      * \param unqiue_property_id the property id (unique among all plugins)
-     * \param value the property value
+     * \param value the property values
      */
-    void otherPropertyChanged(const QString& unqiue_property_id, const QVariant& value) = 0;
+    void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) = 0;
     /**
      * Called by server process if a setting is changed. Use the plugin helper file
      * and call setSettings to save settings permanantly.

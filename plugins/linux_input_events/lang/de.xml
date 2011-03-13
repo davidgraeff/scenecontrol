@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+     <titel>Linux input events</titel>
+     <description>Gibt Ereignisse des Linux Input Frameworks als Events wieder</description>
+  <inputevent>
+      <titel>Input Event</titel>
+      <description>Wird ausgelöst, wenn die entsprechende Eingabe am Eingabegerät getätigt wurde</description>
+      <inputdevice><titel>Eingabegerät</titel></inputdevice>
+      <kernelkeyname><titel>Eingabe</titel></kernelkeyname>
+      <pressed><titel>Gedrückt</titel></pressed>
+      <repeat><titel>Wiederholen</titel></repeat>
+  </inputevent>
+  <inputdevice>
+      <titel>Eingabegeräte</titel>
+      <description>Alle Eingabegeräte, Komma separiert</description>
+      <alldevices><titel>Eingabegeräte</titel></alldevices>
+  </inputdevice>
+  <lastinputkey>
+      <titel>Taste ausgelöst</titel>
+      <description>Enthält den letzen Tastendruck des Eingeaberätes, das mit selected_input_device ausgewählt worden ist</description>
+      <kernelkeyname><titel>Tastenname</titel></kernelkeyname>
+  </lastinputkey>
+</plugin>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="roomcontrol_leds" version="1.0">
+  <action id="ledvalue_relative">
+    <int id="channel" model="ledchannels" />
+    <int id="value" min="-255" max="255" />
+    <enum id="fade" n="3" />
+  </action>
+  <action id="ledvalue_absolut">
+    <int id="channel" model="ledchannels" />
+    <int id="value" min="0" max="255" />
+    <enum id="fade" n="3" />
+  </action>
+  <action id="ledvalue_invers">
+    <int id="channel" model="ledchannels" />
+    <enum id="fade" n="3" />
+  </action>
+  <action id="ledcondition">
+    <int id="channel" model="ledchannels" />
+    <int id="lower" min="0" max="255" />
+    <int id="upper" min="0" max="255" />
+  </action>
+  <action id="ledname">
+    <int id="channel" model="ledchannels" />
+    <string id="name" />
+  </action>
+  <property id="ledvalue">
+    <int id="channel" />
+    <int id="value" />
+  </property>
+  <property id="ledname">
+    <int id="channel" />
+    <string id="name" />
+  </property>
+  
+  <action id="curtain">
+    <int id="value" />
+  </action>
+  <action id="curtaincondition">
+    <int id="value" />
+  </action>
+  <property id="curtainstate">
+    <int id="max" />
+    <int id="value" />
+  </property>
+  
+</plugin>

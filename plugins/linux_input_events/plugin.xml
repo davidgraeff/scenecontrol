@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="linux_input_events" version="1.0">
+  <event id="inputevent">
+    <string id="inputdevice" model="inputdevice" sendback_as="selected_input_device" />
+    <string id="kernelkeyname" property="lastinputkey" />
+    <bool id="pressed">1</bool>
+    <bool id="repeat"></bool>
+  </event>
+  <property id="inputdevice">
+    <string id="alldevices" /><!--comma separated-->
+  </property>
+  
+  <property id="lastinputkey" type="session" depends_on="selected_input_device">
+    <string id="kernelkeyname" />
+  </property>
+  
+</plugin>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+     <titel>Sanyo Z700 Projektor</titel>
+     <description>Kontrolliert einen Sanyo Z700 HD Projektor über die serielle Schnittstelle</description>
+  <projector_sanyo_power>
+      <titel>Power</titel>
+      <description>Ein/Ausschalten</description>
+      <power><titel>Power</titel></power>
+  </projector_sanyo_power>
+  <projector_sanyo_video>
+      <titel>Videomute</titel>
+      <description>Ein/Ausschalten des Videobildes</description>
+      <mute><titel>Mute</titel></mute>
+  </projector_sanyo_video>
+  <projector_sanyo_lamp>
+      <titel>Lampenhelligkeit</titel>
+      <description>Eco Modus der Lampe aktivieren</description>
+      <eco><titel>Eco</titel></eco>
+  </projector_sanyo_lamp>
+</plugin>

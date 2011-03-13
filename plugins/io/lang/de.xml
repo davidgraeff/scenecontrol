@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+     <titel>Anel Steckdosenleisten</titel>
+     <description>Steuert die Netzwerksteckdosen der Firma Anel</description>
+  <iovalue_absolute>
+      <titel>Steckdosen Wert Absolut</titel>
+      <description>Setzt Steckdosen Wert</description>
+      <channel><titel>Steckdosenkanal</titel></channel>
+      <value><titel>Wert</titel></value>
+  </iovalue_absolute>
+  <iovalue_toogle>
+      <titel>Steckdosen Wert umschalten</titel>
+      <description>Setzt Steckdosen Wert</description>
+      <channel><titel>Steckdosenkanal</titel></channel>
+  </iovalue_toogle>
+  <iovalue>
+      <titel>Steckdosen Wert Änderung</titel>
+      <description>Steckdosen Wert hat sich verändert</description>
+      <channel><titel>Steckdosenkanal</titel></channel>
+      <value><titel>Wert</titel></value>
+  </iovalue>
+  <iocondition>
+      <titel>Steckdosen Wert Bedingung</titel>
+      <description>Led Wert muss zwischen Unter und Obergrenze liegen</description>
+      <channel><titel>Steckdosenkanal</titel></channel>
+      <value><titel>Wert</titel></value>
+  </iocondition>
+  <ioname>
+      <titel>Steckdosen Namen</titel>
+      <description>Steckdosen Namen</description>
+      <channel><titel>Steckdosenkanal</titel></channel>
+      <name><titel>Name</titel></name>
+  </ioname>
+</plugin>

@@ -16,6 +16,23 @@
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
+bool ConditionPinServer::checkcondition()
+{
+  return (m_plugin->controller()->getPin(service<ConditionPin>()->pin()) == service<ConditionPin>()->value());
+}
+void ActorPinServer::execute()
+{
+  ActorPin* a = service<ActorPin>();
+  if (a->value()==ActorPin::PinToggle)
+    m_plugin->controller()->togglePin(a->pin());
+  else
+    m_plugin->controller()->setPin(a->pin(),a->value());
+}
+void ActorPinNameServer::execute()
+{
+  ActorPinName* a = service<ActorPinName>();
+  m_plugin->controller()->setPinName(a->pin(),a->pinname());
+}
 myPluginExecute::myPluginExecute() : ExecutePlugin() {
   m_base = new myPlugin();
   m_IOController = new IOController(this);

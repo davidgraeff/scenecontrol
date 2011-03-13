@@ -20,6 +20,38 @@
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
 
+bool ConditionLedServer::checkcondition()
+{
+  const unsigned int v = m_plugin->controller()->getChannel(service<ConditionLed>()->channel());
+  if (v>service<ConditionLed>()->max()) return false;
+  if (v<service<ConditionLed>()->min()) return false;
+  return true;
+}
+bool ConditionCurtainServer::checkcondition()
+{
+  return (service<ConditionCurtain>()->value() == m_plugin->controller()->getCurtain());
+}
+void ActorLedServer::execute()
+{
+  ActorLed* a = service<ActorLed>();
+  if (a->assignment() == ActorLed::ValueAbsolute)
+    m_plugin->controller()->setChannel ( a->channel(),a->value(),a->fadetype() );
+  else if (a->assignment() == ActorLed::ValueRelative)
+    m_plugin->controller()->setChannelRelative ( a->channel(),a->value(),a->fadetype() );
+  else if (a->assignment() == ActorLed::ValueMultiplikator)
+    m_plugin->controller()->setChannelExponential ( a->channel(),a->value(),a->fadetype() );
+  else if (a->assignment() == ActorLed::ValueInverse)
+    m_plugin->controller()->inverseChannel ( a->channel(),a->fadetype() );
+}
+void ActorLedNameServer::execute()
+{
+    m_plugin->controller()->setChannelName(service<ActorLedName>()->channel(),service<ActorLedName>()->ledname());
+}
+void ActorCurtainServer::execute()
+{
+    m_plugin->controller()->setCurtain(service<ActorCurtain>()->value());
+}
+
 myPluginExecute::myPluginExecute() : ExecutePlugin() {
     m_base = new myPlugin();
     m_Controller = new Controller(this);

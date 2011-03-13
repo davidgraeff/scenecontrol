@@ -3,43 +3,21 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
 #include "plugin.h"
-#include <qdbusservicewatcher.h>
-#include <QDBusConnection>
-#include <qdbusinterface.h>
-#include <qdbusreply.h>
 #include <qdom.h>
-#include "services_server/eventremotekeyServer.h"
-#include "services/eventremotekey.h"
-#include <qdbusconnectioninterface.h>
-#include "lirid_proxy.h"
-#include "lirid_control_proxy.h"
+#include "configplugin.h"
 
 Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
-#define LIRI_DBUS_SERVICE "org.liri.Devices"
-#define LIRI_DBUS_OBJECT_RECEIVERS "/org/liri/Devicelist"
 
 myPluginExecute::myPluginExecute() : ExecutePlugin() {
     m_base = new myPlugin();
     m_control = 0;
     m_repeating = 0;
 
-    m_statetracker = new RemoteControlStateTracker();
-    m_statetrackerKey = new RemoteControlKeyStateTracker();
-
-    QDBusServiceWatcher *watcher = new QDBusServiceWatcher(QLatin1String(LIRI_DBUS_SERVICE),
-            QDBusConnection::systemBus(),
-            QDBusServiceWatcher::WatchForOwnerChange,
-            this);
-    connect (watcher, SIGNAL(serviceUnregistered(const QString&)),
-             this, SLOT(slotServiceUnregistered(const QString&)));
-
-    connect (watcher, SIGNAL(serviceRegistered(const QString&)),
-             this, SLOT(slotServiceRegistered(const QString&)));
-
     if (watcher->connection().interface()->isServiceRegistered(QLatin1String(LIRI_DBUS_SERVICE)))
         slotServiceRegistered(QLatin1String(LIRI_DBUS_SERVICE));
+    
+    _config(this);
 }
 
 myPluginExecute::~myPluginExecute() {

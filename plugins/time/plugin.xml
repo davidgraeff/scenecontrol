@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="xbmc" version="1.0">
+  <event id="timeperiodic">
+    <time id="time"></time>
+    <enum id="days" multiple="true" n="7"></enum>
+  </event>
+  <event id="timedate">
+    <data id="date"></data>
+  </event>
+  <condition id="timespan">
+    <data id="lower"></data>
+    <data id="upper"></data>
+  </condition>
+</plugin>

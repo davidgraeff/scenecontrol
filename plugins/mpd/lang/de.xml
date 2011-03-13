@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+     <titel>MPD Kontrollieren</titel>
+     <description>Kontrolliert Abspieleigenschaften des music player daemons (mpd)</description>
+  <mpdvolume>
+      <titel>Lautstärke</titel>
+      <description>Setzt die Laustärke</description>
+      <volume><titel>Lautstärke</titel></volume>
+      <relative><titel>Relativ</titel></relative>
+  </mpdvolume>
+  <mpdposition>
+      <titel>Position</titel>
+      <description>Setzt die Position in ms im Mediastream</description>
+      <position_in_ms><titel>Position in ms</titel></position_in_ms>
+      <relative><titel>Relativ</titel></relative>
+  </mpdposition>
+  <mpdchangeplaylist>
+      <titel>Position</titel>
+      <description>Setzt die Position in ms im Mediastream</description>
+      <playlistid><titel>Playlist ID</titel></playlistid>
+      <track><titel>Track</titel></track>
+  </mpdchangeplaylist>
+  <mpdstatecondition>
+      <titel>Musikstatusbedindung</titel>
+      <description>Bedindung, dass der aktuelle Abspielstatus dem gesetzten entspricht</description>
+      <state><titel>Status</titel>
+      <entry>Abspielend</entry><entry>Pausierend</entry><entry>Stoppend</entry>
+      </state>
+  </mpdstatecondition>
+  <mpdcmd>
+      <titel>mpd Kommando</titel>
+      <description>Setzt ein Kommando an den Musikdaemon ab</description>
+      <state><titel>Kommando</titel>
+      <entry>Abspielen</entry><entry>Pausieren</entry><entry>Stoppen</entry>
+      <entry>Nächster</entry><entry>Vorheriger</entry>
+      <entry>Vorspulen</entry><entry>Zurückspulen</entry>
+      </state>
+  </mpdcmd>
+  <mpdstate>
+      <titel>mpd Status</titel>
+      <description>mpd Status geändert</description>
+      <playlistid><titel>Playlist ID</titel></playlistid>
+      <position_in_ms><titel>Position in ms</titel></position_in_ms>
+      <total_in_ms><titel>Abspieldauer in ms</titel></total_in_ms>
+      <track><titel>Track</titel></track>
+      <state><titel>Status</titel>
+      <entry>Abspielend</entry><entry>Pausierend</entry><entry>Stoppend</entry>
+      </state>
+  </mpdstate>
+</plugin>

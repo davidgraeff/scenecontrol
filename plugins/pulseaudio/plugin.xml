@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="pulseaudio" version="1.0">
+  <action id="pulsechannelvolume">
+    <string id="sindid" model="pulse_sinks" />
+    <double id="volume" min="-1.0" max="1.0" step="0.1">1.0</double>
+    <bool id="relative">1</bool>
+  </action>
+  <action id="pulsechannelmute">
+    <string id="sindid" model="pulse_sinks" />
+    <enum id="mute" /><!-- Mute,Unmute,Toggle -->
+  </action>
+  <property id="pulsechannelstate">
+    <string id="sindid" />
+    <double id="volume" min="0.0" max="1.0" />
+    <bool id="mute" />
+  </property>
+</plugin>

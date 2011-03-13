@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+     <titel>Pulseaudio</titel>
+     <description>Kontrolliert Kanäle des PulseAudio Soundservers</description>
+  <pulsechannelvolume>
+      <titel>Pulseaudiokanallautstärke</titel>
+      <description>Steuert die Laustärke eines Pulseaudiokanal</description>
+      <sindid><titel>Kanal</titel></sindid>
+      <volume><titel>Lautstärke</titel></volume>
+      <relative><titel>Relativ</titel></relative>
+  </pulsechannelvolume>
+  <pulsechannelmute>
+      <titel>Pulseaudiokanal Mute</titel>
+      <description>Steuert die Stummschaltung eines Pulseaudiokanal</description>
+      <sindid><titel>Kanal</titel></sindid>
+      <mute><titel>Zustand</titel>
+      <entry>Stumm</entry><entry>Hörbar</entry><entry>Umschalten</entry>
+      </mute>
+  </pulsechannelmute>
+  <pulsechannelstate>
+      <titel>Position</titel>
+      <description>Setzt die Position in ms im Mediastream</description>
+      <sindid><titel>Kanal</titel></sindid>
+      <volume><titel>Lautstärke</titel></volume>
+      <mute><titel>Stumm</titel></mute>
+  </pulsechannelstate>
+</plugin>
