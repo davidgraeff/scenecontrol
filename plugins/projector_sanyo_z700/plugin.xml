@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="projector_sanyo" version="1.0">
+  <action id="projector_sanyo_focus">
+    <string id="device"></string>
+  </action>
   <action id="projector_sanyo_power">
     <bool id="power">1</bool>
   </action>

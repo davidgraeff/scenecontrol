@@ -1,12 +1,30 @@
 #ifndef __XBMC_CLIENT_H__
 #define __XBMC_CLIENT_H__
 
+/*
+ *  Copyright (C) 2008-2009 Team XBMC http://www.xbmc.org
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #ifdef _WIN32
-#include <winsock2.h>
+#include <winsock.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -723,7 +741,7 @@ private:
   int           m_Socket;
   unsigned int  m_UID;
 public:
-  CXBMCClient(const char *IP = "127.0.0.1", int Port = STD_PORT, int Socket = -1, unsigned int UID = 0)
+  CXBMCClient(const char *IP = "127.0.0.1", int Port = 9777, int Socket = -1, unsigned int UID = 0)
   {
     m_Addr = CAddress(IP, Port);
     if (Socket == -1)

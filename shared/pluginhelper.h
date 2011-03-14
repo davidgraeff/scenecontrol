@@ -20,13 +20,14 @@
 #pragma once
 #include <QVariantMap>
 #include <QString>
+#include "abstractplugin.h"
 
-class PluginHelper
+class PluginHelper : public AbstractPlugin
 {
 public:
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
-    virtual void registerSetting(const char* name, const QVariant& value) = 0;
-    const QVariantMap getSettings() const = 0;
+    virtual void registerSetting(const char* name, const QVariant& value);
+    virtual const QVariantMap getSettings() const;
 private:
     QVariantMap m_settings;
 };

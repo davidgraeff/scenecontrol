@@ -25,6 +25,7 @@
 class AbstractPlugin
 {
 public:
+    virtual ~AbstractPlugin() {}
     /**
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the
      * network is initiated or by request from a client with sufficient access rights.
@@ -51,7 +52,7 @@ public:
      * \param unqiue_property_id the property id (unique among all plugins)
      * \param value the property values
      */
-    void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) = 0;
+    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) = 0;
     /**
      * Called by server process if a setting is changed. Use the plugin helper file
      * and call setSettings to save settings permanantly.
@@ -70,7 +71,7 @@ public:
     /**
      * Called by the server if a client requested settings of this plugin.
      */
-    const QVariantMap getSettings() const = 0;
+    virtual const QVariantMap getSettings() const = 0;
     
     /**
      * Implement execution routines for all provided actions

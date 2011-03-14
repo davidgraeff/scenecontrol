@@ -18,39 +18,33 @@
  */
 
 #pragma once
+#define PLUGIN_ID "xbmc"
 #include <QObject>
 #include <QStringList>
-#include "shared/server/executeplugin.h"
+#include "shared/abstractplugin.h"
+#include "shared/pluginhelper.h"
 
-class CinemaPositionStateTracker;
-class CinemaStateTracker;
-class CinemaVolumeStateTracker;
 class CXBMCClient;
-class myPluginExecute : public ExecutePlugin
+class plugin : public QObject, public PluginHelper
 {
     Q_OBJECT
-    Q_INTERFACES(ExecutePlugin)
+    Q_INTERFACES(AbstractPlugin)
 public:
-    myPluginExecute();
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-    virtual void clear() {}
-    virtual void setSetting(const QString& name, const QVariant& value);
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    /**
-      * if cinemaID is empty use all cinema players as targets
-      */
+    plugin();
+    virtual ~plugin();
+
+    virtual void init(AbstractServer*);
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void clear();
+    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value);
+    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void execute(const QVariantMap& data);
+    virtual bool condition(const QVariantMap& data) ;
+    virtual bool event_changed(const QVariantMap& data);
+
     void setCommand(int cmd);
     void setPosition(int pos, bool relative=false);
     void setVolume(int vol, bool relative=false);
 private:
-    AbstractPlugin* m_base;
-    CinemaStateTracker* m_CinemaStateTracker;
-    CinemaPositionStateTracker* m_CinemaPositionStateTracker;
-    CinemaVolumeStateTracker* m_CinemaVolumeStateTracker;
     CXBMCClient* m_xbmcClient;
 };

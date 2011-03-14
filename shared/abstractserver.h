@@ -54,6 +54,6 @@ public:
     /**
      * Ask the server to execute the action described by the VariantMap. The fields "plugin_id" and "name" are mandatory.
      */
-    virtual void execute_action(const QvariantMap& action, const char* pluginid = PLUGIN_ID) = 0;
+    virtual void execute_action(const QVariantMap& action, const char* pluginid = PLUGIN_ID) = 0;
 
 };
