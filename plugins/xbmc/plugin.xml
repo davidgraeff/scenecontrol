@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="xbmc" version="1.0">
   <action id="xbmcfocus">
-    <string id="server"></string>
+	  <string id="server"></string><!--server:port -->
   </action>
   <action id="xbmcvolume">
     <double id="volume" min="-1.0" max="1.0" step="0.1">1.0</double>
@@ -11,8 +11,10 @@
     <int id="position" step="100" />
     <bool id="relative">1</bool>
   </action>
+  <action id="xbmcmedia">
+    <string id="url"/>
+  </action>
   <action id="xbmccmd">
-    <string id="url" optional="1"/>
     <enum id="state" /><!--
     PlayCmd,PauseCmd,StopCmd,
     NextCmd,PrevCmd,InfoCmd,

@@ -1,9 +1,6 @@
-#include <QDateTime>
-#include <QDebug>
 #include <QCoreApplication>
 #include <QtPlugin>
 #include <QDebug>
-#include <QUrl>
 
 #include "xbmcclient.h"
 #include "xbmcactions.h"
@@ -17,17 +14,46 @@ plugin::plugin() : m_xbmcClient(0) {
 }
 
 plugin::~plugin() {
-    //delete m_base;
     if (m_xbmcClient)
         m_xbmcClient->SendNOTIFICATION(QCoreApplication::applicationName().toLatin1().constData(),
                                        tr("Server wird beendet").toLatin1().constData(),
                                        ICON_NONE);
     delete m_xbmcClient;
 }
+void plugin::init(AbstractServer* server) {
 
-/*    m_plugin->setVolume(service<ActorCinemaVolume>()->volume(),service<ActorCinemaVolume>()->relative());
-    m_plugin->setCommand(service<ActorCinema>()->cmd());
-    m_plugin->setVolume(service<ActorCinemaPosition>()->value(),service<ActorCinemaPosition>()->relative());*/
+}
+
+void plugin::clear() {
+
+}
+
+void plugin::otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) {
+Q_UNUSED(unqiue_property_id);Q_UNUSED(value);
+}
+
+void plugin::execute(const QVariantMap& data) {
+	if (!m_xbmcClient) return;
+	if (data["id"] == "xbmcfocus") {
+		setSetting(QLatin1String("server"), data["server"]);
+	} else if (data["id"] == "xbmcvolume") {
+		//todo
+	} else if (data["id"] == "xbmcposition") {
+		//todo
+	} else if (data["id"] == "xbmcmedia") {
+		//todo
+	} else if (data["id"] == "xbmccmd") {
+		setCommand(data["state"].toInt());
+	}
+}
+
+bool plugin::condition(const QVariantMap& data)  {
+Q_UNUSED(data);
+}
+
+void plugin::event_changed(const QVariantMap& data) {
+Q_UNUSED(data);  
+}
 
 void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
     PluginHelper::setSetting(name, value);
@@ -115,16 +141,4 @@ void plugin::setCommand(int cmd)
     default:
         break;
     };
-}
-
-void plugin::setPosition ( int pos, bool relative )
-{
-    Q_UNUSED(pos);
-    Q_UNUSED(relative);
-}
-
-void plugin::setVolume ( int vol, bool relative )
-{
-    Q_UNUSED(vol);
-    Q_UNUSED(relative);
 }

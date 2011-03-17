@@ -14,10 +14,14 @@
       <position><titel>Position in ms</titel></position>
       <relative><titel>Relativ</titel></relative>
   </xbmcposition>
+  <xbmcmedia>
+      <titel>xbmc Medium</titel>
+      <description>Ändert das aktuelle Abspielmedium</description>
+      <url><titel>Url oder Datei auf dem Server</titel></url>
+  </xbmcmedia>
   <xbmccmd>
       <titel>xbmc Kommando</titel>
       <description>Setzt ein Kommando an die Vorführungsengine ab</description>
-      <url><titel>Url oder Datei auf dem Server</titel></url>
       <state><titel>Kommando</titel>
       <entry>Abspielen</entry><entry>Pausieren</entry><entry>Stoppen</entry>
       <entry>Nächster</entry><entry>Vorheriger</entry><entry>Info anzeigen</entry>

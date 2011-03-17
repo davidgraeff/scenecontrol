@@ -20,17 +20,24 @@
 #pragma once
 #include <QVariantMap>
 #include <QString>
-#include "abstractserver.h"
 
+#define PLUGIN_MACRO virtual QString pluginid() { return QLatin1String(PLUGIN_ID); }
+class AbstractServer;
 class AbstractPlugin
 {
 public:
+    /**
+     * Add PLUGIN_MACRO to your implementation class (before the public part) to
+	 * get an implementation for this plugin id returing function.
+     */
+	virtual QString pluginid() = 0;
+	
     virtual ~AbstractPlugin() {}
     /**
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the
      * network is initiated or by request from a client with sufficient access rights.
      */
-    virtual void init(AbstractServer*) = 0;
+    virtual void init(AbstractServer* server) = 0;
     /**
      * Return current state of all plugin properties. The server
      * reguests all properties from all plugins after a client has connected.
@@ -87,7 +94,7 @@ public:
      * Event data loaded by the server or changed by a client. Implement routines to trigger the actual event based on these data
      * and remove the event with the event id (from data) that was established by previous data.
      */
-    virtual bool event_changed(const QVariantMap& data) = 0;
+    virtual void event_changed(const QVariantMap& data) = 0;
 
 };
 Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/2.0")

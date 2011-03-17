@@ -18,18 +18,17 @@
  */
 
 #pragma once
-#define PLUGIN_ID "xbmc"
+#define PLUGIN_ID "bla"
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
 #include "shared/pluginhelper.h"
 
-class CXBMCClient;
 class plugin : public QObject, public PluginHelper
 {
     Q_OBJECT
-    PLUGIN_MACRO
+    PLUGIN
     Q_INTERFACES(AbstractPlugin)
 public:
     plugin();
@@ -43,8 +42,5 @@ public:
     virtual void execute(const QVariantMap& data);
     virtual bool condition(const QVariantMap& data) ;
     virtual void event_changed(const QVariantMap& data);
-
-    void setCommand(int cmd);
 private:
-    CXBMCClient* m_xbmcClient;
 };

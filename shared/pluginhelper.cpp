@@ -6,7 +6,7 @@
 
 void PluginHelper::setSetting(const QString& name, const QVariant& value, bool init) {
 	QSettings s;
-	s.beginGroup(base()->name());
+	s.beginGroup(pluginid());
 	QVariant oldvalue = s.value(name);
 	if (!oldvalue.isValid() || !init)
 		s.setValue(name, value);
@@ -15,12 +15,11 @@ void PluginHelper::setSetting(const QString& name, const QVariant& value, bool i
 
 void PluginHelper::registerSetting(const char* name, const QVariant& value) {
 	QSettings s;
-	s.beginGroup(base()->name());
+	s.beginGroup(pluginid());
 	QString oldvalue = s.value(QString::fromAscii(name)).toString();
 
 	QByteArray b;
-	if (base())
-		b.append(base()->name().toUtf8().replace(' ',"").replace('-','_'));
+	b.append(pluginid().toUtf8().replace(' ',"").replace('-','_'));
 	b.append('_');
 	b.append(name);
 	char *valueEnv = getenv ( b.data() );
