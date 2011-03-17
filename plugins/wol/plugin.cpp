@@ -1,56 +1,82 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
+#include <QUdpSocket>
+#include <QHostAddress>
 #include "plugin.h"
-#include "services/actorwol.h"
-#include "services_server/actorwolServer.h"
 
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+Q_EXPORT_PLUGIN2(libexecute, plugin)
 
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-  m_base = new myPlugin();
+plugin::plugin() {
 }
 
-myPluginExecute::~myPluginExecute() {
-  //delete m_base;
+plugin::~plugin() {
+
 }
 
-
-void ServiceWOLExecute::execute() {
-    ActorWOL* s = service<ActorWOL>();
-    Q_ASSERT(s);
-    QStringList parts = s->mac().split(QLatin1Char(':'));
-    if (parts.size()!=6) return;
-    QByteArray mac;
-    for (int i=0;i<6;++i)
-        mac.append(QByteArray::fromHex(parts[i].toAscii()));
-
-    // 6 mal FF
-    const char header[] = {255,255,255,255,255,255};
-    QByteArray bytes(header);
-    // 16 mal mac
-    for (int i=0;i<16;++i)
-        bytes.append(mac);
-
-    QUdpSocket socket;
-    socket.writeDatagram(bytes,QHostAddress::Broadcast,9);
+void plugin::init(AbstractServer* server) {
+Q_UNUSED(server);
 }
 
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-    if (idb == ActorWOL::staticMetaObject.className()) {
-        return new ServiceWOLExecute((ActorWOL*)service, this);
-    }
-    return 0;
+void plugin::clear() {
+
 }
 
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    QList<AbstractStateTracker*> a;
-    return a;
+void plugin::otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) {
+Q_UNUSED(unqiue_property_id);Q_UNUSED(value);
+}
+
+void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
+	PluginHelper::setSetting(name, value, init);
+}
+
+void plugin::execute(const QVariantMap& data) {
+	if (IS_ID("wol")) {
+		QStringList parts = data["mac"].toString().split(QLatin1Char(':'));
+		if (parts.size()!=6) return;
+		QByteArray mac;
+		for (int i=0;i<6;++i)
+			mac.append(QByteArray::fromHex(parts[i].toAscii()));
+
+		// 6 mal FF
+		const char header[] = {255,255,255,255,255,255};
+		QByteArray bytes(header);
+		// 16 mal mac
+		for (int i=0;i<16;++i)
+			bytes.append(mac);
+
+		QUdpSocket socket;
+		socket.writeDatagram(bytes,QHostAddress::Broadcast,9);
+	}
+}
+
+bool plugin::condition(const QVariantMap& data)  {
+	Q_UNUSED(data);
+	return false;
+}
+
+void plugin::event_changed(const QVariantMap& data) {
+	Q_UNUSED(data);
+}
+
+QMap<QString, QVariantMap> plugin::properties() {
+	QMap<QString, QVariantMap> l;
+	return l;
 }

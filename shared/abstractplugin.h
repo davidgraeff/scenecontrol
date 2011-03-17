@@ -22,6 +22,9 @@
 #include <QString>
 
 #define PLUGIN_MACRO virtual QString pluginid() { return QLatin1String(PLUGIN_ID); }
+#define IS_ID(ID) data[QLatin1String("id")].toString() == QLatin1String(ID)
+#define DATA(ID) data[QLatin1String(ID)].toString()
+
 class AbstractServer;
 class AbstractPlugin
 {

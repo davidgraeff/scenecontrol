@@ -28,7 +28,7 @@
 class plugin : public QObject, public PluginHelper
 {
     Q_OBJECT
-    PLUGIN
+    PLUGIN_MACRO
     Q_INTERFACES(AbstractPlugin)
 public:
     plugin();

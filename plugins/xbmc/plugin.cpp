@@ -21,7 +21,7 @@ plugin::~plugin() {
     delete m_xbmcClient;
 }
 void plugin::init(AbstractServer* server) {
-
+Q_UNUSED(server);
 }
 
 void plugin::clear() {
@@ -34,29 +34,30 @@ Q_UNUSED(unqiue_property_id);Q_UNUSED(value);
 
 void plugin::execute(const QVariantMap& data) {
 	if (!m_xbmcClient) return;
-	if (data["id"] == "xbmcfocus") {
-		setSetting(QLatin1String("server"), data["server"]);
-	} else if (data["id"] == "xbmcvolume") {
+	if (IS_ID("xbmcfocus")) {
+		setSetting(QLatin1String("server"), data["server"].toString());
+	} else if (IS_ID("xbmcvolume")) {
 		//todo
-	} else if (data["id"] == "xbmcposition") {
+	} else if (IS_ID("xbmcposition")) {
 		//todo
-	} else if (data["id"] == "xbmcmedia") {
+	} else if (IS_ID("xbmcmedia")) {
 		//todo
-	} else if (data["id"] == "xbmccmd") {
+	} else if (IS_ID("xbmccmd")) {
 		setCommand(data["state"].toInt());
 	}
 }
 
 bool plugin::condition(const QVariantMap& data)  {
-Q_UNUSED(data);
+	Q_UNUSED(data);
+	return false;
 }
 
 void plugin::event_changed(const QVariantMap& data) {
-Q_UNUSED(data);  
+	Q_UNUSED(data);  
 }
 
 void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
-    PluginHelper::setSetting(name, value);
+    PluginHelper::setSetting(name, value, init);
     if (name == QLatin1String("server")) {
         delete m_xbmcClient;
         const QStringList data(value.toString().split(QLatin1Char(':')));

@@ -1,165 +1,163 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
-#include "plugin.h"
-#include "services/eventperiodic.h"
-#include "services/eventdatetime.h"
-#include "services/conditiontimespan.h"
-#include "services_server/eventperiodicServer.h"
-#include "services_server/eventdatetimeServer.h"
-#include "services_server/conditiontimespanServer.h"
-
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
-
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-  m_base = new myPlugin();
-}
-
-myPluginExecute::~myPluginExecute() {
-  //delete m_base;
-}
-
-void myPluginExecute::refresh() {}
-
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-    if (idb == EventPeriodic::staticMetaObject.className()) {
-        return new EventPeriodicServer((EventPeriodic*)service, this);
-    } else if (idb == EventDateTime::staticMetaObject.className()) {
-        return new EventDateTimeServer((EventDateTime*)service, this);
-    } else if (idb == ConditionTimespan::staticMetaObject.className()) {
-        return new ConditionTimespanServer((ConditionTimespan*)service, this);
-    }
-    return 0;
-}
-
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    QList<AbstractStateTracker*> a;
-    return a;
-}
-
-
-
-#include "eventperiodicServer.h"
-#include <QDebug>
-#include <services/eventperiodic.h>
 #include <QDateTime>
-#include "server/plugin_server.h"
 
-void EventPeriodicServer::timeout(bool aftersync)
-{
-    // timer triggered this timeout
-    if (!aftersync && !m_aftertrigger)  {
-        emit trigger();
-        // get back in 2 seconds to generate the new periodic alarm
-        m_aftertrigger = true;
-        m_timer.start(2000);
-        return;
-    }
-    m_aftertrigger = false;
+#include "plugin.h"
 
-	EventPeriodic* base = service<EventPeriodic>();
-	QTime m_time = QDateTime::fromString(base->time(),Qt::ISODate).time();
-	m_time.setHMS(m_time.hour(),m_time.minute(),0);
-	QDateTime datetime = QDateTime::currentDateTime();
-    datetime.setTime ( m_time );
-    int dow = QDate::currentDate().dayOfWeek() - 1;
-    int offsetdays = 0;
+Q_EXPORT_PLUGIN2(libexecute, plugin)
 
-    // If it is too late for the alarm today then
-    // try with the next weekday
-    if ( QTime::currentTime() > m_time )
-    {
-        dow = (dow+1) % 7;
-        ++offsetdays;
-    }
-
-    // Search for the next activated weekday
-    for (; offsetdays < 8; ++offsetdays )
-    {
-        if ( base->m_days[dow] ) break;
-        dow = (dow+1) % 7;
-    }
-
-    if ( offsetdays >= 8 ) {
-        return;
-		qWarning()<<"Periodic alarm: Failure with weekday offset"<<offsetdays<<datetime.toString(Qt::DefaultLocaleShortDate);
-    }
-
-    const int sec = QDateTime::currentDateTime().secsTo (datetime.addDays ( offsetdays ));
-    m_timer.start(sec*1000);
-	qDebug() << "Periodic alarm: " << datetime.addDays ( offsetdays ).toString(Qt::DefaultLocaleShortDate);
-}
-EventPeriodicServer::EventPeriodicServer(EventPeriodic* base, myPluginExecute*, QObject* parent) : ExecuteService(base, parent), m_aftertrigger(false)
-{
+plugin::plugin() {
     m_timer.setSingleShot(true);
-    connect(&m_timer,SIGNAL(timeout()),SLOT(timeout()));
-}
-bool EventPeriodicServer::checkcondition() {
-    return true;
-}
-void EventPeriodicServer::dataUpdate() {
-    timeout(true);
-}
-void EventPeriodicServer::execute() {}
-
-void EventPeriodicServer::nameUpdate() {
-    EventPeriodic* base = service<EventPeriodic>();
-    QString days;
-    for (int i=0;i<7;++i) {
-        if (base->days() & (1<<i)) {
-            days.append(QDate::shortDayName(i+1));
-            days.append(QLatin1String(","));
-        }
-    }
-    days.chop(1);
-	const QString time = QDateTime::fromString(base->time(),Qt::ISODate).time().toString(Qt::DefaultLocaleShortDate);
-    base->setString(tr("Periodisch um %1\nan: %2").arg(time).arg(days));
+	connect(&m_timer, SIGNAL(timeout()), SLOT(timeout()));
 }
 
+plugin::~plugin() {
 
-
-EventDateTimeServer::EventDateTimeServer(EventDateTime* base, myPluginExecute* , QObject* parent)
-        : ExecuteService(base, parent)
-{
-    m_timer.setSingleShot(true);
-    connect(&m_timer,SIGNAL(timeout()),SLOT(timeout()));
 }
 
-void EventDateTimeServer::dataUpdate()
-{
-    timeout();
+void plugin::init(AbstractServer* server) {
+	m_server=server;
+	calculate_next_events();
 }
 
-void EventDateTimeServer::timeout()
-{
-  EventDateTime* base = service<EventDateTime>();
-    const int sec = QDateTime::currentDateTime().secsTo (QDateTime::fromString(base->datetime(),Qt::ISODate));
-
-    if (sec > 86400) {
-        qDebug() << "One-time alarm: Armed (next check only)";
-        m_timer.start(86400*1000);
-    } else if (sec > 10) {
-		qDebug() << "One-time alarm: Armed" << sec;
-        m_timer.start(sec*1000);
-    } else if (sec > -10 && sec < 10) {
-        emit trigger();
-    }
+void plugin::clear() {
+	m_timer.stop();
 }
 
-bool ConditionTimespanServer::checkcondition() {
-  const ConditionTimespan* base = service<ConditionTimespan>();
-  QTime m_lower = QTime::fromString(base->lower(),Qt::ISODate);
-  QTime m_upper = QTime::fromString(base->upper(),Qt::ISODate);
-    if (QTime::currentTime() < m_lower) return false;
-    if (QTime::currentTime() > m_upper) return false;
-    return true;
+void plugin::otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) {
+Q_UNUSED(unqiue_property_id);Q_UNUSED(value);
 }
 
+void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
+	PluginHelper::setSetting(name, value, init);
+}
 
+void plugin::execute(const QVariantMap& data) {
+	Q_UNUSED(data);
+}
+
+bool plugin::condition(const QVariantMap& data)  {
+	if (IS_ID("timespan")) {
+		QTime m_lower = QTime::fromString(DATA("lower"),Qt::ISODate);
+		QTime m_upper = QTime::fromString(DATA("upper"),Qt::ISODate);
+		if (QTime::currentTime() < m_lower) return false;
+		if (QTime::currentTime() > m_upper) return false;
+		return true;
+	}
+	return false;
+}
+
+void plugin::event_changed(const QVariantMap& data) {
+	const QString uid = DATA("uid");
+	// remove from next events
+	m_timeout_service_ids.remove(uid);
+	// recalculate next event
+	m_remaining_events[data[uid].toString()] = data;
+	calculate_next_events();
+}
+
+QMap<QString, QVariantMap> plugin::properties() {
+	QMap<QString, QVariantMap> l;
+	return l;
+}
+
+void plugin::timeout() {
+	// events triggered, propagate to server
+	foreach(QString uid, m_timeout_service_ids) {
+		m_server->event_triggered(uid);
+	}
+	m_timeout_service_ids.clear();
+	// calculate next events
+	calculate_next_events();
+}
+
+void plugin::calculate_next_events() {
+	QMap<int, QSet<QString> > min_next_time;
+	QSet<QString> remove;
+
+	foreach(QVariantMap data, m_remaining_events) {
+		if (IS_ID("timedate")) {
+			const int sec = QDateTime::currentDateTime().secsTo (QDateTime::fromString(DATA("date"),Qt::ISODate));
+			if (sec > 86400) {
+				qDebug() << "One-time alarm: Armed (next check only)";
+				min_next_time[86400*1000];
+			} else if (sec > 10) {
+				qDebug() << "One-time alarm: Armed" << sec;
+				m_timer.start(sec*1000);
+				min_next_time[sec*1000].insert(DATA("uid"));
+				remove.insert(DATA("uid"));
+			} else if (sec > -10 && sec < 10) {
+				m_server->event_triggered(DATA("uid"));
+				remove.insert(DATA("uid"));
+			}
+		} else if (IS_ID("timeperiodic")) {
+			// timer triggered this timeout
+			if (!aftersync && !m_aftertrigger)  {
+				emit trigger();
+				// get back in 2 seconds to generate the new periodic alarm
+				m_aftertrigger = true;
+				m_timer.start(2000);
+				return;
+			}
+			m_aftertrigger = false;
+
+			QTime m_time = QDateTime::fromString(DATA("time"),Qt::ISODate).time();
+			QDateTime datetime = QDateTime::currentDateTime();
+			datetime.setTime ( m_time );
+			int dow = QDate::currentDate().dayOfWeek() - 1;
+			int offsetdays = 0;
+
+			// If it is too late for the alarm today then
+			// try with the next weekday
+			if ( QTime::currentTime() > m_time )
+			{
+				dow = (dow+1) % 7;
+				++offsetdays;
+			}
+
+			// Search for the next activated weekday
+			for (; offsetdays < 8; ++offsetdays )
+			{
+				if ( base->m_days[dow] ) break;
+				dow = (dow+1) % 7;
+			}
+
+			if ( offsetdays >= 8 ) {
+				return;
+				qWarning()<<"Periodic alarm: Failure with weekday offset"<<offsetdays<<datetime.toString(Qt::DefaultLocaleShortDate);
+			}
+
+			const int sec = QDateTime::currentDateTime().secsTo (datetime.addDays ( offsetdays ));
+			m_timer.start(sec*1000);
+			qDebug() << "Periodic alarm: " << datetime.addDays ( offsetdays ).toString(Qt::DefaultLocaleShortDate);
+		}
+	}
+	
+	// remove remaining events that are in the next event list
+	m_remaining_events.remove(remove);
+	
+	if (min_next_time.size() > 0) {
+		// add entry to next events
+		
+		// start timer
+		m_timer.start(ad);
+	}
+}
