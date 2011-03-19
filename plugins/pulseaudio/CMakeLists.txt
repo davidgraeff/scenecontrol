@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(PulseAudio QUIET)
 
 SET(DEBFOUND ${PULSEAUDIO_FOUND})
 IF (DEBFOUND)
-	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)
+	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)
 
-	IF (PLUGIN_${PROJECT_NAME}_SERVER)
+	IF (PLUGIN_${PROJECT_NAME})
 		build_server_lib()
 		target_link_libraries(${PROJECT_NAME}_server ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES})
 		install_server_lib()
 	ENDIF()
+	add_subdirectory(roompulsehelper)
+ELSE()
+	MESSAGE("Not building: ${PROJECT_NAME}")
 ENDIF()
-add_subdirectory(roompulsehelper)
-

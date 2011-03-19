@@ -17,36 +17,36 @@
  *
  */
 
-#ifndef myPLUGINSERVER_H
-#define myPLUGINSERVER_H
+#pragma once
+#define PLUGIN_ID "roomcontrol_leds"
 #include <QObject>
 #include <QStringList>
-#include "shared/server/executeplugin.h"
+#include "shared/abstractplugin.h"
+#include "shared/abstractserver.h"
+#include "shared/pluginhelper.h"
 
 class Controller;
-class myPluginExecute : public ExecutePlugin
-{
-    Q_OBJECT
-    Q_INTERFACES(ExecutePlugin)
-public:
-    myPluginExecute();
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-    virtual void setSetting(const QString& name, const QVariant& value);
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    Controller* controller() {
-        return m_Controller;
-    }
-    virtual void clear() {}
-private:
-    AbstractPlugin* m_base;
-    Controller* m_Controller;
-private Q_SLOTS:
-    void dataLoadingComplete();
-};
+class plugin : public QObject, public PluginHelper {
+        Q_OBJECT
+        PLUGIN_MACRO
+        Q_INTERFACES ( AbstractPlugin )
+    public:
+        plugin();
+        virtual ~plugin();
 
-#endif // myPLUGINSERVER_H
+        virtual void init ( AbstractServer* server );
+        virtual QMap<QString, QVariantMap> properties();
+        virtual void clear();
+        virtual void otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value );
+        virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
+        virtual void execute ( const QVariantMap& data );
+        virtual bool condition ( const QVariantMap& data ) ;
+        virtual void event_changed ( const QVariantMap& data );
+    private:
+        Controller* m_controller;
+		AbstractServer* m_server;
+    private Q_SLOTS:
+        void curtainChanged ( int current, int max );
+        void ledvalueChanged ( int channel, int value );
+        void lednameChanged ( int channel, const QString& name );
+};

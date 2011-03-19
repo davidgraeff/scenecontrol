@@ -14,15 +14,16 @@
     <int id="channel" model="ledchannels" />
     <enum id="fade" n="3" />
   </action>
-  <action id="ledcondition">
+  <condition id="ledcondition">
     <int id="channel" model="ledchannels" />
     <int id="lower" min="0" max="255" />
     <int id="upper" min="0" max="255" />
-  </action>
+  </condition>
   <action id="ledname">
     <int id="channel" model="ledchannels" />
     <string id="name" />
   </action>
+  
   <property id="ledvalue">
     <int id="channel" />
     <int id="value" />
@@ -35,9 +36,9 @@
   <action id="curtain">
     <int id="value" />
   </action>
-  <action id="curtaincondition">
+  <condition id="curtaincondition">
     <int id="value" />
-  </action>
+  </condition>
   <property id="curtainstate">
     <int id="max" />
     <int id="value" />

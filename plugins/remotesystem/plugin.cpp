@@ -1,159 +1,113 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
+
 #include "plugin.h"
-#include "externalclient.h"
-#include <services/actorambiencevideo.h>
-#include <services/actorambiencecmd.h>
-#include <services/actorambiencevolume.h>
-#include <services_server/actorambiencevideoServer.h>
-#include <services_server/actorambiencecmdServer.h>
-#include <services_server/actorambiencevolumeServer.h>
-#include "statetracker/eventST.h"
-#include "statetracker/eventvolumeST.h"
-#include "services/actorevent.h"
-#include "services/actoreventvolume.h"
-#include "services_server/actoreventServer.h"
-#include "services_server/actoreventvolumeServer.h"
 #include "configplugin.h"
+#include "externalclient.h"
 
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-    m_base = new myPlugin();
-    _config(this);
+plugin::plugin() {
+    _config ( this );
 }
 
-myPluginExecute::~myPluginExecute() {
-        qDeleteAll(m_clients);
+plugin::~plugin() {
+    qDeleteAll ( m_clients );
+    m_clients.clear();
+}
+
+void plugin::init ( AbstractServer* server ) {
+    Q_UNUSED ( server );
+}
+
+void plugin::clear() {
+
+}
+
+void plugin::otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value ) {
+    Q_UNUSED ( unqiue_property_id );
+    Q_UNUSED ( value );
+}
+
+void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
+    PluginHelper::setSetting ( name, value, init );
+    if ( name == QLatin1String ( "servers" ) ) {
+        qDeleteAll ( m_clients );
         m_clients.clear();
-    //delete m_base;
+        QStringList strings = value.toString().split ( QLatin1Char ( ';' ) );
+        foreach ( QString address, strings ) {
+            const QStringList data ( address.split ( QLatin1Char ( ':' ) ) );
+            if ( data.size() !=2 ) continue;
+            m_clients.append ( new ExternalClient ( this,data[0], data[1].toInt() ) );
+        }
+        // default: select all clients
+        m_selectedclients = m_clients;
+    }
 }
 
-void ActorAmbienceCmdServer::execute()
-{
-    ActorAmbienceCmd* base = service<ActorAmbienceCmd>();
-    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
-    foreach (ExternalClient* client, clients) {
-        switch (base->cmd()) {
-        case ActorAmbienceCmd::CloseFullscreen:
-            client->closeFullscreen();
-            break;
-        case ActorAmbienceCmd::ScreenOff:
-            client->setDisplayState(0);
-            break;
-        case ActorAmbienceCmd::ScreenOn:
-            client->setDisplayState(1);
-            break;
-        case ActorAmbienceCmd::ScreenToggle:
-            client->setDisplayState(2);
-            break;
-        case ActorAmbienceCmd::HideVideo:
-            client->hideVideo();
-            break;
-        case ActorAmbienceCmd::StopVideo:
-            client->stopvideo();
-            break;
-        default:
-            break;
+void plugin::execute ( const QVariantMap& data ) {
+    if ( IS_ID ( "remotefocus" ) ) {
+        m_selectedclients = specificClients ( DATA ( "servers" ).split ( QLatin1Char ( ';' ) ) );
+    } else if ( IS_ID ( "remotevolume" ) ) {
+        foreach ( ExternalClient* client, m_selectedclients ) {
+            client->setSystemVolume ( DOUBLEDATA ( "volume" ),BOOLDATA ( "relative" ) );
+        }
+    } else if ( IS_ID ( "remotenotification" ) ) {
+        foreach ( ExternalClient* client, m_selectedclients ) {
+            client->showMessage ( INTDATA ( "duration" ), DATA ( "title" ), DATA ( "audio" ) );
+        }
+    } else if ( IS_ID ( "remotevideo" ) ) {
+        foreach ( ExternalClient* client, m_selectedclients ) {
+            client->showVideo ( DATA ( "video" ), INTDATA ( "display" ) );
+        }
+    } else if ( IS_ID ( "remotedisplay" ) ) {
+        foreach ( ExternalClient* client, m_selectedclients ) {
+            client->setDisplayState ( INTDATA ( "state" ), INTDATA ( "display" ) );
         }
     }
 }
 
-void ActorAmbienceVideoServer::execute()
-{
-    ActorAmbienceVideo* base = service<ActorAmbienceVideo>();
-    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
-    foreach (ExternalClient* client, clients) {
-        client->setDisplay(base->display());
-        client->setClickActions(base->onleftclick(),base->onrightclick(), base->restoretime());
-        client->setVolume(base->volume());
-        client->setFilename(base->filename());
-    }
+bool plugin::condition ( const QVariantMap& data )  {
+    Q_UNUSED ( data );
+    return false;
 }
 
-void ActorAmbienceVolumeServer::execute()
-{
-    ActorAmbienceVolume* base = service<ActorAmbienceVolume>();
-    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
-    foreach (ExternalClient* client, clients) {
-        client->setVolume(base->volume(),base->relative());
-    }
+void plugin::event_changed ( const QVariantMap& data ) {
+    Q_UNUSED ( data );
 }
 
-void ActorEventServer::execute()
-{
-    ActorEvent* base = service<ActorEvent>();
-    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
-    foreach (ExternalClient* client, clients) {
-        if (base->filename().size())
-            client->playEvent(base->filename());
-        if (base->title().size())
-            client->showMessage(base->duration(),base->title());
+QMap<QString, QVariantMap> plugin::properties() {
+    QMap<QString, QVariantMap> l;
+    foreach ( ExternalClient* client, m_clients ) {
+        //list.append(client->getStateTracker());
     }
+    return l;
 }
 
-void ActorEventVolumeServer::execute()
-{
-    ActorEventVolume* base = service<ActorEventVolume>();
-    QList< ExternalClient* > clients = m_plugin->specificClients(base->host());
-    foreach (ExternalClient* client, clients) {
-        client->setVolume(base->volume(),base->relative());
-    }
-}
-
-
-void myPluginExecute::refresh() {}
-
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-    if (idb == ActorAmbienceVideo::staticMetaObject.className())
-        return new ActorAmbienceVideoServer((ActorAmbienceVideo*)service, this);
-    else if (idb == ActorAmbienceCmd::staticMetaObject.className())
-        return new ActorAmbienceCmdServer((ActorAmbienceCmd*)service, this);
-    else if (idb == ActorAmbienceVolume::staticMetaObject.className())
-        return new ActorAmbienceVolumeServer((ActorAmbienceVolume*)service, this);
-    else if (idb == ActorEvent::staticMetaObject.className()) {
-        return new ActorEventServer((ActorEvent*)service, this);
-    } else if (idb == ActorEventVolume::staticMetaObject.className()) {
-        return new ActorEventVolumeServer((ActorEventVolume*)service, this);
-    }
-    return 0;
-}
-
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    QList<AbstractStateTracker*> list;
-    foreach(ExternalClient* client, m_clients) {
-        list.append(client->getStateTracker());
-    }
-    return list;
-}
-
-void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
-    ExecutePlugin::setSetting(name, value);
-    if (name == QLatin1String("servers")) {
-        qDeleteAll(m_clients);
-        m_clients.clear();
-        QStringList strings = value.toString().split(QLatin1Char(';'));
-        foreach(QString address, strings) {
-            const QStringList data(address.split(QLatin1Char(':')));
-            if (data.size()!=2) continue;
-            m_clients.append(new ExternalClient(this,data[0], data[1].toInt()));
-        }
-    }
-}
-
-QList< ExternalClient* > myPluginExecute::specificClients(const QString& host) {
-    if (host.isEmpty()) return m_clients;
+QList< ExternalClient* > plugin::specificClients ( const QStringList& hosts ) {
     QList<ExternalClient*> r;
-    foreach(ExternalClient* client, m_clients) {
-        if (client->peerAddress() == QHostAddress(host)) r.append(client);
+    foreach ( QString host, hosts ) {
+        foreach ( ExternalClient* client, m_clients ) {
+            if ( client->peerAddress() == QHostAddress ( host ) ) r.append ( client );
+        }
     }
     return r;
 }

@@ -1,102 +1,115 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
+
 #include "plugin.h"
-#include "services/actorcurtain.h"
-#include "services/conditionled.h"
-#include "services/conditioncurtain.h"
-#include "services/actorledname.h"
-#include "services/actorled.h"
-#include "services_server/actorcurtainServer.h"
-#include "services_server/actorledServer.h"
-#include "services_server/actorlednameServer.h"
-#include "services_server/conditioncurtainServer.h"
-#include "services_server/conditionledServer.h"
-#include "controller.h"
 #include "configplugin.h"
+#include "controller.h"
 
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-bool ConditionLedServer::checkcondition()
-{
-  const unsigned int v = m_plugin->controller()->getChannel(service<ConditionLed>()->channel());
-  if (v>service<ConditionLed>()->max()) return false;
-  if (v<service<ConditionLed>()->min()) return false;
-  return true;
-}
-bool ConditionCurtainServer::checkcondition()
-{
-  return (service<ConditionCurtain>()->value() == m_plugin->controller()->getCurtain());
-}
-void ActorLedServer::execute()
-{
-  ActorLed* a = service<ActorLed>();
-  if (a->assignment() == ActorLed::ValueAbsolute)
-    m_plugin->controller()->setChannel ( a->channel(),a->value(),a->fadetype() );
-  else if (a->assignment() == ActorLed::ValueRelative)
-    m_plugin->controller()->setChannelRelative ( a->channel(),a->value(),a->fadetype() );
-  else if (a->assignment() == ActorLed::ValueMultiplikator)
-    m_plugin->controller()->setChannelExponential ( a->channel(),a->value(),a->fadetype() );
-  else if (a->assignment() == ActorLed::ValueInverse)
-    m_plugin->controller()->inverseChannel ( a->channel(),a->fadetype() );
-}
-void ActorLedNameServer::execute()
-{
-    m_plugin->controller()->setChannelName(service<ActorLedName>()->channel(),service<ActorLedName>()->ledname());
-}
-void ActorCurtainServer::execute()
-{
-    m_plugin->controller()->setCurtain(service<ActorCurtain>()->value());
+plugin::plugin() {
+    m_controller = new Controller ( this );
+    _config ( this );
+	connect(m_controller,SIGNAL(curtainChanged(int,int)),SLOT(curtainChanged(int,int)));
+	connect(m_controller,SIGNAL(lednameChanged(int,QString)),SLOT(lednameChanged(int,QString)));
+	connect(m_controller,SIGNAL(ledvalueChanged(int,int)),SLOT(ledvalueChanged(int,int)));
 }
 
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-    m_base = new myPlugin();
-    m_Controller = new Controller(this);
-    connect(m_Controller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
-    connect(m_Controller,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
-    _config(this);
+plugin::~plugin() {
+    delete m_controller;
 }
 
-myPluginExecute::~myPluginExecute() {
-    //delete m_base;
-    delete m_Controller;
+void plugin::init ( AbstractServer* server ) {
+    m_server = server;
 }
 
-void myPluginExecute::refresh() {}
+void plugin::clear() {
 
-void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
-    ExecutePlugin::setSetting(name, value);
-    if (name == QLatin1String("serialport")) {
+}
+
+void plugin::otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value ) {
+    Q_UNUSED ( unqiue_property_id );
+    Q_UNUSED ( value );
+}
+
+void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
+    PluginHelper::setSetting ( name, value, init );
+    if ( name == QLatin1String ( "serialport" ) ) {
         const QString device = value.toString();
-        m_Controller->connectToLeds(device);
+        m_controller->connectToLeds ( device );
     }
 }
 
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-    if (idb == ActorCurtain::staticMetaObject.className()) {
-        return new ActorCurtainServer((ActorCurtain*)service, this);
-    } else if (idb == ActorLed::staticMetaObject.className()) {
-        return new ActorLedServer((ActorLed*)service, this);
-    } else if (idb == ActorLedName::staticMetaObject.className()) {
-        return new ActorLedNameServer((ActorLedName*)service, this);
-    } else if (idb == ConditionCurtain::staticMetaObject.className()) {
-        return new ConditionCurtainServer((ConditionCurtain*)service, this);
-    } else if (idb == ConditionLed::staticMetaObject.className()) {
-        return new ConditionLedServer((ConditionLed*)service, this);
+void plugin::execute ( const QVariantMap& data ) {
+    if ( IS_ID ( "ledvalue_relative" ) ) {
+		m_controller->setChannelRelative ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
+    } else if ( IS_ID ( "ledvalue_absolut" ) ) {
+		 m_controller->setChannel ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
+    } else if ( IS_ID ( "ledvalue_invers" ) ) {
+		m_controller->inverseChannel ( INTDATA("channel"),INTDATA("fade") );
+    } else if ( IS_ID ( "ledname" ) ) {
+		m_controller->setChannelName ( INTDATA("channel"), DATA("name") );
+    } else if ( IS_ID ( "curtain" ) ) {
+		m_controller->setCurtain ( INTDATA("value") );
     }
-    return 0;
 }
 
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    return m_Controller->getStateTracker();
+bool plugin::condition ( const QVariantMap& data )  {
+    if ( IS_ID ( "ledcondition" ) ) {
+        const int v = m_controller->getChannel ( INTDATA("channel") );
+        if ( v>INTDATA("upper") ) return false;
+        if ( v<INTDATA("lower") ) return false;
+        return true;
+    } else if ( IS_ID ( "curtaincondition" ) ) {
+        return ( INTDATA("value") == m_controller->getCurtain() );
+    }
+    return false;
 }
-void myPluginExecute::dataLoadingComplete() {
-    emit pluginLoadingComplete(this);
+
+void plugin::event_changed ( const QVariantMap& data ) {
+    Q_UNUSED ( data );
+}
+
+QMap<QString, QVariantMap> plugin::properties() {
+    QMap<QString, QVariantMap> l;
+    return l;
+}
+
+void plugin::curtainChanged(int current, int max) {
+	PROPERTY("curtainstate");
+	data[QLatin1String("value")] = current;
+	data[QLatin1String("max")] = max;
+	m_server->property_changed(data);
+}
+
+void plugin::ledvalueChanged(int channel, int value) {
+	PROPERTY("ledvalue");
+	data[QLatin1String("channel")] = channel;
+	data[QLatin1String("value")] = value;
+	m_server->property_changed(data);
+}
+
+void plugin::lednameChanged(int channel, const QString& name) {
+	PROPERTY("ledname");
+	data[QLatin1String("channel")] = channel;
+	data[QLatin1String("name")] = name;
+	m_server->property_changed(data);
 }

@@ -22,6 +22,7 @@
 #include <QObject>
 #include <QStringList>
 #include <QTimer>
+#include <QSet>
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
 #include "shared/pluginhelper.h"

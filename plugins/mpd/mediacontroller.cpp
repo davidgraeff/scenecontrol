@@ -21,19 +21,14 @@
 #include <QSettings>
 #include <limits>
 #include <stdio.h>
-#include "statetracker/volumestatetracker.h"
-#include "plugin_server.h"
 #include <shared/abstractplugin.h>
-#include <statetracker/playliststatetracker.h>
 #include <shared/qjson/qobjecthelper.h>
 #include <QDir>
-#include <QApplication>
+#include <QCoreApplication>
 #include <QDateTime>
 
-MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0)
+MediaController::MediaController(AbstractPlugin* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0)
 {
-    m_mediaStateTracker = new MediaStateTracker(this);
-    m_volumestateTracker = new MusicVolumeStateTracker(this);
     m_fakepos.setInterval(1000);
     connect(&m_fakepos, SIGNAL(timeout()),SLOT(updatefakepos()));
 
@@ -58,7 +53,7 @@ MediaController::~MediaController()
     m_terminate = true;
     m_mpdcmd->disconnectFromHost();
     m_mpdstatus->disconnectFromHost();
-    qDeleteAll(m_playlists);
+    //qDeleteAll(m_playlists);
 }
 
 void MediaController::connectToMpd(const QString& hostport)
@@ -91,14 +86,14 @@ void MediaController::slotdisconnected()
 {
     if (m_terminate) return;
     if (m_mpdstatus->state() != QTcpSocket::UnconnectedState) return;
-    qWarning() << m_plugin->base()->name() << "Connection lost. Try reconnect (status channel)";
+    qWarning() << m_plugin->pluginid() << "Connection lost. Try reconnect (status channel)";
     m_mpdstatus->connectToHost(m_mpdhost,m_mpdport);
 }
 
 void MediaController::sloterror(QAbstractSocket::SocketError)
 {
     if (m_terminate) return;
-    qWarning() << m_plugin->base()->name() << m_mpdhost << m_mpdport << m_mpdstatus->errorString() << "status channel";
+    qWarning() << m_plugin->pluginid() << m_mpdhost << m_mpdport << m_mpdstatus->errorString() << "status channel";
     m_reconnect.start();
 }
 
@@ -113,14 +108,14 @@ void MediaController::slotdisconnected2()
 {
     if (m_terminate) return;
     if (m_mpdcmd->state() != QTcpSocket::UnconnectedState) return;
-    qWarning() << m_plugin->base()->name() << "Connection lost. Try reconnect (cmd channel)";
+    qWarning() << m_plugin->pluginid() << "Connection lost. Try reconnect (cmd channel)";
     m_mpdcmd->connectToHost(m_mpdhost,m_mpdport);
 }
 
 void MediaController::sloterror2(QAbstractSocket::SocketError)
 {
     if (m_terminate) return;
-    qWarning() << m_plugin->base()->name() << m_mpdhost << m_mpdport << m_mpdcmd->errorString() << "cmd channel";
+    qWarning() << m_plugin->pluginid() << m_mpdhost << m_mpdport << m_mpdcmd->errorString() << "cmd channel";
     m_reconnect.start();
 }
 

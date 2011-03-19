@@ -24,39 +24,26 @@
 #include <QTimer>
 
 #include <qprocess.h>
-#include <services/actorambiencevideo.h>
 #include <QtNetwork/QTcpSocket>
 #include <QtNetwork/QHostAddress>
 #include <QUrl>
 
-class AbstractStateTracker;
-class ExecuteWithBase;
-class myPluginExecute;
-class AbstractServiceProvider;
-
+class AbstractPlugin;
 class ExternalClient : public QTcpSocket
 {
     Q_OBJECT
 public:
-    ExternalClient(myPluginExecute* plugin, const QString& host, int port);
+    ExternalClient(AbstractPlugin* plugin, const QString& host, int port);
     ~ExternalClient();
-    QList<AbstractStateTracker*> getStateTracker();
 
-    void hideVideo();
-    void closeFullscreen();
-    void setFilename(const QString& filename);
-    void stopvideo();
-    void setVolume(qreal newvol, bool relative = false);
-    void setDisplay(int display);
-    void setClickActions(ActorAmbienceVideo::EnumOnClick leftclick, ActorAmbienceVideo::EnumOnClick rightclick, int restoretime);
-    void setDisplayState(int state);
+    void setSystemVolume(qreal newvol, bool relative = false);
+    void setDisplayState(int state, int display);
     void stopevent();
 
-    void showMessage(int duration, const QString& msg);
-    void playEvent(const QString& filename);
-    void setVolumeEvent(qreal newvol, bool relative = false);
+    void showVideo(const QString& filename, int display);
+    void showMessage(int duration, const QString& msg, const QString& audiofile);
 private:
-    myPluginExecute* m_plugin;
+    AbstractPlugin* m_plugin;
     QTimer m_reconnect;
     QString m_host;
     int m_port;

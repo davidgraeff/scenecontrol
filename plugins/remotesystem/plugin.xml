@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="remotesystem" version="1.0">
   <action id="remotefocus">
-    <string id="server">127.0.0.1</string>
+	<string id="servers">127.0.0.1</string><!-- multiple servers possible: server1;server2 -->
   </action>
   <action id="remotevolume">
     <double id="volume" min="-1.0" max="1.0" step="0.1">1.0</double>
@@ -13,13 +13,13 @@
     <serverfile id="audio"></serverfile>
   </action>
   <action id="remotevideo">
-    <double id="volume" min="0.0" max="1.0" step="0.1">1.0</double>
     <uint id="position_in_ms" step="100" />
     <int id="display" min="-1" max="10" step="1">0</int>
     <serverfile id="video"></serverfile>
   </action>
   <action id="remotedisplay">
-    <enum id="state" n="3"></enum>
+	  <int id="display" min="-1" max="10" step="1">0</int>
+	  <enum id="state" n="3"></enum><!-- on, off, toggle -->
   </action>
   <property id="remotevolume">
     <double id="volume" min="0.0" max="1.0" />

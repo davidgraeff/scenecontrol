@@ -44,40 +44,23 @@ void MediaPlayer::readyRead() {
 
     QList<QByteArray> args = line.split(' ');
     if (args.size()==0) return;
-    if (args[0] == "hideVideo") {
-        hide();
-        restoretimer.start();
-    } else if (args[0] == "closeFullscreen") {
-        smallWindow();
-    } else if (args[0] == "stopvideo") {
-        restoretimer.stop();
-        m_videomedia->stop();
-        hide();
-    } else if (args[0] == "stopevent") {
-        m_eventmedia->stop();
-    } else if (args[0] == "display" && args.size()==2) {
-        m_screen = args[1].toInt();
-    } else if (args[0] == "videovolume_relative" && args.size()==2) {
-        qreal vol = m_outputvideo->volume();
+	if (args[0] == "volume_relative" && args.size()==2) {
+/*        qreal vol = m_outputvideo->volume();
         vol += args[1].toDouble();
-        m_outputvideo->setVolume(vol);
-    } else if (args[0] == "eventvolume_relative" && args.size()==2) {
-        qreal vol = m_outputevents->volume();
-        vol += args[1].toDouble();
-        m_outputevents->setVolume(vol);
-    } else if (args[0] == "videovolume" && args.size()==2) {
-        m_outputvideo->setVolume(args[1].toDouble());
-    } else if (args[0] == "eventvolume" && args.size()==2) {
-        m_outputevents->setVolume(args[1].toDouble());
-    } else if (args[0] == "clickactions" && args.size()==4) {
-        leftclick = (ActorAmbienceVideo::EnumOnClick)args[1].toInt();
-        rightclick = (ActorAmbienceVideo::EnumOnClick)args[2].toInt();
-        restoretimer.setInterval(args[3].toInt());
+        m_outputvideo->setVolume(vol);*/
+    } else if (args[0] == "volume" && args.size()==2) {
+        //m_outputvideo->setVolume(args[1].toDouble());
     } else if (args[0] == "displaystate" && args.size()==2) {
         setSceenState(args[1].toInt());
     } else if (args[0] == "showmessage" && args.size()==3) {
         const int duration = args[1].toInt();
         const QString title = QString::fromUtf8(line.mid(2+args[0].count()+args[1].count()));
+        const QUrl filename = QUrl(QString::fromUtf8(line.mid(1+args[0].count())));
+        if (m_eventmedia->currentSource().url()!=filename) {
+            m_eventmedia->setCurrentSource(filename);
+            m_eventmedia->play();
+        } else if (m_eventmedia->state()!=Phonon::PlayingState)
+            m_eventmedia->play();
     } else if (args[0] == "playvideo" && args.size()>1) {
         const QUrl filename = QUrl(QString::fromUtf8(line.mid(6)));
         fullscreenWindow();
@@ -86,13 +69,6 @@ void MediaPlayer::readyRead() {
             m_videomedia->play();
         } else if (m_videomedia->state()!=Phonon::PlayingState)
             m_videomedia->play();
-    } else if (args[0] == "playevent" && args.size()>1) {
-        const QUrl filename = QUrl(QString::fromUtf8(line.mid(1+args[0].count())));
-        if (m_eventmedia->currentSource().url()!=filename) {
-            m_eventmedia->setCurrentSource(filename);
-            m_eventmedia->play();
-        } else if (m_eventmedia->state()!=Phonon::PlayingState)
-            m_eventmedia->play();
     }
 }
 
@@ -101,7 +77,7 @@ void MediaPlayer::prefinishMarkReached(qint32) {
 }
 
 void MediaPlayer::mousePressEvent(QMouseEvent*event) {
-    ActorAmbienceVideo::EnumOnClick i=ActorAmbienceVideo::OnClickClose;
+/*    ActorAmbienceVideo::EnumOnClick i=ActorAmbienceVideo::OnClickClose;
     if (event->button()==Qt::LeftButton) {
         i = leftclick;
     } else if (event->button()==Qt::RightButton) {
@@ -124,7 +100,7 @@ void MediaPlayer::mousePressEvent(QMouseEvent*event) {
         break;
     default:
         break;
-    }
+    }*/
 }
 
 void MediaPlayer::smallWindow() {
@@ -197,7 +173,7 @@ int main(int argc, char **argv)
     signal(SIGINT, catch_int);
     signal(SIGTERM, catch_int);
 #ifndef _WIN32
-    signal(SIGHUP, catch_int)
+    signal(SIGHUP, catch_int);
     prctl(PR_SET_PDEATHSIG, SIGHUP); // quit if parent dies
 #endif
     QApplication app(argc, argv);

@@ -13,9 +13,9 @@ SET(CONFIG_REPEAT ${CONFIG_${PROJECT_NAME}_REPEAT})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
 IF (DEBFOUND)
-	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)
+	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)
 
-	IF (PLUGIN_${PROJECT_NAME}_SERVER)
+	IF (PLUGIN_${PROJECT_NAME})
 		build_server_lib()
 		target_link_libraries(${PROJECT_NAME}_server ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES} ${QT_QTDBUS_LIBRARIES})
 		install_server_lib()

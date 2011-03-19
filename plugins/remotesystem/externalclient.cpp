@@ -22,10 +22,9 @@
 #include <limits>
 #include <stdio.h>
 #include <qprocess.h>
-#include "plugin_server.h"
 #include <shared/abstractplugin.h>
 
-ExternalClient::ExternalClient(myPluginExecute* plugin, const QString& host, int port) : m_plugin(plugin), m_alreadyWarnedNoHost(false)
+ExternalClient::ExternalClient(AbstractPlugin* plugin, const QString& host, int port) : m_plugin(plugin), m_alreadyWarnedNoHost(false)
 {
     connect(&m_reconnect,SIGNAL(timeout()),SLOT(reconnectTimeout()));
     m_reconnect.setInterval(60000);
@@ -57,12 +56,12 @@ void ExternalClient::slotconnected()
 {
     m_alreadyWarnedNoHost = false;
     m_reconnect.stop();
-    qDebug()<< m_plugin->base()->name() << "connected to"<<m_host<<m_port;
+    qDebug()<< m_plugin->pluginid() << "connected to"<<m_host<<m_port;
 }
 
 void ExternalClient::slotdisconnected()
 {
-    qDebug()<< m_plugin->base()->name() << "disconnected from"<<m_host<<m_port;
+    qDebug()<< m_plugin->pluginid() << "disconnected from"<<m_host<<m_port;
     disconnectFromHost();
     m_reconnect.start();
 }
@@ -73,7 +72,7 @@ void ExternalClient::sloterror(QAbstractSocket::SocketError e)
         if (m_alreadyWarnedNoHost) return;
         m_alreadyWarnedNoHost = true;
     }
-    qWarning() << m_plugin->base()->name() << m_host << m_port << errorString();
+    qWarning() << m_plugin->pluginid() << m_host << m_port << errorString();
 }
 
 void ExternalClient::slotreadyRead()
@@ -88,61 +87,27 @@ void ExternalClient::slotreadyRead()
         QByteArray line = readLine();
         line.chop(1);
         //QList<QByteArray> args = line.split(' ');
-        qWarning()<< m_plugin->base()->name() << line;
+        qWarning()<< m_plugin->pluginid() << line;
     }
 }
 
-QList<AbstractStateTracker*> ExternalClient::getStateTracker()
-{
-    QList<AbstractStateTracker*> l;
-    return l;
+void ExternalClient::showVideo(const QString& filename, int display) {
+    write("playvideo;" + filename.toUtf8() + ";" + QByteArray::number(display) +"\n");
 }
 
-void ExternalClient::hideVideo() {
-    write("hideVideo\n");
-}
-void ExternalClient::closeFullscreen() {
-    write("closeFullscreen\n");
-}
-void ExternalClient::setFilename(const QString& filename) {
-    write("playvideo " + filename.toUtf8() +"\n");
-}
-void ExternalClient::setVolume(qreal newvol, bool relative) {
+void ExternalClient::setSystemVolume(qreal newvol, bool relative) {
     if (relative)
-        write("videovolume_relative " + QByteArray::number(newvol*100) + "\n");
+        write("volume_relative;" + QByteArray::number(newvol*100) + "\n");
     else {
-        write("videovolume " + QByteArray::number(newvol*100) + "\n");
+        write("volume;" + QByteArray::number(newvol*100) + "\n");
     }
 }
-void ExternalClient::setVolumeEvent(qreal newvol, bool relative) {
-    if (relative)
-        write("eventvolume_relative " + QByteArray::number(newvol*100) + "\n");
-    else {
-        write("eventvolume " + QByteArray::number(newvol*100) + "\n");
-    }
-}
-void ExternalClient::stopvideo() {
-    write("stopvideo\n");
-}
-void ExternalClient::stopevent() {
-    write("stopevent\n");
-}
-void ExternalClient::setDisplay(int display) {
-    write("display " + QByteArray::number(display) + "\n");
-}
-void ExternalClient::setClickActions(ActorAmbienceVideo::EnumOnClick leftclick, ActorAmbienceVideo::EnumOnClick rightclick, int restoretime) {
-    write("clickactions " + QByteArray::number(leftclick) + " " + QByteArray::number(rightclick) + " " + QByteArray::number(restoretime) + "\n");
-}
-void ExternalClient::setDisplayState(int state) {
-    write("displaystate " + QByteArray::number(state) + "\n");
+
+void ExternalClient::setDisplayState(int state, int display) {
+    write("displaystate;" + QByteArray::number(state) + ";" + QByteArray::number(display) + "\n");
 }
 
-void ExternalClient::showMessage(int duration, const QString& msg) {
-    write("showmessage " + QByteArray::number(duration) + " " + msg.toUtf8() + "\n");
+void ExternalClient::showMessage(int duration, const QString& msg, const QString& audiofile) {
+    write("showmessage;" + QByteArray::number(duration) + ";" + msg.toUtf8() + ";" + audiofile.toUtf8() + "\n");
 }
-
-void ExternalClient::playEvent(const QString& filename) {
-    write("playevent " + filename.toUtf8() +"\n");
-}
-
 

@@ -21,23 +21,15 @@
 #include <QStringList>
 #include <QTimer>
 #include <QTcpSocket>
-#include <statetracker/mediastatetracker.h>
 #include <QUrl>
 
-class MusicVolumeStateTracker;
-class PlaylistStateTracker;
-class AbstractStateTracker;
-class ExecuteWithBase;
-class myPluginExecute;
-class AbstractServiceProvider;
-
+class AbstractPlugin;
 class MediaController : public QObject
 {
     Q_OBJECT
 public:
-    MediaController(myPluginExecute* plugin);
+    MediaController(AbstractPlugin* plugin);
     ~MediaController();
-    QList<AbstractStateTracker*> getStateTracker();
 
     /**
      * Return current active playlist or an empty string if no valid playlist is set
@@ -81,7 +73,7 @@ public:
     void dumpMediaInfo();
     void connectToMpd(const QString& hostport);
 private:
-    myPluginExecute* m_plugin;
+    AbstractPlugin* m_plugin;
     QString m_mpdhost;
     int m_mpdport;
     bool m_terminate;
@@ -97,9 +89,9 @@ private:
     void checkPlaylists();
 
     // state trackers
-    MediaStateTracker *m_mediaStateTracker;
-    MusicVolumeStateTracker* m_volumestateTracker;
-    QList<PlaylistStateTracker*> m_playlists;
+//     MediaStateTracker *m_mediaStateTracker;
+//     MusicVolumeStateTracker* m_volumestateTracker;
+//     QList<PlaylistStateTracker*> m_playlists;
     int indexOfPlaylist(const QString& name);
 
     // current media state

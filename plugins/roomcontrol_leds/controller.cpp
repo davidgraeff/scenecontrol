@@ -19,183 +19,142 @@
 
 #include "controller.h"
 #include <QSettings>
-#include "statetracker/curtainstatetracker.h"
-#include "statetracker/ledvaluestatetracker.h"
-#include "statetracker/lednamestatetracker.h"
-#include "plugin_server.h"
 #include <qfile.h>
 #include <QDebug>
-#include <shared/server/qextserialport/qextserialport.h>
+#include <shared/qextserialport/qextserialport.h>
 #include <shared/abstractplugin.h>
 
-Controller::Controller(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_channels(0), m_bufferpos(0), m_readState(ReadOK), m_serial(0)
-{
-    m_curtainStateTracker = new CurtainStateTracker();
-}
+Controller::Controller ( AbstractPlugin* plugin ) : m_plugin ( plugin ), m_curtain_max ( 0 ), m_curtain_value ( 0 ), m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {}
 
-Controller::~Controller()
-{
-    qDeleteAll(m_values);
-    qDeleteAll(m_names);
+Controller::~Controller() {
     delete m_serial;
-    delete m_curtainStateTracker;
 }
 
-
-void Controller::readyRead()
-{
+void Controller::readyRead() {
     QByteArray bytes;
-    bytes.resize(m_serial->bytesAvailable());
-    m_serial->read(bytes.data(), bytes.size());
-    m_buffer.append(bytes);
-    while(m_buffer.size()) {
-    if (m_readState==ReadOK) {
-        for (int i=m_bufferpos;i<m_buffer.size();++i) {
-            if (m_buffer.size()<=i) break;
-            if (m_buffer[i] == 'O' && m_buffer[i+1] == 'K') {
-                m_readState = ReadEnd;
-                m_buffer.remove(0,i+2);
-                m_bufferpos = 0;
+    bytes.resize ( m_serial->bytesAvailable() );
+    m_serial->read ( bytes.data(), bytes.size() );
+    m_buffer.append ( bytes );
+    while ( m_buffer.size() ) {
+        if ( m_readState==ReadOK ) {
+            for ( int i=m_bufferpos;i<m_buffer.size();++i ) {
+                if ( m_buffer.size() <=i ) break;
+                if ( m_buffer[i] == 'O' && m_buffer[i+1] == 'K' ) {
+                    m_readState = ReadEnd;
+                    m_buffer.remove ( 0,i+2 );
+                    m_bufferpos = 0;
+                    break;
+                }
+            }
+            if ( m_readState==ReadOK ) {
+                m_buffer.clear();
+                return;
+            }
+        }
+        if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
+            int leds;
+            switch ( m_buffer[0] ) {
+            case 'S': //sensors
+                if ( m_buffer.size() <3 ) return;
+                parseSensors ( m_buffer[1], m_buffer[2] );
+                m_buffer.remove ( 0,3 );
+                break;
+            case 'M': //curtain motor
+                if ( m_buffer.size() <3 ) return;
+                parseCurtain ( m_buffer[1], m_buffer[2] );
+                m_buffer.remove ( 0,3 );
+                break;
+            case 'L': //leds
+                if ( m_buffer.size() <3 ) return;
+                leds = m_buffer[1];
+                parseLeds ( m_buffer.mid ( 1,leds ) );
+                m_buffer.remove ( 0,2+leds );
+                break;
+            case 'I': //init
+                if ( m_buffer.size() <2 ) return;
+                parseInit ( m_buffer[1] );
+                m_buffer.remove ( 0,2 );
                 break;
             }
         }
-        if (m_readState==ReadOK) {
-            m_buffer.clear();
-            return;
-        }
-    }
-    if (m_readState == ReadEnd && m_buffer.size()>1) {
-        int leds;
-        switch(m_buffer[0]) {
-            case 'S': //sensors
-                if (m_buffer.size()<3) return;
-                parseSensors(m_buffer[1], m_buffer[2]);
-                m_buffer.remove(0,3);
-                break;
-            case 'M': //curtain motor
-                if (m_buffer.size()<3) return;
-                parseCurtain(m_buffer[1], m_buffer[2]);
-                m_buffer.remove(0,3);
-                break;
-            case 'L': //leds
-                if (m_buffer.size()<3) return;
-                leds = m_buffer[1];
-                parseLeds(m_buffer.mid(1,leds));
-                m_buffer.remove(0,2+leds);
-                break;
-            case 'I': //init
-                if (m_buffer.size()<2) return;
-                parseInit(m_buffer[1]);
-                m_buffer.remove(0,2);
-                break;
-        }
-    }
     } //while
 }
 
-void Controller::parseCurtain(unsigned char current, unsigned char max) {
-    m_curtainStateTracker->setCurtain(current);
-    m_curtainStateTracker->setCurtainMax(max);
-    emit stateChanged(m_curtainStateTracker);
+void Controller::parseCurtain ( unsigned char current, unsigned char max ) {
+    m_curtain_value = current;
+    m_curtain_max = max;
+    emit curtainChanged ( current, max );
 }
 
-void Controller::parseInit(unsigned char protocolversion) {
-     qDebug() <<m_pluginname<< "LED Protocol:" << protocolversion;
+void Controller::parseInit ( unsigned char protocolversion ) {
+    qDebug() <<m_plugin->pluginid() << "LED Protocol:" << protocolversion;
 }
 
-void Controller::parseSensors(unsigned char s1, unsigned char s2) {
+void Controller::parseSensors ( unsigned char s1, unsigned char s2 ) {
 
 }
 
-void Controller::parseLeds(const QByteArray& data)
-{
-    if (data.isEmpty() || data.size() != (int)data[0]+1) {
-        qWarning()<<m_pluginname<<__FUNCTION__<<"size missmatch:"<<(data.size()?((int)data[0]+1):0)<<data.size();
+void Controller::parseLeds ( const QByteArray& data ) {
+    if ( data.isEmpty() || data.size() != ( int ) data[0]+1 ) {
+        qWarning() <<m_plugin->pluginid() <<__FUNCTION__<<"size missmatch:"<< ( data.size() ? ( ( int ) data[0]+1 ) :0 ) <<data.size();
         return;
     }
     QSettings settings;
-    settings.beginGroup(m_pluginname);
-    settings.beginGroup ( QLatin1String("channelnames") );
+    settings.beginGroup ( m_plugin->pluginid() );
+    settings.beginGroup ( QLatin1String ( "channelnames" ) );
     // clear old
-    qDeleteAll(m_values);
-    qDeleteAll(m_names);
-    m_values.clear();
-    m_names.clear();
+    m_leds.clear();
     // set new
-    m_channels = (int)data[0];
-    qDebug() <<m_pluginname<< "LED Channels:" << m_channels;
-    for ( int i=0;i<m_channels;++i )
-    {
-        const QString name = settings.value ( QLatin1String("channel")+QString::number( i ),
-                                              tr("Channel %1").arg( i ) ).toString();
-        ChannelValueStateTracker* cv = new ChannelValueStateTracker();
-        m_values.append(cv);
-        cv->setChannel(i);
-        const int value = (uint8_t)data[i+1];
-        cv->setValue(value);
-        emit stateChanged(cv);
-        ChannelNameStateTracker* cn = new ChannelNameStateTracker();
-        m_names.append(cn);
-        cn->setChannel(i);
-        cn->setValue(name);
-        emit stateChanged(cn);
+    m_channels = ( int ) data[0];
+    qDebug() <<m_plugin->pluginid() << "LED Channels:" << m_channels;
+    for ( int i=0;i<m_channels;++i ) {
+        const QString name = settings.value ( QLatin1String ( "channel" ) +QString::number ( i ),
+                                              tr ( "Channel %1" ).arg ( i ) ).toString();
+        const int value = ( uint8_t ) data[i+1];
+        m_leds[i].value = value;
+        emit ledvalueChanged ( i, value );
+        m_leds[i].name = name;
+        emit lednameChanged ( i, name );
     }
     emit dataLoadingComplete();
 }
 
-void Controller::refresh() {}
-
-QList<AbstractStateTracker*> Controller::getStateTracker()
-{
-    QList<AbstractStateTracker*> l;
-    foreach (ChannelValueStateTracker* p, m_values) l.append(p);
-    foreach (ChannelNameStateTracker* p, m_names) l.append(p);
-    l.append(m_curtainStateTracker);
-    return l;
-}
-
-void Controller::setCurtain(unsigned int position)
-{
-    if (!m_serial) return;
-    m_curtainStateTracker->setCurtain(position);
-    emit stateChanged(m_curtainStateTracker);
+void Controller::setCurtain ( unsigned int position ) {
+    if ( !m_serial ) return;
+    m_curtain_value = position;
+    emit curtainChanged ( m_curtain_value, m_curtain_max );
     const char t1[] = {0xdf, position};
-    m_serial->write(t1, sizeof(t1));
+    m_serial->write ( t1, sizeof ( t1 ) );
 }
 
-unsigned int Controller::getCurtain()
-{
-    return m_curtainStateTracker->curtain();
+int Controller::getCurtain() {
+    return m_curtain_value;
 }
 
-void Controller::setChannelName ( uint channel, const QString& name )
-{
-    if ( channel>= ( unsigned int ) m_names.size() ) return;
-    m_names[channel]->setValue(name);
-    emit stateChanged(m_names[channel]);
+void Controller::setChannelName ( uint channel, const QString& name ) {
+    if ( !m_leds.contains(channel) ) return;
+    m_leds[channel].name = name;
+	emit lednameChanged ( channel, name );
 
     QSettings settings;
-    settings.beginGroup(m_pluginname);
-    settings.beginGroup ( QLatin1String("channelnames") );
-    settings.setValue ( QLatin1String("channel")+QString::number ( channel ), name );
+    settings.beginGroup ( m_plugin->pluginid() );
+    settings.beginGroup ( QLatin1String ( "channelnames" ) );
+    settings.setValue ( QLatin1String ( "channel" ) +QString::number ( channel ), name );
 }
 
-unsigned int Controller::getChannel(unsigned int channel) const
-{
-    if ( channel>= ( unsigned int ) m_values.size() ) return 300;
-    return m_values.at(channel)->value();
+unsigned int Controller::getChannel ( unsigned int channel ) const {
+    return m_leds.value ( channel ).value;
 }
 
-void Controller::setChannel ( uint channel, uint value, uint fade )
-{
-    if (!m_serial) return;
-    if ( channel>= ( unsigned int ) m_values.size() ) return;
+void Controller::setChannel ( uint channel, uint value, uint fade ) {
+    if ( !m_serial ) return;
+    if ( !m_leds.contains(channel) ) return;
     value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
-    m_values[channel]->setValue(value);
-    emit stateChanged(m_values[channel]);
+    m_leds[channel].value = value;
+	emit ledvalueChanged ( channel, value );
 
     unsigned char cfade=0;
-    switch (fade) {
+    switch ( fade ) {
     case STELLA_SET_IMMEDIATELY:
         cfade = 0xcf;
         break;
@@ -212,96 +171,91 @@ void Controller::setChannel ( uint channel, uint value, uint fade )
         break;
     };
     const char t1[] = {cfade, channel, value};
-    m_serial->write(t1, sizeof(t1));
+    m_serial->write ( t1, sizeof ( t1 ) );
 }
 
-void Controller::inverseChannel(uint channel, uint fade)
-{
-    if ( channel>= ( unsigned int ) m_values.size() ) return;
-    const unsigned int newvalue = 255 - m_values[channel]->value();
-    setChannel(channel, newvalue, fade);
+void Controller::inverseChannel ( uint channel, uint fade ) {
+    if ( channel>= ( unsigned int ) m_leds.size() ) return;
+    const unsigned int newvalue = 255 - m_leds[channel]->value();
+    setChannel ( channel, newvalue, fade );
 }
 
-void Controller::setChannelExponential ( uint channel, int multiplikator, uint fade )
-{
-    if ( channel>= ( unsigned int ) m_values.size() ) return;
-    unsigned int v = m_values[channel]->value();
-    if (multiplikator>100) {
-        if (v==0)
+void Controller::setChannelExponential ( uint channel, int multiplikator, uint fade ) {
+    if ( channel>= ( unsigned int ) m_leds.size() ) return;
+    unsigned int v = m_leds[channel]->value();
+    if ( multiplikator>100 ) {
+        if ( v==0 )
             v=1;
-        else if (v==1)
+        else if ( v==1 )
             v=2;
         else
-            v = (v * multiplikator)/100;
+            v = ( v * multiplikator ) /100;
     } else {
-        if (v==0 || v==1)
+        if ( v==0 || v==1 )
             v = 0;
         else
-            v = (v * multiplikator)/100;
+            v = ( v * multiplikator ) /100;
     }
 
-    setChannel(channel, v, fade);
+    setChannel ( channel, v, fade );
 }
 
-void Controller::setChannelRelative ( uint channel, int value, uint fade )
-{
-    if ( channel>= ( unsigned int ) m_values.size() ) return;
-    value += m_values[channel]->value();
-    const unsigned int v = ( unsigned int ) qMin ( 0, value);
+void Controller::setChannelRelative ( uint channel, int value, uint fade ) {
+    if ( channel>= ( unsigned int ) m_leds.size() ) return;
+    value += m_leds[channel]->value();
+    const unsigned int v = ( unsigned int ) qMin ( 0, value );
     setChannel ( channel, v, fade );
 }
 
 
-int Controller::countChannels()
-{
+int Controller::countChannels() {
     return m_channels;
 }
 
-QString Controller::getChannelName(uint channel) {
-    if (channel>=(uint)m_names.size()) return QString();
-    return m_names[channel]->value();
+QString Controller::getChannelName ( uint channel ) {
+	return m_leds.value ( channel ).name;
 }
 
 void Controller::panicTimeout() {
-    if (!m_serial) return;
+    if ( !m_serial ) return;
     const char t1[] = {0x00};
-    if (!m_serial->isOpen() || m_serial->write(t1, sizeof(t1)) == -1) {
-        qWarning()<< "IO: Failed to reset panic counter. Try reconnection";
+    if ( !m_serial->isOpen() || m_serial->write ( t1, sizeof ( t1 ) ) == -1 ) {
+        qWarning() << "IO: Failed to reset panic counter. Try reconnection";
         m_serial->close();
         const char t1[] = {0xef};
-        if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1,  sizeof(t1))) {
+        if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1,  sizeof ( t1 ) ) ) {
             qWarning() << "IO: rs232 init fehler";
         }
     }
 }
-void Controller::connectToLeds(const QString& device) {
+void Controller::connectToLeds ( const QString& device ) {
     // disable old
     m_panicTimer.stop();
     delete m_serial;
     m_serial = 0;
     // create new
     QSettings settings;
-    settings.beginGroup(m_pluginname);
+    settings.beginGroup ( m_plugin->pluginid() );
     // Open device and ask for pins
-    if (!QFile::exists(device)) {
-        qWarning() << m_pluginname << "device not found"<<device;
+    if ( !QFile::exists ( device ) ) {
+        qWarning() << m_plugin->pluginid() << "device not found"<<device;
         return;
     }
 
-    m_serial = new QextSerialPort(device,QextSerialPort::EventDriven);
-    m_serial->setBaudRate(BAUD115200);
-    m_serial->setFlowControl(FLOW_OFF);
-    m_serial->setParity(PAR_NONE);
-    m_serial->setDataBits(DATA_8);
-    m_serial->setStopBits(STOP_1);
-    connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
+    m_serial = new QextSerialPort ( device,QextSerialPort::EventDriven );
+    m_serial->setBaudRate ( BAUD115200 );
+    m_serial->setFlowControl ( FLOW_OFF );
+    m_serial->setParity ( PAR_NONE );
+    m_serial->setDataBits ( DATA_8 );
+    m_serial->setStopBits ( STOP_1 );
+    connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
 
     const char t1[] = {0xef};
-    if (!m_serial->open(QIODevice::ReadWrite) || !m_serial->write(t1, sizeof(t1))) {
-        qWarning() << m_pluginname << "rs232 init fehler";
+    if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1, sizeof ( t1 ) ) ) {
+        qWarning() << m_plugin->pluginid() << "rs232 init fehler";
     }
     // panic counter
-    m_panicTimer.setInterval(60000);
-    connect(&m_panicTimer,SIGNAL(timeout()),SLOT(panicTimeout()));
+    m_panicTimer.setInterval ( 60000 );
+    connect ( &m_panicTimer,SIGNAL ( timeout() ),SLOT ( panicTimeout() ) );
     m_panicTimer.start();
 }

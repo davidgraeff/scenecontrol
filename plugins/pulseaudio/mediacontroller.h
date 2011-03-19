@@ -26,27 +26,29 @@
 #include <QTcpSocket>
 #include <qprocess.h>
 
-class PulseStateTracker;
-class AbstractStateTracker;
-class ExecuteWithBase;
-class myPluginExecute;
-class AbstractServiceProvider;
+class AbstractPlugin;
 
 class MediaController : public QObject
 {
     Q_OBJECT
 public:
-    MediaController(myPluginExecute* plugin);
+    MediaController(AbstractPlugin* plugin);
     ~MediaController();
-    int count();
-    QList<AbstractStateTracker*> getStateTracker();
+	/**
+	 * Return volumes for all known sinks
+	 */
+	QMap<QByteArray, QPair<double, bool> > volumes() {return m_paVolume;}
 
-    void setPAMute(const QByteArray sink, bool mute);
-    void togglePAMute(const QByteArray sink);
+	/**
+	 * Set sink Volume
+	 * \param sink PA sink name
+	 * \param state 0=unmute, 1=mute, 2=toggle
+	 */
+    void setPAMute(const QByteArray sink, int state); 
     void setPAVolume(const QByteArray sink, double volume, bool relative = false);
 private:
-    myPluginExecute* m_plugin;
-    QMap<QByteArray, PulseStateTracker*> m_paStateTrackers;
+    AbstractPlugin* m_plugin;
+    QMap<QByteArray, QPair<double, bool> > m_paVolume;
     QProcess* m_playerprocess;
 private Q_SLOTS:
     void slotreadyRead ();
@@ -55,5 +57,5 @@ private Q_SLOTS:
     void sloterror(QProcess::ProcessError e);
     void readyReadStandardError() ;
 Q_SIGNALS:
-    void stateChanged(AbstractStateTracker*);
+    void pulseSinkChanged(double volume, bool mute, const QString& sinkid);
 };

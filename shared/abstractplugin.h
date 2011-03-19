@@ -24,6 +24,10 @@
 #define PLUGIN_MACRO virtual QString pluginid() { return QLatin1String(PLUGIN_ID); }
 #define IS_ID(ID) data[QLatin1String("id")].toString() == QLatin1String(ID)
 #define DATA(ID) data[QLatin1String(ID)].toString()
+#define INTDATA(ID) data[QLatin1String(ID)].toInt()
+#define BOOLDATA(ID) data[QLatin1String(ID)].toBool()
+#define DOUBLEDATA(ID) data[QLatin1String(ID)].toDouble()
+#define PROPERTY(ID) QVariantMap data; data[QLatin1String("id")] = QLatin1String(PLUGIN_ID"_"ID);
 
 class AbstractServer;
 class AbstractPlugin

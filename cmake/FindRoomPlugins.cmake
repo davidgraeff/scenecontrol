@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 # project name
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-project(${targetname}Plugin)
+project(${targetname})
 message(STATUS "Configure Plugin: ${targetname}")
 
 #Only allow this file to be included by the root cmake file
@@ -10,7 +10,7 @@ IF (NOT DEFINED PRODUCTID)
 	RETURN()
 ENDIF()
 
-find_package(Qt4 4.7.0 COMPONENTS QtCore QtGui REQUIRED)
+find_package(Qt4 4.7.0 COMPONENTS QtCore REQUIRED)
 
 get_filename_component(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 #set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")

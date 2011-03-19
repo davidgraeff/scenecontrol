@@ -26,6 +26,7 @@
 #include <QVariantMap>
 #include <stdint.h>
 
+class AbstractPlugin;
 class QextSerialPort;
 class myPluginExecute;
 class CurtainStateTracker;
@@ -50,13 +51,11 @@ public:
     /**
     Daten von ethersex abrufen
     */
-    Controller(myPluginExecute* plugin);
+    Controller(AbstractPlugin* plugin);
     ~Controller();
-    void refresh();
     void connectToLeds(const QString& url);
-    QList<AbstractStateTracker*> getStateTracker();
     void setCurtain(unsigned int position);
-    unsigned int getCurtain();
+    int getCurtain();
 
     int countChannels();
     QString getChannelName ( uint channel );
@@ -67,10 +66,16 @@ public:
     void setChannelRelative ( uint channel, int value, uint fade );
     unsigned int getChannel(unsigned int channel) const;
 private:
-    QString m_pluginname;
-    QList<ChannelValueStateTracker*> m_values;
-    QList<ChannelNameStateTracker*> m_names;
-    CurtainStateTracker* m_curtainStateTracker;
+    AbstractPlugin* m_plugin;
+	struct ledchannel {
+		int value;
+		QString name;
+		ledchannel() { value = 300; }
+	};
+    QMap<int,ledchannel> m_leds;
+	int m_curtain_max;
+	int m_curtain_value;
+    
     int m_channels;
     QByteArray m_buffer;
     void parseLeds(const QByteArray& data);
@@ -91,6 +96,8 @@ private Q_SLOTS:
     void readyRead();
     void panicTimeout();
 Q_SIGNALS:
-    void stateChanged(AbstractStateTracker*);
+    void curtainChanged(int current, int max);
+	void ledvalueChanged(int channel, int value);
+	void lednameChanged(int channel, const QString& name);
     void dataLoadingComplete();
 };

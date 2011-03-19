@@ -4,7 +4,6 @@
 #include <Phonon/AudioOutput>
 #include <Phonon/VideoWidget>
 #include <Phonon/Global>
-#include <services/actorambiencevideo.h>
 #include <QMouseEvent>
 #include <qfile.h>
 #include <QTimer>
@@ -21,8 +20,6 @@ private:
     Phonon::MediaObject *m_eventmedia;
     Phonon::AudioOutput *m_outputvideo;
     Phonon::AudioOutput *m_outputevents;
-    ActorAmbienceVideo::EnumOnClick leftclick;
-    ActorAmbienceVideo::EnumOnClick rightclick;
     QTimer restoretimer;
     int m_screen;
     QByteArray m_buffer;

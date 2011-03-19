@@ -22,11 +22,9 @@
 #include <limits>
 #include <stdio.h>
 #include <qprocess.h>
-#include "plugin_server.h"
 #include <shared/abstractplugin.h>
-#include <statetracker/pulsestatetracker.h>
 
-MediaController::MediaController(myPluginExecute* plugin) : m_plugin(plugin)
+MediaController::MediaController( AbstractPlugin* plugin) : m_plugin(plugin)
 {
 
     m_playerprocess = new QProcess();
@@ -79,33 +77,16 @@ void MediaController::slotreadyRead()
 		if (args[0] == "pa_version" && args.size()==3) {
 			qDebug() << "Pulseaudio Version:" << args[2];
 		} else if (args[0] == "pa_sink" && args.size()==4) {
-            PulseStateTracker* p = m_paStateTrackers[args[1]];
-            if (!p) {
-                p = new PulseStateTracker(this);
-                p->setSinkname(QString::fromAscii(args[1]));
-                m_paStateTrackers.insert(args[1], p);
-            }
-            p->setMute(args[2].toInt());
-            p->setVolume(args[3].toUInt()/10000.0);
-            emit stateChanged(p);
+			const double volume = args[3].toUInt()/10000.0;
+			const bool mute = args[2].toInt();
+			m_paVolume[args[1]] = QPair<double, bool>(volume, mute);
+			emit pulseSinkChanged(args[1], volume, mute);
         }
     }
 }
 
-QList<AbstractStateTracker*> MediaController::getStateTracker()
-{
-    QList<AbstractStateTracker*> l;
-    QList<PulseStateTracker*> k = m_paStateTrackers.values();
-    foreach(PulseStateTracker* p, k) l.append(p);
-    return l;
-}
-
-void MediaController::setPAMute(const QByteArray sink, bool mute) {
-    m_playerprocess->write("pa_mute " + sink + " " + QByteArray::number(mute) +"\n");
-}
-
-void MediaController::togglePAMute(const QByteArray sink) {
-    m_playerprocess->write("pa_mute " + sink +" 2\n");
+void MediaController::setPAMute(const QByteArray sink, int state) {
+    m_playerprocess->write("pa_mute " + sink + " " + QByteArray::number(state) +"\n");
 }
 
 void MediaController::setPAVolume(const QByteArray sink, double volume, bool relative) {

@@ -7,9 +7,9 @@ configure_file(configplugin.h.in configplugin.h @ONLY)
 
 SET(DEBFOUND TRUE)
 IF (DEBFOUND)
-	OPTION(PLUGIN_${PROJECT_NAME}_SERVER "Plugin ${PROJECT_NAME} Server" ON)
+	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)
 
-	IF (PLUGIN_${PROJECT_NAME}_SERVER)
+	IF (PLUGIN_${PROJECT_NAME})
 		build_server_lib()
 		IF(WIN32)
 		SET(WIN_SOCKS "-lWs2_32")
