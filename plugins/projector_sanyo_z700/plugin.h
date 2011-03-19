@@ -17,42 +17,36 @@
  *
  */
 
-#ifndef myPLUGINSERVER_H
-#define myPLUGINSERVER_H
+#pragma once
+#define PLUGIN_ID "projector_sanyo_z700"
 #include <QObject>
 #include <QStringList>
-#include "shared/server/executeplugin.h"
-
-#include "services/actorprojector.h"
+#include "shared/abstractplugin.h"
+#include "shared/abstractserver.h"
+#include "shared/pluginhelper.h"
 
 class QextSerialPort;
-class AbstractStateTracker;
-class ProjectorStateTracker;
-
-class myPluginExecute : public ExecutePlugin
+class plugin : public QObject, public PluginHelper
 {
     Q_OBJECT
-    Q_INTERFACES(ExecutePlugin)
+    PLUGIN_MACRO
+    Q_INTERFACES(AbstractPlugin)
 public:
-    myPluginExecute();
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-    virtual void setSetting(const QString& name, const QVariant& value);
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-	virtual void clear(){}
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    void setCommand(ActorProjector::ProjectorControl c);
+    plugin();
+    virtual ~plugin();
+
+    virtual void init(AbstractServer* server);
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void clear();
+    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value);
+    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void execute(const QVariantMap& data);
+    virtual bool condition(const QVariantMap& data) ;
+    virtual void event_changed(const QVariantMap& data);
 private:
     QextSerialPort* m_serial;
-    AbstractPlugin* m_base;
-    char buffer[4];
-    ProjectorStateTracker* m_ProjectorStateTracker;
+	char m_buffer[4];
+	void writeToDevice();
 public slots:
     void readyRead();
-
 };
-
-#endif // myPLUGINSERVER_H

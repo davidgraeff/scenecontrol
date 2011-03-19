@@ -18,44 +18,35 @@
  */
 
 #pragma once
+#define PLUGIN_ID "modes"
 #include <QObject>
 #include <QStringList>
-#include "../plugin.h"
-#include <QDir>
-#include <shared/server/executeplugin.h>
+#include "shared/abstractplugin.h"
+#include "shared/abstractserver.h"
+#include "shared/pluginhelper.h"
+#include <QSet>
 
-class ModeStateTracker;
-class ExecuteWithBase;
-class SystemStateTracker;
-class BackupStateTracker;
-class ExecuteService;
-class myPluginExecute : public ExecutePlugin
+class plugin : public QObject, public PluginHelper
 {
     Q_OBJECT
+    PLUGIN_MACRO
+    Q_INTERFACES(AbstractPlugin)
 public:
-    myPluginExecute(QObject* parent = 0);
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-	virtual void clear(){}
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    void setMode(const QString& mode);
-	QString mode() { return m_mode; }
-    void backups_changed();
-    void backup_create(const QString& name);
-	void backup_rename(const QString& id, const QString& name);
-    void backup_restore(const QString& id);
-    void backup_remove(const QString& id);
-    void dataLoadingComplete();
-private:
-    BackupStateTracker* m_BackupStateTracker;
-    SystemStateTracker* m_SystemStateTracker;
-    ModeStateTracker* m_ModeStateTracker;
-    AbstractPlugin* m_base;
-    QString m_mode;
-    QDir m_savedir;
-};
+    plugin();
+    virtual ~plugin();
 
+    virtual void init(AbstractServer* server);
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void clear();
+    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value);
+    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void execute(const QVariantMap& data);
+    virtual bool condition(const QVariantMap& data) ;
+    virtual void event_changed(const QVariantMap& data);
+private:
+	QString m_mode;
+	QMap<QString, QSet<QString> > m_mode_events; //mode->set of uids
+	AbstractServer* m_server;
+private Q_SLOTS:
+	void modeChanged(const QString& mode);
+};

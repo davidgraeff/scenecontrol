@@ -1,116 +1,125 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
-#include <qfile.h>
+
 #include "plugin.h"
-#include "shared/server/executeservice.h"
-#include "statetracker/projectorstatetracker.h"
-#include "services/actorprojector.h"
-#include "services_server/actorprojectorServer.h"
-#include "shared/server/qextserialport/qextserialport.h"
 #include "configplugin.h"
+#include <qfile.h>
+#include <shared/qextserialport/qextserialport.h>
 
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-myPluginExecute::myPluginExecute() : ExecutePlugin(), m_serial(0) {
-    m_base = new myPlugin();
-    buffer[3] = '\r';
-    m_ProjectorStateTracker = new ProjectorStateTracker();
-    _config(this);
+plugin::plugin() {
+    _config ( this );
+    m_serial = 0;
+    m_buffer[3] = '\r';
 }
 
-myPluginExecute::~myPluginExecute() {
-    //delete m_base;
+plugin::~plugin() {
     delete m_serial;
-    delete m_ProjectorStateTracker;
 }
 
-void ActorProjectorServer::execute() {
-    ActorProjector* base = service<ActorProjector>();
-    m_plugin->setCommand(base->cmd());
+void plugin::init ( AbstractServer* server ) {
+    Q_UNUSED ( server );
 }
 
-void myPluginExecute::refresh() {}
+void plugin::clear() {
 
-void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
-    ExecutePlugin::setSetting(name, value);
-    if (name == QLatin1String("serialport")) {
+}
+
+void plugin::otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value ) {
+    Q_UNUSED ( unqiue_property_id );
+    Q_UNUSED ( value );
+}
+
+void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
+    PluginHelper::setSetting ( name, value, init );
+    if ( name == QLatin1String ( "serialport" ) ) {
         delete m_serial;
-	const QString device = value.toString();
-        if (!QFile::exists(device)) {
-            qWarning() << m_base->name() << "device not found" << device;
+        const QString device = value.toString();
+        if ( !QFile::exists ( device ) ) {
+            qWarning() << pluginid() << "device not found" << device;
             return;
         }
-        m_serial = new QextSerialPort(device,QextSerialPort::EventDriven);
-        m_serial->setBaudRate(BAUD19200);
-        m_serial->setFlowControl(FLOW_OFF);
-        m_serial->setParity(PAR_NONE);
-        m_serial->setDataBits(DATA_8);
-        m_serial->setStopBits(STOP_1);
-        connect(m_serial, SIGNAL(readyRead()), SLOT(readyRead()));
-        if (!m_serial->open(QIODevice::ReadWrite)) {
-            qWarning() << m_base->name() << "init fehler";
+        m_serial = new QextSerialPort ( device,QextSerialPort::EventDriven );
+        m_serial->setBaudRate ( BAUD19200 );
+        m_serial->setFlowControl ( FLOW_OFF );
+        m_serial->setParity ( PAR_NONE );
+        m_serial->setDataBits ( DATA_8 );
+        m_serial->setStopBits ( STOP_1 );
+        connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
+        if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
+            qWarning() << pluginid() << "init fehler";
         }
     }
 }
 
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-    if (idb == ActorProjector::staticMetaObject.className()) {
-        return new ActorProjectorServer((ActorProjector*)service, this);
-    }
-    return 0;
-}
-
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    QList<AbstractStateTracker*> a;
-    m_ProjectorStateTracker->setState(0);
-    a.append(m_ProjectorStateTracker);
-    return a;
-}
-
-void myPluginExecute::setCommand(ActorProjector::ProjectorControl c) {
-  if (!m_serial) return;
-    switch (c) {
-    case ActorProjector::ProjectorOn:
-        strncpy(buffer, "C00", 3);
-        break;
-    case ActorProjector::ProjectorOff:
-        strncpy(buffer, "C01", 3);
-        break;
-    case ActorProjector::ProjectorVideoMute:
-        strncpy(buffer, "C0D", 3);
-        break;
-    case ActorProjector::ProjectorVideoUnMute:
-        strncpy(buffer, "C0E", 3);
-        break;
-    case ActorProjector::ProjectorLampNormal:
-        strncpy(buffer, "C74", 3);
-        break;
-    case ActorProjector::ProjectorLampEco:
-        strncpy(buffer, "C75", 3);
-        break;
-    default:
-        return;
-    };
-
-    if (!m_serial->write(buffer,4)) {
-        qWarning() << m_base->name() << "send failed\n";
+void plugin::writeToDevice() {
+    if ( !m_serial->write ( m_buffer,4 ) ) {
+        qWarning() << pluginid() << "send failed\n";
         return;
     }
-
-    m_ProjectorStateTracker->setState(c);
-    emit stateChanged(m_ProjectorStateTracker);
 }
 
-void myPluginExecute::readyRead() {
+void plugin::execute ( const QVariantMap& data ) {
+    if ( !m_serial ) return;
+    if ( IS_ID ( "projector_sanyo_power" ) ) {
+        if ( BOOLDATA ( "power" ) )
+            strncpy ( m_buffer, "C00", 3 );
+        else
+            strncpy ( m_buffer, "C01", 3 );
+		writeToDevice();
+    } else if ( IS_ID ( "projector_sanyo_video" ) ) {
+        if ( BOOLDATA ( "mute" ) )
+            strncpy ( m_buffer, "C0D", 3 );
+        else
+            strncpy ( m_buffer, "C0E", 3 );
+		writeToDevice();
+    } else if ( IS_ID ( "projector_sanyo_lamp" ) ) {
+        if ( BOOLDATA ( "eco" ) )
+            strncpy ( m_buffer, "C75", 3 );
+        else
+            strncpy ( m_buffer, "C74", 3 );
+		writeToDevice();
+    } else if ( IS_ID ( "projector_sanyo_focus" ) ) {
+        //TODO
+    }
+}
+
+bool plugin::condition ( const QVariantMap& data )  {
+    Q_UNUSED ( data );
+    return false;
+}
+
+void plugin::event_changed ( const QVariantMap& data ) {
+    Q_UNUSED ( data );
+}
+
+QMap<QString, QVariantMap> plugin::properties() {
+    QMap<QString, QVariantMap> l;
+    return l;
+}
+
+void plugin::readyRead() {
     QByteArray bytes;
     int a = m_serial->bytesAvailable();
-    bytes.resize(a);
-    m_serial->read(bytes.data(), bytes.size());
+    bytes.resize ( a );
+    m_serial->read ( bytes.data(), bytes.size() );
 }
