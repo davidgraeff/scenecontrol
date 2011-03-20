@@ -31,17 +31,9 @@ plugin::~plugin() {
 
 }
 
-void plugin::init(AbstractServer* server) {
-Q_UNUSED(server);
+void plugin::initialize() {
 }
 
-void plugin::clear() {
-
-}
-
-void plugin::otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) {
-Q_UNUSED(unqiue_property_id);Q_UNUSED(value);
-}
 
 void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 	PluginHelper::setSetting(name, value, init);

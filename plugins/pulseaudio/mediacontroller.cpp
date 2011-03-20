@@ -80,7 +80,7 @@ void MediaController::slotreadyRead()
 			const double volume = args[3].toUInt()/10000.0;
 			const bool mute = args[2].toInt();
 			m_paVolume[args[1]] = QPair<double, bool>(volume, mute);
-			emit pulseSinkChanged(args[1], volume, mute);
+			emit pulseSinkChanged(volume, mute, args[1]);
         }
     }
 }

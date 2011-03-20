@@ -18,7 +18,6 @@
  */
 
 #pragma once
-#define PLUGIN_ID "roomcontrol_leds"
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
@@ -27,26 +26,23 @@
 
 class Controller;
 class plugin : public QObject, public PluginHelper {
-        Q_OBJECT
-        PLUGIN_MACRO
-        Q_INTERFACES ( AbstractPlugin )
-    public:
-        plugin();
-        virtual ~plugin();
+    Q_OBJECT
+    PLUGIN_MACRO
+    Q_INTERFACES ( AbstractPlugin )
+public:
+    plugin();
+    virtual ~plugin();
 
-        virtual void init ( AbstractServer* server );
-        virtual QMap<QString, QVariantMap> properties();
-        virtual void clear();
-        virtual void otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value );
-        virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
-        virtual void execute ( const QVariantMap& data );
-        virtual bool condition ( const QVariantMap& data ) ;
-        virtual void event_changed ( const QVariantMap& data );
-    private:
-        Controller* m_controller;
-		AbstractServer* m_server;
-    private Q_SLOTS:
-        void curtainChanged ( int current, int max );
-        void ledvalueChanged ( int channel, int value );
-        void lednameChanged ( int channel, const QString& name );
+    virtual void initialize();
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
+    virtual void execute ( const QVariantMap& data );
+    virtual bool condition ( const QVariantMap& data ) ;
+    virtual void event_changed ( const QVariantMap& data );
+private:
+    Controller* m_controller;
+private Q_SLOTS:
+    void curtainChanged ( int current, int max );
+    void ledvalueChanged ( int channel, int value );
+    void lednameChanged ( int channel, const QString& name );
 };

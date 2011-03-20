@@ -33,12 +33,24 @@
       <state><titel>Kommando</titel>
       <entry>Abspielen</entry><entry>Pausieren</entry><entry>Stoppen</entry>
       <entry>Nächster</entry><entry>Vorheriger</entry>
-      <entry>Vorspulen</entry><entry>Zurückspulen</entry>
+      <entry>Nächste Abspielliste</entry><entry>Vorherige Abspielliste</entry>
+	  <entry>Songinfo speichern</entry>
       </state>
   </mpdcmd>
-  <mpdstate>
-      <titel>mpd Status</titel>
-      <description>mpd Status geändert</description>
+  <mpdplaylist>
+      <titel>mpd Abspielliste</titel>
+      <description>mpd Abspielliste</description>
+      <position><titel>Neue Position der Abspielliste</titel></position>
+  </mpdplaylist>
+  <mpdplaylists>
+      <titel>mpd Abspiellisten</titel>
+      <description>mpd Abspiellisten</description>
+      <playlistid><titel>Abspielliste ID</titel></playlistid>
+	  <playlistid><titel>Abspielliste ID</titel></playlistid>
+  </mpdplaylists>
+  <mpdtrack>
+      <titel>mpd Song</titel>
+      <description>mpd Song Status geändert</description>
       <playlistid><titel>Playlist ID</titel></playlistid>
       <position_in_ms><titel>Position in ms</titel></position_in_ms>
       <total_in_ms><titel>Abspieldauer in ms</titel></total_in_ms>
@@ -46,5 +58,5 @@
       <state><titel>Status</titel>
       <entry>Abspielend</entry><entry>Pausierend</entry><entry>Stoppend</entry>
       </state>
-  </mpdstate>
+  </mpdtrack>
 </plugin>

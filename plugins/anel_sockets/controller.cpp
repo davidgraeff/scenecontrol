@@ -17,30 +17,24 @@
 
 */
 
-#include "iocontroller.h"
+#include "controller.h"
 #include <QDebug>
 #include <QSettings>
-#include "shared/server/qextserialport/qextserialport.h"
-#include "statetracker/pinvaluestatetracker.h"
-#include "statetracker/pinnamestatetracker.h"
+#include "shared/qextserialport/qextserialport.h"
 #include <qfile.h>
-#include "plugin_server.h"
 #include <shared/abstractplugin.h>
 #include <QUdpSocket>
 #include <QThread>
-IOController::IOController(myPluginExecute* plugin) : m_pluginname(plugin->base()->name()), m_listenSocket(0) {
+Controller::Controller(AstractPlugin* plugin) : m_plugin(plugin), m_listenSocket(0) {
     m_writesocket = new QUdpSocket(this);
     connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
     m_cacheTimer.setInterval(50);
     m_cacheTimer.setSingleShot(true);
 }
 
-IOController::~IOController() {
-    qDeleteAll(m_values);
-    qDeleteAll(m_names);
-}
+Controller::~Controller() {}
 
-void IOController::connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd) {
+void Controller::connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd) {
     m_sendPort = portSend;
     m_user = user;
     m_pwd = pwd;
@@ -55,7 +49,7 @@ void IOController::connectToIOs(int portSend, int portListen, const QString& use
     m_writesocket->writeDatagram(str, QHostAddress::Broadcast, portSend);
 }
 
-void IOController::readyRead() {
+void Controller::readyRead() {
 	if (!m_listenSocket->hasPendingDatagrams()) {
 		return;
 	}
@@ -69,7 +63,7 @@ void IOController::readyRead() {
     //cmd[2] = ip
     //cmd[6] .. ende -2
     QSettings settings;
-    settings.beginGroup(m_pluginname);
+    settings.beginGroup(m_plugin->pluginid());
     settings.beginGroup ( QLatin1String("pinnames") );
     // set new
     int pins = cmd.size()-2;
@@ -85,20 +79,14 @@ void IOController::readyRead() {
         const QString name = settings.value ( initialname, initialname ).toString();
         const bool alreadyinside = m_mapPinToHost.contains(initialname);
         m_mapPinToHost[initialname] = QPair<QHostAddress,uint>(host,pin);
-        PinValueStateTracker* cv = (alreadyinside ? m_values[initialname] : new PinValueStateTracker());
-        PinNameStateTracker* cn =  (alreadyinside ? m_names[initialname] : new PinNameStateTracker());
         bool changed = false;
-        if (!alreadyinside || (m_values[initialname]->value() != value)) changed = true;
-        cv->setPin(initialname);
-        cv->setValue(value);
-        m_values[initialname] = cv;
-        if (changed) emit stateChanged(cv);
+        if (!alreadyinside || (m_values[initialname] != value)) changed = true;
+        m_values[initialname] = value;
+        if (changed) emit valueChanged(initialname, value);
         changed = false;
-        if (!alreadyinside || (m_names[initialname]->value() != name)) changed = true;
-        cn->setPin(initialname);
-        cn->setValue(name);
-        m_names[initialname] = cn;
-        if (changed) emit stateChanged(cn);
+        if (!alreadyinside || (m_names[initialname] != name)) changed = true;
+        m_names[initialname] = name;
+        if (changed) emit nameChanged(initialname, name);
         // update cache
         if (value)
             m_cache[host.toString()] |= (unsigned char)(1 << pin);
@@ -109,13 +97,13 @@ void IOController::readyRead() {
     emit dataLoadingComplete();
 }
 
-bool IOController::getPin(const QString& pin) const
+bool Controller::getPin(const QString& pin) const
 {
     if (!m_values.contains(pin)) return false;
     return m_values[pin]->value();
 }
 
-void IOController::setPin ( const QString& pin, bool value )
+void Controller::setPin ( const QString& pin, bool value )
 {
     if (!m_mapPinToHost.contains(pin)) return;
     QPair<QHostAddress,uint> p = m_mapPinToHost[pin];
@@ -128,26 +116,26 @@ void IOController::setPin ( const QString& pin, bool value )
     if (!m_cacheTimer.isActive()) m_cacheTimer.start();
 }
 
-void IOController::setPinName ( const QString& pin, const QString& name )
+void Controller::setPinName ( const QString& pin, const QString& name )
 {
     if ( !m_names.contains(pin) ) return;
-    m_names[pin]->setValue(name);
+    m_names[pin] = name;
 
     QSettings settings;
-    settings.beginGroup(m_pluginname);
+    settings.beginGroup(m_plugin->pluginid());
     settings.beginGroup ( QLatin1String("pinnames") );
     settings.setValue ( pin, name );
 
-    emit stateChanged(m_names[pin]);
+	emit nameChanged(pin, name);
 }
 
-void IOController::togglePin ( const QString& pin )
+void Controller::togglePin ( const QString& pin )
 {
     if (!m_values.contains(pin)) return;
     setPin ( pin, !m_values[pin]->value() );
 }
 
-void IOController::cacheToDevice()
+void Controller::cacheToDevice()
 {
     QMap<QString, unsigned char>::const_iterator it = m_cache.constBegin();
     for (;it != m_cache.constEnd(); ++it) {
@@ -161,18 +149,11 @@ void IOController::cacheToDevice()
     }
 }
 
-QList< AbstractStateTracker* > IOController::getStateTracker() {
-    QList<AbstractStateTracker*> temp;
-    foreach (PinValueStateTracker* p, m_values) temp.append(p);
-    foreach (PinNameStateTracker* p, m_names) temp.append(p);
-    return temp;
-}
-
-int IOController::countPins() {
+int Controller::countPins() {
     return m_values.size();
 }
 
-QString IOController::getPinName(const QString& pin) {
+QString Controller::getPinName(const QString& pin) {
     if (!m_names.contains(pin)) return QString();
     return m_names[pin]->value();
 }

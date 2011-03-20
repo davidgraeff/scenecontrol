@@ -27,7 +27,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 
-MediaController::MediaController(AbstractPlugin* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(MediaStateTracker::StopState), m_currenttime(0), m_totaltime(0)
+MediaController::MediaController(AbstractPlugin* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(StopState), m_currenttime(0), m_totaltime(0)
 {
     m_fakepos.setInterval(1000);
     connect(&m_fakepos, SIGNAL(timeout()),SLOT(updatefakepos()));
@@ -53,7 +53,6 @@ MediaController::~MediaController()
     m_terminate = true;
     m_mpdcmd->disconnectFromHost();
     m_mpdstatus->disconnectFromHost();
-    //qDeleteAll(m_playlists);
 }
 
 void MediaController::connectToMpd(const QString& hostport)
@@ -77,9 +76,9 @@ void MediaController::slotconnected() {
     if (m_terminate) return;
     if (m_mpdstatus->state() != QTcpSocket::UnconnectedState && m_mpdcmd->state() != QTcpSocket::UnconnectedState)
         m_reconnect.stop();
-    needCurrentSong = StatusNoNeed;
-    needstatus = StatusNeed;
-    needPlaylists = StatusNeed;
+    m_needCurrentSong = StatusNoNeed;
+    m_needstatus = StatusNeed;
+    m_needPlaylists = StatusNeed;
 }
 
 void MediaController::slotdisconnected()
@@ -154,7 +153,7 @@ void MediaController::addToCommandQueue(const QByteArray& cmd) {
 void MediaController::slotreadyRead()
 {
     bool needsync = false;
-    const MediaStateTracker::EnumMediaState before = m_mediastate;
+    const MediaState before = m_mediastate;
     while (m_mpdstatus->bytesAvailable())
     {
         QByteArray line = m_mpdstatus->readLine();
@@ -163,33 +162,33 @@ void MediaController::slotreadyRead()
 
         if (args[0] == "OK") {
             // Fetching OK
-            if (needstatus==StatusFetching) {
-                needstatus=StatusNoNeed;
+            if (m_needstatus==StatusFetching) {
+                m_needstatus=StatusNoNeed;
             }
-            else if (needPlaylists==StatusFetching) {
-                needPlaylists=StatusNoNeed;
+            else if (m_needPlaylists==StatusFetching) {
+                m_needPlaylists=StatusNoNeed;
                 checkPlaylists();
-            } else if (needCurrentSong==StatusFetching) {
-                needCurrentSong=StatusNoNeed;
+            } else if (m_needCurrentSong==StatusFetching) {
+                m_needCurrentSong=StatusNoNeed;
                 saveMediaInfo();
             }
             // Need
-            if (needstatus==StatusNeed) {
+            if (m_needstatus==StatusNeed) {
                 m_mpdstatus->write("status\n");
-                needstatus = StatusFetching;
-            } else if (needPlaylists==StatusNeed) {
+                m_needstatus = StatusFetching;
+            } else if (m_needPlaylists==StatusNeed) {
                 m_mpdstatus->write("listplaylists\n");
-                needPlaylists = StatusFetching;
-            } else if (needCurrentSong==StatusNeed) {
+                m_needPlaylists = StatusFetching;
+            } else if (m_needCurrentSong==StatusNeed) {
                 m_mpdstatus->write("currentsong\n");
-                needCurrentSong = StatusFetching;
+                m_needCurrentSong = StatusFetching;
             } else {
                 m_mpdstatus->write("idle\n");
             }
             continue;
         }
 
-        if (needCurrentSong == StatusFetching) {
+        if (m_needCurrentSong == StatusFetching) {
             if (args[0]=="file:" && args.size()==2) {
                 m_trackfile = QString::fromUtf8(args[1]);
             } else if (args[0]=="Title:" && args.size()==2) {
@@ -197,43 +196,37 @@ void MediaController::slotreadyRead()
             } else if (args[0]=="Name:" && args.size()==2) {
                 m_trackname = QString::fromUtf8(args[1]);
             }
-        } else if (needstatus == StatusFetching) {
+        } else if (m_needstatus == StatusFetching) {
             if (args[0]=="state:" && args.size()==2) {
                 if (args[1]=="play") {
-                    m_mediastate = MediaStateTracker::PlayState;
-                    m_mediaStateTracker->setState(m_mediastate);
+                    m_mediastate = PlayState;
                     m_fakepos.start();
                 }
                 else if (args[1]=="pause") {
-                    m_mediastate = MediaStateTracker::PauseState;
-                    m_mediaStateTracker->setState(m_mediastate);
+                    m_mediastate = PauseState;
                     m_fakepos.stop();
                 }
                 else if (args[1]=="stopped") {
-                    m_mediastate = MediaStateTracker::StopState;
-                    m_mediaStateTracker->setState(m_mediastate);
+                    m_mediastate = StopState;
                     m_fakepos.stop();
                 }
             } else if (args[0] == "volume:" && args.size()==2) {
                 m_volume = args[1].toInt();
-                m_volumestateTracker->setVolume(m_volume);
-                emit stateChanged(m_volumestateTracker);
+				emit volumeChanged(m_volume);
             } else if (args[0] == "time:" && args.size()==2) {
                 QList<QByteArray> l = args[1].split(':');
                 if (l.size()==1) l.append(0);
                 const int current = l[0].toInt();
                 const int total = l[1].toInt();
-                m_mediaStateTracker->setPosition(current);
-                m_mediaStateTracker->setTotal(total);
                 if (m_totaltime!=total || m_currenttime!=current) needsync = true;
                 m_currenttime = current;
                 m_totaltime = total;
             } else if (args[0] == "song:" && args.size()==2) {
-                const int trackno = args[1].toInt();
-                if (m_totaltime!=trackno) needsync = true;
-                m_mediaStateTracker->setTrack(trackno);
+                const int track = args[1].toInt();
+                if (m_totaltime!=track) needsync = true;
+                m_track = track;
             }
-        } else if (needPlaylists == StatusFetching) {
+        } else if (m_needPlaylists == StatusFetching) {
             if (args[0] == "playlist:" && args.size()==2 ) {
                 args.removeAt(0);
                 QByteArray filename;
@@ -244,32 +237,23 @@ void MediaController::slotreadyRead()
             }
         } else if (args[0] == "changed:" && args.size()==2) {
             if (args[1] == "stored_playlist")
-                needPlaylists = StatusNeed;
+                m_needPlaylists = StatusNeed;
             else if (args[1] == "player")
-                needstatus = StatusNeed;
+                m_needstatus = StatusNeed;
             else if (args[1] == "mixer")
-                needstatus = StatusNeed;
+                m_needstatus = StatusNeed;
         }
     }
 
     if (before!=m_mediastate) needsync = true;
     if (needsync) {
-        emit stateChanged(m_mediaStateTracker);
+        emit trackChanged(m_trackfile,m_trackname,m_track,m_currenttime,m_totaltime,m_mediastate);
     }
-}
-
-QList<AbstractStateTracker*> MediaController::getStateTracker()
-{
-    QList<AbstractStateTracker*> l;
-    l.append(m_mediaStateTracker);
-    l.append(m_volumestateTracker);
-    foreach(PlaylistStateTracker* p, m_playlists) l.append(p);
-    return l;
 }
 
 void MediaController::nextPlaylist()
 {
-    int i = indexOfPlaylist(m_currentplaylist);
+    int i = indexOfPlaylist(m_playlistid);
     if (i == -1) {
         if (m_playlists.size()) i=0;
         else return;
@@ -281,7 +265,7 @@ void MediaController::nextPlaylist()
 
 void MediaController::previousPlaylist()
 {
-    int i = indexOfPlaylist(m_currentplaylist);
+    int i = indexOfPlaylist(m_playlistid);
     if (i == -1) {
         if (m_playlists.size()) i=0;
         else return;
@@ -293,32 +277,28 @@ void MediaController::previousPlaylist()
 
 void MediaController::setPlaylistByIndex ( int index )
 {
-    PlaylistStateTracker* s = m_playlists.value(index, 0);
-    if (!s) return;
-    setPlaylist ( s->name() );
+    setPlaylist ( m_playlists.at(index) );
 }
 
 void MediaController::setPlaylist(const QString& name)
 {
-    if (name.isEmpty() || m_currentplaylist == name) return;
-    m_currentplaylist = name;
-    m_mediaStateTracker->setPlaylistid(name);
-    emit stateChanged(m_mediaStateTracker);
+    if (name.isEmpty() || m_playlistid == name) return;
+    m_playlistid = name;
+    emit playlistChanged(name);
     addToCommandQueue("clear\n");
     addToCommandQueue("load "+ name.toUtf8() + "\n");
 }
 
 QString MediaController::currentplaylist()
 {
-    return m_currentplaylist;
+    return m_playlistid;
 }
 
 void MediaController::setVolume ( int newvol, bool relative )
 {
     if (relative) m_volume = qBound<int>(0,m_volume + newvol,100);
     else m_volume = newvol;
-    m_volumestateTracker->setVolume(m_volume);
-    emit stateChanged(m_volumestateTracker);
+    emit volumeChanged(m_volume);
     addToCommandQueue("setvol "+QByteArray::number(m_volume) + "\n");
 }
 
@@ -344,7 +324,7 @@ void MediaController::stop()
 
 void MediaController::pause()
 {
-    if (m_mediastate == MediaStateTracker::PlayState)
+    if (m_mediastate == PlayState)
         addToCommandQueue("pause 1\n");
     else
         addToCommandQueue("pause 0\n");
@@ -368,9 +348,8 @@ void MediaController::setTrackPosition ( qint64 pos, bool relative )
     if (relative) m_currenttime += pos;
     else m_currenttime = pos;
 
-    addToCommandQueue("seek " + QByteArray::number(m_mediaStateTracker->track()) + " " + QByteArray::number(m_currenttime) + "\n");
-    m_mediaStateTracker->setPosition(m_currenttime);
-    emit stateChanged(m_mediaStateTracker);
+    addToCommandQueue("seek " + QByteArray::number(m_track) + " " + QByteArray::number(m_currenttime) + "\n");
+    emit trackChanged(m_trackfile,m_trackname,m_track,m_currenttime,m_totaltime,m_mediastate);
 }
 
 qint64 MediaController::getTrackPosition()
@@ -383,7 +362,7 @@ qint64 MediaController::getTrackDuration()
     return m_totaltime;
 }
 
-MediaStateTracker::EnumMediaState MediaController::state()
+MediaController::MediaState MediaController::state()
 {
     return m_mediastate;
 }
@@ -394,7 +373,7 @@ void MediaController::updatefakepos() {
 
 int MediaController::indexOfPlaylist(const QString& name) {
     for (int i=0;i<m_playlists.size();++i) {
-        if (m_playlists[i]->name() == name) return i;
+        if (m_playlists[i] == name) return i;
     }
     return -1;
 }
@@ -416,32 +395,26 @@ void MediaController::checkPlaylists() {
             vorhanden[index] = 1;
             continue;
         }
-        PlaylistStateTracker* statetracker = new PlaylistStateTracker();
-        statetracker->setName(m_tempplaylists[i]);
-        if (i+1<m_tempplaylists.size())
-            statetracker->setLastModified(m_tempplaylists[i+1]);
-        m_playlists.append(statetracker);
-        emit stateChanged(statetracker);
+        m_playlists.append(m_tempplaylists[i]);
+		emit playlistsChanged(m_playlists[i], m_playlists.size());
     }
 
     //remove old
     for (int i=vorhanden.size()-1;i>=0;--i) {
         if (vorhanden[i] == true) continue;
-        m_playlists[i]->setRemoved(true);
-        emit stateChanged(m_playlists[i]);
-        m_playlists.takeAt(i)->deleteLater();
+		emit playlistsChanged(m_playlists[i], -1);
+        m_playlists.removeAt(i);
     }
 
     m_tempplaylists.clear();
 }
 void MediaController::dumpMediaInfo() {
-    needCurrentSong = StatusNeed;
+    m_needCurrentSong = StatusNeed;
     m_mpdstatus->write("noidle\n");
 }
 
 void MediaController::saveMediaInfo() {
-    QDir m_savedir = QDir(qApp->property("settingspath").value<QString>());
-    m_savedir = m_savedir.filePath ( QLatin1String("mediainfo") );
+    QDir m_savedir = QDir::home().filePath ( QLatin1String("mediainfo") );
     if ( !m_savedir.exists() && !m_savedir.mkpath ( m_savedir.absolutePath() ) )
     {
         qDebug() << "MPD: saveMediaInfo failed in" << m_savedir;

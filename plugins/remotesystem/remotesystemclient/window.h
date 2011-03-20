@@ -15,6 +15,7 @@ class MediaPlayer : public Phonon::VideoWidget {
     Q_OBJECT
 public:
     MediaPlayer(QWidget *parent=0);
+	virtual ~MediaPlayer() {}
 private:
     Phonon::MediaObject *m_videomedia;
     Phonon::MediaObject *m_eventmedia;

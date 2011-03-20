@@ -30,16 +30,7 @@ plugin::~plugin() {
 
 }
 
-void plugin::init(AbstractServer* server) {
-m_server = server;
-}
-
-void plugin::clear() {
-
-}
-
-void plugin::otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) {
-	Q_UNUSED(unqiue_property_id);Q_UNUSED(value);
+void plugin::initialize() {
 }
 
 void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
@@ -84,4 +75,8 @@ void plugin::modeChanged(const QString& mode) {
 	PROPERTY("modechanged");
 	data[QLatin1String("mode")] = mode;
 	m_server->property_changed(data);
+	
+	foreach (QString uid, m_mode_events[mode]) {
+		m_server->event_triggered(uid);
+	}
 }

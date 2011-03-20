@@ -20,32 +20,28 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/server/executeplugin.h"
+#include "shared/abstractplugin.h"
+#include "shared/abstractserver.h"
+#include "shared/pluginhelper.h"
 
-class PinNameStateTracker;
-class PinValueStateTracker;
-class IOController;
-class myPluginExecute : public ExecutePlugin
-{
+class Controller;
+class plugin : public QObject, public PluginHelper {
     Q_OBJECT
-    Q_INTERFACES(ExecutePlugin)
+    PLUGIN_MACRO
+    Q_INTERFACES ( AbstractPlugin )
 public:
-    myPluginExecute();
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-    virtual void setSetting(const QString& name, const QVariant& value);
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-    virtual void clear(){}
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    IOController* controller() {
-        return m_IOController;
-    }
+    plugin();
+    virtual ~plugin();
+
+    virtual void initialize();
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
+    virtual void execute ( const QVariantMap& data );
+    virtual bool condition ( const QVariantMap& data ) ;
+    virtual void event_changed ( const QVariantMap& data );
 private:
-    AbstractPlugin* m_base;
-    IOController* m_IOController;
+    Controller* m_controller;
 private Q_SLOTS:
-    void dataLoadingComplete();
+    void nameChanged ( QString,QString );
+    void valueChanged ( QString,int );
 };

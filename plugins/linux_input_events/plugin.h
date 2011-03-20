@@ -1,4 +1,4 @@
-/*
+/*/*
  *    RoomControlServer. Home automation for controlling sockets, leds and music.
  *    Copyright (C) 2010  David Gräff
  *
@@ -17,58 +17,44 @@
  *
  */
 
-#ifndef myPLUGINSERVER_H
-#define myPLUGINSERVER_H
+#pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/server/executeplugin.h"
-#include <QMap>
-#include "statetracker/remotecontrolstatetracker.h"
-#include "statetracker/remotecontrolkeystatetracker.h"
+#include "shared/abstractplugin.h"
+#include "shared/abstractserver.h"
+#include "shared/pluginhelper.h"
+#include <QSet>
+#include <QTimer>
 
-class EventRemoteKeyServer;
-class OrgLiriControlInterface;
-class OrgLiriDeviceInterface;
-class myPluginExecute : public ExecutePlugin
+class plugin : public QObject, public PluginHelper
 {
     Q_OBJECT
-    Q_INTERFACES(ExecutePlugin)
+    PLUGIN_MACRO
+    Q_INTERFACES(AbstractPlugin)
 public:
-    myPluginExecute();
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-	virtual void clear();
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    void registerKeyEvent(EventRemoteKeyServer* event);
-    bool isRegistered(EventRemoteKeyServer* event) ;
-    void setRepeatingEvent(EventRemoteKeyServer* event) {
-        m_repeating=event;
-    }
+    plugin();
+    virtual ~plugin();
+
+    virtual void initialize();
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value, const QString& sessionid);
+    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void execute(const QVariantMap& data);
+    virtual bool condition(const QVariantMap& data) ;
+    virtual void event_changed(const QVariantMap& data);
 private:
-    AbstractPlugin* m_base;
-    QStringList parseIntrospect();
-    OrgLiriControlInterface* m_control;
-    QMap< QString, OrgLiriDeviceInterface* > m_devices;
-    QString m_mode;
-    QMap<QString, QList<EventRemoteKeyServer*> > m_keyevents;
-    RemoteControlStateTracker* m_statetracker;
-    RemoteControlKeyStateTracker* m_statetrackerKey;
-    EventRemoteKeyServer* m_repeating;
-    QTimer m_timer;
+	// input events
+	QMap<QString, QSet<QString> > m_key_events; //device+key->set of uids
+	QString m_lastevent;
+	void inputEvent(const QString& device, const QString& kernelkeyname, bool pressed);
+	// devices
+	QSet<QString> m_alldevices;
+	void listenToDevice(const QString& device);
+	void stoplistenToDevice(const QString& device);
+	// repeat
+    QTimer m_repeattimer;
     bool m_dorepeat;
 private Q_SLOTS:
-  void retrigger();
-    void slotServiceUnregistered(const QString& service);
-    void slotServiceRegistered(const QString& service);
-    void deviceAdded(const QString& uid);
-    void deviceRemoved(const QString& uid);
-    void keySlot(const QString &keycode, const QString &keyname, uint channel, int pressed);
-    void keyEventDestroyed ( QObject * obj);
-	
+	void inputDevicesChanged();
+	void repeattrigger();
 };
-
-#endif // myPLUGINSERVER_H

@@ -20,17 +20,9 @@ plugin::~plugin() {
                                        ICON_NONE);
     delete m_xbmcClient;
 }
-void plugin::init(AbstractServer* server) {
-Q_UNUSED(server);
+void plugin::initialize() {
 }
 
-void plugin::clear() {
-
-}
-
-void plugin::otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) {
-Q_UNUSED(unqiue_property_id);Q_UNUSED(value);
-}
 
 void plugin::execute(const QVariantMap& data) {
 	if (!m_xbmcClient) return;
@@ -69,9 +61,6 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 
 QMap<QString, QVariantMap> plugin::properties() {
 	QMap<QString, QVariantMap> l;
-//     l.append(m_CinemaStateTracker);
-//     l.append(m_CinemaPositionStateTracker);
-//     l.append(m_CinemaVolumeStateTracker);
 	return l;
 }
 

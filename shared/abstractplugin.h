@@ -44,7 +44,7 @@ public:
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the
      * network is initiated or by request from a client with sufficient access rights.
      */
-    virtual void init(AbstractServer* server) = 0;
+    virtual void initialize_plugin(AbstractServer* server) = 0;
     /**
      * Return current state of all plugin properties. The server
      * reguests all properties from all plugins after a client has connected.
@@ -60,13 +60,14 @@ public:
      */
     virtual void clear() = 0;
     /**
-     * Called by server process if a state of a property of another plugin changed.
+     * Called by server process if a state of a property of another plugin or a client property changed.
      * This plugin has to register its interest in one or more properties to the server by
      * using the AbstractServer Interface before.
      * \param unqiue_property_id the property id (unique among all plugins)
      * \param value the property values
+	 * \param sessionid If sessionid is not null this property is a session propery and received from a client and only valid for the referred session
      */
-    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value) = 0;
+    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value, const QString& sessionid) = 0;
     /**
      * Called by server process if a setting is changed. Use the plugin helper file
      * and call setSettings to save settings permanantly.
@@ -102,6 +103,13 @@ public:
      * and remove the event with the event id (from data) that was established by previous data.
      */
     virtual void event_changed(const QVariantMap& data) = 0;
+	
+	/**
+	 * Server Session Information
+	 * \param id Unique session id
+	 * \param running Session is started or has finished
+	 */
+	virtual void session_change(const QString& id, bool running) = 0;
 
 };
 Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/2.0")

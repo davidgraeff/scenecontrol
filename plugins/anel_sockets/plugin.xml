@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="anel_power_sockets" version="1.0">
   <action id="iovalue_absolut">
-    <int id="channel" model="iochannels" />
+    <string id="channel" model="iochannels" />
     <bool id="value" />
   </action>
   <action id="iovalue_toogle">
-    <int id="channel" model="iochannels" />
+    <string id="channel" model="iochannels" />
   </action>
-  <action id="iocondition">
-    <int id="channel" model="iochannels" />
+  <condition id="iocondition">
+    <string id="channel" model="iochannels" />
     <bool id="value" />
-  </action>
+  </condition>
   <action id="ioname">
-    <int id="channel" model="iochannels" />
+    <string id="channel" model="iochannels" />
     <string id="name" />
   </action>
   <property id="iovalue">
-    <int id="channel" />
+    <string id="channel" />
     <int id="value" />
   </property>
   <property id="ioname">
-    <int id="channel" />
+    <string id="channel" />
     <string id="name" />
   </property>
 </plugin>

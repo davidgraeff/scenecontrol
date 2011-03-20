@@ -22,32 +22,26 @@
 #include <QTimer>
 #include <QHostAddress>
 #include <QPair>
+#include <QUdpSocket>
 
-class QUdpSocket;
-class myPluginExecute;
-class AbstractStateTracker;
-class PinNameStateTracker;
-class PinValueStateTracker;
-class IOControllerThread;
-
-class IOController : public QObject
+class AbstractPlugin;
+class Controller : public QObject
 {
     Q_OBJECT
 public:
-    IOController(myPluginExecute* plugin);
-    ~IOController();
+    Controller(AbstractPlugin* plugin);
+    ~Controller();
     QString getPinName ( const QString& pin );
     void setPin ( const QString& pin, bool value );
     void setPinName ( const QString& pin, const QString& name );
     void togglePin ( const QString& pin );
     bool getPin( const QString& pin ) const;
     int countPins();
-    QList<AbstractStateTracker*> getStateTracker();
     void connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd);
 private:
-    QString m_pluginname;
-    QMap<QString, PinValueStateTracker*> m_values;
-    QMap<QString, PinNameStateTracker*> m_names;
+    AbstractPlugin* m_plugin;
+    QMap<QString, unsigned char> m_values;
+    QMap<QString, QString> m_names;
     QMap< QString, QPair<QHostAddress,uint> > m_mapPinToHost;
     int m_sendPort;
     QString m_user;
@@ -60,6 +54,7 @@ private slots:
     void readyRead();
     void cacheToDevice();
 Q_SIGNALS:
-    void stateChanged(AbstractStateTracker*);
+	void valueChanged(const QString& id, int value);
+	void nameChanged(const QString& id, const QString& name);
     void dataLoadingComplete();
 };

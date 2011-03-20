@@ -17,72 +17,34 @@
  *
  */
 
-#ifndef myPLUGINSERVER_H
-#define myPLUGINSERVER_H
+#pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/server/executeplugin.h"
-#include <QThread>
+#include "shared/abstractplugin.h"
+#include "shared/abstractserver.h"
+#include "shared/pluginhelper.h"
+#include <QSet>
 
-#ifdef __APPLE__
-#include <PCSC/wintypes.h>
-#include <PCSC/winscard.h>
-#else
-#include <winscard.h>
-#endif
-
-class CardThread : public QThread
-{
+class CardThread;
+class plugin : public QObject, public PluginHelper {
     Q_OBJECT
+    PLUGIN_MACRO
+    Q_INTERFACES ( AbstractPlugin )
 public:
-    explicit CardThread(QObject* parent = 0);
-    virtual ~CardThread();
-	virtual void run();
-	void abort();
-private:
-    bool m_systemReady;
-    void readReaders();
-	int current_reader;
-	LONG rv;
-	SCARDCONTEXT hContext;
-	SCARD_READERSTATE *rgReaderStates_t;
-	SCARD_READERSTATE rgReaderStates[1];
-	DWORD dwReaders;
-	DWORD dwReadersOld;
-	DWORD timeout;
-	LPSTR mszReaders;
-	char *ptr;
-	char **readers;
-	int nbReaders, i;
-	char atr[MAX_ATR_SIZE*3+1];
-	bool pnp;
-Q_SIGNALS:
-    void cardDetected(const QString& atr, int state);
-};
+    plugin();
+    virtual ~plugin();
 
-class CardReaderPCSCStateTracker;
-class myPluginExecute : public ExecutePlugin
-{
-    Q_OBJECT
-    Q_INTERFACES(ExecutePlugin)
-public:
-    myPluginExecute();
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    virtual void clear() {}
+    virtual void init ( AbstractServer* server );
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
+    virtual void execute ( const QVariantMap& data );
+    virtual bool condition ( const QVariantMap& data ) ;
+    virtual void event_changed ( const QVariantMap& data );
 private:
-    AbstractPlugin* m_base;
-    CardReaderPCSCStateTracker* m_cardreader;
     CardThread* m_thread;
+	QMap<QString, QSet<QString> > m_card_events; //atr->set of uids
+
 private Q_SLOTS:
-    void slotcardDetected(const QString& atr, int state);
-Q_SIGNALS:
-    void cardDetected(const QString& atr, int state);
+    void slotcardDetected ( const QString& atr, int state );
 };
 
-#endif // myPLUGINSERVER_H

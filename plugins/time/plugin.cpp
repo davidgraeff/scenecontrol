@@ -33,18 +33,12 @@ plugin::~plugin() {
 
 }
 
-void plugin::init ( AbstractServer* server ) {
-    m_server=server;
+void plugin::initialize(){
     calculate_next_events();
 }
 
 void plugin::clear() {
     m_timer.stop();
-}
-
-void plugin::otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value ) {
-    Q_UNUSED ( unqiue_property_id );
-    Q_UNUSED ( value );
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {

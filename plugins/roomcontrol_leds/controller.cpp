@@ -91,7 +91,7 @@ void Controller::parseInit ( unsigned char protocolversion ) {
 }
 
 void Controller::parseSensors ( unsigned char s1, unsigned char s2 ) {
-
+Q_UNUSED(s1);Q_UNUSED(s2);//TODO sensors
 }
 
 void Controller::parseLeds ( const QByteArray& data ) {
@@ -176,13 +176,13 @@ void Controller::setChannel ( uint channel, uint value, uint fade ) {
 
 void Controller::inverseChannel ( uint channel, uint fade ) {
     if ( channel>= ( unsigned int ) m_leds.size() ) return;
-    const unsigned int newvalue = 255 - m_leds[channel]->value();
+    const unsigned int newvalue = 255 - m_leds[channel].value;
     setChannel ( channel, newvalue, fade );
 }
 
 void Controller::setChannelExponential ( uint channel, int multiplikator, uint fade ) {
     if ( channel>= ( unsigned int ) m_leds.size() ) return;
-    unsigned int v = m_leds[channel]->value();
+    unsigned int v = m_leds[channel].value;
     if ( multiplikator>100 ) {
         if ( v==0 )
             v=1;
@@ -202,7 +202,7 @@ void Controller::setChannelExponential ( uint channel, int multiplikator, uint f
 
 void Controller::setChannelRelative ( uint channel, int value, uint fade ) {
     if ( channel>= ( unsigned int ) m_leds.size() ) return;
-    value += m_leds[channel]->value();
+    value += m_leds[channel].value;
     const unsigned int v = ( unsigned int ) qMin ( 0, value );
     setChannel ( channel, v, fade );
 }

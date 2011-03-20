@@ -37,17 +37,7 @@ plugin::~plugin() {
     delete m_controller;
 }
 
-void plugin::init ( AbstractServer* server ) {
-    m_server = server;
-}
-
-void plugin::clear() {
-
-}
-
-void plugin::otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value ) {
-    Q_UNUSED ( unqiue_property_id );
-    Q_UNUSED ( value );
+void plugin::initialize(){
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {

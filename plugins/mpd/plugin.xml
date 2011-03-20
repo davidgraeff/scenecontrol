@@ -10,10 +10,10 @@
   </action>
   <action id="mpdchangeplaylist">
     <string id="playlistid" model="mpd_playlists" />
-    <uint id="track"  />
+	<int id="track"  /><!-- -1= use last played track number of that playlist -->
   </action>
   <action id="mpdcmd">
-    <enum id="state" n="7" /><!--PlayCmd,PauseCmd,StopCmd,NextCmd,PrevCmd,FastForwardCmd,FastRewindCmd -->
+    <enum id="state" n="8" /><!--PlayCmd,PauseCmd,StopCmd,NextCmd,PrevCmd,NextPlaylistCmd,PrevPlaylistCmd,DumpMediaInfoCmd -->
   </action>
   <condition id="mpdstatecondition">
     <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
@@ -21,13 +21,22 @@
   <property id="mpdvolume">
     <double id="volume" min="0.0" max="1.0" />
   </property>
+  <property id="mpdplaylist">
+	  <string id="playlistid" />
+  </property>
+  <!-- playlists changed -->
+  <property id="mpdplaylists">
+	  <string id="playlistid" />
+	  <int id="position" />
+  </property>
   <!-- only send this notification if a client changes the position or the player engine made unexspected jumps.
   It's up to the client to fake the current postion counter -->
-  <property id="mpdstate">
-    <string id="playlistid" />
+  <property id="mpdtrack">
+	<string id="filename" />
+    <string id="trackname" />
+	<int id="track" /><!-- -1 if not a track of a playlist -->
     <uint id="position_in_ms" />
     <uint id="total_in_ms" />
-    <uint id="track" />
     <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
   </property>
 </plugin>

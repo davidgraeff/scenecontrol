@@ -18,7 +18,6 @@
  */
 
 #pragma once
-#define PLUGIN_ID "xbmc"
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
@@ -35,10 +34,8 @@ public:
     plugin();
     virtual ~plugin();
 
-    virtual void init(AbstractServer* server);
+    virtual void initialize();
     virtual QMap<QString, QVariantMap> properties();
-    virtual void clear();
-    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data);
     virtual bool condition(const QVariantMap& data) ;

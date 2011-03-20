@@ -36,17 +36,8 @@ plugin::~plugin() {
     delete m_serial;
 }
 
-void plugin::init ( AbstractServer* server ) {
-    Q_UNUSED ( server );
-}
-
-void plugin::clear() {
-
-}
-
-void plugin::otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value ) {
-    Q_UNUSED ( unqiue_property_id );
-    Q_UNUSED ( value );
+void plugin::initialize(){
+    
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {

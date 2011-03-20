@@ -17,32 +17,33 @@
  *
  */
 
-#ifndef myPLUGINSERVER_H
-#define myPLUGINSERVER_H
+#pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/server/executeplugin.h"
+#include "shared/abstractplugin.h"
+#include "shared/abstractserver.h"
+#include "shared/pluginhelper.h"
 
 class MediaController;
-class myPluginExecute : public ExecutePlugin
-{
+class plugin : public QObject, public PluginHelper {
     Q_OBJECT
-    Q_INTERFACES(ExecutePlugin)
+    PLUGIN_MACRO
+    Q_INTERFACES ( AbstractPlugin )
 public:
-    myPluginExecute();
-    virtual ~myPluginExecute();
-    virtual void refresh() ;
-    virtual void clear() {}
-    virtual void setSetting(const QString& name, const QVariant& value);
-    virtual ExecuteWithBase* createExecuteService(const QString& id);
-    virtual QList<AbstractStateTracker*> stateTracker();
-    virtual AbstractPlugin* base() {
-        return m_base;
-    }
-    MediaController* mediacontroller();
-private:
-    AbstractPlugin* m_base;
-    MediaController* m_mediacontroller;
-};
+    plugin();
+    virtual ~plugin();
 
-#endif // myPLUGINSERVER_H
+    virtual void initialize();
+    virtual QMap<QString, QVariantMap> properties();
+    virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
+    virtual void execute ( const QVariantMap& data );
+    virtual bool condition ( const QVariantMap& data ) ;
+    virtual void event_changed ( const QVariantMap& data );
+private:
+    MediaController* m_mediacontroller;
+public slots:
+    void playlistChanged ( QString );
+    void playlistsChanged ( QString,int );
+    void trackChanged ( QString filename, QString trackname, int track, uint position_in_ms, uint total_in_ms, int state );
+    void volumeChanged ( double );
+};

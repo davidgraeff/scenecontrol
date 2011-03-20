@@ -18,7 +18,6 @@
  */
 
 #pragma once
-#define PLUGIN_ID "bla"
 #include <QObject>
 #include <QStringList>
 #include <QTimer>
@@ -36,10 +35,9 @@ public:
     plugin();
     virtual ~plugin();
 
-    virtual void init(AbstractServer* server);
+    virtual void initialize();
+	virtual void clear();
     virtual QMap<QString, QVariantMap> properties();
-    virtual void clear();
-    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data);
     virtual bool condition(const QVariantMap& data) ;
@@ -48,7 +46,6 @@ private:
 	void calculate_next_events();
 	QMap<QString, QVariantMap> m_remaining_events;
 	QSet<QString> m_timeout_service_ids;
-	AbstractServer* m_server;
 	QTimer m_timer;
 private Q_SLOTS:
 	void timeout();

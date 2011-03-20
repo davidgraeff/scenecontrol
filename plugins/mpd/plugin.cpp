@@ -1,136 +1,144 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
+
 #include "plugin.h"
-#include "mediacontroller.h"
-#include "services/conditionmusicstate.h"
-#include "services/actorplaylistvolume.h"
-#include "services/actorplaylisttrack.h"
-#include "services/actorplaylistposition.h"
-#include "services/actormusiccmd.h"
-#include "statetracker/volumestatetracker.h"
-#include "services_server/conditionmusicstateServer.h"
-#include "services_server/actorplaylistvolumeServer.h"
-#include "services_server/actorplaylisttrackServer.h"
-#include "services_server/actorplaylistpositionServer.h"
-#include "services_server/actorplaylistcmdServer.h"
 #include "configplugin.h"
+#include "mediacontroller.h"
 
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-    m_base = new myPlugin();
-    m_mediacontroller = new MediaController(this);
-    connect(m_mediacontroller,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
-    _config(this);
+plugin::plugin() {
+    m_mediacontroller = new MediaController ( this );
+    connect ( m_mediacontroller,SIGNAL ( playlistChanged ( QString ) ),SLOT ( playlistChanged ( QString ) ) );
+    connect ( m_mediacontroller,SIGNAL ( playlistsChanged ( QString,int ) ),SLOT ( playlistsChanged ( QString,int ) ) );
+    connect ( m_mediacontroller,SIGNAL ( trackChanged ( QString,QString,int,uint,uint,MediaState ) ),SLOT ( trackChanged ( QString,QString,int,uint,uint,MediaState ) ) );
+    connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
+    _config ( this );
 }
 
-myPluginExecute::~myPluginExecute() {
-    //delete m_base;
+plugin::~plugin() {
     delete m_mediacontroller;
 }
-bool ConditionMusicStateServer::checkcondition() {
-    return (service<ConditionMusicState>()->value() == m_plugin->mediacontroller()->state());
+
+void plugin::initialize(){
 }
 
-void ActorPlaylistVolumeServer::execute() {
-  ActorPlaylistVolume* base = service<ActorPlaylistVolume>();
-    m_plugin->mediacontroller()->setVolume(base->volume(), base->relative());
-}
-void ActorPlaylistTrackServer::execute()
-{
-    MediaController* mc = m_plugin->mediacontroller();
-    ActorPlaylistTrack* base = service<ActorPlaylistTrack>();
-    // set playlist
-    if (base->playlistid().size())
-    {
-        mc->setPlaylist(base->playlistid());
-    }
-    // set track number
-    if (base->track() != -1)
-    {
-        mc->setCurrentTrack(base->track());
-    }
-
-    if (base->state() == MediaStateTracker::PlayState)
-    {
-        mc->play();
-    } else if (base->state() == MediaStateTracker::PauseState)
-    {
-        mc->pause();
-    } else if (base->state() == MediaStateTracker::StopState)
-    {
-        mc->stop();
-    }
-}
-void ActorPlaylistPositionServer::execute() {
-    ActorPlaylistPosition* base = service<ActorPlaylistPosition>();
-    m_plugin->mediacontroller()->setTrackPosition(base->value(), base->relative());
-}
-
-void ActorPlaylistCmdServer::execute()
-{
-    ActorPlaylistCmd* base = service<ActorPlaylistCmd>();
-    MediaController* mc = m_plugin->mediacontroller();
-    if (base->cmd() == ActorPlaylistCmd::PlayCmd)
-    {
-        mc->play();
-    } else if (base->cmd() == ActorPlaylistCmd::PauseCmd)
-    {
-        mc->pause();
-    } else if (base->cmd() == ActorPlaylistCmd::StopCmd)
-    {
-        mc->stop();
-    } else if (base->cmd() == ActorPlaylistCmd::NextCmd)
-    {
-        mc->next();
-    } else if (base->cmd() == ActorPlaylistCmd::PrevCmd)
-    {
-        mc->previous();
-    } else if (base->cmd() == ActorPlaylistCmd::NextPlaylistCmd)
-    {
-        mc->nextPlaylist();
-    } else if (base->cmd() == ActorPlaylistCmd::PrevPlaylistCmd)
-    {
-        mc->previousPlaylist();
-    } else if (base->cmd() == ActorPlaylistCmd::DumpMediaInfoCmd)
-    {
-        mc->dumpMediaInfo();
-    }
-}
-void myPluginExecute::refresh() {}
-
-void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
-    ExecutePlugin::setSetting(name, value);
-    if (name == QLatin1String("server")) {
-      m_mediacontroller->connectToMpd(value.toString());
+void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
+    PluginHelper::setSetting ( name, value, init );
+    if ( name == QLatin1String ( "server" ) ) {
+        m_mediacontroller->connectToMpd ( value.toString() );
     }
 }
 
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-	if (idb == ActorPlaylistCmd::staticMetaObject.className())
-        return new ActorPlaylistCmdServer((ActorPlaylistCmd*)service, this);
-    else if (idb == ActorPlaylistPosition::staticMetaObject.className())
-        return new ActorPlaylistPositionServer((ActorPlaylistPosition*)service, this);
-    else if (idb == ActorPlaylistTrack::staticMetaObject.className())
-        return new ActorPlaylistTrackServer((ActorPlaylistTrack*)service, this);
-    else if (idb == ActorPlaylistVolume::staticMetaObject.className())
-        return new ActorPlaylistVolumeServer((ActorPlaylistVolume*)service, this);
-    else if (idb == ConditionMusicState::staticMetaObject.className())
-        return new ConditionMusicStateServer((ConditionMusicState*)service, this);
-    return 0;
+void plugin::execute ( const QVariantMap& data ) {
+    if ( IS_ID ( "mpdvolume" ) ) {
+        m_mediacontroller->setVolume ( DOUBLEDATA ( "volume" ), BOOLDATA ( "relative" ) );
+    } else if ( IS_ID ( "mpdcmd" ) ) {
+        switch ( INTDATA ( "state" ) ) {
+        case 0:
+            m_mediacontroller->play();
+            break;
+        case 1:
+            m_mediacontroller->pause();
+            break;
+        case 2:
+            m_mediacontroller->stop();
+            break;
+        case 3:
+            m_mediacontroller->next();
+            break;
+        case 4:
+            m_mediacontroller->previous();
+            break;
+        case 5:
+            m_mediacontroller->nextPlaylist();
+            break;
+        case 6:
+            m_mediacontroller->previousPlaylist();
+            break;
+        case 7:
+            m_mediacontroller->dumpMediaInfo();
+            break;
+        default:
+            break;
+        }
+    } else if ( IS_ID ( "mpdchangeplaylist" ) ) {
+        // set playlist
+        const QString playlistid = DATA ( "playlistid" );
+        const int track = INTDATA ( "track" );
+        if ( playlistid.size() ) {
+            m_mediacontroller->setPlaylist ( playlistid );
+        }
+        // set track number
+        if ( track != -1 ) {
+            m_mediacontroller->setCurrentTrack ( track );
+        }
+
+    } else if ( IS_ID ( "mpdposition" ) ) {
+        m_mediacontroller->setTrackPosition ( INTDATA ( "position_in_ms" ), BOOLDATA ( "relative" ) );
+    }
 }
 
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    return m_mediacontroller->getStateTracker();
+bool plugin::condition ( const QVariantMap& data )  {
+    if ( IS_ID ( "bla" ) ) {
+        return ( INTDATA ( "mpdstatecondition" ) == m_mediacontroller->state() );
+    }
+    return false;
 }
-MediaController* myPluginExecute::mediacontroller() {
-    return m_mediacontroller;
+
+void plugin::event_changed ( const QVariantMap& data ) {
+    Q_UNUSED ( data );
+}
+
+QMap<QString, QVariantMap> plugin::properties() {
+    QMap<QString, QVariantMap> l;
+    return l;
+}
+
+void plugin::playlistChanged ( QString p ) {
+    PROPERTY ( "mpdplaylist" );
+    data[QLatin1String ( "playlistid" ) ] = p;
+    m_server->property_changed ( data );
+}
+
+void plugin::playlistsChanged ( QString p, int pos) {
+    PROPERTY ( "mpdplaylists" );
+    data[QLatin1String ( "playlistid" ) ] = p;
+	data[QLatin1String ( "position" ) ] = pos;
+    m_server->property_changed ( data );
+}
+
+void plugin::trackChanged ( QString filename, QString trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
+    PROPERTY ( "mpdtrack" );
+    data[QLatin1String ( "filename" ) ] = filename;
+	data[QLatin1String ( "trackname" ) ] = trackname;
+	data[QLatin1String ( "track" ) ] = track;
+	data[QLatin1String ( "position_in_ms" ) ] = position_in_ms;
+	data[QLatin1String ( "total_in_ms" ) ] = total_in_ms;
+	data[QLatin1String ( "state" ) ] = state;
+    m_server->property_changed ( data );
+}
+
+void plugin::volumeChanged ( double volume ) {
+    PROPERTY ( "mpdvolume" );
+    data[QLatin1String ( "volume" ) ] = volume;
+    m_server->property_changed ( data );
 }

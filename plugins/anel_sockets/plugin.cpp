@@ -1,80 +1,76 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
-#include "shared/server/executeservice.h"
+
 #include "plugin.h"
-#include "iocontroller.h"
-#include "services/actorpin.h"
-#include "services/actorpinname.h"
-#include "services/conditionpin.h"
-#include "services_server/actorpinServer.h"
-#include "services_server/actorpinnameServer.h"
-#include "services_server/conditionpinServer.h"
 #include "configplugin.h"
+#include "controller.h"
 
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-bool ConditionPinServer::checkcondition()
-{
-  return (m_plugin->controller()->getPin(service<ConditionPin>()->pin()) == service<ConditionPin>()->value());
-}
-void ActorPinServer::execute()
-{
-  ActorPin* a = service<ActorPin>();
-  if (a->value()==ActorPin::PinToggle)
-    m_plugin->controller()->togglePin(a->pin());
-  else
-    m_plugin->controller()->setPin(a->pin(),a->value());
-}
-void ActorPinNameServer::execute()
-{
-  ActorPinName* a = service<ActorPinName>();
-  m_plugin->controller()->setPinName(a->pin(),a->pinname());
-}
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-  m_base = new myPlugin();
-  m_IOController = new IOController(this);
-  connect(m_IOController,SIGNAL(stateChanged(AbstractStateTracker*)),SIGNAL(stateChanged(AbstractStateTracker*)));
-  connect(m_IOController,SIGNAL(dataLoadingComplete()),SLOT(dataLoadingComplete()));
-  _config(this);
+plugin::plugin() {
+    m_controller = new Controller ( this );
+    connect ( m_controller,SIGNAL(nameChanged(QString,QString)),SLOT(nameChanged(QString,QString)));
+    connect ( m_controller,SIGNAL(valueChanged(QString,int)),SLOT(valueChanged(QString,int)));
+    _config ( this );
 }
 
-myPluginExecute::~myPluginExecute() {
-  //delete m_base;
-  delete m_IOController;
+plugin::~plugin() {
+    delete m_controller;
 }
 
-void myPluginExecute::refresh() {}
+void plugin::initialize(){
+    
+}
 
-void myPluginExecute::setSetting(const QString& name, const QVariant& value) {
-    ExecutePlugin::setSetting(name, value);
-    if (name == QLatin1String("autoconfig")) {
-        QStringList data = value.toString().split(QLatin1Char(':'));
-        if (data.size()>=4)
-          m_IOController->connectToIOs(data[0].toInt(), data[1].toInt(), data[2], data[3]);
+void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
+    PluginHelper::setSetting ( name, value, init );
+    if ( name == QLatin1String ( "autoconfig" ) ) {
+        QStringList data = value.toString().split ( QLatin1Char ( ':' ) );
+        if ( data.size() >=4 )
+            m_controller->connectToIOs ( data[0].toInt(), data[1].toInt(), data[2], data[3] );
     }
 }
 
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-    if (idb == ActorPin::staticMetaObject.className()) {
-        return new ActorPinServer((ActorPin*)service, this);
-    } else if (idb == ActorPinName::staticMetaObject.className()) {
-        return new ActorPinNameServer((ActorPinName*)service, this);
-    } else if (idb == ConditionPin::staticMetaObject.className()) {
-        return new ConditionPinServer((ConditionPin*)service, this);
+void plugin::execute ( const QVariantMap& data ) {
+    if ( IS_ID ( "iovalue_absolut" ) ) {
+		m_controller->setPin ( DATA("channel"),BOOLDATA("value") );
+    } else if ( IS_ID ( "iovalue_toogle" ) ) {
+		m_controller->togglePin ( DATA("channel") );
+    } else if ( IS_ID ( "ioname" ) ) {
+		m_controller->setPinName ( DATA("channel"),DATA("name") );
     }
-    return 0;
 }
 
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    return m_IOController->getStateTracker();
+bool plugin::condition ( const QVariantMap& data )  {
+    if ( IS_ID ( "iocondition" ) ) {
+		return ( m_controller->getPin ( DATA("channel") ) == BOOLDATA("value") );
+    }
+    return false;
 }
-void myPluginExecute::dataLoadingComplete() {
-    emit pluginLoadingComplete(this);
+
+void plugin::event_changed ( const QVariantMap& data ) {
+    Q_UNUSED ( data );
+}
+
+QMap<QString, QVariantMap> plugin::properties() {
+    QMap<QString, QVariantMap> l;
+    return l;
 }

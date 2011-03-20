@@ -28,6 +28,11 @@ class MediaController : public QObject
 {
     Q_OBJECT
 public:
+	enum MediaState {
+		StopState,
+		PauseState,
+		PlayState
+	};
     MediaController(AbstractPlugin* plugin);
     ~MediaController();
 
@@ -64,7 +69,7 @@ public:
     qint64 getTrackDuration();
 
     // state
-    MediaStateTracker::EnumMediaState state();
+    MediaState state();
 
     // volume
     void setVolume(int newvol, bool relative = false);
@@ -84,20 +89,17 @@ private:
     bool m_mpdchannelfree;
 
     // build playlist statetrackers
-    QList< QString > m_tempplaylists;
-    QString m_currentplaylist;
-    void checkPlaylists();
+    QList< QString > m_playlists;
+	QList< QString > m_tempplaylists;
+    QString m_playlistid;
 
-    // state trackers
-//     MediaStateTracker *m_mediaStateTracker;
-//     MusicVolumeStateTracker* m_volumestateTracker;
-//     QList<PlaylistStateTracker*> m_playlists;
     int indexOfPlaylist(const QString& name);
 
     // current media state
-    MediaStateTracker::EnumMediaState m_mediastate;
+    MediaState m_mediastate;
     qint64 m_currenttime;
     qint64 m_totaltime;
+	int m_track;
     int m_volume;
     QTimer m_fakepos;
     QString m_tracktitle;
@@ -115,12 +117,13 @@ private:
         StatusNeed,
         StatusFetching
     };
-    StatusEnum needstatus;
-    StatusEnum needPlaylists;
-    StatusEnum needCurrentSong;
+    StatusEnum m_needstatus;
+    StatusEnum m_needPlaylists;
+    StatusEnum m_needCurrentSong;
 
     // dump media info
     void saveMediaInfo();
+	void checkPlaylists();
 private Q_SLOTS:
     void writeCommandQueueItem();
     void slotreadyRead ();
@@ -134,5 +137,8 @@ private Q_SLOTS:
     void updatefakepos();
     void reconnectTimeout();
 Q_SIGNALS:
-    void stateChanged(AbstractStateTracker*);
+    void volumeChanged(double);
+	void playlistsChanged(const QString& playlist, int position);
+	void playlistChanged(const QString& playlist_id);
+	void trackChanged(const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, MediaState state);
 };

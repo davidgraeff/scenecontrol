@@ -18,25 +18,41 @@
 */
 
 #pragma once
-#include <QVariantMap>
-#include <QString>
-#include "abstractplugin.h"
-#include <QSet>
+#include <QObject>
+#include <QThread>
 
-class AbstractServer;
-class PluginHelper : public AbstractPlugin
+#ifdef __APPLE__
+#include <PCSC/wintypes.h>
+#include <PCSC/winscard.h>
+#else
+#include <winscard.h>
+#endif
+
+class CardThread : public QThread
 {
+    Q_OBJECT
 public:
-    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
-    virtual void registerSetting(const char* name, const QVariant& value);
-    virtual const QVariantMap getSettings() const;
-	virtual void session_change(const QString& id, bool running);
-	virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value, const QString& sessionid);
-	virtual void initialize_plugin(AbstractServer* server);
-	virtual void initialize() = 0;
-	virtual void clear() {}
-protected:
-    QVariantMap m_settings;
-	QSet<QString> m_sessions;
-	AbstractServer* m_server;
+    explicit CardThread(QObject* parent = 0);
+    virtual ~CardThread();
+	virtual void run();
+	void abort();
+private:
+    bool m_systemReady;
+    void readReaders();
+	int current_reader;
+	LONG rv;
+	SCARDCONTEXT hContext;
+	SCARD_READERSTATE *rgReaderStates_t;
+	SCARD_READERSTATE rgReaderStates[1];
+	DWORD dwReaders;
+	DWORD dwReadersOld;
+	DWORD timeout;
+	LPSTR mszReaders;
+	char *ptr;
+	char **readers;
+	int nbReaders, i;
+	char atr[MAX_ATR_SIZE*3+1];
+	bool pnp;
+Q_SIGNALS:
+    void cardDetected(const QString& atr, int state);
 };
