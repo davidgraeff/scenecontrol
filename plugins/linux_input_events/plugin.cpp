@@ -1,275 +1,156 @@
-#include "plugin_server.h"
-#include <QDateTime>
+/*
+ *    RoomControlServer. Home automation for controlling sockets, leds and music.
+ *    Copyright (C) 2010  David Gräff
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 #include <QDebug>
-#include <QCoreApplication>
 #include <QtPlugin>
+
 #include "plugin.h"
-#include <qdom.h>
 #include "configplugin.h"
 
-Q_EXPORT_PLUGIN2(libexecute, myPluginExecute)
+Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-myPluginExecute::myPluginExecute() : ExecutePlugin() {
-    m_base = new myPlugin();
-    m_control = 0;
-    m_repeating = 0;
-
-    if (watcher->connection().interface()->isServiceRegistered(QLatin1String(LIRI_DBUS_SERVICE)))
-        slotServiceRegistered(QLatin1String(LIRI_DBUS_SERVICE));
-    
-    _config(this);
+plugin::plugin() : m_repeat(0), m_repeatInit(0) {
+    connect(&m_repeattimer,SIGNAL(timeout()),SLOT(repeattrigger()));
+    m_repeattimer.setSingleShot(true);
+    _config ( this );
 }
 
-myPluginExecute::~myPluginExecute() {
-    //delete m_base;
-    delete m_control;
-    qDeleteAll(m_devices.values());
+plugin::~plugin() {
+
+}
+
+void plugin::initialize() {
+    m_server->register_listener ( QLatin1String ( "selected_input_device" ) );
 }
 
 
-
-
-EventRemoteKeyServer::EventRemoteKeyServer(EventRemoteKey* base, myPluginExecute* plugin, QObject* parent) : ExecuteService(base, parent), m_plugin(plugin) {
-    connect(&m_timer,SIGNAL(timeout()),SLOT(retrigger()));
-    m_timer.setSingleShot(true);
+void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
+    PluginHelper::setSetting ( name, value, init );
+	if (name == QLatin1String("repeat")) m_repeat = value.toInt();
+	else if (name == QLatin1String("repeat_init")) m_repeatInit = value.toInt();
 }
 
-void EventRemoteKeyServer::keySlot(QString,QString keyname,uint channel,int pressed)
-{
-    EventRemoteKey* base = service<EventRemoteKey>();
-    if (base->channel()>=0 && channel != (uint)base->channel()) return;
-    if (base->pressed() != pressed) {
-        return;
+void plugin::execute ( const QVariantMap& data ) {
+    Q_UNUSED ( data );
+}
+
+bool plugin::condition ( const QVariantMap& data )  {
+    Q_UNUSED ( data );
+    return false;
+}
+
+void plugin::event_changed ( const QVariantMap& data ) {
+    if ( IS_ID ( "inputevent" ) ) {
+        // entfernen
+        const QString inputdevice = DATA ( "inputdevice" );
+        const QString key = inputdevice+DATA ( "kernelkeyname" );
+        const QString uid = DATA ( "uid" );
+        QMutableMapIterator<QString, eventstruct > it ( m_key_events );
+        while ( it.hasNext() ) {
+            it.value().uids.remove ( uid );
+            if ( it.value().uids.isEmpty() )
+                it.remove();
+        }
+        // hinzufügen
+        m_key_events[key].uids.insert ( uid );
+
+        // stop listening to device
+        if ( m_eventdevices.contains ( uid ) ) {
+            m_eventdevices.remove ( uid );
+            stoplistenToDevice ( inputdevice );
+        }
+        // start listening to the device
+        listenToDevice ( inputdevice );
     }
-    
-    if (base->key() != keyname) return;
-    emit trigger();
+}
+
+void plugin::otherPropertyChanged ( const QVariantMap& data, const QString& sessionid ) {
+    if ( IS_ID ( "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
+        listenToDevice ( DATA ( "inputdevice" ), sessionid );
+    }
+}
+
+void plugin::session_change ( const QString& id, bool running ) {
+    PluginHelper::session_change ( id, running );
+    if ( running ) return;
+    // stop listening to device
+    if ( m_sessiondevices.contains ( id ) ) {
+        stoplistenToDevice ( m_eventdevices.value(id) );
+        m_eventdevices.remove ( id );
+    }
+}
+
+QMap<QString, QVariantMap> plugin::properties() {
+    QMap<QString, QVariantMap> l;
+    return l;
+}
+
+void plugin::eventKeyUp ( const QString& device, const QString& kernelkeyname )
+{
+	Q_UNUSED(device);
+	Q_UNUSED(kernelkeyname);
+	// repeat stop
+	m_repeattimer.stop();
+}
+
+void plugin::eventKeyDown ( const QString& device, const QString& kernelkeyname ) {
+	// properties
+	{
+		// last key property. Will be propagated to interested clients only.
+		PROPERTY ( "lastinputkey" );
+		data[QLatin1String ( "kernelkeyname" ) ] = kernelkeyname;
+		data[QLatin1String ( "inputdevice" ) ] = device;
+		
+		// Propagate to all interested clients
+		QMap<QString, QString>::iterator it = m_sessiondevices.begin();
+		for (;it != m_sessiondevices.end();++it) {
+			const QString sessionid = it.key();
+			if (it.value() == device) m_server->property_changed(data, sessionid);
+		}
+	}
+	// repeat stop
+	m_repeattimer.stop();
+	m_lastevent = device+kernelkeyname;
+	repeattrigger(true);
+}
+
+void plugin::listenToDevice ( const QString& device, const QString& sesssionid ) {}
+
+void plugin::stoplistenToDevice ( const QString& device, bool stopOnlyIfNotUsed ) {}
+
+void plugin::inputDevicesChanged() {
+    PROPERTY ( "inputdevice" );
+    QStringList l = m_alldevices.toList();
+    data[QLatin1String ( "alldevices" ) ] = l.join ( QLatin1String ( ";" ) );
+    m_server->property_changed ( data );
+}
+
+void plugin::repeattrigger(bool initial_event) {
+    QMap<QString, eventstruct >::iterator it = m_key_events.find(m_lastevent);
+	if (it == m_key_events.end()) return;
 	
-    if (base->repeat()) {
-        m_dorepeat=true;
-        m_plugin->setRepeatingEvent(this);
-        m_timer.start(base->repeatinit());
-    }
-}
-
-
-void EventRemoteKeyServer::dataUpdate() {
-    m_plugin->registerKeyEvent(this);
-}
-
-void EventRemoteKeyServer::retrigger() {
-    EventRemoteKey* base = service<EventRemoteKey>();
-    emit trigger();
-    if (base->repeat() && m_dorepeat) m_timer.start(base->repeat());
-}
-void EventRemoteKeyServer::stopRepeat() {
-    m_dorepeat=false;
-    m_timer.stop();
-}
-
-
-
-void myPluginExecute::refresh() {}
-
-ExecuteWithBase* myPluginExecute::createExecuteService(const QString& id)
-{
-    AbstractServiceProvider* service = m_base->createServiceProvider(id);
-    if (!service) return 0;
-    QByteArray idb = id.toAscii();
-    if (idb == EventRemoteKey::staticMetaObject.className()) {
-        return new EventRemoteKeyServer((EventRemoteKey*)service, this);
-    }
-    return 0;
-}
-
-QList<AbstractStateTracker*> myPluginExecute::stateTracker() {
-    QList<AbstractStateTracker*> a;
-    m_statetracker->setConnected(m_control!=0);
-    m_statetracker->setReceivers(m_devices.size());
-    a.append(m_statetracker);
-    return a;
-}
-
-
-void myPluginExecute::deviceAdded(const QString& rid) {
-    // be on the safe side, although this slot should only be called if these
-    // prerequires are fulfilled anyway
-    if (!m_control) return;
-
-    // is this a duplicate?
-    if (m_devices.contains(rid)) return;
-
-    // create device-manager device bus object. Bus objectpath: /org/liri/Devicelist/N
-    QString devicename = QLatin1String(LIRI_DBUS_OBJECT_RECEIVERS"/") + rid;
-    OrgLiriDeviceInterface* tmp;
-    tmp = new OrgLiriDeviceInterface(
-        QLatin1String(LIRI_DBUS_SERVICE),
-        devicename,
-        QDBusConnection::systemBus() );
-
-    // connection established?
-    if (!tmp->isValid()) {
-        qWarning() << devicename << "Interface invalid" << tmp->lastError();
-        delete tmp;
-        tmp = 0;
-        return;
-    }
-
-    // create new entry
-    m_devices[rid] = tmp;
-
-    // connect
-    connect(tmp,SIGNAL(key(QString,QString,uint,int)),SLOT(keySlot(QString,QString,uint,int)));
-
-    m_statetracker->setConnected(m_control!=0);
-    m_statetracker->setReceivers(m_devices.size());
-    emit stateChanged(m_statetracker);
-}
-
-void myPluginExecute::deviceRemoved(const QString& rid) {
-    // only do something if this rid is in our map
-    QMap< QString, OrgLiriDeviceInterface* >::iterator it = m_devices.find(rid);
-    if (it == m_devices.end()) return;
-
-    // remove
-    delete *it;
-    m_devices.erase(it);
-    
-    m_statetracker->setConnected(m_control!=0);
-    m_statetracker->setReceivers(m_devices.size());
-    emit stateChanged(m_statetracker);
-}
-
-void myPluginExecute::slotServiceUnregistered(const QString&) {
-    // free m_control interface
-    delete m_control;
-    m_control = 0;
-
-    // remove all entries one after the other
-    QStringList rids = m_devices.keys();
-    foreach(QString rid, rids) deviceRemoved(rid);
-}
-
-void myPluginExecute::slotServiceRegistered(const QString&) {
-    // create m_control object
-    m_control = new OrgLiriControlInterface(
-        QLatin1String(LIRI_DBUS_SERVICE),
-        QLatin1String(LIRI_DBUS_OBJECT_RECEIVERS),
-        QDBusConnection::systemBus());
-
-    // connection established?
-    if (!m_control->isValid()) {
-        qWarning() << "m_control Interface invalid" <<
-        m_control->lastError();
-        delete m_control;
-        m_control = 0;
-        return;
-    }
-
-    // connect signals
-    connect(m_control, SIGNAL ( deviceAdded(const QString &) ),
-            SLOT( deviceAdded(const QString &) ));
-
-    connect(m_control, SIGNAL ( deviceRemoved(const QString &) ),
-            SLOT( deviceRemoved(const QString &) ));
-
-    // add m_devices through parsing dbus introsspect xml
-    QStringList list = parseIntrospect();
-    foreach(QString rid, list) deviceAdded(rid);
-}
-
-QStringList myPluginExecute::parseIntrospect() {
-    QStringList tmp;
-    QDBusInterface iface(QLatin1String(LIRI_DBUS_SERVICE), QLatin1String(LIRI_DBUS_OBJECT_RECEIVERS),
-                         QLatin1String("org.freedesktop.DBus.Introspectable"), QDBusConnection::systemBus());
-    if (!iface.isValid()) {
-        QDBusError err(iface.lastError());
-        qDebug() << "Cannot introspect child nodes (m_devices): interface invalid";
-        return tmp;
-    }
-
-    QDBusReply<QString> xml = iface.call(QLatin1String("Introspect"));
-    if (!xml.isValid()) {
-        QDBusError err(xml.error());
-        if (err.isValid()) {
-            qDebug() << "Cannot introspect child nodes (m_devices): Call to object failed";
-        } else {
-            qDebug() << "Cannot introspect child nodes (m_devices): Invalid XML";
-        }
-        return tmp;
-    }
-
-    QDomDocument doc;
-    doc.setContent(xml);
-
-    QDomElement node = doc.documentElement();
-    QDomElement child = node.firstChildElement();
-    while (!child.isNull()) {
-        QString name = child.attribute(QLatin1String("name"));
-        if (child.tagName() == QLatin1String("node") && name[0].isNumber()) {
-            tmp.append(name);
-        }
-        child = child.nextSiblingElement();
-    }
-    return tmp;
-}
-
-void myPluginExecute::keySlot(const QString &t, const QString &keyname, uint channel, int pressed)
-{
-    if (m_repeating) m_repeating->stopRepeat();
-    QList<EventRemoteKeyServer*> providers = m_keyevents.value(keyname);
-
-    foreach (EventRemoteKeyServer* e, providers) {
-        e->keySlot(t,keyname,channel,pressed);
-    }
-
-    if (keyname.isEmpty()) return;
-
-    m_statetrackerKey->setKey(keyname);
-    m_statetrackerKey->setChannel(channel);
-    m_statetrackerKey->setPressed(pressed);
-    emit stateChanged(m_statetrackerKey);
-}
-
-void myPluginExecute::keyEventDestroyed(QObject* obj) {
-	if (m_keyevents.isEmpty()) return;
-	EventRemoteKeyServer* event = qobject_cast<EventRemoteKeyServer*>(obj);
-	if (!event) return;
-    EventRemoteKey* base = (EventRemoteKey*)event->base();
-    Q_ASSERT(base);
-	qDebug()<<__FUNCTION__<<base;
-	QMap<QString, QList<EventRemoteKeyServer*> >::iterator it = m_keyevents.find(base->key());
-    it.value().removeAll(event);
-    if (it.value().isEmpty())
-      m_keyevents.remove(base->key());
-    //qDebug() << "remove" << k << r;
-}
-
-void myPluginExecute::registerKeyEvent(EventRemoteKeyServer* event) {
-    EventRemoteKey* base = (EventRemoteKey*)event->base();
-    // first remove if already registered
-    QMap<QString, QList<EventRemoteKeyServer*> >::iterator it = m_keyevents.begin();
-    for (;it != m_keyevents.end();++it) {
-        QList<EventRemoteKeyServer*> list = it.value();
-        for (int i=list.size()-1;i>=0;--i) {
-            if (list[i] == event) {
-                // remove old key
-                m_keyevents.erase(it);
-                goto endloop;
-            }
-        }
-    }
-    endloop:
-    // register
-    m_keyevents[base->key()].append(event);
-    connect(event,SIGNAL(destroyed(QObject*)),SLOT(keyEventDestroyed(QObject*)));
-}
-
-bool myPluginExecute::isRegistered(EventRemoteKeyServer* event) {
-    EventRemoteKey* base = (EventRemoteKey*)event->base();
-    QList<EventRemoteKeyServer*> list = m_keyevents.value(base->key());
-    return list.contains(event);
-}
-void myPluginExecute::clear() {
-	m_keyevents.clear();
+	const eventstruct* event = &(*it);
+	foreach (QString uid, event->uids) {
+		m_server->event_triggered(uid);
+	}
+	
+	if (!event->repeat) return;
+	
+	if (initial_event)
+		m_repeattimer.start(initial_event?m_repeatInit:m_repeat);
 }

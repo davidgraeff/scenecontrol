@@ -25,7 +25,8 @@
 #include <shared/abstractplugin.h>
 #include <QUdpSocket>
 #include <QThread>
-Controller::Controller(AstractPlugin* plugin) : m_plugin(plugin), m_listenSocket(0) {
+#include <QStringList>
+Controller::Controller(AbstractPlugin* plugin) : m_plugin(plugin), m_listenSocket(0) {
     m_writesocket = new QUdpSocket(this);
     connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
     m_cacheTimer.setInterval(50);
@@ -100,7 +101,7 @@ void Controller::readyRead() {
 bool Controller::getPin(const QString& pin) const
 {
     if (!m_values.contains(pin)) return false;
-    return m_values[pin]->value();
+    return m_values[pin];
 }
 
 void Controller::setPin ( const QString& pin, bool value )
@@ -132,7 +133,7 @@ void Controller::setPinName ( const QString& pin, const QString& name )
 void Controller::togglePin ( const QString& pin )
 {
     if (!m_values.contains(pin)) return;
-    setPin ( pin, !m_values[pin]->value() );
+    setPin ( pin, !m_values[pin] );
 }
 
 void Controller::cacheToDevice()
@@ -155,5 +156,5 @@ int Controller::countPins() {
 
 QString Controller::getPinName(const QString& pin) {
     if (!m_names.contains(pin)) return QString();
-    return m_names[pin]->value();
+    return m_names[pin];
 }

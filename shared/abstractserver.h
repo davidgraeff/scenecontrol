@@ -35,9 +35,10 @@ public:
     virtual void event_triggered(const QString& event_id, const char* pluginid = PLUGIN_ID) = 0;
     /**
      * A plugin state/property has changed
-     * \param value values of the property with special entry id (unqiue identifier within current plugin properties)
+     * \param values values of the property with special entry id (unqiue identifier within current plugin properties)
+	 * \param sessionid if not empty, the server will propagate this property change only to the client with this sessionid
      */
-    virtual void property_changed(const QVariantMap& values, const char* pluginid = PLUGIN_ID) = 0;
+    virtual void property_changed(const QVariantMap& values, const QString& sessionid = QString(), const char* pluginid = PLUGIN_ID) = 0;
     /**
      * Register a listener for a property. The server will send all changes of thsi property back to the plugin via otherPropertyChanged
      */

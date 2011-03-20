@@ -42,9 +42,8 @@ void PluginHelper::session_change ( const QString& id, bool running ) {
     else m_sessions.remove ( id );
 }
 
-void PluginHelper::otherPropertyChanged ( const QString& unqiue_property_id, const QVariantMap& value, const QString& sessionid ) {
-    Q_UNUSED ( unqiue_property_id );
-    Q_UNUSED ( value );
+void PluginHelper::otherPropertyChanged ( const QVariantMap& data, const QString& sessionid ) {
+    Q_UNUSED ( data );
     Q_UNUSED ( sessionid );
 }
 

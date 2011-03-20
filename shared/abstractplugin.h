@@ -27,7 +27,7 @@
 #define INTDATA(ID) data[QLatin1String(ID)].toInt()
 #define BOOLDATA(ID) data[QLatin1String(ID)].toBool()
 #define DOUBLEDATA(ID) data[QLatin1String(ID)].toDouble()
-#define PROPERTY(ID) QVariantMap data; data[QLatin1String("id")] = QLatin1String(PLUGIN_ID"_"ID);
+#define PROPERTY(ID) QVariantMap data; data[QLatin1String("id")] = QLatin1String(PLUGIN_ID"_"ID)
 
 class AbstractServer;
 class AbstractPlugin
@@ -50,8 +50,8 @@ public:
      * reguests all properties from all plugins after a client has connected.
      * Example in the VariantMap: fancyplugin_ledIsOn = true
      * Note: Properties are temporary and are not saved by the server.
-     * Cache properties from devices that need a while for responses. This call
-     * should not block the server for a longer period!
+     * You should cache longer-to-generate properties. This call
+     * should not block the server noticable!
      */
     virtual QMap<QString, QVariantMap> properties() = 0;
     /**
@@ -63,11 +63,10 @@ public:
      * Called by server process if a state of a property of another plugin or a client property changed.
      * This plugin has to register its interest in one or more properties to the server by
      * using the AbstractServer Interface before.
-     * \param unqiue_property_id the property id (unique among all plugins)
-     * \param value the property values
+     * \param data the property data with special entry id (unqiue identifier within current plugin properties)
 	 * \param sessionid If sessionid is not null this property is a session propery and received from a client and only valid for the referred session
      */
-    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value, const QString& sessionid) = 0;
+    virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid) = 0;
     /**
      * Called by server process if a setting is changed. Use the plugin helper file
      * and call setSettings to save settings permanantly.

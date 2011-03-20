@@ -40,7 +40,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 void plugin::execute(const QVariantMap& data) {
 	if (IS_ID("changemode")) {
 		m_mode = DATA("mode");
-		QSet<QString> uids = m_mode_events[m_mode];
+		const QSet<QString> uids = m_mode_events.value(m_mode);
 		foreach(QString uid, uids) {
 			m_server->event_triggered(uid);
 		}
@@ -56,14 +56,18 @@ bool plugin::condition(const QVariantMap& data)  {
 }
 
 void plugin::event_changed(const QVariantMap& data) {
-	// entfernen
-	const QString uid = DATA("uid");
-	QMap<QString, QSet<QString> >::iterator it = m_mode_events.begin();
-	for(;it!=m_mode_events.end();++it) {
-		it->remove(uid);
+	if (IS_ID("modeevent")) {
+		// entfernen
+		const QString uid = DATA("uid");
+		QMutableMapIterator<QString, QSet<QString> > it(m_mode_events);
+		while (it.hasNext()) {
+			it.value().remove(uid);
+			if (it.value().isEmpty())
+				it.remove();
+		}
+		// hinzufügen
+		m_mode_events[DATA("mode")].insert(uid);
 	}
-	// hinzufügen
-	m_mode_events[DATA("mode")].insert(uid);
 }
 
 QMap<QString, QVariantMap> plugin::properties() {

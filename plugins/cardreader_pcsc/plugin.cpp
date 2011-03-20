@@ -55,14 +55,18 @@ bool plugin::condition ( const QVariantMap& data )  {
 }
 
 void plugin::event_changed ( const QVariantMap& data ) {
-	// entfernen
-	const QString uid = DATA("uid");
-	QMap<QString, QSet<QString> >::iterator it = m_card_events.begin();
-	for(;it!=m_card_events.end();++it) {
-		it->remove(uid);
+	if (IS_ID("cardevent")) {
+		// entfernen
+		const QString uid = DATA("uid");
+		QMutableMapIterator<QString, QSet<QString> > it(m_card_events);
+		while (it.hasNext()) {
+			it.value().remove(uid);
+			if (it.value().isEmpty())
+				it.remove();
+		}
+		// hinzufügen
+		m_card_events[DATA("cardid")].insert(uid);
 	}
-	// hinzufügen
-	m_card_events[DATA("cardid")].insert(uid);
 }
 
 QMap<QString, QVariantMap> plugin::properties() {

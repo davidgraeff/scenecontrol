@@ -31,7 +31,7 @@ public:
     virtual void registerSetting(const char* name, const QVariant& value);
     virtual const QVariantMap getSettings() const;
 	virtual void session_change(const QString& id, bool running);
-	virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value, const QString& sessionid);
+	virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid);
 	virtual void initialize_plugin(AbstractServer* server);
 	virtual void initialize() = 0;
 	virtual void clear() {}

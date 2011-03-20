@@ -37,24 +37,33 @@ public:
 
     virtual void initialize();
     virtual QMap<QString, QVariantMap> properties();
-    virtual void otherPropertyChanged(const QString& unqiue_property_id, const QVariantMap& value, const QString& sessionid);
+    virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid);
+	virtual void session_change(const QString& id, bool running);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data);
     virtual bool condition(const QVariantMap& data) ;
     virtual void event_changed(const QVariantMap& data);
 private:
 	// input events
-	QMap<QString, QSet<QString> > m_key_events; //device+key->set of uids
+	struct eventstruct {
+		QSet<QString> uids;
+		bool repeat;
+	};
+	QMap<QString, eventstruct > m_key_events; //device+key->set of uids
 	QString m_lastevent;
-	void inputEvent(const QString& device, const QString& kernelkeyname, bool pressed);
+	void eventKeyDown(const QString& device, const QString& kernelkeyname);
+	void eventKeyUp(const QString& device, const QString& kernelkeyname);
 	// devices
 	QSet<QString> m_alldevices;
-	void listenToDevice(const QString& device);
-	void stoplistenToDevice(const QString& device);
+	QMap<QString, QString> m_eventdevices; // uid -> device
+	QMap<QString, QString> m_sessiondevices; //sessionid -> device
+	void listenToDevice(const QString& device, const QString& sesssionid = QString());
+	void stoplistenToDevice(const QString& device, bool stopOnlyIfNotUsed = true);
 	// repeat
     QTimer m_repeattimer;
-    bool m_dorepeat;
+	int m_repeat;
+	int m_repeatInit;
 private Q_SLOTS:
 	void inputDevicesChanged();
-	void repeattrigger();
+	void repeattrigger(bool initial_event = false);
 };

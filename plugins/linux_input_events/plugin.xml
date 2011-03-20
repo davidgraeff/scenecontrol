@@ -4,14 +4,19 @@
     <string id="inputdevice" model="inputdevice" sendback_as="selected_input_device" />
     <string id="kernelkeyname" property="lastinputkey" />
     <bool id="pressed">1</bool>
-    <bool id="repeat"></bool>
+    <bool id="repeat">0</bool>
   </event>
   <property id="inputdevice">
-    <string id="alldevices" /><!--comma separated-->
+    <string id="alldevices" /><!--semicolon separated-->
   </property>
   
   <property id="lastinputkey" type="session" depends_on="selected_input_device">
+	<string id="inputdevice" />
     <string id="kernelkeyname" />
   </property>
   
+  <property id="selected_input_device" type="session;sendback" >
+    <string id="inputdevice" />
+  </property>
+
 </plugin>
