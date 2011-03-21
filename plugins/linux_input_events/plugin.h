@@ -1,4 +1,4 @@
-/*/*
+/*
  *    RoomControlServer. Home automation for controlling sockets, leds and music.
  *    Copyright (C) 2010  David Gräff
  *
@@ -25,12 +25,48 @@
 #include "shared/pluginhelper.h"
 #include <QSet>
 #include <QTimer>
+#include <qfile.h>
+#include <linux/input.h>
+
+class plugin;
+class ManagedDeviceList;
+class ManagedDevice;
+
+struct EventKey {
+    QSet<QString> uids;
+    bool repeat;
+};
+
+struct InputDevice : public QObject {
+    Q_OBJECT
+private:
+    ManagedDevice* m_device;
+    QFile m_file;
+    QSet<QString> m_sessionids;
+    QMap<QString, EventKey*> m_keyToUids;
+    QTimer m_repeattimer;
+    QString m_lastkey;
+    plugin* m_plugin;
+public:
+    InputDevice(plugin* plugin) ;
+    ~InputDevice();
+    bool isClosable();
+    void connectSession(const QString& sessionid);
+    void disconnectSession(const QString& sessionid);
+    void setDevice(ManagedDevice* device);
+    void unregisterKey(QString uid);
+    void registerKey(QString uid, QString key, bool repeat);
+private Q_SLOTS:
+    void eventData();
+    void repeattrigger(bool initial_event = false);
+};
 
 class plugin : public QObject, public PluginHelper
 {
     Q_OBJECT
     PLUGIN_MACRO
     Q_INTERFACES(AbstractPlugin)
+    friend class InputDevice;
 public:
     plugin();
     virtual ~plugin();
@@ -38,32 +74,20 @@ public:
     virtual void initialize();
     virtual QMap<QString, QVariantMap> properties();
     virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid);
-	virtual void session_change(const QString& id, bool running);
+    virtual void session_change(const QString& id, bool running);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data);
     virtual bool condition(const QVariantMap& data) ;
     virtual void event_changed(const QVariantMap& data);
 private:
-	// input events
-	struct eventstruct {
-		QSet<QString> uids;
-		bool repeat;
-	};
-	QMap<QString, eventstruct > m_key_events; //device+key->set of uids
-	QString m_lastevent;
-	void eventKeyDown(const QString& device, const QString& kernelkeyname);
-	void eventKeyUp(const QString& device, const QString& kernelkeyname);
-	// devices
-	QSet<QString> m_alldevices;
-	QMap<QString, QString> m_eventdevices; // uid -> device
-	QMap<QString, QString> m_sessiondevices; //sessionid -> device
-	void listenToDevice(const QString& device, const QString& sesssionid = QString());
-	void stoplistenToDevice(const QString& device, bool stopOnlyIfNotUsed = true);
-	// repeat
-    QTimer m_repeattimer;
-	int m_repeat;
-	int m_repeatInit;
+    ManagedDeviceList* m_devicelist;
+    QMap<QString, InputDevice*> m_devices;
+	QMap<uint, QString> m_keymapping;
+
+    static int m_repeat;
+    static int m_repeatInit;
 private Q_SLOTS:
-	void inputDevicesChanged();
-	void repeattrigger(bool initial_event = false);
+    void deviceAdded(ManagedDevice*);
+    void deviceRemoved(ManagedDevice*);
+
 };

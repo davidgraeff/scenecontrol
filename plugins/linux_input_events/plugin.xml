@@ -6,8 +6,9 @@
     <bool id="pressed">1</bool>
     <bool id="repeat">0</bool>
   </event>
-  <property id="inputdevice">
-    <string id="alldevices" /><!--semicolon separated-->
+  <property id="inputdevice" model_key="device_path">
+    <string id="device_path" />
+	<string id="device_info" />
   </property>
   
   <property id="lastinputkey" type="session" depends_on="selected_input_device">

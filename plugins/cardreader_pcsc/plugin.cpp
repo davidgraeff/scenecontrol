@@ -74,7 +74,7 @@ QMap<QString, QVariantMap> plugin::properties() {
     return l;
 }
 
-void plugin::cardDetected ( const QString& atr, int state ) {
+void plugin::slotcardDetected ( const QString& atr, int state ) {
     PROPERTY("cardevent");
 	data[QLatin1String("cardid")] = atr;
 	data[QLatin1String("state")] = state;

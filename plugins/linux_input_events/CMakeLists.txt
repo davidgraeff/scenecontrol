@@ -14,10 +14,10 @@ configure_file(configplugin.h.in configplugin.h @ONLY)
 
 IF (DEBFOUND)
 	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)
-
+	#include_directories("/usr/include/udev")
 	IF (PLUGIN_${PROJECT_NAME})
 		build_server_lib()
-		target_link_libraries(${PROJECT_NAME}_server ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES} ${QT_QTDBUS_LIBRARIES})
+		target_link_libraries(${PROJECT_NAME}_server ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES} ${QT_QTDBUS_LIBRARIES} udev)
 		install_server_lib()
 	ENDIF()
 ELSE()

@@ -34,7 +34,7 @@ public:
     plugin();
     virtual ~plugin();
 
-    virtual void init ( AbstractServer* server );
+    virtual void initialize();
     virtual QMap<QString, QVariantMap> properties();
     virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
     virtual void execute ( const QVariantMap& data );
