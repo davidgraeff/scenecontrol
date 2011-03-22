@@ -72,11 +72,11 @@ int su_conv(int num_msg,const struct pam_message **msgm,
 }
 #endif
 
-bool AuthThread::query(QObject* socketptr, const QString& name, const QString& pwd) {
+bool AuthThread::query(const QString& sessionid, const QString& name, const QString& pwd) {
     bool ok = false;
     mutex.lock();
     if (m_creds.size()<MAX_SIMULTANEOUS_LOGINS) {
-        m_creds.append(new AuthQueryData(socketptr, name.toUtf8(), pwd.toUtf8()));
+        m_creds.append(new AuthQueryData(sessionid, name.toUtf8(), pwd.toUtf8()));
         ok = true;
     }
     mutex.unlock();
@@ -100,9 +100,9 @@ void AuthThread::run() {
 		HANDLE token = 0;
 		LogonUser(user, (char*)".", pwdptr, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &token);
 		if (token)
-			emit auth_success(p->socketptr,QString::fromUtf8(p->name));
+			emit auth_success(p->sessionid,QString::fromUtf8(p->name));
 		else
-			emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
+			emit auth_failed(p->sessionid,QString::fromUtf8(p->name));
 		CloseHandle(token);
 #else
 		/* conversation-Struktur */
@@ -127,11 +127,11 @@ void AuthThread::run() {
 
             if (retval != PAM_SUCCESS) {
                 //qDebug() <<"Fehler beim authentifizieren von Nutzer" << user << ":" << pam_strerror( pamh, retval);
-                emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
+                emit auth_failed(p->sessionid,QString::fromUtf8(p->name));
             }
         } else {
             qWarning() <<"Fehler bei Verbindung zu pam";
-            emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
+            emit auth_failed(p->sessionid,QString::fromUtf8(p->name));
         }
 
         /* Nutzerkonto auf Guelitigkeit pruefen */
@@ -140,12 +140,12 @@ void AuthThread::run() {
 
             if (retval != PAM_SUCCESS) {
                 //qDebug() << "Nutzerkonto von" << user << "nicht in Ordnung:" << pam_strerror( pamh, retval);
-                emit auth_failed(p->socketptr,QString::fromUtf8(p->name));
+                emit auth_failed(p->sessionid,QString::fromUtf8(p->name));
             }
         }
 
         if (retval == PAM_SUCCESS) {
-            emit auth_success(p->socketptr,QString::fromUtf8(p->name));
+            emit auth_success(p->sessionid,QString::fromUtf8(p->name));
         }
 
         delete p;

@@ -20,6 +20,7 @@ plugin::~plugin() {
                                        ICON_NONE);
     delete m_xbmcClient;
 }
+void plugin::clear() {}
 void plugin::initialize() {
 }
 
@@ -49,7 +50,7 @@ void plugin::event_changed(const QVariantMap& data) {
 }
 
 void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
-    PluginHelper::setSetting(name, value, init);
+    PluginSettingsHelper::setSetting(name, value, init);
     if (name == QLatin1String("server")) {
         delete m_xbmcClient;
         const QStringList data(value.toString().split(QLatin1Char(':')));
@@ -59,7 +60,8 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
     }
 }
 
-QMap<QString, QVariantMap> plugin::properties() {
+QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+Q_UNUSED(sessionid);
 	QMap<QString, QVariantMap> l;
 	return l;
 }

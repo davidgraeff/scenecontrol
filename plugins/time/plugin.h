@@ -24,20 +24,22 @@
 #include <QSet>
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
-#include "shared/pluginhelper.h"
+#include "shared/pluginsettingshelper.h" 
+#include "shared/abstractplugin_services.h"
 
-class plugin : public QObject, public PluginHelper
+class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin)
+    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services)
 public:
     plugin();
     virtual ~plugin();
 
+    virtual void session_change(const QString& id, bool running) {Q_UNUSED(id);Q_UNUSED(running);}
     virtual void initialize();
 	virtual void clear();
-    virtual QMap<QString, QVariantMap> properties();
+    virtual QMap<QString, QVariantMap> properties(const QString& sessionid);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data);
     virtual bool condition(const QVariantMap& data) ;

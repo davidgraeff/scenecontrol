@@ -22,7 +22,6 @@
 #include <limits>
 #include <stdio.h>
 #include <shared/abstractplugin.h>
-#include <shared/qjson/qobjecthelper.h>
 #include <QDir>
 #include <QCoreApplication>
 #include <QDateTime>

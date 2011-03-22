@@ -1,11 +1,11 @@
-#include "pluginhelper.h"
+#include "pluginsettingshelper.h"
 #include <QSettings>
 #include <QString>
 #include <QDebug>
 #include <cstdlib> //getenv
 #include "abstractserver.h"
 
-void PluginHelper::setSetting ( const QString& name, const QVariant& value, bool init ) {
+void PluginSettingsHelper::setSetting ( const QString& name, const QVariant& value, bool init ) {
     QSettings s;
     s.beginGroup ( pluginid() );
     QVariant oldvalue = s.value ( name );
@@ -14,7 +14,7 @@ void PluginHelper::setSetting ( const QString& name, const QVariant& value, bool
     m_settings.insert ( name, value );
 }
 
-void PluginHelper::registerSetting ( const char* name, const QVariant& value ) {
+void PluginSettingsHelper::registerSetting ( const char* name, const QVariant& value ) {
     QSettings s;
     s.beginGroup ( pluginid() );
     QString oldvalue = s.value ( QString::fromAscii ( name ) ).toString();
@@ -33,18 +33,6 @@ void PluginHelper::registerSetting ( const char* name, const QVariant& value ) {
     setSetting ( QString::fromAscii ( name ), ( oldvalue.size() ?oldvalue:value ), true );
 }
 
-const QVariantMap PluginHelper::getSettings() const {
+const QVariantMap PluginSettingsHelper::getSettings() const {
     return m_settings;
 }
-
-void PluginHelper::session_change ( const QString& id, bool running ) {
-    if ( running ) m_sessions.insert ( id );
-    else m_sessions.remove ( id );
-}
-
-void PluginHelper::otherPropertyChanged ( const QVariantMap& data, const QString& sessionid ) {
-    Q_UNUSED ( data );
-    Q_UNUSED ( sessionid );
-}
-
-void PluginHelper::initialize_plugin ( AbstractServer* server ) {m_server = server; initialize();}

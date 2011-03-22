@@ -37,12 +37,13 @@ plugin::~plugin() {
     delete m_thread;
 }
 
+void plugin::clear() {}
 void plugin::initialize(){
     m_thread->start();
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginHelper::setSetting ( name, value, init );
+    PluginSettingsHelper::setSetting ( name, value, init );
 }
 
 void plugin::execute ( const QVariantMap& data ) {
@@ -69,7 +70,8 @@ void plugin::event_changed ( const QVariantMap& data ) {
 	}
 }
 
-QMap<QString, QVariantMap> plugin::properties() {
+QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+Q_UNUSED(sessionid);
     QMap<QString, QVariantMap> l;
     return l;
 }

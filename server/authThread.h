@@ -33,20 +33,20 @@ class AuthThread : public QThread
 public:
 	AuthThread() {}
 	void run();
-	bool query(QObject* socketptr, const QString& name, const QString& pwd);
+	bool query(const QString& sessionid, const QString& name, const QString& pwd);
 private:
 	class AuthQueryData {
 	public:
-		QObject* socketptr;
+		QString sessionid;
 		QByteArray name;
 		QByteArray pwd;
-		AuthQueryData(QObject* socketptr, const QByteArray& name, const QByteArray& pwd)
-		 : socketptr(socketptr), name(name), pwd(pwd) {}
+		AuthQueryData(const QString& sessionid, const QByteArray& name, const QByteArray& pwd)
+		 : sessionid(sessionid), name(name), pwd(pwd) {}
 	};
 	QList<AuthQueryData*> m_creds;
 	QMutex mutex;
 	QWaitCondition bufferNotFull;
 Q_SIGNALS:
-	void auth_success(QObject* socketptr, const QString& name);
-	void auth_failed(QObject* socketptr, const QString& name);
+	void auth_success(const QString& sessionid, const QString& name);
+	void auth_failed(const QString& sessionid, const QString& name);
 };

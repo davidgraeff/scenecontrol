@@ -22,7 +22,8 @@
 #include <QStringList>
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
-#include "shared/pluginhelper.h"
+#include "shared/pluginsettingshelper.h" 
+#include "shared/abstractplugin_services.h"
 #include <QSet>
 #include <QTimer>
 #include <qfile.h>
@@ -61,18 +62,19 @@ private Q_SLOTS:
     void repeattrigger(bool initial_event = false);
 };
 
-class plugin : public QObject, public PluginHelper
+class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin)
+    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services)
     friend class InputDevice;
 public:
     plugin();
     virtual ~plugin();
 
     virtual void initialize();
-    virtual QMap<QString, QVariantMap> properties();
+    virtual void clear();
+    virtual QMap<QString, QVariantMap> properties(const QString& sessionid);
     virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid);
     virtual void session_change(const QString& id, bool running);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);

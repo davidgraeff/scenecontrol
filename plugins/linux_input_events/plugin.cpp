@@ -50,6 +50,7 @@ plugin::~plugin() {
     delete m_devicelist;
 }
 
+void plugin::clear() {}
 void plugin::initialize() {
     m_server->register_listener ( QLatin1String ( "selected_input_device" ) );
 	for (int i=0;keynames[i].name;++i) {
@@ -58,7 +59,7 @@ void plugin::initialize() {
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginHelper::setSetting ( name, value, init );
+    PluginSettingsHelper::setSetting ( name, value, init );
     if (name == QLatin1String("repeat")) m_repeat = value.toInt();
     else if (name == QLatin1String("repeat_init")) m_repeatInit = value.toInt();
 }
@@ -98,14 +99,15 @@ void plugin::otherPropertyChanged ( const QVariantMap& data, const QString& sess
 }
 
 void plugin::session_change ( const QString& id, bool running ) {
-    PluginHelper::session_change ( id, running );
+    PluginSettingsHelper::session_change ( id, running );
     if ( running ) return;
     foreach (InputDevice* device, m_devices) {
         device->disconnectSession(id);
     }
 }
 
-QMap<QString, QVariantMap> plugin::properties() {
+QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+Q_UNUSED(sessionid);
     QMap<QString, QVariantMap> l;
     return l;
 }

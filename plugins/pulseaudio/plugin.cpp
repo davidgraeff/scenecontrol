@@ -35,12 +35,13 @@ plugin::~plugin() {
     delete m_controller;
 }
 
+void plugin::clear() {}
 void plugin::initialize(){
 }
 
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginHelper::setSetting ( name, value, init );
+    PluginSettingsHelper::setSetting ( name, value, init );
 }
 
 void plugin::execute ( const QVariantMap& data ) {
@@ -60,7 +61,8 @@ void plugin::event_changed ( const QVariantMap& data ) {
     Q_UNUSED ( data );
 }
 
-QMap<QString, QVariantMap> plugin::properties() {
+QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+Q_UNUSED(sessionid);
     QMap<QString, QVariantMap> l;
     return l;
 }

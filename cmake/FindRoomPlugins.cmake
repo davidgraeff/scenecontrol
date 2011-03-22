@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 2.8)
 
-# project name
-get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-project(${targetname})
-message(STATUS "Configure Plugin: ${targetname}")
-
 #Only allow this file to be included by the root cmake file
 IF (NOT DEFINED PRODUCTID)
 	RETURN()
 ENDIF()
+
+# project name
+get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+project(${targetname})
+message(STATUS "Configure Plugin: ${targetname}")
 
 find_package(Qt4 4.7.0 COMPONENTS QtCore REQUIRED)
 
@@ -18,7 +18,7 @@ set(SHAREDDIR "${ROOTDIR}/shared")
 set(PLUGINDIR "${ROOTDIR}/plugins")
 
 LIST(APPEND Shared_SRCS_H "")
-LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginhelper.cpp")
+LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginsettingshelper.cpp")
 
 file(GLOB SRCS_SERVER "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB SRCS_SERVER_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")

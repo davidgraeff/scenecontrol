@@ -20,23 +20,17 @@
 #pragma once
 #include <QVariantMap>
 #include <QString>
-#include "abstractplugin.h"
-#include <QSet>
 
-class AbstractServer;
-class PluginHelper : public AbstractPlugin
+class AbstractPlugin_otherproperties
 {
 public:
-    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
-    virtual void registerSetting(const char* name, const QVariant& value);
-    virtual const QVariantMap getSettings() const;
-	virtual void session_change(const QString& id, bool running);
-	virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid);
-	virtual void initialize_plugin(AbstractServer* server);
-	virtual void initialize() = 0;
-	virtual void clear() {}
-protected:
-    QVariantMap m_settings;
-	QSet<QString> m_sessions;
-	AbstractServer* m_server;
+    /**
+     * Called by server process if a state of a property of another plugin or a client property changed.
+     * This plugin has to register its interest in one or more properties to the server by
+     * using the AbstractServer Interface before.
+     * \param data the property data with special entry id (unqiue identifier within current plugin properties)
+	 * \param sessionid If sessionid is not null this property is a session propery and received from a client and only valid for the referred session
+     */
+    virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid) = 0;
 };
+Q_DECLARE_INTERFACE(AbstractPlugin_otherproperties, "com.roomcontrol.PluginOtherProperties/2.0")

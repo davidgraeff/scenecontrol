@@ -6,74 +6,68 @@
  */
 
 #pragma once
-
-#include <QTcpServer>
-#include <QTcpSocket>
-#include <QSslSocket>
 #include <QByteArray>
 #include <QUuid>
 #include <QStringList>
 
 #include <QDir>
 #include <QTimer>
+#include <QDateTime>
+#include <QMap>
+#include <shared/abstractplugin_services.h>
 
-class AbstractStateTracker;
 class AuthThread;
-class AbstractServiceProvider;
-class ServiceController;
 
-class ClientConnection : public QObject
+class Session : public QObject
 {
     Q_OBJECT
 private:
     bool m_auth;
     QTimer m_authTimer;
+	QDateTime m_authSuccess;
+	QDateTime m_lastAction;
     QString m_user;
+	QString m_sessionid;
 public:
-    QByteArray buffer;
-    int bufferpos;
-    int bufferBrakes;
-    QSslSocket* socket;
+    Session();
+    ~Session();
+	// authetification
     QString user() ;
     void setAuth(const QString& user) ;
     bool auth() ;
-    ClientConnection(QSslSocket* s) ;
-    ~ClientConnection() ;
 private Q_SLOTS:
     void timeout() ;
 Q_SIGNALS:
-    void timeoutAuth(QSslSocket* socket);
+    void timeoutAuth();
+	void timeoutSession();
 };
 
 /**
- * Manages incoming connections and delegate commands to the RoomControlServer
+ * Manages websessions and login data. Implements the plugin interface
+ * and process actions for login, logout and provides information about sessions
+ * via properties.
  */
-class NetworkController: public QTcpServer {
+class SessionController : AbstractPlugin_services {
     Q_OBJECT
 public:
-    NetworkController();
-    virtual ~NetworkController();
-    void setServiceController(ServiceController* controller) ;
-    bool start();
-    void log(const char* msg);
+    SessionController();
+    virtual ~SessionController();
+	Session* getSession(const QString& sessionid);
 
+	// plugin interface
+    virtual bool condition(const QVariantMap& data);
+    virtual void event_changed(const QVariantMap& data);
+    virtual void execute(const QVariantMap& data);
+    virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
+	
 private:
-    ServiceController* m_service;
     AuthThread* m_auththread;
-    virtual void incomingConnection(int socketDescriptor);
-    QMap<QSslSocket*, ClientConnection*> m_connections;
-    QByteArray getNextJson(ClientConnection*);
-    void syncClient(QSslSocket* socket);
+	QMap<QString, Session*> m_session;
 
 private Q_SLOTS:
-    void readyRead ();
-    void disconnected();
-    void auth_success(QObject* socketptr, const QString& name);
-    void auth_failed(QObject* socketptr, const QString& name);
-    void timeoutAuth(QSslSocket* socket);
-    void peerVerifyError(QSslError);
-    void sslErrors(QList<QSslError>);
-public Q_SLOTS:
-    void serviceSync(AbstractServiceProvider* p);
-    void statetrackerSync(AbstractStateTracker* p);
+    void auth_success(QString sessionid, const QString& name);
+    void auth_failed(QString sessionid, const QString& name);
+    void timeoutAuth(QString sessionid);
+	void sessionBegin(QString sessionid);
+	void sessionFinished(QString sessionid);
 };

@@ -34,12 +34,13 @@ plugin::~plugin() {
     m_clients.clear();
 }
 
+void plugin::clear() {}
 void plugin::initialize(){
     
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginHelper::setSetting ( name, value, init );
+    PluginSettingsHelper::setSetting ( name, value, init );
     if ( name == QLatin1String ( "servers" ) ) {
         qDeleteAll ( m_clients );
         m_clients.clear();
@@ -85,7 +86,8 @@ void plugin::event_changed ( const QVariantMap& data ) {
     Q_UNUSED ( data );
 }
 
-QMap<QString, QVariantMap> plugin::properties() {
+QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+Q_UNUSED(sessionid);
     QMap<QString, QVariantMap> l;
     foreach ( ExternalClient* client, m_clients ) {
         //list.append(client->getStateTracker());
