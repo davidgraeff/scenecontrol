@@ -18,16 +18,18 @@
 */
 
 #pragma once
-#include <QObject>
-#include <QStringList>
-#include <QTimer>
-#include <QMap>
+#include <QVariantMap>
+#include <QString>
 #include <QSet>
 
-class Collection : public QObject
+class AbstractPlugin_sessions
 {
-    Q_OBJECT
 public:
-	Collection() {}
-	virtual ~Collection() {}
+	/**
+	 * Server Session Information
+	 * \param id Unique session id
+	 * \param running Session is started or has finished
+	 */
+	virtual void session_change(const QString& id, bool running) = 0;
 };
+Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.PluginSession/2.0")

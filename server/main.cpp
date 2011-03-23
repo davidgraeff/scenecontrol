@@ -19,52 +19,18 @@
 
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <QCoreApplication>
-#include <QDBusError>
-#define __FUNCTION__ __FUNCTION__
-//#define __TIMESTAMP__ __TIMESTAMP__
 #include <qprocess.h>
-#include "networkcontroller.h"
 #include "servicecontroller.h"
-#include "shared/abstractserviceprovider.h"
+#include "externalcontrol/httpserver.h"
 #include <QSettings>
 #include "config.h"
 #include <qtextcodec.h>
-#include <time.h>
+#include "logging.h"
 
-NetworkController* network = 0;
-
-void myMessageOutput(QtMsgType type, const char *msg)
-{
-    if (network) network->log(msg);
-    time_t rawtime;
-    tm * ptm;
-    time ( &rawtime );
-    ptm = gmtime ( &rawtime );
-    switch (type) {
-    case QtDebugMsg:
-        fprintf(stderr, "[%2d:%02d] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
-        break;
-    case QtWarningMsg:
-        fprintf(stderr, "[%2d:%02d] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
-        break;
-    case QtCriticalMsg:
-        fprintf(stderr, "[%2d:%02d] \033[31mCritical: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
-        break;
-    case QtFatalMsg:
-        fprintf(stderr, "[%2d:%02d] \033[31mFatal: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
-        abort();
-    }
-}
-
-/* first, here is the signal handler */
 static void catch_int(int )
 {
-    /* re-set the signal handler again to catch_int, for next time */
-//     signal(SIGINT, catch_int);
-//     signal(SIGTERM, catch_int);
     QCoreApplication::exit(0);
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -72,62 +38,63 @@ int main(int argc, char *argv[])
     signal(SIGTERM, catch_int);
 
     QCoreApplication qapp(argc, argv);
-    qapp.setApplicationName(QLatin1String("roomcontrolserver"));
+    qapp.setApplicationName(QLatin1String(ROOM_SERVICENAME));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
     qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
+	setLogOptions(ROOM_LOGTOCONSOLE,ROOM_LOGFILE);
 
-#ifndef _WIN32
-    const QLatin1String servicename = QLatin1String(ROOM_SERVICENAME);
-    QDBusConnection dbusconnection = QDBusConnection::connectToBus(QDBusConnection::SessionBus, servicename);
-    if ( !dbusconnection.isConnected() )
-    {
-        qCritical() << "DBus Error:" << dbusconnection.lastError().name() << dbusconnection.lastError().message();
-        return 0;
-    } else if (!dbusconnection.registerService(servicename) )
-    {
-        qCritical() << "Another instance of this program is already running." << dbusconnection.lastError().name() << dbusconnection.lastError().message();
-        return 0;
-    }
-#endif
-
-    qInstallMsgHandler(myMessageOutput);
-
+    qInstallMsgHandler(roomMessageOutput);
     qDebug() << QCoreApplication::applicationName().toAscii().data() << ":" << QCoreApplication::applicationVersion().toAscii().data();
 
-    network = new NetworkController();
+	QFile lockfile(QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath())); 
+	if (lockfile.exists()) {
+		qWarning() << "Lockfile"<<lockfile.fileName()<<"already exists. Only one instance at a time is allowed. If you are sure no other instance is running, remove the lockfile!";
+		return -1;
+	}
+	lockfile.open(QIODevice::ReadWrite);
+	lockfile.write("");
+
     ServiceController* services = new ServiceController();
+#ifdef WITH_EXTERNAL
+    network = new NetworkController();
     network->setServiceController(services);
     network->connect(services,SIGNAL(serviceSync(AbstractServiceProvider*)),SLOT(serviceSync(AbstractServiceProvider*)));
     network->connect(services,SIGNAL(statetrackerSync(AbstractStateTracker*)),SLOT(statetrackerSync(AbstractStateTracker*)));
     network->start();
+#endif
 
     int r = 0;
     if (argc<=1 || strcmp("--shutdown", argv[1])!=0)
         r = qapp.exec();
 
-	#ifndef _WIN32
-		dbusconnection->unregisterService(servicename);
-	#endif
-
+	// remove lockfile
+	lockfile.remove();
+	
+	#ifdef WITH_EXTERNAL
     qDebug() << "Shutdown: Network server";
     delete network;
     network = 0;
+	#endif
 
     qDebug() << "Shutdown: Service Controller";
     delete services;
     services = 0;
 
     // restart program
-    if (r == EXIT_WITH_RESTART) {
+    if (r == ROOM_RESTART_ON_CLOSE) {
         r = 0;
         if (argc>1 && strcmp("--norestart", argv[1])==0) {
             qDebug() << "Shutdown: Start another instance not allowed";
         } else {
             qDebug() << "Shutdown: Start another instance";
+			logclose();
             QProcess::startDetached(QString::fromAscii(argv[0]));
+			return 0;
         }
     }
 
+	logclose();
+	
     return r;
 }

@@ -15,19 +15,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+	Purpose: Logging to console, file, network
 */
 
 #pragma once
-#include <QObject>
-#include <QStringList>
-#include <QTimer>
-#include <QMap>
-#include <QSet>
+#include <QtGlobal>
 
-class Collection : public QObject
-{
-    Q_OBJECT
-public:
-	Collection() {}
-	virtual ~Collection() {}
-};
+void roomMessageOutput(QtMsgType type, const char *msg);
+void setLogOptions(bool toConsole, const char* logfile = 0);
+void logclose();

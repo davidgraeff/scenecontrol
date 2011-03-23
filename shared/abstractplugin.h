@@ -26,7 +26,6 @@
 protected: \
 	virtual QString pluginid() { return QLatin1String(PLUGIN_ID); } \
 	AbstractServer* m_server; \
-	QSet<QString> m_sessions; \
 public: \
 	virtual void __connectToServer(AbstractServer* server) {m_server=server; } \
 	virtual void __session_change(const QString& id, bool running) {if ( running ) m_sessions.insert ( id ); else m_sessions.remove ( id ); session_change(id,running);}

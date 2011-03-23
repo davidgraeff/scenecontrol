@@ -18,16 +18,19 @@
 */
 
 #pragma once
-#include <QObject>
-#include <QStringList>
-#include <QTimer>
-#include <QMap>
+#include <QVariantMap>
+#include <QString>
 #include <QSet>
+#include "abstractplugin_sessions.h"
 
-class Collection : public QObject
+/**
+ * Implements all session related methods of the plugin interface.
+ */
+class PluginSessionsHelper : public AbstractPlugin_sessions
 {
-    Q_OBJECT
 public:
-	Collection() {}
-	virtual ~Collection() {}
+    virtual void session_change(const QString& id, bool running);
+
+protected:
+    QSet<QString> m_sessions;
 };

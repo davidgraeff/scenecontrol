@@ -15,19 +15,26 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+	Purpose: Create, load, remove backups of all service files
 */
 
 #pragma once
-#include <QObject>
-#include <QStringList>
-#include <QTimer>
+#include <QtCore/QObject>
 #include <QMap>
-#include <QSet>
+#include <QVariantMap>
+#include <QDir>
 
-class Collection : public QObject
+class Backups: public QObject
 {
     Q_OBJECT
 public:
-	Collection() {}
-	virtual ~Collection() {}
+    Backups ();
+    virtual ~Backups();
+	void create(const QString& name);
+	void rename(const QString& id, const QString& name);
+	void restore ( const QString& id );
+	void remove ( const QString& id );
+	QStringList list();
+private:
+	QDir m_savedir;
 };

@@ -18,7 +18,7 @@ set(SHAREDDIR "${ROOTDIR}/shared")
 set(PLUGINDIR "${ROOTDIR}/plugins")
 
 LIST(APPEND Shared_SRCS_H "")
-LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginsettingshelper.cpp")
+LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginsettingshelper.cpp" "${SHAREDDIR}/pluginsessionhelper.cpp")
 
 file(GLOB SRCS_SERVER "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB SRCS_SERVER_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -47,12 +47,12 @@ endmacro(build_server_lib)
 
 macro(install_server_lib)
 	INSTALL(TARGETS ${PROJECT_NAME}_server
-		RUNTIME DESTINATION ${LIBPATH}/server/
+		RUNTIME DESTINATION ${LIBPATH}
 		COMPONENT ServerPlugins
-		LIBRARY DESTINATION ${LIBPATH}/server/
+		LIBRARY DESTINATION ${LIBPATH}
 		COMPONENT ServerPlugins
 		)
-	FILE(GLOB files "www/*")
-	install( FILES ${files} DESTINATION ${WWWPATH} COMPONENT ServerPlugins)
+	INSTALL(FILES "plugin.xml" DESTINATION ${LIBPATH} COMPONENT ServerPlugins RENAME "${PROJECT_NAME}.xml")
+	INSTALL(DIRECTORY "www" DESTINATION ${WWWPATH}/${PROJECT_NAME} COMPONENT ServerPlugins)
 endmacro()
 

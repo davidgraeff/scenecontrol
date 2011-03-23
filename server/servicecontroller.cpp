@@ -7,24 +7,6 @@
 #include <QUuid>
 #include <QDebug>
 
-#include "shared/categorize/profile.h"
-#include "shared/categorize/category.h"
-#include "shared/qjson/parser.h"
-#include "shared/qjson/qobjecthelper.h"
-#include "shared/qjson/serializer.h"
-#include "shared/abstractplugin.h"
-#include "shared/abstractstatetracker.h"
-#include "shared/server/executeservice.h"
-#include "shared/server/executeplugin.h"
-#include "executeprofile.h"
-#include "shared/paths.h"
-#include <QApplication>
-#include <plugins/coreplugin/services_server/systemACServer.h>
-#include <plugins/coreplugin/services/systemAC.h>
-#include <plugins/coreplugin/services_server/systemEVServer.h>
-#include <plugins/coreplugin/services_server/profileACServer.h>
-#include <plugins/coreplugin/services/profileAC.h>
-
 #define __FUNCTION__ __FUNCTION__
 
 ServiceController::ServiceController ()
@@ -116,17 +98,7 @@ ServiceController::~ServiceController()
     qDeleteAll(m_plugins);
 }
 
-QList<AbstractStateTracker*> ServiceController::stateTracker()
-{
-    QList<AbstractStateTracker*> l;
-    foreach ( ExecutePlugin* plugin, m_plugins )
-    {
-        l.append ( plugin->stateTracker() );
-    }
-    return l;
-}
-
-bool ServiceController::generate ( const QVariantMap& json, bool loading )
+bool ServiceController::generate ( const QVariantMap& data, bool loading )
 {
     const QString id = json.value ( QLatin1String ( "id" ) ).toString();
     const QString filename = serviceFilename(json.value ( QLatin1String ( "type" ) ).toByteArray(), id);
@@ -281,7 +253,7 @@ void ServiceController::removeFromDisk ( ExecuteWithBase* eservice )
     eservice->deleteLater();
 }
 
-void ServiceController::saveToDisk ( ExecuteWithBase* eservice )
+void ServiceController::saveToDisk ( const QVariantMap& data )
 {
     AbstractServiceProvider* service = eservice->base();
     Q_ASSERT ( service );
@@ -320,9 +292,9 @@ void ServiceController::saveToDisk ( ExecuteWithBase* eservice )
     emit serviceSync ( service );
 }
 
-QString ServiceController::serviceFilename ( const QByteArray& type, const QString& id )
+QString ServiceController::serviceFilename ( const QString& id, const QString& uid )
 {
-    return m_savedir.absoluteFilePath ( QString::fromAscii ( type +"-" ) + id );
+    return m_savedir.absoluteFilePath ( id + uid );
 }
 
 
@@ -400,15 +372,4 @@ void ServiceController::executeservice(ExecuteService* service) {
     }
     else
         service->execute();
-}
-
-void ServiceController::pluginLoadingComplete(ExecutePlugin* plugin) {
-    for (int i=0;i<m_servicesList.size();++i) {
-        if (m_plugin_provider.value(QString::fromAscii(m_servicesList[i]->base()->type())) != plugin) continue;
-        ExecuteService* exservice = dynamic_cast<ExecuteService*>(m_servicesList[i]);
-        if (exservice) {
-            exservice->nameUpdate();
-            emit serviceSync ( exservice->base() );
-        }
-    }
 }

@@ -28,6 +28,7 @@
 #include <QTimer>
 #include <qfile.h>
 #include <linux/input.h>
+#include <shared/pluginsessionhelper.h>
 
 class plugin;
 class ManagedDeviceList;
@@ -62,11 +63,11 @@ private Q_SLOTS:
     void repeattrigger(bool initial_event = false);
 };
 
-class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
+class plugin : public QObject, public PluginSettingsHelper, public PluginSessionsHelper, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services)
+    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services AbstractPlugin_sessions)
     friend class InputDevice;
 public:
     plugin();

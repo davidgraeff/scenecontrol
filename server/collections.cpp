@@ -17,36 +17,15 @@
 
 */
 
-#include "executeprofile.h"
-#include "shared/server/executeservice.h"
-#include <shared/categorize/profile.h>
+#include "collections.h"
 #include <QDebug>
-
+/*
 ExecuteCollection::ExecuteCollection(AbstractServiceProvider* p, QObject* parent) :ExecuteWithBase(p,parent) {
     m_currentExecution = 0;
     m_executionTimer.setSingleShot ( true );
     connect ( &m_executionTimer, SIGNAL ( timeout() ),SLOT ( executiontimeout() ) );
 }
 
-ExecuteCollection::~ExecuteCollection() {
-}
-
-void ExecuteCollection::registerChild(ExecuteService* service) {
-    m_childs_linked.insert(service);
-    if (service->base()->service() == AbstractServiceProvider::EventService)
-        connect(service,SIGNAL(trigger()),SLOT(eventTriggered()));
-}
-
-void ExecuteCollection::removeChild(ExecuteService* service) {
-    if (!m_childs_linked.contains(service)) return;
-    m_childs_linked.remove(service);
-    if (service->base()->service() == AbstractServiceProvider::EventService)
-        disconnect(service,SIGNAL(trigger()),this, SLOT(eventTriggered()));
-}
-
-void ExecuteCollection::stop() {
-    m_executionTimer.stop();
-}
 void ExecuteCollection::executiontimeout()
 {
     const int currentTimePoint = m_actors_delays[m_currentExecution];
@@ -61,6 +40,7 @@ void ExecuteCollection::executiontimeout()
     const int nextTimePoint = m_actors_delays[m_currentExecution];
     m_executionTimer.start ( 1000* ( nextTimePoint-currentTimePoint ) );
 }
+
 void ExecuteCollection::run(bool ignoreConditions) {
 	if (!ignoreConditions && !service<Collection>()->enabled() ) return;
 
@@ -86,7 +66,4 @@ void ExecuteCollection::run(bool ignoreConditions) {
     if ( m_actors_linked_map.isEmpty() ) return;
     m_actors_delays = m_actors_linked_map.uniqueKeys();
     m_executionTimer.start ( 1000*m_actors_delays[m_currentExecution] );
-}
-void ExecuteCollection::eventTriggered() {
-    run();
-}
+}*/

@@ -99,7 +99,7 @@ void plugin::otherPropertyChanged ( const QVariantMap& data, const QString& sess
 }
 
 void plugin::session_change ( const QString& id, bool running ) {
-    PluginSettingsHelper::session_change ( id, running );
+    PluginSessionsHelper::session_change ( id, running );
     if ( running ) return;
     foreach (InputDevice* device, m_devices) {
         device->disconnectSession(id);

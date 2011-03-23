@@ -27,7 +27,7 @@ SET(CPACK_PACKAGE_VENDOR "David Gräff")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The roomcontrol server plus server plugins and cli, editor, data viewer clients and client plugins")
 SET(CPACK_PACKAGE_DESCRIPTION "Plugin orientierte Steuersoftware für Raumautomatisierung. Plugins für Steckdosen, Rollo, Led Beleuchtung, PulseAudio, Videoabspielprogramm, Beamersteuerung und Zeitbasierte Ereignisse vorhanden und in Benutzung.")
 SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt4-network (>= 4:4.7.1), libpam0g (>= 1.1.1)")
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt4-network (>= 4:4.7.1), libpam0g (>= 1.1.1), libqjson0 (>= 0.7.0)")
 SET(CPACK_STRIP_FILES 1)
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
@@ -64,11 +64,37 @@ ELSE()
 	ENDIF()
 	SET(DATAPATH "shares/${PRODUCTID}")
 ENDIF()
-SET(WWWPATH "${DATAPATH}/www")
-SET(CERTPATH "${DATAPATH}/cert")
 
+# prepare configuration file
+SET(ROOM_WWWPATH "${DATAPATH}/www")
+SET(ROOM_CERTPATH "${DATAPATH}/cert")
+SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
+SET(ROOM_PATHNAME "${PRODUCTID}")
 SET(CONFIG_SERVER_LISTENPORT "3101" CACHE INT "Server Listenport")
+SET(CONFIG_SERVER_LOGTOCONSOLE TRUE CACHE BOOL "Server Log to Console")
+IF (CONFIG_SERVER_LOGTOCONSOLE)
+	SET(CONFIG_SERVER_LOGTOCONSOLE 1)
+ELSE()
+	SET(CONFIG_SERVER_LOGTOCONSOLE 0)
+ENDIF()
+SET(CONFIG_SERVER_LOGFILE "roomcontrolserver.log" CACHE STRING "Server Logfile. Set to empty for no file logging")
+SET(CONFIG_RESTART_ON_CLOSE TRUE CACHE BOOL "Server restart on close (prevent with --norestart as command line argument)")
+IF (CONFIG_RESTART_ON_CLOSE)
+	SET(CONFIG_RESTART_ON_CLOSE 1)
+ELSE()
+	SET(CONFIG_RESTART_ON_CLOSE 0)
+ENDIF()
+SET(CONFIG_SERVER_PLUGINPROCESSES FALSE CACHE BOOL "Server use separate processes for each plugin. (Slower, Crash safer)")
+IF (CONFIG_SERVER_PLUGINPROCESSES)
+	SET(CONFIG_SERVER_PLUGINPROCESSES 1)
+ELSE()
+	SET(CONFIG_SERVER_PLUGINPROCESSES 0)
+ENDIF()
 configure_file(config.h.in config.h @ONLY)
+
+# add directories
+add_subdirectory(server)
+add_subdirectory(plugins)
 
 # modify registry path after installation
 IF(WIN32)
@@ -81,48 +107,33 @@ IF(WIN32)
 		")
 ENDIF(WIN32)
 
-# prepare configuration file
-SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
-SET(ROOM_PATHNAME "${PRODUCTID}")
-SET(CONFIG_SERVER_LISTENPORT "3101" CACHE INT "Server Listenport")
-configure_file(config.h.in config.h @ONLY)
-
-# add directories
-add_subdirectory(server)
-add_subdirectory(plugins)
-
 # Distribution via cpack
 INCLUDE(InstallRequiredSystemLibraries)
 INCLUDE(CPack)
 
 # Installation types
 cpack_add_install_type(Full DISPLAY_NAME "Alles")
-cpack_add_install_type(ServerOnly DISPLAY_NAME "Nur Server und Serverplugins")
-cpack_add_install_type(ClientsOnly DISPLAY_NAME "Nur administrative Werkzeuge und Clientplugins")
+#cpack_add_install_type(ServerOnly DISPLAY_NAME "Nur Server und Serverplugins")
+#cpack_add_install_type(ClientsOnly DISPLAY_NAME "Nur administrative Werkzeuge und Clientplugins")
 
 # Component groups
 cpack_add_component_group(Plugins
   DISPLAY_NAME "Plugins"
   EXPANDED
-  DESCRIPTION "Server und Client Plugins")
+  DESCRIPTION "Server Plugins")
 
 # Components
-cpack_add_component(ClientPlugins
-  DISPLAY_NAME "Client Plugins"
-  DESCRIPTION "Die Clientversionen der Plugins"
-  GROUP Plugins
-  INSTALL_TYPES Full ClientsOnly)
 cpack_add_component(ServerPlugins
   DISPLAY_NAME "Server Plugins"
   DESCRIPTION "Die Serverversionen der Plugins"
   GROUP Plugins
-  INSTALL_TYPES Full ServerOnly)
+  INSTALL_TYPES Full)
 
 cpack_add_component(Server
   DISPLAY_NAME "Raumkontrollserver"
   DESCRIPTION "Serverprogramm und Dienstprogramme"
-  INSTALL_TYPES Full ServerOnly)
-cpack_add_component(Tools
-  DISPLAY_NAME "Werkzeuge"
-  DESCRIPTION "Administrative Werkzeuge um Einstellungen am Server vorzunehmen oder Profile zu ändern"
-  INSTALL_TYPES Full ClientsOnly)
+  INSTALL_TYPES Full)
+# cpack_add_component(Tools
+#   DISPLAY_NAME "Werkzeuge"
+#   DESCRIPTION "Administrative Werkzeuge um Einstellungen am Server vorzunehmen oder Profile zu ändern"
+#   INSTALL_TYPES Full ClientsOnly)
