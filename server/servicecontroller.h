@@ -25,6 +25,7 @@
 #include <QTimer>
 #include <QDir>
 #include <QtXml/QDomDocument>
+#include <QFileSystemWatcher>
 #undef PLUGIN_ID
 #define PLUGIN_ID "servicecontroller"
 #include <shared/abstractplugin.h>
@@ -62,7 +63,7 @@ public:
 
     void load(bool service_dir_watcher);
 private:
-    QDir m_savedir;
+	QFileSystemWatcher m_dirwatcher;
     // services
     QMap<QString, ServiceStruct*> m_valid_services; // uid -> data+plugin
 
@@ -81,7 +82,9 @@ private:
 		AbstractPlugin* plugin;
 		QString name;
 		QString version;
-		PluginInfo(AbstractPlugin* plugin, QString name, QString version) {this->plugin=plugin;this->name=name;this->version=version;}
+		void setName(const QString& name) { this->name = name; }
+		void setVersion(const QString& version) { this->version = version; }
+		PluginInfo(AbstractPlugin* plugin, QString name = QString(), QString version = QString()) {this->plugin=plugin;this->name=name;this->version=version;}
 		~PluginInfo() {delete plugin; }
 	};
     QList<PluginInfo*> m_plugins;
@@ -132,6 +135,7 @@ public Q_SLOTS:
      * Execute service in m_services with given uid immediately.
      */
     void executeService(const QString& uid);
+    void directoryChanged(QString file, bool loading = false);
 Q_SIGNALS:
     /**
      * Emitted after a service has changed
