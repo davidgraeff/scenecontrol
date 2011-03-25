@@ -33,6 +33,8 @@ void setLogOptions(bool toConsole, const char* logfile) {
 
 void logclose() {
 	fclose(logfile);
+	logfile = 0;
+	logfilename = 0;
 }
 
 void messageout(QtMsgType type, const char *msg, FILE * stream_debug, FILE * stream_warning, FILE * stream_error)

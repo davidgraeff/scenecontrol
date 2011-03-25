@@ -36,7 +36,6 @@ public:
     plugin();
     virtual ~plugin();
 
-    virtual void session_change(const QString& id, bool running) {Q_UNUSED(id);Q_UNUSED(running);}
     virtual void initialize();
 	virtual void clear();
     virtual QMap<QString, QVariantMap> properties(const QString& sessionid);

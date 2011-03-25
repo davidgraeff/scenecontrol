@@ -1,42 +1,75 @@
 Raumautomatisierungsoftware:
 ----------------------------
-Plugin orientierte Steuersoftware für Raumautomatisierung. Plugins für
+Eine Plugin orientierte Steuersoftware für die Raumautomatisierung. Plugins für
 Steckdosen, Rollo, Led Beleuchtung, PulseAudio, Videoabspielprogramm,
-Beamersteuerung und Zeitbasierte Ereignisse sind vorhanden und in Benutzung.
+Beamersteuerung und Zeitbasierte Ereignisse sind vorhanden.
 
-Plattform:
-----------
+Unterstützte Plattformen:
+-------------------------
 - Windows ab Vista (Qt4;OpenSSL;Windows API: CryptProtectData, CryptUnprotectData, LogonUser)
-  Einige Plugins sind linux-only: remotecontrol
-- Linux ab 2.6.22 (Qt4;OpenSSL;pam;dbus;gstreamer;pulseaudio)
+- Linux ab 2.6.22 (Qt4;OpenSSL;pam)
+
+Unter Linux können die Plugins als eigene Prozesse laufen und kommunizieren über dbus
+mit dem Serverprozess um eine höhere Ausfallsicherheit auch bei fehlerhaften Plugins
+zu gewährleisten.
+
+Mitgelieferte Plugins:
+----------------------
+Anel sockets: Steuert Steckdosenleisten von der Firma anel (http://www.anel-elektronik.de/).
+Cardreader PCSC: Reagiert auf das Ein/Ausstecken von Karten bei PCSC Kompatiblen Kartenlesegeräten.
+Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
+Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
+MPD: Steuert den Music Player Daemon.
+Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
+Pulseaudio (linux only): Steuert Lautstärkekanäle des Pulseaudio daemons.
+RemoteSystem: Ermöglicht gewisse Steuerbefehle an alle Computer im selben Subnetzwerk, welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
+Roomcontrol_Leds: Steuert den, über ein RS232 Anschluss angebundenen, Atmega µController mit der in tools/firmware/leds programmierten Software um Leuchtdioden anzusteuern.
+Time: Bietet feste aber auch periodische Zeitereignisse an.
+WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.
+XBMC: Steuert das XBox Media Center.
 
 Architektur:
 ------------
 Es gibt den ausführenden Kern des Systems, im weiteren Server genannt.
-Es gibt Clients, welche sich mit dem Server über eine SSL gesicherte
-Verbindung und linux-pam Authentifierzung verbinden können.
-Es gibt Plugins, welche den Server um Funktionalität ergänzen und Clients
-GUI Erweiterungen zur Ansteuerung der Plugin Funktionen zur Verfügung stellen.
 
-Auf der Serverseite wird die Funktionalität eines Plugins durch seine Controllerklasse gegeben.
-Diese kommuniziert mit dem Server und gegebenenfalls mit anderen Plugins über Aktionen und
-StateTracker.
-Auf der Clientseite kann ein Plugin Modelle (Qt MVC Prinzip) bereitstellen, die von Clients
-zu Anzeige- und Manipulationszwecken genutzt werden können. Die Modelle der Clients werden
-synchronisieren selbstständig mit dem Server.
+Webclients können sich über https mit dem Server verbinden. Es wird eine
+Authentifizierung gegenüber den auf dem Betriebssystem vorhandenen Benutzern
+durchgeführt. Zugriffsrechte werden durch Gruppenmitgliedschaften des
+angegeben Benutzers geregelt.
 
-Plugins bieten desweiteren Ereignisse, Bedingungen und Aktionen an, welche in Profilen
-zusammengefasst werden können. Profile können Kategorien zugeordnet werden.
-Ereignisse können Profile aktivieren (z.B. das Drücken einer Fernbedienungstaste,
-das Eintreten eines bestimmten Zeitpunktes).
-Wenn alle Bedingungen, welche einem Profil zugeordnet sind, zutreffen
-(z.B. das Rollo ist offen) werden die im Profil definierten Aktionen,
-ggfs. mit einer eingestellten zeitlichen Verzögerung, ausgeführt.
+Es gibt Plugins, welche den Server um Funktionalität ergänzen und Webclients
+eigene Seiten zur Ansteuerung der Plugin Funktionen zur Verfügung stellen können.
 
-StateTracker geben Veränderungen des Controllers an den Server weiter, welcher
-verbundene Clients synchronisiert. Clients werden beim Verbinden mit allen Objekten
-(Events, Conditions, Actions, StateTracker) synchronisiert und über das StateTracker
-System ist die ständige Konsistenz mit dem Server sichergestellt.
+Plugins können Eigenschaften (properties) besitzen. Wenn ein Plugin Eigenschaften
+ändert, werden alle interessierten Plugins (Plugin<-->Plugin Kommunikation) und alle
+Webclients darüber informiert. Webclients können über Eigenschaften Modelle für MVC
+generieren. Eigenschaften können gegenüber Webclients über eingeschränkten Zugriff verfügen,
+dies wird über Gruppenmitgliedschaften des angegeben Benutzers geregelt.
+
+Plugins bieten desweiteren Ereignisse, Bedingungen und Aktionen an. Ein Ereignis kann das
+Eintreten eines gewissen Zeitpunktes sein, eine Bedingung könnte den aktuellen Steckdosenzustand meinen,
+eine Aktion löst eine Veränderung aus etwa das Ändern der Lichwerte von Leuchtdioden.
+
+Ereignisse, Bedingungen und Aktionen machen erst Sinn, sobald diese zusammengefasst werden können.
+Dies geschieht durch Profile (Collections). Sobald ein Ereignis in einem Profil eintritt,
+werden die Bedingungen geprüft und dann ggfs. die im Profil definierten Aktionen,
+evtl. mit eingestellter zeitlicher Verzögerung, ausgeführt.
+
+Einige Serverklassen registrieren sich ebenfalls als Plugins (etwa die Backups Klasse)
+und bieten ebenfalls Eigenschaften, Ereignisse, Bedingungen und Aktionen an.
+
+Welche Eigenschaften, Ereignisse, Bedingungen und Aktionen von einem Plugin definiert werden,
+ist in einer plugin.xml Datei dokumentiert, welche auch für die Verifikation von JSon Strings
+genutzt wird. JSon ist das Speicherformat für Ereignisse, Bedingungen, Aktionen und Profilen
+und wird zur Übertragung derselben und zusätzlich auch Ereignissen zu Webclients genutzt.
+
+Webclients werden nach dem Verbinden und Authentifizieren mit allen Objekten
+(Events, Conditions, Actions, Properties) synchronisiert und über das Eigenschaften
+System ist die ständige Konsistenz mit dem Server sichergestellt. Der Zielbrowser muss
+Server-send-events für das pushen von Eigenschaften unterstützen.
+
+Webclients können Sofortaktionen (immediately to-be-executed actions) auslösen. Etwa das Einschalten
+einer Steckdose. Sofortaktionen müssen vorher nicht als Aktionen im Server gespeichert worden sein.
 
 Anwendungsgebiete:
 ------------------
@@ -45,20 +78,17 @@ Anwendungsgebiete:
 3. Intelligenter Raum
 4. Automatisiertes Heimkino
 
-Externe Software:
---------
-- PulseAudio für die Soundsteuerung unter Linux.
-- Fernbedienungseingaben werden über eine Eigenentwicklung [liri daemon (für X10 433Mhz Funkfernbedienungen)]
-entgegengenommen. Sobald ein einheitliches Framework für Fernbedienungen über das linux input subsystem
-möglich ist, sollte dieses verwendet werden.
+Integrierte Bibliotheken:
+-------------------------
+- BoolStuff von http://perso.b2b2c.ca/sarrazip/dev/boolstuff.html (GPL 2+)
 
 Clients:
 --------
-Ein Webclient in Html5/CSS3/JS Technologie bedient Desktops und Smartphones mit Touchbedienung. Der Webclient ist
-auf Webkit Browser (Apple iOS Browser, Android Browser, Chrome, etc) ausgelegt und berücksichtigt keine Altbrowser.
-Als Javascript Toolkit wird Sencha Touch benutzt.
+Ein Webclient in Html5/CSS3/JS Technologie bedient Desktops und Smartphones mit Maus und Touchbedienung. Der Webclient ist
+auf neuere Webkit Browser (Apple iOS Browser, Android Browser, Chrome, etc) ausgelegt. Als Javascript Toolkit wird Sencha Touch verwendet.
 
-Benötigte Packete unter Linux/Ubuntu:
--------------------------------------
-libpam0g-dev
-libqt4-dev
+Benötigte Packete für den Server ohne Plugins unter Linux/Ubuntu:
+-----------------------------------------------------------------
+libqt4-dev    (Qt4 Framework)
+libpam0g-dev  (Benutzerauthentifizierung)
+libqjson0-dev (Qt Json Bibliothek)

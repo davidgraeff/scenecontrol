@@ -8,7 +8,4 @@ QString wwwFile(const QString& file);
 
 // Dirs
 QDir pluginDir();
-
-// Files
-QStringList serverPluginsFiles();
-QStringList serviceFiles();
+QDir serviceDir();

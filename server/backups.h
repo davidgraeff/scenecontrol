@@ -23,18 +23,30 @@
 #include <QMap>
 #include <QVariantMap>
 #include <QDir>
+#undef PLUGIN_ID
+#define PLUGIN_ID "backups"
+#include <shared/abstractplugin.h>
+#include <shared/abstractplugin_services.h>
+#include <shared/abstractserver.h>
 
-class Backups: public QObject
+class Backups: public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
+    PLUGIN_MACRO
 public:
     Backups ();
     virtual ~Backups();
+    virtual void clear();
+    virtual void initialize();
+    virtual bool condition(const QVariantMap& data);
+    virtual void event_changed(const QVariantMap& data);
+    virtual void execute(const QVariantMap& data);
+    virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
+	
 	void create(const QString& name);
 	void rename(const QString& id, const QString& name);
 	void restore ( const QString& id );
 	void remove ( const QString& id );
-	QStringList list();
 private:
 	QDir m_savedir;
 };

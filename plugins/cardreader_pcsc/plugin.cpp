@@ -58,7 +58,7 @@ bool plugin::condition ( const QVariantMap& data )  {
 void plugin::event_changed ( const QVariantMap& data ) {
 	if (IS_ID("cardevent")) {
 		// entfernen
-		const QString uid = DATA("uid");
+		const QString uid = UNIQUEID();
 		QMutableMapIterator<QString, QSet<QString> > it(m_card_events);
 		while (it.hasNext()) {
 			it.value().remove(uid);
@@ -82,7 +82,7 @@ void plugin::slotcardDetected ( const QString& atr, int state ) {
 	data[QLatin1String("state")] = state;
     m_server->property_changed(data);
 	
-	foreach (QString uid, m_card_events[atr]) {
+	foreach (QString uid, m_card_events.value(atr)) {
 		m_server->event_triggered(uid);
 	}
 }

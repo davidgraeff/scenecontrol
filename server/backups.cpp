@@ -12,9 +12,51 @@ Backups::~Backups()
 
 }
 
+QMap<QString, QVariantMap> Backups::properties(const QString& sessionid) {
+    Q_UNUSED(sessionid);
+    QMap<QString, QVariantMap> l;
+    QStringList backups = m_savedir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
+    foreach(QString dir, backups) {
+		PROPERTY("backup");
+        QFile namefile(m_savedir.absoluteFilePath ( dir ));
+        namefile.open(QIODevice::ReadOnly|QIODevice::Truncate);
+		data[QLatin1String("backupid")] = dir;
+		data[QLatin1String("name")] = QString::fromUtf8(namefile.readLine());
+        namefile.close();
+		l.insertMulti(QLatin1String("backup"), data);
+    }
+    return l;
+}
+
+bool Backups::condition(const QVariantMap& data)  {
+    Q_UNUSED(data);
+	return false;
+}
+
+void Backups::event_changed(const QVariantMap& data)  {
+    Q_UNUSED(data);
+}
+
+void Backups::execute(const QVariantMap& data)  {
+    if (IS_ID("backup_create")) {
+		create(DATA("name"));
+	} else if (IS_ID("backup_restore")) {
+		restore(DATA("backupid"));
+	} else if (IS_ID("backup_remove")) {
+		remove(DATA("backupid"));
+    }
+}
+
+void Backups::initialize() {
+}
+
+void Backups::clear() {
+}
+
 void Backups::create(const QString& name)
 {
-    QDir destdir = m_savedir.filePath ( QDateTime::currentDateTime().toString() );
+	const QString id = QDateTime::currentDateTime().toString();
+    QDir destdir = m_savedir.filePath ( id );
     if ( !destdir.exists() && !destdir.mkpath ( destdir.absolutePath() ) )
     {
         qWarning() << "Backup failed" << destdir;
@@ -36,6 +78,10 @@ void Backups::create(const QString& name)
     namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
     namefile.write(name.toUtf8());
     namefile.close();
+    PROPERTY("backup");
+	data[QLatin1String("backupid")] = id;
+	data[QLatin1String("name")] = name;
+	m_server->property_changed(data);
 }
 
 void Backups::rename(const QString& id, const QString& name)
@@ -50,6 +96,10 @@ void Backups::rename(const QString& id, const QString& name)
         namefile.write(name.toUtf8());
         namefile.close();
     }
+    PROPERTY("backup");
+	data[QLatin1String("backupid")] = id;
+	data[QLatin1String("name")] = name;
+	m_server->property_changed(data);
 }
 
 void Backups::remove ( const QString& id )
@@ -63,6 +113,10 @@ void Backups::remove ( const QString& id )
         foreach ( QString file, files ) destdir.remove ( file );
         destdir.rmdir ( destdir.absolutePath() );
     }
+    PROPERTY("backup");
+	data[QLatin1String("backupid")] = id;
+	data[QLatin1String("name")] = QString();
+	m_server->property_changed(data);
 }
 
 void Backups::restore ( const QString& id )
@@ -82,15 +136,3 @@ void Backups::restore ( const QString& id )
 	}
 }
 
-QStringList Backups::list()
-{
-    QStringList backups = m_savedir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
-    QStringList names;
-    foreach(QString dir, backups) {
-        QFile namefile(m_savedir.absoluteFilePath ( dir ));
-        namefile.open(QIODevice::ReadOnly|QIODevice::Truncate);
-        names.append(QString::fromUtf8(namefile.readLine()));
-        namefile.close();
-    }
-    return backups;
-}

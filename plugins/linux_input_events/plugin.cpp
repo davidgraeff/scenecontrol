@@ -76,7 +76,7 @@ bool plugin::condition ( const QVariantMap& data )  {
 void plugin::event_changed ( const QVariantMap& data ) {
     if ( IS_ID ( "inputevent" ) ) {
         // entfernen
-        const QString uid = DATA ( "uid" );
+        const QString uid = UNIQUEID();
 
         QMutableMapIterator<QString, InputDevice* > it ( m_devices );
         while ( it.hasNext() ) {

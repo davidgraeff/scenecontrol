@@ -21,11 +21,35 @@
 #include <QVariantMap>
 #include <QString>
 
+// access and set unique id (uid)
+#define UNIQUEID() data[QLatin1String("__uid")].toString()
+#define SETUNIQUEID(VAR) data[QLatin1String("__uid")] = VAR
+
+// contains
+#define CONTAINS(ID) data.contains(QLatin1String(ID))
+
+// special attributes
+#define IS_TOBEREMOVED() CONTAINS("__remove")
+#define IS_TOBEEXECUTED() CONTAINS("__execute")
+
+// service type
+#define IS_ACTION() (data[QLatin1String("__type")].toString() == QLatin1String("action"))
+#define IS_CONDITION() (data[QLatin1String("__type")].toString() == QLatin1String("condition"))
+#define IS_EVENT() (data[QLatin1String("__type")].toString() == QLatin1String("event"))
+#define IS_COLLECTION() (data[QLatin1String("__type")].toString() == QLatin1String("collection"))
+#define IS_PROPERTY() (data[QLatin1String("__type")].toString() == QLatin1String("property"))
+
+// getter
+#define MAP(ID) data[QLatin1String(ID)].toMap()
+#define LIST(ID) data[QLatin1String(ID)].toList()
 #define DATA(ID) data[QLatin1String(ID)].toString()
 #define INTDATA(ID) data[QLatin1String(ID)].toInt()
 #define BOOLDATA(ID) data[QLatin1String(ID)].toBool()
 #define DOUBLEDATA(ID) data[QLatin1String(ID)].toDouble()
-#define PROPERTY(ID) QVariantMap data; data[QLatin1String("id")] = QLatin1String(PLUGIN_ID"_"ID)
+#define PROPERTY(ID) QVariantMap data; data[QLatin1String("id")].toString() = QLatin1String(PLUGIN_ID"_"ID)
+
+// setter
+#define SETDATA(ID, DATA) data[QLatin1String(ID)] = DATA
 
 class AbstractPlugin_services
 {

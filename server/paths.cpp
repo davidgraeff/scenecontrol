@@ -30,26 +30,10 @@ QString wwwFile(const QString& file) {
 	return dir.absoluteFilePath ( file );
 }
 
-QStringList serverPluginsFiles() {
-	QDir dir = pluginDir();
-	dir.cd(QLatin1String("server"));
-
-	QStringList files = dir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
-	for (int i=0;i<files.size();++i)
-		files[i] = dir.absoluteFilePath ( files[i] );
-	return files;
-}
-
-
-QStringList serviceFiles() {
-	QStringList files;
-	// append files in {home}/roomcontrol/services
-	QDir dir = QDir::home();
-	dir.cd(QLatin1String("roomcontrol"));
-	dir.cd(QLatin1String("services"));
-	dir.mkpath(dir.absolutePath());
-	const QStringList tfiles = dir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
-	for (int i=0;i<tfiles.size();++i)
-		files.append(dir.absoluteFilePath ( tfiles[i] ));
-	return files;
+QDir serviceDir() {
+    QDir dir = QDir::home();
+    dir.cd(QLatin1String("roomcontrol"));
+    dir.cd(QLatin1String("services"));
+    dir.mkpath(dir.absolutePath());
+    return dir;
 }

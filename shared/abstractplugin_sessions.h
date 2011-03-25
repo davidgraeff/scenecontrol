@@ -32,4 +32,4 @@ public:
 	 */
 	virtual void session_change(const QString& id, bool running) = 0;
 };
-Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.PluginSession/2.0")
+Q_DECLARE_INTERFACE(AbstractPlugin_sessions, "com.roomcontrol.PluginSession/2.0")

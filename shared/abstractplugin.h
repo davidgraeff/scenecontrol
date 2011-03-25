@@ -27,10 +27,12 @@ protected: \
 	virtual QString pluginid() { return QLatin1String(PLUGIN_ID); } \
 	AbstractServer* m_server; \
 public: \
-	virtual void __connectToServer(AbstractServer* server) {m_server=server; } \
-	virtual void __session_change(const QString& id, bool running) {if ( running ) m_sessions.insert ( id ); else m_sessions.remove ( id ); session_change(id,running);}
+	virtual void connectToServer(AbstractServer* server) {m_server=server; } \
 
+// access and set id
 #define IS_ID(ID) data[QLatin1String("id")].toString() == QLatin1String(ID)
+#define ID() data[QLatin1String("id")].toString()
+#define SETID(VAR) data[QLatin1String("id")] = VAR
 
 class AbstractServer;
 class AbstractPlugin
@@ -44,20 +46,8 @@ public:
     /**
 	 * Hint: Do not reimplement this method (It is implemented within the PLUGIN_MACRO macro).
      */
-    virtual void __connectToServer(AbstractServer* server) = 0;
+    virtual void connectToServer(AbstractServer* server) = 0;
 
-    /**
-	 * Hint: Do not reimplement this method (It is implemented within the PLUGIN_MACRO macro).
-     */
-	virtual void __session_change(const QString& id, bool running) = 0;
-
-	/**
-	 * Server Session Information
-	 * \param id Unique session id
-	 * \param running Session is started or has finished
-	 */
-	virtual void session_change(const QString& id, bool running) = 0;
-	
     /**
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the
      * network is initiated or by request from a client with sufficient access rights.

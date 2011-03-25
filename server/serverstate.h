@@ -24,42 +24,18 @@
 #include <QMap>
 #include <QSet>
 #undef PLUGIN_ID
-#define PLUGIN_ID "collection"
+#define PLUGIN_ID "serverstate"
 #include <shared/abstractplugin.h>
 #include <shared/abstractplugin_services.h>
 #include <shared/abstractserver.h>
-#include "boolstuff/BoolExpr.h"
 
-class ServiceController;
-class CollectionInstance : public QObject {
-	Q_OBJECT
-public:
-	CollectionInstance();
-	virtual ~CollectionInstance();
-	void startExecution() ;
-    void stop();
-
-	QSet<QString> eventids;
-	boolstuff::BoolExpr<std::string>* conditionids;
-	QMap< int, QString > actionids;
-	bool enabled;
-private:
-	QTimer m_executionTimer;
-	int m_currenttime;
-private Q_SLOTS:
-	void executiontimeout();
-Q_SIGNALS:
-	void executeService(const QString& uid);
-};
-
-class Collections : public QObject, public AbstractPlugin, public AbstractPlugin_services
+class ServerState : public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
 public:
-	Collections();
-	virtual ~Collections();
-	void setServiceController(ServiceController* sc) { m_servicecontroller = sc; }
+	ServerState() {}
+	virtual ~ServerState() {}
     virtual void clear();
     virtual void initialize();
     virtual bool condition(const QVariantMap& data);
@@ -67,15 +43,5 @@ public:
     virtual void execute(const QVariantMap& data);
     virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
 private:
-	void addCollection(const QVariantMap& data);
-	ServiceController* m_servicecontroller;
-	QMap< QString, CollectionInstance* > m_collections;
-	void convertVariantToStringSet(const QVariantList& source, QSet<QString>& destination);
-	void convertVariantToIntStringMap(const QVariantMap& source, QMap<int, QString>& destination);
-public Q_SLOTS:
-    void dataSync(const QVariantMap& data, bool removed = false, const QString& sessionid = QString());
-    void dataReady();
-    void eventTriggered(const QString& uid);
-Q_SIGNALS:
-	void instanceExecute(const QString& uid);
+	QMap<int, QSet<QString> > m_state_events; //state->set of uids
 };

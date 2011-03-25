@@ -61,7 +61,7 @@ bool plugin::condition ( const QVariantMap& data )  {
 }
 
 void plugin::event_changed ( const QVariantMap& data ) {
-    const QString uid = DATA ( "uid" );
+    const QString uid = UNIQUEID();
     // remove from next events
     m_timeout_service_ids.remove ( uid );
     // recalculate next event
@@ -97,11 +97,11 @@ void plugin::calculate_next_events() {
                 min_next_time[86400];
             } else if ( sec > 10 ) {
                 qDebug() << "One-time alarm: Armed" << sec;
-                min_next_time[sec].insert ( DATA ( "uid" ) );
-                remove.insert ( DATA ( "uid" ) );
+                min_next_time[sec].insert ( UNIQUEID() );
+                remove.insert ( UNIQUEID() );
             } else if ( sec > -10 && sec < 10 ) {
-                m_server->event_triggered ( DATA ( "uid" ) );
-                remove.insert ( DATA ( "uid" ) );
+                m_server->event_triggered ( UNIQUEID() );
+                remove.insert ( UNIQUEID() );
             }
         } else if ( IS_ID ( "timeperiodic" ) ) {
             QTime m_time = QDateTime::fromString ( DATA ( "time" ),Qt::ISODate ).time();
@@ -130,7 +130,7 @@ void plugin::calculate_next_events() {
 
             if ( offsetdays < 7 ) {
                 const int sec = QDateTime::currentDateTime().secsTo ( datetime.addDays ( offsetdays ) ) + 1;
-				min_next_time[sec].insert ( DATA ( "uid" ) );
+				min_next_time[sec].insert ( UNIQUEID() );
                 qDebug() << "Periodic alarm: " << datetime.addDays ( offsetdays ).toString ( Qt::DefaultLocaleShortDate );
             }
         }

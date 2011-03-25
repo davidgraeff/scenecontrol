@@ -12,7 +12,7 @@
     <bool id="relative">1</bool>
   </action>
   <action id="xbmcmedia">
-    <string id="url"/>
+    <url id="url"/>
   </action>
   <action id="xbmccmd">
     <enum id="state" /><!--

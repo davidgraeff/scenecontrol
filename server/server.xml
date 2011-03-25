@@ -37,19 +37,28 @@
   </event>
 </plugin>
 
+<plugin id="collection" version="1.0">
+  <action id="executecollection">
+	  <string id="collectionid" />
+  </action>
+  <action id="stopcollection">
+	  <string id="collectionid" />
+  </action>
+</plugin>
+
 <plugin id="backups" version="1.0">
  <!-- backups -->
   <action id="backup_create">
     <string id="name" />
   </action>
   <action id="backup_restore">
-    <string id="id" model="backups" />
+    <string id="backupid" model="backups" />
   </action>
   <action id="backup_remove">
-    <string id="id" model="backups" />
+    <string id="backupid" model="backups" />
   </action>
   <property id="backup">
-    <string id="id"></string>
+    <string id="backupid"></string>
     <string id="name"></string>
   </property>
 

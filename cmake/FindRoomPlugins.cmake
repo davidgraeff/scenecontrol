@@ -52,7 +52,7 @@ macro(install_server_lib)
 		LIBRARY DESTINATION ${LIBPATH}
 		COMPONENT ServerPlugins
 		)
-	INSTALL(FILES "plugin.xml" DESTINATION ${LIBPATH} COMPONENT ServerPlugins RENAME "${PROJECT_NAME}.xml")
+	INSTALL(FILES "plugin.xml" DESTINATION ${LIBPATH}/xml COMPONENT ServerPlugins RENAME "${PROJECT_NAME}.xml")
 	INSTALL(DIRECTORY "www" DESTINATION ${WWWPATH}/${PROJECT_NAME} COMPONENT ServerPlugins)
 endmacro()
 

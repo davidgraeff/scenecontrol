@@ -25,6 +25,8 @@
 #include <QTimer>
 #include <QDir>
 #include <QtXml/QDomDocument>
+#undef PLUGIN_ID
+#define PLUGIN_ID "servicecontroller"
 #include <shared/abstractplugin.h>
 #include <shared/abstractplugin_services.h>
 #include <shared/abstractplugin_otherproperties.h>
@@ -42,10 +44,27 @@ public:
      * execute backup actions and send changed properties to \link ServiceController.
      * For validation and service description the server.xml file is used.
      */
-    void useServerObject(AbstractPlugin*);
+    void useServerObject(AbstractPlugin* object);
+	/**
+	 * Deregister server objects before deleting them, otherwise ServiceController
+	 * might try to acces them.
+	 */
+	void removeServerObject(AbstractPlugin* object);
+
+    struct ServiceStruct {
+        QVariantMap data;
+        AbstractPlugin_services* plugin;
+    };
+    ServiceStruct* service(const QString& uid) {
+		return m_valid_services.value(uid);
+    }
+    const QMap<QString, ServiceStruct*> &valid_services() const;
+
+    void load(bool service_dir_watcher);
 private:
+    QDir m_savedir;
     // services
-    QMap<QString, QVariantMap> m_valid_services;
+    QMap<QString, ServiceStruct*> m_valid_services; // uid -> data+plugin
 
     // services
     QString serviceFilename(const QString& id, const QString& uid);
@@ -55,58 +74,40 @@ private:
      * Only validated services are propagated to the respective plugin
      * for execution. In m_valid_services are only validated services.
      */
-    bool validateService( const QVariantMap& data );
+    bool validateService( QVariantMap& data );
 
     // plugins
-    QList<AbstractPlugin*> m_plugins;
+	struct PluginInfo {
+		AbstractPlugin* plugin;
+		QString name;
+		QString version;
+		PluginInfo(AbstractPlugin* plugin, QString name, QString version) {this->plugin=plugin;this->name=name;this->version=version;}
+		~PluginInfo() {delete plugin; }
+	};
+    QList<PluginInfo*> m_plugins;
     QMap<QString, AbstractPlugin_services*> m_plugin_services;
     QMap<QString, AbstractPlugin_otherproperties*> m_plugin_otherproperties;
     QMap<QString, AbstractPlugin_settings*> m_plugin_settings;
-    QMap<QString, QDomDocument> m_pluginxml;
-    QMap<QString, QString> m_idToPlugin;
+    QMap<QString, QDomNode*> m_id_to_xml;
+	QMap<QString, AbstractPlugin*> m_id_to_plugin;
 
     /**
      * Load plugins and their corresponding xml description file and
      * registers all provided properties and services
      */
     void loadPlugins();
-    void loadServerXML();
+    void loadXML(const QString& filename);
 
     // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;
 
     // server interface
-    virtual void event_triggered(const QString& event_id, const char* pluginid = "") {
-        emit eventTriggered(event_id);
-    }
-    virtual void execute_action(const QVariantMap& data, const char* pluginid = "") {
-        executeService(data);
-    }
-    virtual void property_changed(const QVariantMap& data, const QString& sessionid = QString(), const char* pluginid = "") {
-        emit dataSync(data, false, sessionid);
-        QSet<QString> plugins = m_propertyid_to_plugins.value(DATA("id"));
-        foreach(QString pluginid, plugins) {
-            AbstractPlugin_otherproperties* plugin = m_plugin_otherproperties.value(pluginid);
-            if (plugin) plugin->otherPropertyChanged(data, sessionid);
-        }
-    }
-    virtual void register_listener(const QString& unqiue_property_id, const char* pluginid = "") {
-        m_propertyid_to_plugins[unqiue_property_id].insert(QString::fromAscii(pluginid));
-    }
-    virtual void unregister_all_listeners(const char* pluginid = "") {
-        const QString id = QString::fromAscii(pluginid);
-        QMutableMapIterator<QString, QSet<QString> > it(m_propertyid_to_plugins);
-        while (it.hasNext()) {
-            it.value().remove(id);
-            if (it.value().isEmpty())
-                it.remove();
-        }
-    }
-    virtual void unregister_listener(const QString& unqiue_property_id, const char* pluginid = "") {
-        m_propertyid_to_plugins[unqiue_property_id].remove(QString::fromAscii(pluginid));
-        if (m_propertyid_to_plugins[unqiue_property_id].isEmpty())
-            m_propertyid_to_plugins.remove(unqiue_property_id);
-    }
+    virtual void event_triggered(const QString& event_id, const char* pluginid = "");
+    virtual void execute_action(const QVariantMap& data, const char* pluginid = "");
+    virtual void property_changed(const QVariantMap& data, const QString& sessionid = QString(), const char* pluginid = "");
+    virtual void register_listener(const QString& unqiue_property_id, const char* pluginid = "");
+    virtual void unregister_all_listeners(const char* pluginid = "");
+    virtual void unregister_listener(const QString& unqiue_property_id, const char* pluginid = "");
 public Q_SLOTS:
     /**
      * Validates data to plugin description xml.
@@ -115,7 +116,7 @@ public Q_SLOTS:
      * then do not add data to m_valid_services but call \link executeService.
      * \param service data
      */
-    void changeService(const QVariantMap& data);
+    void changeService(QVariantMap& data);
 
     /**
      * Remove service from m_valid_services and from disk and propagate that through the dataSync signal
@@ -139,7 +140,7 @@ Q_SIGNALS:
     /**
      * Emitted after all services have been loaded from disk.
      */
-    void dataReady(const QMap<QString, QVariantMap>& data_map);
+    void dataReady();
     /**
      * Event triggered
      */

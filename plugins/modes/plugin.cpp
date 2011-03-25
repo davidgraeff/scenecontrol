@@ -59,7 +59,7 @@ bool plugin::condition(const QVariantMap& data)  {
 void plugin::event_changed(const QVariantMap& data) {
 	if (IS_ID("modeevent")) {
 		// entfernen
-		const QString uid = DATA("uid");
+		const QString uid = UNIQUEID();
 		QMutableMapIterator<QString, QSet<QString> > it(m_mode_events);
 		while (it.hasNext()) {
 			it.value().remove(uid);
@@ -82,7 +82,7 @@ void plugin::modeChanged(const QString& mode) {
 	data[QLatin1String("mode")] = mode;
 	m_server->property_changed(data);
 	
-	foreach (QString uid, m_mode_events[mode]) {
+	foreach (QString uid, m_mode_events.value(mode)) {
 		m_server->event_triggered(uid);
 	}
 }
