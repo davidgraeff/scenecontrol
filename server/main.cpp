@@ -120,11 +120,15 @@ int main(int argc, char *argv[])
 
     // network
 #ifdef WITH_EXTERNAL
-    NetworkController* network = 0;
+    HttpServer* httpserver = 0;
     if (!cmdargs.contains("--no-network")) {
-        network = new NetworkController();
-        network->setServiceController(services);
-        network->start();
+        httpserver = new HttpServer();
+		httpserver->connect(services,SIGNAL(dataSync(QVariantMap,bool,QString)), httpserver, SLOT(dataSync(QVariantMap,bool,QString)));
+		httpserver->connect(sessions,SIGNAL(sessionAuthFailed(QString)),httpserver,SLOT(sessionAuthFailed(QString)));
+		httpserver->connect(sessions,SIGNAL(sessionBegin(QString)),httpserver,SLOT(sessionBegin(QString)));
+		httpserver->connect(sessions,SIGNAL(sessionFinished(QString,bool)),httpserver,SLOT(sessionFinished(QString,bool)));
+        httpserver->setServiceController(services);
+        httpserver->start();
     }
 #endif
 
@@ -137,8 +141,8 @@ int main(int argc, char *argv[])
 
 #ifdef WITH_EXTERNAL
     qDebug() << "Shutdown: Network server";
-    delete network;
-    network = 0;
+    delete httpserver;
+    httpserver = 0;
 #endif
 
     qDebug() << "Shutdown: Service Controller";

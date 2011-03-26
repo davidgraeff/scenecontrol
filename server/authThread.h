@@ -31,24 +31,24 @@ class AuthThread : public QThread
 {
     Q_OBJECT
 public:
-	AuthThread() :m_keeprunning(true) {}
-	void stop(){m_keeprunning=false;}
-	void run();
-	bool query(const QString& sessionid, const QString& name, const QString& pwd);
+    AuthThread() :m_keeprunning(true) {}
+    void stop();
+    void run();
+    bool query(const QString& sessionid, const QString& name, const QString& pwd);
 private:
-	bool m_keeprunning;
-	class AuthQueryData {
-	public:
-		QString sessionid;
-		QByteArray name;
-		QByteArray pwd;
-		AuthQueryData(const QString& sessionid, const QByteArray& name, const QByteArray& pwd)
-		 : sessionid(sessionid), name(name), pwd(pwd) {}
-	};
-	QList<AuthQueryData*> m_creds;
-	QMutex mutex;
-	QWaitCondition bufferNotFull;
+    bool m_keeprunning;
+    class AuthQueryData {
+    public:
+        QString sessionid;
+        QByteArray name;
+        QByteArray pwd;
+        AuthQueryData(const QString& sessionid, const QByteArray& name, const QByteArray& pwd)
+                : sessionid(sessionid), name(name), pwd(pwd) {}
+    };
+    QList<AuthQueryData*> m_creds;
+    QMutex mutex;
+    QWaitCondition bufferNotFull;
 Q_SIGNALS:
-	void auth_success(const QString& sessionid, const QString& name);
-	void auth_failed(const QString& sessionid, const QString& name);
+    void auth_success(const QString& sessionid, const QString& name);
+    void auth_failed(const QString& sessionid, const QString& name);
 };

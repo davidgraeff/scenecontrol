@@ -1,75 +1,61 @@
 /*
- * NetworkController.cpp
- *
- *  Created on: 19.09.2009
- *      Author: david
- */
+    RoomControlServer. Home automation for controlling sockets, leds and music.
+    Copyright (C) 2010  David Gräff
 
-#include "networkcontroller.h"
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	Purpose: https server
+*/
+
+#include "httpserver.h"
 // QT
-#include <QHostAddress>
+#include <QtNetwork/QHostAddress>
 #include <QStringList>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
 #include <QSettings>
-// Json
-#include "shared/qjson/parser.h"
-#include "shared/qjson/qobjecthelper.h"
-#include "shared/qjson/serializer.h"
 
-#include "shared/abstractserviceprovider.h"
-#include "shared/abstractstatetracker.h"
-#include "shared/server/executeservice.h"
-#include "shared/paths.h"
+#include "paths.h"
 #include "servicecontroller.h"
 #include "authThread.h"
 #include "config.h"
+#include <serializer.h>
+#include <parser.h>
 
 
 ClientConnection::ClientConnection(QSslSocket* s) {
     bufferpos=0;
     bufferBrakes=0;
     socket=s;
-    m_auth=false;
-    connect(&m_authTimer,SIGNAL(timeout()),SLOT(timeout()));
-    m_authTimer.start(ROOM_NETWORK_AUTHTIMEOUT);
 }
 ClientConnection::~ClientConnection() {
     delete socket;
 }
-void ClientConnection::timeout() {
-    emit timeoutAuth(socket);
-}
-bool ClientConnection::auth() {
-    return m_auth;
-}
-void ClientConnection::setAuth(const QString& user) {
-    m_user = user;
-    m_auth = true;
-    m_authTimer.stop();
-}
-QString ClientConnection::user() {
-    return m_user;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 
-NetworkController::NetworkController() : m_service(0), m_auththread(new AuthThread())
-{
-    connect(m_auththread,SIGNAL(auth_failed(QObject*,QString)),SLOT(auth_failed(QObject*,QString)),Qt::QueuedConnection);
-    connect(m_auththread,SIGNAL(auth_success(QObject*,QString)),SLOT(auth_success(QObject*,QString)),Qt::QueuedConnection);
-    m_auththread->start();
-}
+HttpServer::HttpServer() : m_service(0) {}
 
-NetworkController::~NetworkController()
+HttpServer::~HttpServer()
 {
     qDeleteAll(m_connections);
     m_connections.clear();
     close();
 }
 
-bool NetworkController::start()
+bool HttpServer::start()
 {
     if ( !listen ( QHostAddress::Any, ROOM_LISTENPORT ) )
     {
@@ -80,13 +66,41 @@ bool NetworkController::start()
     return true;
 }
 
+void HttpServer::sslErrors(QList< QSslError > errors) {
+    QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
+    QString errorString;
+    foreach(QSslError error, errors) {
+        switch (error.error()) {
+        default:
+            errorString.append(error.errorString());
+            errorString.append(QLatin1String(" "));
+            break;
+        case QSslError::SelfSignedCertificate:
+            break;
+        }
+    }
+    if (errorString.size())
+        qWarning()<<__FUNCTION__ << socket->peerAddress()<< errorString;
+}
+
+void HttpServer::peerVerifyError(QSslError error) {
+    QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
+    switch (error.error()) {
+    default:
+        qWarning()<<__FUNCTION__ << socket->peerAddress() << error.errorString();
+        break;
+    case QSslError::SelfSignedCertificate:
+        break;
+    }
+}
+
 /*
    * Generate a self signed root certificate
     openssl req -x509 -utf8 -newkey rsa:1024 -nodes -days 3650 -keyout server.key -out server.crt
     openssl -new -x509 -extensions v3_ca -days 3650 -keyout cakey.pem -out cacert.pem
     openssl x509 -noout -text -in thecert.pem
 */
-void NetworkController::incomingConnection ( int socketDescriptor )
+void HttpServer::incomingConnection ( int socketDescriptor )
 {
     QSslSocket *socket = new QSslSocket;
     if ( socket->setSocketDescriptor ( socketDescriptor ) == true )
@@ -107,14 +121,14 @@ void NetworkController::incomingConnection ( int socketDescriptor )
                 this, SLOT(peerVerifyError (const QSslError &)));
         connect(socket, SIGNAL(sslErrors(const QList<QSslError> &)),
                 this, SLOT(sslErrors(const QList<QSslError> &)));
-		connect(socket,SIGNAL(disconnected()),SLOT(disconnected()));
+        connect(socket,SIGNAL(disconnected()),SLOT(disconnected()));
         m_connections.insert ( socket, new ClientConnection(socket) );
-        QByteArray data;
-        data.append("{\"type\" : \"serverinfo\", \"version\" : \""ROOM_NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \"");
-        data.append(QByteArray::number(ROOM_NETWORK_AUTHTIMEOUT));
-        data.append("\", \"plugins\" : \"");
-        data.append("\"}");
-        socket->write ( data );
+//         QByteArray data;
+//         data.append("{\"type\" : \"serverinfo\", \"version\" : \""ROOM_NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \"");
+//         data.append(QByteArray::number(ROOM_NETWORK_AUTHTIMEOUT));
+//         data.append("\", \"plugins\" : \"");
+//         data.append("\"}");
+//         socket->write ( data );
         //qDebug() << "new connection, waiting for authentification";
     }
     else
@@ -124,35 +138,35 @@ void NetworkController::incomingConnection ( int socketDescriptor )
     }
 }
 
-void NetworkController::syncClient(QSslSocket* socket)
+void HttpServer::syncClient(QSslSocket* socket)
 {
     //sync all providers with the new client
     QList<QObject*> synclist;
 
-    const QList<ExecuteWithBase*> servicesList = m_service->m_servicesList;
-    foreach (ExecuteWithBase* p, servicesList)
-    {
-        synclist.append(p->base());
-    }
-    const QList<AbstractStateTracker*> stateTrackerlist = m_service->stateTracker();
-    foreach (AbstractStateTracker* p, stateTrackerlist)
-    {
-        synclist.append(p);
-    }
-
-    qDebug() << "New client from" << socket->peerAddress().toString().toUtf8().data() << "Sync objects:" << synclist.size();
-    foreach (QObject* p, synclist)
-    {
-        QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
-        QJson::Serializer serializer;
-        QByteArray cmdbytes = serializer.serialize(variant);
-        socket->write ( cmdbytes );
-    }
-    socket->write("{\"type\" : \"complete\"}");
-    socket->flush();
+//     const QList<ExecuteWithBase*> servicesList = m_service->m_servicesList;
+//     foreach (ExecuteWithBase* p, servicesList)
+//     {
+//         synclist.append(p->base());
+//     }
+//     const QList<AbstractStateTracker*> stateTrackerlist = m_service->stateTracker();
+//     foreach (AbstractStateTracker* p, stateTrackerlist)
+//     {
+//         synclist.append(p);
+//     }
+//
+//     qDebug() << "New client from" << socket->peerAddress().toString().toUtf8().data() << "Sync objects:" << synclist.size();
+//     foreach (QObject* p, synclist)
+//     {
+//         QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
+//         QJson::Serializer serializer;
+//         QByteArray cmdbytes = serializer.serialize(variant);
+//         socket->write ( cmdbytes );
+//     }
+//     socket->write("{\"type\" : \"complete\"}");
+//     socket->flush();
 }
 
-QByteArray NetworkController::getNextJson(ClientConnection* c)
+QByteArray HttpServer::getNextJson(ClientConnection* c)
 {
     for (; c->bufferpos<c->buffer.size(); ++c->bufferpos)
     {
@@ -174,40 +188,7 @@ QByteArray NetworkController::getNextJson(ClientConnection* c)
     return QByteArray();
 }
 
-void NetworkController::statetrackerSync(AbstractStateTracker* p)
-{
-    // do nothing if no clients are connected
-    if (m_connections.isEmpty()) return;
-
-    QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
-    QJson::Serializer serializer;
-    QByteArray cmdbytes = serializer.serialize(variant);
-
-    foreach ( ClientConnection* c, m_connections )
-    if (c->auth()) c->socket->write ( cmdbytes );
-}
-
-void NetworkController::serviceSync(AbstractServiceProvider* p)
-{
-    // do nothing if no clients are connected
-    if (m_connections.isEmpty()) return;
-
-    QVariantMap variant = QJson::QObjectHelper::qobject2qvariant(p);
-    if (p->dynamicPropertyNames().contains("remove"))
-        variant.insert(QLatin1String("remove"), true);
-    if (p->dynamicPropertyNames().contains("iexecute"))
-        variant.insert(QLatin1String("iexecute"), true);
-    QJson::Serializer serializer;
-    QByteArray cmdbytes = serializer.serialize(variant);
-
-    foreach ( ClientConnection* c, m_connections ) {
-		if (c->auth()) {
-			c->socket->write ( cmdbytes );
-		}
-	}
-}
-
-void NetworkController::readyRead()
+void HttpServer::readyRead()
 {
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     Q_ASSERT(socket);
@@ -237,34 +218,13 @@ void NetworkController::readyRead()
             return;
         }
 
-        QJson::Parser parser;
         bool ok;
-
-        QVariantMap result = parser.parse (cmdstring, &ok).toMap();
-        if (!ok || !result.contains(QLatin1String("type"))) {
-            qWarning() << "could not parse cmd" << ok << cmdstring;
-            continue;
-        }
-        if (!c->auth()) {
-            if (result.value(QLatin1String("type")).toByteArray()=="auth") {
-                if (!m_auththread->query(socket, result.value(QLatin1String("name")).toString(),
-                                         result.value(QLatin1String("pwd")).toString()
-                                        )) {
-                    QByteArray data("{\"type\" : \"auth\", \"result\" : \"notaccepted\"}");
-                    socket->write ( data );
-                }
-            } else {
-                QByteArray data("{\"type\" : \"auth\", \"result\" : \"missing\"}");
-                socket->write ( data );
-            }
-            continue;
-        }
-        // Let the factory update existing objects or create new ones if necessary
-        m_service->generate(result);
+        QVariantMap result = QJson::Parser().parse (cmdstring, &ok).toMap();
+        //TODO to service controller
     };
 }
 
-void NetworkController::disconnected()
+void HttpServer::disconnected()
 {
     QSslSocket* socket = qobject_cast<QSslSocket*>(sender());
     Q_ASSERT(socket);
@@ -272,83 +232,51 @@ void NetworkController::disconnected()
     m_connections.take ( socket )->deleteLater();
 }
 
-
-void NetworkController::log(const char* msg) {
-    if (m_connections.isEmpty()) return;
-    QByteArray cmdbytes("{\"type\" : \"log\", \"data\" : \"");
-    // replace " with '
-    for (char* msgr = (char*)msg;*msgr!=0;++msgr)
-        if (*msgr == '"') *msgr = '\'';
-    cmdbytes.append(msg);
-    cmdbytes.append("\"}");
-    foreach ( ClientConnection* c, m_connections )
-    if (c->auth()) c->socket->write ( cmdbytes );
-}
-
-void NetworkController::setServiceController ( ServiceController* controller ) {
+void HttpServer::setServiceController ( ServiceController* controller ) {
     m_service = controller;
 }
 
-void NetworkController::auth_success(QObject* ptr, const QString& name) {
-    if (ptr==0) { // Test
-        qDebug() << __FUNCTION__ << name;
-        return;
+void HttpServer::dataSync(const QVariantMap& data, bool removed, const QString& sessiondid) {
+    if (m_connections.isEmpty()) return;
+    const QByteArray cmdbytes = QJson::Serializer().serialize(data);
+    foreach ( ClientConnection* c, m_connections ) {
+        if (sessiondid.isEmpty() || sessiondid==c->sessionid) c->socket->write ( cmdbytes );
     }
-    QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
-    Q_ASSERT(socket);
-    ClientConnection* c = m_connections.value(socket);
-    Q_ASSERT(c);
-    c->setAuth(name);
-    QByteArray data("{\"type\" : \"auth\", \"result\" : \"ok\"}");
-    socket->write ( data );
-    syncClient(socket);
 }
 
-void NetworkController::auth_failed(QObject* ptr, const QString& name) {
-    if (ptr==0) { // Test
-        qDebug() << __FUNCTION__ << name;
-        return;
-    }
-    Q_UNUSED(name);
-    QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
-    Q_ASSERT(socket);
-    QByteArray data("{\"type\" : \"auth\", \"result\" : \"failed\"}");
-    socket->write ( data );
-    socket->flush();
+void HttpServer::sessionAuthFailed(QString sessionid) {
+//     if (ptr==0) { // Test
+//         qDebug() << __FUNCTION__ << name;
+//         return;
+//     }
+//     Q_UNUSED(name);
+//     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
+//     Q_ASSERT(socket);
+//     QByteArray data("{\"type\" : \"auth\", \"result\" : \"failed\"}");
+//     socket->write ( data );
+//     socket->flush();
 }
 
-void NetworkController::timeoutAuth(QSslSocket* socket) {
-    QByteArray data("{\"type\" : \"auth\", \"result\" : \"timeout\"}");
-    socket->write ( data );
-    socket->flush();
-    qWarning() << "Client auth timeout:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
-    m_connections.take ( socket )->deleteLater();
+void HttpServer::sessionBegin(QString sessionid) {
+//     if (ptr==0) { // Test
+//         qDebug() << __FUNCTION__ << name;
+//         return;
+//     }
+//     QSslSocket* socket = qobject_cast<QSslSocket*>(ptr);
+//     Q_ASSERT(socket);
+//     ClientConnection* c = m_connections.value(socket);
+//     Q_ASSERT(c);
+//     c->setAuth(name);
+//     QByteArray data("{\"type\" : \"auth\", \"result\" : \"ok\"}");
+//     socket->write ( data );
+//     syncClient(socket);
 }
 
-void NetworkController::sslErrors(QList< QSslError > errors) {
-    QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
-    QString errorString;
-    foreach(QSslError error, errors) {
-		switch (error.error()) {
-			default:
-				errorString.append(error.errorString());
-				errorString.append(QLatin1String(" "));
-				break;
-			case QSslError::SelfSignedCertificate:
-				break;
-		}
-    }
-    if (errorString.size())
-		qWarning()<<__FUNCTION__ << socket->peerAddress()<< errorString;
+void HttpServer::sessionFinished(QString sessionid, bool timeout) {
+//     QByteArray data("{\"type\" : \"auth\", \"result\" : \"timeout\"}");
+//     socket->write ( data );
+//     socket->flush();
+//     qWarning() << "Client auth timeout:" << socket->peerAddress().toString().toUtf8().data() << socket->socketDescriptor();
+//     m_connections.take ( socket )->deleteLater();
 }
 
-void NetworkController::peerVerifyError(QSslError error) {
-    QSslSocket *socket = qobject_cast<QSslSocket*>(sender());
-	switch (error.error()) {
-		default:
-			qWarning()<<__FUNCTION__ << socket->peerAddress() << error.errorString();
-			break;
-		case QSslError::SelfSignedCertificate:
-			break;
-	}
-}
