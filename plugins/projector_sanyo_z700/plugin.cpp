@@ -27,9 +27,9 @@
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
-    _config ( this );
     m_serial = 0;
     m_buffer[3] = '\r';
+    _config ( this );
 }
 
 plugin::~plugin() {

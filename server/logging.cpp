@@ -21,25 +21,26 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <qfile.h>
+#include <QDir>
 
-const char* logfilename;
-FILE* logfile = 0;
+QFile logfile;
 bool logToConsole = true;
 
-void setLogOptions(bool toConsole, const char* logfile) {
-	logfilename = logfile;
+void setLogOptions(bool toConsole, const char* logfilename) {
 	logToConsole = toConsole;
+	if (!logfilename) return;
+	logfile.setFileName(QDir::home().absoluteFilePath(QLatin1String(logfilename)));
+	logfile.open(QIODevice::WriteOnly|QIODevice::Append);
+	logfile.write("--------------------------------------\n");
 }
 
 void logclose() {
-	fclose(logfile);
-	logfile = 0;
-	logfilename = 0;
+	logfile.close();
 }
 
 void messageout(QtMsgType type, const char *msg, FILE * stream_debug, FILE * stream_warning, FILE * stream_error)
 {
-    
     time_t rawtime;
     tm * ptm;
     time ( &rawtime );
@@ -66,14 +67,9 @@ void roomMessageOutput(QtMsgType type, const char *msg)
 	if (logToConsole) {
 		messageout(type, msg, stdout, stderr, stderr);
 	}
-	if (logfilename) {
-		if (!logfile) {
-			logfile = fopen (logfilename , "ab");
-			const long size=ftell (logfile);
-			if (size > 1024*50) {
-				fclose(logfile);
-				logfile = fopen (logfilename , "wb");
-			}	
-		}
+	if (logfile.isWritable()) {
+		if (logfile.size()>1024*10) logfile.resize(0);
+		logfile.write(msg);
+		logfile.write("\n");
 	}
 }

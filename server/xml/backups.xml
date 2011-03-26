@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="backups" version="1.0">
+ <!-- backups -->
+  <action id="backup_create">
+    <string id="name" />
+  </action>
+  <action id="backup_restore">
+    <string id="backupid" model="backups" />
+  </action>
+  <action id="backup_remove">
+    <string id="backupid" model="backups" />
+  </action>
+  <property id="backup">
+    <string id="backupid"></string>
+    <string id="name"></string>
+  </property>
+</plugin>

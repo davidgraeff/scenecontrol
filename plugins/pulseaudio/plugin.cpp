@@ -26,17 +26,16 @@
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
-//     _config(this);
-    m_controller = new MediaController ( this );
-    connect ( m_controller,SIGNAL ( pulseSinkChanged ( double,bool,QString ) ),SLOT ( pulseSinkChanged ( double,bool,QString ) ) );
+    //     _config(this);
 }
 
 plugin::~plugin() {
-    delete m_controller;
+    close_pulseaudio();
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
+void plugin::initialize() {
+    reconnect_to_pulse(this);
 }
 
 
@@ -46,9 +45,13 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data ) {
     if ( IS_ID ( "pulsechannelmute" ) ) {
-        m_controller->setPAMute ( DATA("sindid").toUtf8(), INTDATA ( "mute" ) );
+        set_sink_muted(DATA("sindid").toUtf8().constData(), INTDATA ( "mute" ) );
     } else if ( IS_ID ( "pulsechannelvolume" ) ) {
-        m_controller->setPAVolume ( DATA("sindid").toUtf8(), DOUBLEDATA ( "volume" ),BOOLDATA ( "relative" ) );
+        if (BOOLDATA ( "relative" )) {
+            set_sink_volume_relative(DATA("sindid").toUtf8(), DOUBLEDATA ( "volume" ));
+        } else {
+            set_sink_volume(DATA("sindid").toUtf8(), DOUBLEDATA ( "volume" ));
+        }
     }
 }
 
@@ -62,7 +65,7 @@ void plugin::event_changed ( const QVariantMap& data ) {
 }
 
 QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QMap<QString, QVariantMap> l;
     return l;
 }
@@ -72,5 +75,12 @@ void plugin::pulseSinkChanged ( double volume, bool mute, const QString& sinkid 
     data[QLatin1String ( "sinkid" ) ] = sinkid;
     data[QLatin1String ( "mute" ) ] = mute;
     data[QLatin1String ( "volume" ) ] = volume;
+    m_server->property_changed ( data );
+}
+
+void plugin::pulseVersion(int protocol, int server) {
+    PROPERTY ( "pulseversion" );
+    data[QLatin1String ( "protocol" ) ] = protocol;
+    data[QLatin1String ( "server" ) ] = server;
     m_server->property_changed ( data );
 }

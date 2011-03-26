@@ -140,5 +140,5 @@ Q_SIGNALS:
     void volumeChanged(double);
 	void playlistsChanged(const QString& playlist, int position);
 	void playlistChanged(const QString& playlist_id);
-	void trackChanged(const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, MediaState state);
+	void trackChanged(const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state);
 };

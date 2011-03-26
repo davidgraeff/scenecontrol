@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<plugin id="anel_power_sockets" version="1.0">
+<plugin id="anel_sockets" version="1.0">
   <action id="iovalue_absolut">
     <string id="channel" model="iochannels" />
     <bool id="value" />
@@ -15,11 +15,11 @@
     <string id="channel" model="iochannels" />
     <string id="name" />
   </action>
-  <property id="iovalue">
+  <property id="iovaluehange">
     <string id="channel" />
     <int id="value" />
   </property>
-  <property id="ioname">
+  <property id="ionamechange">
     <string id="channel" />
     <string id="name" />
   </property>

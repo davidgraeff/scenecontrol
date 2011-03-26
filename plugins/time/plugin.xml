@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<plugin id="xbmc" version="1.0">
+<plugin id="time" version="1.0">
   <event id="timeperiodic">
     <time id="time"></time>
     <enum id="days" multiple="true" n="7"></enum>

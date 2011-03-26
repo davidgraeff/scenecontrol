@@ -85,7 +85,7 @@ bool AuthThread::query(const QString& sessionid, const QString& name, const QStr
 }
 
 void AuthThread::run() {
-    while (1) {
+    while (m_keeprunning) {
         // get next request
         mutex.lock();
         while (m_creds.size()==0) bufferNotFull.wait(&mutex);

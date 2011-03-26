@@ -29,7 +29,7 @@ plugin::plugin() {
     m_mediacontroller = new MediaController ( this );
     connect ( m_mediacontroller,SIGNAL ( playlistChanged ( QString ) ),SLOT ( playlistChanged ( QString ) ) );
     connect ( m_mediacontroller,SIGNAL ( playlistsChanged ( QString,int ) ),SLOT ( playlistsChanged ( QString,int ) ) );
-    connect ( m_mediacontroller,SIGNAL ( trackChanged ( QString,QString,int,uint,uint,MediaState ) ),SLOT ( trackChanged ( QString,QString,int,uint,uint,MediaState ) ) );
+    connect ( m_mediacontroller,SIGNAL ( trackChanged(QString,QString,int,uint,uint,int)), SLOT(trackChanged(QString,QString,int,uint,uint,int)));
     connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
     _config ( this );
 }
@@ -128,7 +128,7 @@ void plugin::playlistsChanged ( QString p, int pos) {
     m_server->property_changed ( data );
 }
 
-void plugin::trackChanged ( QString filename, QString trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
+void plugin::trackChanged ( const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
     PROPERTY ( "mpdtrack" );
     data[QLatin1String ( "filename" ) ] = filename;
 	data[QLatin1String ( "trackname" ) ] = trackname;
@@ -140,7 +140,7 @@ void plugin::trackChanged ( QString filename, QString trackname, int track, uint
 }
 
 void plugin::volumeChanged ( double volume ) {
-    PROPERTY ( "mpdvolume" );
+    PROPERTY ( "mpdvolumechanged" );
     data[QLatin1String ( "volume" ) ] = volume;
     m_server->property_changed ( data );
 }

@@ -18,44 +18,11 @@
 */
 
 #pragma once
-#include <QAbstractListModel>
-#include <QStringList>
-#include <QUuid>
-#include <QTimer>
+#include <glib/gtypes.h>
 
-#include <QTcpSocket>
-#include <qprocess.h>
-
-class AbstractPlugin;
-
-class MediaController : public QObject
-{
-    Q_OBJECT
-public:
-    MediaController(AbstractPlugin* plugin);
-    ~MediaController();
-	/**
-	 * Return volumes for all known sinks
-	 */
-	QMap<QByteArray, QPair<double, bool> > volumes() {return m_paVolume;}
-
-	/**
-	 * Set sink Volume
-	 * \param sink PA sink name
-	 * \param state 0=unmute, 1=mute, 2=toggle
-	 */
-    void setPAMute(const QByteArray sink, int state); 
-    void setPAVolume(const QByteArray sink, double volume, bool relative = false);
-private:
-    AbstractPlugin* m_plugin;
-    QMap<QByteArray, QPair<double, bool> > m_paVolume;
-    QProcess* m_playerprocess;
-private Q_SLOTS:
-    void slotreadyRead ();
-    void slotconnected();
-    void slotdisconnected(int);
-    void sloterror(QProcess::ProcessError e);
-    void readyReadStandardError() ;
-Q_SIGNALS:
-    void pulseSinkChanged(double volume, bool mute, const QString& sinkid);
-};
+class plugin;
+void reconnect_to_pulse(plugin* p);
+void close_pulseaudio();
+void set_sink_muted(const char* sinkname, int muted);
+void set_sink_volume_relative(const char* sinkname, gdouble percent);
+void set_sink_volume(const char* sinkname, gdouble percent);

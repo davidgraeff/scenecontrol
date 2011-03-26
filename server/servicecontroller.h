@@ -80,12 +80,10 @@ private:
     // plugins
 	struct PluginInfo {
 		AbstractPlugin* plugin;
-		QString name;
 		QString version;
-		void setName(const QString& name) { this->name = name; }
 		void setVersion(const QString& version) { this->version = version; }
-		PluginInfo(AbstractPlugin* plugin, QString name = QString(), QString version = QString()) {this->plugin=plugin;this->name=name;this->version=version;}
-		~PluginInfo() {delete plugin; }
+		PluginInfo(AbstractPlugin* plugin) {this->plugin=plugin;}
+		~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
 	};
     QList<PluginInfo*> m_plugins;
     QMap<QString, AbstractPlugin_services*> m_plugin_services;

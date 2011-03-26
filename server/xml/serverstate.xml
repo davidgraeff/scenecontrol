@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="serverstate" version="1.0">
+  <!-- Propagates server condition -->
+  <property id="serverstate">
+    <enum id="state" n="2" /><!-- ready, going offline -->
+  </property>
+ 
+  <action id="servercmd" group_restriction="adm, roomcontrol_admin">
+    <enum id="state" n="3" /><!-- resync client, restart, stop server -->
+  </action>
+  
+  <event id="serverevent">
+    <enum id="state" n="2" /><!-- ready, going offline -->
+  </event>
+</plugin>

@@ -51,6 +51,9 @@
 // setter
 #define SETDATA(ID, DATA) data[QLatin1String(ID)] = DATA
 
+/**
+ * Plugin interface for dealing with actions, conditions, events and properties
+ */
 class AbstractPlugin_services
 {
 public:

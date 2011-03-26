@@ -37,8 +37,8 @@ plugin::~plugin() {
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
-    
+void plugin::initialize() {
+
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
@@ -52,17 +52,17 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data ) {
     if ( IS_ID ( "iovalue_absolut" ) ) {
-		m_controller->setPin ( DATA("channel"),BOOLDATA("value") );
+        m_controller->setPin ( DATA("channel"),BOOLDATA("value") );
     } else if ( IS_ID ( "iovalue_toogle" ) ) {
-		m_controller->togglePin ( DATA("channel") );
+        m_controller->togglePin ( DATA("channel") );
     } else if ( IS_ID ( "ioname" ) ) {
-		m_controller->setPinName ( DATA("channel"),DATA("name") );
+        m_controller->setPinName ( DATA("channel"),DATA("name") );
     }
 }
 
 bool plugin::condition ( const QVariantMap& data )  {
     if ( IS_ID ( "iocondition" ) ) {
-		return ( m_controller->getPin ( DATA("channel") ) == BOOLDATA("value") );
+        return ( m_controller->getPin ( DATA("channel") ) == BOOLDATA("value") );
     }
     return false;
 }
@@ -72,7 +72,21 @@ void plugin::event_changed ( const QVariantMap& data ) {
 }
 
 QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QMap<QString, QVariantMap> l;
     return l;
+}
+
+void plugin::nameChanged(QString channel, QString name) {
+    PROPERTY("ionamechange");
+    data[QLatin1String("channel")] = channel;
+	data[QLatin1String("name")] = name;
+    m_server->property_changed(data);
+}
+
+void plugin::valueChanged(QString channel, int value) {
+    PROPERTY("iovaluechange");
+    data[QLatin1String("channel")] = channel;
+    data[QLatin1String("value")] = value;
+    m_server->property_changed(data);
 }

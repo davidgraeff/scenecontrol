@@ -27,7 +27,7 @@
 #define TIMEOUT 1000	/* 1 second timeout */
 
 
-CardThread::CardThread(QObject* parent) : QThread(parent), m_systemReady(false) {
+CardThread::CardThread(QObject* parent) : QThread(parent), m_systemReady(true) {
     rgReaderStates_t = 0;
     dwReaders = 0;
     mszReaders = 0;
@@ -35,23 +35,6 @@ CardThread::CardThread(QObject* parent) : QThread(parent), m_systemReady(false) 
     readers = 0;
     pnp = true;
 	atr[0] = '\0';
-
-    rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, 0, 0, &hContext);
-    if (rv != SCARD_S_SUCCESS) {
-        (void)SCardReleaseContext(hContext);
-        return;
-    }
-
-    rgReaderStates[0].szReader = "\\\\?PnP?\\Notification";
-    rgReaderStates[0].dwCurrentState = SCARD_STATE_UNAWARE;
-
-    rv = SCardGetStatusChange(hContext, 0, rgReaderStates, 1);
-    if (rgReaderStates[0].dwEventState && SCARD_STATE_UNKNOWN)
-    {
-        pnp = false;
-    }
-
-    m_systemReady = true;
 }
 
 CardThread::~CardThread() {
@@ -133,7 +116,21 @@ void CardThread::readReaders() {    /* free memory possibly allocated in a previ
     }
 }
 void CardThread::run() {
-    if (!m_systemReady) return;
+    rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, 0, 0, &hContext);
+    if (rv != SCARD_S_SUCCESS) {
+        (void)SCardReleaseContext(hContext);
+		m_systemReady = false;
+        return;
+    }
+
+    rgReaderStates[0].szReader = "\\\\?PnP?\\Notification";
+    rgReaderStates[0].dwCurrentState = SCARD_STATE_UNAWARE;
+
+    rv = SCardGetStatusChange(hContext, 0, rgReaderStates, 1);
+    if (rgReaderStates[0].dwEventState && SCARD_STATE_UNKNOWN)
+    {
+        pnp = false;
+    }
 
     readReaders();
     if (!m_systemReady) return;

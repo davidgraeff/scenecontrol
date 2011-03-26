@@ -18,7 +18,7 @@
   <condition id="mpdstatecondition">
     <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
   </condition>
-  <property id="mpdvolume">
+  <property id="mpdvolumechanged">
     <double id="volume" min="0.0" max="1.0" />
   </property>
   <property id="mpdplaylist">

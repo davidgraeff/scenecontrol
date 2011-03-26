@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="collection" version="1.0">
+  <action id="executecollection">
+	  <string id="collectionid" />
+  </action>
+  <action id="stopcollection">
+	  <string id="collectionid" />
+  </action>
+</plugin>

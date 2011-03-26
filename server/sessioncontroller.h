@@ -27,32 +27,37 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QMap>
+#undef PLUGIN_ID
+#define PLUGIN_ID "sessioncontroller"
 #include <shared/abstractplugin_services.h>
+#include <shared/abstractplugin.h>
 
 class AuthThread;
+class SessionController;
 
+/**
+ * A session object will only be established after a successful authentification of the user
+ */
 class Session : public QObject
 {
     Q_OBJECT
 private:
-    bool m_auth;
-    QTimer m_authTimer;
-	QDateTime m_authSuccess;
-	QDateTime m_lastAction;
+    SessionController* m_sessioncontroller;
+	QTimer m_sessionTimer;
+    QDateTime m_sessionStarted;
+    QDateTime m_lastAction;
+    QString m_sessionid;
     QString m_user;
-	QString m_sessionid;
 public:
-    Session();
+	Session(SessionController* sc, const QString& sessionid, const QString& user);
     ~Session();
-	// authetification
-    QString user() ;
-    void setAuth(const QString& user) ;
-    bool auth() ;
-private Q_SLOTS:
-    void timeout() ;
+	void resetSessionTimer();
+    QString user();
+    QDateTime sessionStarted();
+    QDateTime lastAction();
+    QString sessionid();
 Q_SIGNALS:
-    void timeoutAuth();
-	void timeoutSession();
+    void timeoutSession();
 };
 
 /**
@@ -60,27 +65,38 @@ Q_SIGNALS:
  * and process actions for login, logout and provides information about sessions
  * via properties.
  */
-class SessionController : AbstractPlugin_services {
+class SessionController : public QObject, public AbstractPlugin, public AbstractPlugin_services {
     Q_OBJECT
+    PLUGIN_MACRO
 public:
     SessionController();
     virtual ~SessionController();
-	Session* getSession(const QString& sessionid);
+    virtual void clear(){}
+    virtual void initialize(){}
+	
+    Session* getSession(const QString& sessionid);
+	/**
+	 * \return Return temporary session id
+	 */
+	QString addSession(const QString& user, const QString& pwd);
+	void closeSession(const QString& sessionid);
 
-	// plugin interface
+    // plugin interface
     virtual bool condition(const QVariantMap& data);
     virtual void event_changed(const QVariantMap& data);
     virtual void execute(const QVariantMap& data);
     virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
-	
+
 private:
     AuthThread* m_auththread;
-	QMap<QString, Session*> m_session;
+    QMap<QString, Session*> m_session;
 
 private Q_SLOTS:
     void auth_success(QString sessionid, const QString& name);
     void auth_failed(QString sessionid, const QString& name);
-    void timeoutAuth(QString sessionid);
-	void sessionBegin(QString sessionid);
-	void sessionFinished(QString sessionid);
+	void timeoutSession();
+Q_SIGNALS:
+    void sessionAuthFailed(QString sessionid);
+    void sessionBegin(QString sessionid);
+    void sessionFinished(QString sessionid, bool timeout);
 };

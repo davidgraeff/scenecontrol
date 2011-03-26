@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="sessioncontroller" version="1.0">
+	<action id="sessionlogin">
+		<string id="user" />
+		<string id="pwd" />
+	</action>
+	<action id="sessionlogout">
+		<string id="sessionid" />
+	</action>
+	<!-- to keep the session alive, otherwise after 120 sec the session will be terminated -->
+	<action id="sessionidle">
+		<string id="sessionid" />
+	</action>
+  <!-- Propagates all current logins and own logins as well as all endpoints of own logins -->
+  <property id="serverlogins" type="session">
+    <int id="all" />
+    <int id="own" />
+	<string id="endpoints" /><!-- semicolon separated -->
+  </property>
+ 
+  <!-- Session state -->
+  <property id="session" type="session">
+    <enum id="state" n="6" /><!-- ok, notaccepted(too much clients), missing(require login), failed, timeout, session_closed(leasetime, logout) -->
+  </property>
+  
+  <!-- Server infos -->
+  <property id="serverinfo" type="session">
+    <string id="appversion" />
+    <string id="protocolversion" />
+    <bool id="auth_required" />
+    <int id="auth_timeout" />
+    <int id="session_timeout" />
+  </property>
+</plugin>

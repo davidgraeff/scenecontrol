@@ -31,10 +31,12 @@ class AuthThread : public QThread
 {
     Q_OBJECT
 public:
-	AuthThread() {}
+	AuthThread() :m_keeprunning(true) {}
+	void stop(){m_keeprunning=false;}
 	void run();
 	bool query(const QString& sessionid, const QString& name, const QString& pwd);
 private:
+	bool m_keeprunning;
 	class AuthQueryData {
 	public:
 		QString sessionid;

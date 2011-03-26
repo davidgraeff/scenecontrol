@@ -80,6 +80,7 @@ void plugin::event_changed ( const QVariantMap& data ) {
 
         QMutableMapIterator<QString, InputDevice* > it ( m_devices );
         while ( it.hasNext() ) {
+			it.next();
             it.value()->unregisterKey(uid);
             if ( it.value()->isClosable() )
                 it.remove();
@@ -171,6 +172,7 @@ void InputDevice::setDevice(ManagedDevice* device) {
 void InputDevice::unregisterKey(QString uid) {
     QMutableMapIterator<QString, EventKey* > it ( m_keyToUids );
     while ( it.hasNext() ) {
+		it.next();
         it.value()->uids.remove(uid);
         if ( it.value()->uids.isEmpty() )
             it.remove();

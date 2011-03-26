@@ -3,7 +3,7 @@
   <event id="cardevent">
     <string id="cardid" property="card"></string>
   </event>
-  <property id="cardevent">
+  <property id="cardchanged">
     <string id="cardid"></string>
     <enum id="state" n="2" /><!-- inside, outside -->
   </property>

@@ -14,4 +14,8 @@
     <double id="volume" min="0.0" max="1.0" />
     <bool id="mute" />
   </property>
+  <property id="pulseversion">
+    <int id="protocol" />
+    <int id="server" />
+  </property>
 </plugin>

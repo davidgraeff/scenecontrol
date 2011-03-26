@@ -62,6 +62,7 @@ void plugin::event_changed(const QVariantMap& data) {
 		const QString uid = UNIQUEID();
 		QMutableMapIterator<QString, QSet<QString> > it(m_mode_events);
 		while (it.hasNext()) {
+			it.next();
 			it.value().remove(uid);
 			if (it.value().isEmpty())
 				it.remove();

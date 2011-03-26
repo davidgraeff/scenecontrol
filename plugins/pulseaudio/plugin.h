@@ -34,6 +34,8 @@ class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugi
 public:
     plugin();
     virtual ~plugin();
+	void pulseSinkChanged(double volume, bool mute, const QString& sinkid);
+	void pulseVersion(int protocol, int server);
 
     virtual void initialize();
     virtual void clear();
@@ -44,6 +46,4 @@ public:
     virtual void event_changed(const QVariantMap& data);
 private:
 	MediaController* m_controller;
-private Q_SLOTS:
-	void pulseSinkChanged(double volume, bool mute, const QString& sinkid);
 };

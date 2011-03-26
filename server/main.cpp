@@ -30,9 +30,13 @@
 #include "collections.h"
 #include "serverstate.h"
 #include <stdio.h>
+#include "sessioncontroller.h"
+
+bool exitByConsoleCommand = false;
 
 static void catch_int(int )
 {
+    exitByConsoleCommand = true;
     QCoreApplication::exit(0);
 }
 
@@ -44,8 +48,10 @@ int main(int argc, char *argv[])
 
     // help text
     if (cmdargs.contains("--help")) {
-        printf("%s - %s\n%s [--no-restart] [--no-event-loop] [--no-network] [--observe-service-dir] [--help] [--version]\nLockfile: %s\n"
-               "--no-restart: Do not restart after exit\n",
+        printf("%s - %s\n%s [--no-restart] [--no-event-loop] [--no-network] [--observe-service-dir] [--ignore-lock] [--help] [--version]\nLockfile: %s\n"
+               "--no-restart: Do not restart after exit\n--no-event-loop: Shutdown after initialisation\n--no-network: Do not load network objects\n"
+			   "--observe-service-dir: Reload changed files in the service directory\n--ignore-lock: Try to remove lock and acquire lock file\n"
+			   "--help: This help text\n--version: Version information, parseable for scripts",
                ROOM_SERVICENAME, ABOUT_VERSION, argv[0],
                QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath()).toUtf8().constData());
         return 0;
@@ -69,16 +75,19 @@ int main(int argc, char *argv[])
     // set uo log options and message handler and print out a first message
     setLogOptions(ROOM_LOGTOCONSOLE, ROOM_LOGFILE);
     qInstallMsgHandler(roomMessageOutput);
-    qDebug() << QCoreApplication::applicationName().toAscii().data() << ":" << QCoreApplication::applicationVersion().toAscii().data();
+    qDebug() << QString(QLatin1String("%1 (%2) - Pid: %3")).
+    arg(QCoreApplication::applicationName()).
+    arg(QCoreApplication::applicationVersion()).
+    arg(QCoreApplication::applicationPid());
 
     // create lock file to allow only one instance of the server process
     QFile lockfile(QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath()));
-    if (lockfile.exists()) {
+    if (lockfile.exists() && (!cmdargs.contains("--ignore-lock") || !lockfile.remove())) {
         qWarning() << "Lockfile"<<lockfile.fileName()<<"already exists. Only one instance at a time is allowed. If you are sure no other instance is running, remove the lockfile!";
         return -1;
     }
-    lockfile.open(QIODevice::ReadWrite);
-    lockfile.write("");
+    lockfile.open(QIODevice::ReadWrite|QIODevice::Append);
+    lockfile.write(QByteArray::number(QCoreApplication::applicationPid()));
 
     // service controller (implements AbstractServer)
     ServiceController* services = new ServiceController();
@@ -91,19 +100,24 @@ int main(int argc, char *argv[])
     // collections
     Collections* collections = new Collections();
     collections->connectToServer(services);
+    collections->setServiceController(services);
     services->useServerObject(collections);
-	collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
-	collections->connect(services, SIGNAL(dataSync(QVariantMap,bool,QString)), collections, SLOT(dataSync(QVariantMap,bool,QString)));
-	collections->connect(services, SIGNAL(eventTriggered(QString)), collections, SLOT(eventTriggered(QString)));
-	services->connect(collections, SIGNAL(instanceExecute(QString)), services, SLOT(executeService(QString)));
+    collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
+    collections->connect(services, SIGNAL(dataSync(QVariantMap,bool,QString)), collections, SLOT(dataSync(QVariantMap,bool,QString)));
+    collections->connect(services, SIGNAL(eventTriggered(QString)), collections, SLOT(eventTriggered(QString)));
+    services->connect(collections, SIGNAL(instanceExecute(QString)), services, SLOT(executeService(QString)));
 
+	SessionController* sessions = new SessionController();
+	sessions->connectToServer(services);
+	services->useServerObject(sessions);
+	
     // serverstate
     ServerState* serverstate = new ServerState();
     serverstate->connectToServer(services);
     services->useServerObject(serverstate);
 
-	services->load(cmdargs.contains("--observe-service-dir"));
-	
+    services->load(cmdargs.contains("--observe-service-dir"));
+
     // network
 #ifdef WITH_EXTERNAL
     NetworkController* network = 0;
@@ -129,9 +143,11 @@ int main(int argc, char *argv[])
 
     qDebug() << "Shutdown: Service Controller";
     services->removeServerObject(serverstate);
+	services->removeServerObject(sessions);
     services->removeServerObject(collections);
     services->removeServerObject(backups);
     delete serverstate;
+	delete sessions;
     delete collections;
     delete backups;
     delete services;
@@ -142,7 +158,7 @@ int main(int argc, char *argv[])
 
     // restart program
     if (ROOM_RESTART_ON_CLOSE) {
-        if (cmdargs.contains("--no-restart")) {
+        if (exitByConsoleCommand || cmdargs.contains("--no-restart")) {
             qDebug() << "Shutdown: Start another instance not allowed";
         } else {
             qDebug() << "Shutdown: Start another instance";

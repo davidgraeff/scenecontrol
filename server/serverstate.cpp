@@ -33,11 +33,12 @@ bool ServerState::condition(const QVariantMap& data)  {
 }
 
 void ServerState::event_changed(const QVariantMap& data)  {
-	if (IS_ID("serverstate")) {
+	if (IS_ID("serverevent")) {
 		// entfernen
 		const QString uid = UNIQUEID();
 		QMutableMapIterator<int, QSet<QString> > it(m_state_events);
 		while (it.hasNext()) {
+			it.next();
 			it.value().remove(uid);
 			if (it.value().isEmpty())
 				it.remove();

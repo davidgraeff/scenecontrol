@@ -72,7 +72,7 @@ ManagedDeviceList::ManagedDeviceList() {
         return;
     }
 
-    udev_enumerate_scan_devices (devenum);
+udev_enumerate_scan_devices (devenum);
     struct udev_list_entry *devlist = udev_enumerate_get_list_entry (devenum);
     struct udev_list_entry *deventry;
     udev_list_entry_foreach (deventry, devlist)
@@ -83,7 +83,6 @@ ManagedDeviceList::ManagedDeviceList() {
         udev_device_unref (dev);
     }
     udev_enumerate_unref (devenum);
-
     m_state = Valid;
 }
 
@@ -161,7 +160,6 @@ void ManagedDeviceList::processDevice(struct udev_device *dev)
         if (usbdev) {
             device->info = QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"product")) +
                            QLatin1Literal(" (") +  QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"manufacturer")) + QLatin1Literal(")");
-            udev_device_unref(usbdev);
         }
 
         /* add to list */
@@ -169,5 +167,4 @@ void ManagedDeviceList::processDevice(struct udev_device *dev)
 
         emit deviceAdded(device);
     }
-    udev_device_unref(dev);
 }

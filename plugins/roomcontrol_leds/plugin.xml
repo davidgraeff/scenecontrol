@@ -24,11 +24,11 @@
     <string id="name" />
   </action>
   
-  <property id="ledvalue">
+  <property id="ledvaluechanged">
     <int id="channel" />
     <int id="value" />
   </property>
-  <property id="ledname">
+  <property id="lednamechanged">
     <int id="channel" />
     <string id="name" />
   </property>

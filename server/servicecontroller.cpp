@@ -49,6 +49,8 @@ void ServiceController::load(bool service_dir_watcher) {
 }
 
 void ServiceController::directoryChanged(QString file, bool loading) {
+    qDebug() <<__LINE__<<"directoryChanged";
+
     if (!loading) {
         if (!QFile::exists(file)) {
             qDebug() << "File removed:"<<file;
@@ -60,6 +62,7 @@ void ServiceController::directoryChanged(QString file, bool loading) {
         qDebug() << "File changed:"<<file;
     }
 
+    qDebug() <<__LINE__<<"directoryChanged";
     QFile f ( file );
     f.open ( QIODevice::ReadOnly );
     if ( !f.isOpen() )
@@ -68,6 +71,7 @@ void ServiceController::directoryChanged(QString file, bool loading) {
         return;
     }
 
+    qDebug() <<__LINE__<<"directoryChanged";
     bool ok = true;
     QVariantMap result = QJson::Parser().parse ( &f, &ok ).toMap();
     f.close();
@@ -176,12 +180,12 @@ bool ServiceController::validateService( QVariantMap& data )
             return false;
         }
         // check child id
-		QDomNamedNodeMap attr = node.attributes();
+        QDomNamedNodeMap attr = node.attributes();
         const QString id = attr.namedItem(QLatin1String("id")).nodeName();
         if (!data.contains(id)) {
-			qWarning() << "Cannot verify"<<ID()<<"with unique id"<<UNIQUEID() <<": Entry"<<id;
-			return false;
-		}
+            qWarning() << "Cannot verify"<<ID()<<"with unique id"<<UNIQUEID() <<": Entry"<<id;
+            return false;
+        }
     }
     return true;
 }
@@ -290,6 +294,7 @@ void ServiceController::unregister_all_listeners(const char* pluginid) {
     const QString id = QString::fromAscii(pluginid);
     QMutableMapIterator<QString, QSet<QString> > it(m_propertyid_to_plugins);
     while (it.hasNext()) {
+		it.next();
         it.value().remove(id);
         if (it.value().isEmpty())
             it.remove();
@@ -308,6 +313,11 @@ void ServiceController::loadPlugins() {
     xmldir.cd(QLatin1String("xml"));
 
     AbstractPlugin *plugin;
+	
+	// server objects are already registered. try to load the corresponding xml files
+	foreach (PluginInfo* info, m_plugins) {
+		loadXML(xmldir.absoluteFilePath(info->plugin->pluginid() + QLatin1String(".xml")));
+	}
 
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     for (int i=0;i<pluginfiles.size();++i) {
@@ -315,22 +325,24 @@ void ServiceController::loadPlugins() {
         QPluginLoader* loader = new QPluginLoader ( filename, this );
         loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
         if (!loader->load()) {
-            qWarning() << "Start: Failed loading" << filename << loader->errorString();
+            qWarning() << "Failed loading Plugin" << pluginfiles[i] << loader->errorString();
             delete loader;
             continue;
         }
+
         plugin = dynamic_cast<AbstractPlugin*> ( loader->instance() );
         if (!plugin) {
-            qWarning() << "Start: Failed to get instance" << filename;
+            qWarning() << "Failed to get instance" << filename;
             delete loader;
             continue;
         }
 
         const QString pluginid = plugin->pluginid();
-        qDebug() << "Start: Load Plugin"<<plugin->pluginid();
         PluginInfo* plugininfo = new PluginInfo(plugin);
+        m_plugins.append ( plugininfo );
 
         loadXML(xmldir.absoluteFilePath ( pluginid + QLatin1String(".xml") ));
+        qDebug() << "Loaded Plugin"<<pluginid<<plugininfo->version;
 
         if (dynamic_cast<AbstractPlugin_services*>(plugin))
             m_plugin_services.insert(pluginid, (AbstractPlugin_services*)plugin);
@@ -340,25 +352,80 @@ void ServiceController::loadPlugins() {
             m_plugin_settings.insert(pluginid, (AbstractPlugin_settings*)plugin);
 
         plugin->connectToServer(this);
-
-        m_plugins.append ( plugininfo );
     }
 
     if (pluginfiles.empty())
         qDebug() << "No plugins found in" << plugindir;
 
-// load server xml
-    loadXML(xmldir.absoluteFilePath(QLatin1String("server.xml")));
-
-// initialize plugins
+    // initialize plugins
     foreach(PluginInfo* p, m_plugins) {
         p->plugin->initialize();
     }
 }
 
 void ServiceController::loadXML(const QString& filename) {
-    // plugin namen muss für jeden unterpunkt rausgefunden werden
-    // plugin namen muss zu enthaltenen ids per m_id_to_plugin map-bar sein
+    QDomDocument doc;
+    QFile file(filename);
+    QString errormsg;
+    int line = 0;
+    int column = 0;
+    if (!file.open(QIODevice::ReadOnly) || !doc.setContent(&file, &errormsg, &line, &column)) {
+        file.close();
+        qWarning() << "Failed loading plugin xml"<<filename<<errormsg<<line<<column;
+        return;
+    }
+    file.close();
+
+    // find plugin node
+    AbstractPlugin* plugin = 0;
+    QDomNode node;
+    QDomNodeList childs = doc.childNodes();
+    for (int i=0;i<childs.size();++i) {
+        node = childs.item(i);
+        if (!node.isElement()) continue;
+        if (node.nodeName()!=QLatin1String("plugin"))
+            continue;
+    }
+
+    // get id and version attributes
+    const QString pluginid = node.attributes().namedItem(QLatin1String("id")).nodeValue();
+    const QString version = node.attributes().namedItem(QLatin1String("version")).nodeValue();
+
+    // find the corresponding plugin
+    foreach (PluginInfo* p, m_plugins) {
+        if (p->plugin->pluginid() == pluginid) {
+            p->setVersion(version);
+            plugin = p->plugin;
+            break;
+        }
+    }
+
+    if (!plugin) {
+        qWarning()<<"No plugin for xml description found!" << filename;
+        return;
+    }
+
+    // register all defined actions, events, conditions and properties
+    QDomNodeList items_of_plugin = node.childNodes();
+    for (int j=0;j<items_of_plugin.size();++j) {
+        QDomNode item = items_of_plugin.item(j);
+        if (!item.isElement()) continue;
+        // get id (for example "periodic_time_event")
+        const QString id = item.attributes().namedItem(QLatin1String("id")).nodeValue();
+
+        if (m_id_to_xml.contains(id)) {
+            qWarning()<<"Multiple xml definition of"<<id<<"for plugin"<<plugin->pluginid()<<item.nodeName();
+            continue;
+        }
+        
+/*        QString t;
+        QTextStream s(&t);
+		item.save(s,3);
+		qDebug()<<t;*/
+
+        m_id_to_xml.insert(id, new QDomNode(item.cloneNode()));
+		m_id_to_plugin.insert(id, plugin);
+    }
 }
 
 const QMap< QString, ServiceController::ServiceStruct* >& ServiceController::valid_services() const {
@@ -367,6 +434,9 @@ const QMap< QString, ServiceController::ServiceStruct* >& ServiceController::val
 
 void ServiceController::useServerObject(AbstractPlugin* object) {
     const QString pluginid = object->pluginid();
+
+    PluginInfo* plugininfo = new PluginInfo(object);
+    m_plugins.append ( plugininfo );
 
     if (dynamic_cast<AbstractPlugin_services*>(object))
         m_plugin_services.insert(pluginid, (AbstractPlugin_services*)object);
@@ -383,6 +453,7 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
     {
         QMutableMapIterator<QString, ServiceStruct* > it(m_valid_services);
         while (it.hasNext()) {
+			it.next();
             AbstractPlugin* p = dynamic_cast<AbstractPlugin*>(it.value()->plugin);
             if (p && p->pluginid() == pluginid) {
                 it.remove();
@@ -394,7 +465,19 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
     {
         QMutableMapIterator<QString, AbstractPlugin* > it(m_id_to_plugin);
         while (it.hasNext()) {
+			it.next();
             if (it.value()->pluginid() == pluginid) {
+                it.remove();
+            }
+        }
+    }
+
+    // aus plugin liste entfernen
+    {
+        QMutableListIterator<PluginInfo*> it(m_plugins);
+        while (it.hasNext()) {
+			it.next();
+            if (it.value()->plugin->pluginid() == pluginid) {
                 it.remove();
             }
         }
@@ -407,24 +490,24 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
 }
 
 void ServiceController::removeService(const QString& uid) {
-	ServiceStruct* service = m_valid_services.value(uid);
-	if (!service) return;
-	removeFromDisk(service->data);
+    ServiceStruct* service = m_valid_services.value(uid);
+    if (!service) return;
+    removeFromDisk(service->data);
 }
 
 void ServiceController::executeService(const QVariantMap& data) {
-	if (!IS_TOBEEXECUTED() || !validateService((QVariantMap&)data)) return;
-	AbstractPlugin* plugin = m_id_to_plugin.value(ID());
-	AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*>(plugin);
-	if (!executeplugin) {
-		qWarning()<<"Cannot execute service. No plugin found:"<<data;
-		return;
-	}
-	executeplugin->execute(data);
+    if (!IS_TOBEEXECUTED() || !validateService((QVariantMap&)data)) return;
+    AbstractPlugin* plugin = m_id_to_plugin.value(ID());
+    AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*>(plugin);
+    if (!executeplugin) {
+        qWarning()<<"Cannot execute service. No plugin found:"<<data;
+        return;
+    }
+    executeplugin->execute(data);
 }
 
 void ServiceController::executeService(const QString& uid) {
-	ServiceStruct* service = m_valid_services.value(uid);
-	if (!service || !service->plugin) return;
-	service->plugin->execute(service->data);
+    ServiceStruct* service = m_valid_services.value(uid);
+    if (!service || !service->plugin) return;
+    service->plugin->execute(service->data);
 }

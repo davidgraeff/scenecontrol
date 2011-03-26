@@ -32,8 +32,9 @@ QString wwwFile(const QString& file) {
 
 QDir serviceDir() {
     QDir dir = QDir::home();
+	dir.mkdir(QLatin1String("roomcontrol"));
     dir.cd(QLatin1String("roomcontrol"));
+	dir.mkdir(QLatin1String("services"));
     dir.cd(QLatin1String("services"));
-    dir.mkpath(dir.absolutePath());
     return dir;
 }

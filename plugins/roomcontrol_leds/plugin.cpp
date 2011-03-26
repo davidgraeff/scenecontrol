@@ -27,10 +27,10 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
     m_controller = new Controller ( this );
-    _config ( this );
 	connect(m_controller,SIGNAL(curtainChanged(int,int)),SLOT(curtainChanged(int,int)));
 	connect(m_controller,SIGNAL(lednameChanged(int,QString)),SLOT(lednameChanged(int,QString)));
 	connect(m_controller,SIGNAL(ledvalueChanged(int,int)),SLOT(ledvalueChanged(int,int)));
+    _config ( this );
 }
 
 plugin::~plugin() {
@@ -93,14 +93,14 @@ void plugin::curtainChanged(int current, int max) {
 }
 
 void plugin::ledvalueChanged(int channel, int value) {
-	PROPERTY("ledvalue");
+	PROPERTY("ledvaluechanged");
 	data[QLatin1String("channel")] = channel;
 	data[QLatin1String("value")] = value;
 	m_server->property_changed(data);
 }
 
 void plugin::lednameChanged(int channel, const QString& name) {
-	PROPERTY("ledname");
+	PROPERTY("lednamechanged");
 	data[QLatin1String("channel")] = channel;
 	data[QLatin1String("name")] = name;
 	m_server->property_changed(data);

@@ -21,15 +21,15 @@
 	  <int id="display" min="-1" max="10" step="1">0</int>
 	  <enum id="state" n="3"></enum><!-- on, off, toggle -->
   </action>
-  <property id="remotevolume">
+  <property id="remotevolumechanged">
     <double id="volume" min="0.0" max="1.0" />
   </property>
-  <property id="remotenotification">
+  <property id="remotenotificationchanged">
     <string id="title"></string>
     <serverfile id="audio"></serverfile>
     <enum id="state" n="2" /><!-- shown, hidden -->
   </property>
-  <property id="remotevideo">
+  <property id="remotevideochanged">
     <string id="title"></string>
     <serverfile id="video"></serverfile>
     <enum id="state" n="3" /><!-- play, pause, stopped, error -->
