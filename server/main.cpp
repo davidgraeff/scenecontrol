@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     collections->connect(services, SIGNAL(eventTriggered(QString)), collections, SLOT(eventTriggered(QString)));
     services->connect(collections, SIGNAL(instanceExecute(QString)), services, SLOT(executeService(QString)));
 
-	SessionController* sessions = new SessionController();
+	SessionController* sessions = SessionController::instance(true);
 	sessions->connectToServer(services);
 	services->useServerObject(sessions);
 	

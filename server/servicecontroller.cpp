@@ -81,20 +81,24 @@ void ServiceController::directoryChanged(QString file, bool loading) {
         return;
     }
 
-    changeService ( result );
+    changeService ( result, QString() );
 }
 
-void ServiceController::changeService ( QVariantMap& data )
+void ServiceController::changeService ( QVariantMap& data, const QString& sessionid )
 {
+	Q_UNUSED(sessionid);
     if (!validateService(data)) return;
 
-    if (IS_TOBEEXECUTED()) {
-        executeService(data);
+    if (IS_EXECUTE()) {
+		if (UNIQUEID().size())
+			executeActionByUID(UNIQUEID());
+		else
+			executeAction(data);
         return;
     }
 
-    if (IS_TOBEREMOVED()) {
-        removeFromDisk(data);
+    if (IS_REMOVE()) {
+        removeService(UNIQUEID());
         return;
     }
 
@@ -119,8 +123,10 @@ void ServiceController::changeService ( QVariantMap& data )
 bool ServiceController::validateService( QVariantMap& data )
 {
     // check remove
-    if (IS_TOBEREMOVED()) {
-        return (ID().size() && UNIQUEID().size());
+    if (IS_REMOVE()) {
+        return (UNIQUEID().size());
+    } else  if (IS_EXECUTE() && UNIQUEID().size()) {
+        return true;
     }
 
     QDomNode* node = 0;
@@ -137,8 +143,8 @@ bool ServiceController::validateService( QVariantMap& data )
         return false;
     }
 
-    // check uid and add one if not there
-    if (!IS_TOBEEXECUTED() && UNIQUEID().isEmpty()) {
+    // check uid and add one if neccessary
+    if (!IS_EXECUTE() && UNIQUEID().isEmpty()) {
         // Generate unique ids amoung all existing ids
         QString nid;
         do {
@@ -150,6 +156,7 @@ bool ServiceController::validateService( QVariantMap& data )
     // check type
     const QString type = node->nodeName();
     if (IS_ACTION() && type != QLatin1String("action")) return false;
+	if (IS_EXECUTE() && type != QLatin1String("action")) return false; //execute commands are actions
     if (IS_EVENT() && type != QLatin1String("event")) return false;
     if (IS_CONDITION() && type != QLatin1String("condition")) return false;
     if (IS_COLLECTION() && type != QLatin1String("collection")) return false;
@@ -229,12 +236,12 @@ void ServiceController::removeFromDisk ( const QVariantMap& data )
 
 void ServiceController::saveToDisk ( const QVariantMap& data )
 {
-    if ( IS_TOBEEXECUTED() )
+    if ( IS_EXECUTE() )
     {
         qWarning() << "Requested to save an immediately-to-execute action!";
         return;
     }
-    if ( IS_TOBEREMOVED() )
+    if ( IS_REMOVE() )
     {
         qWarning() << "Requested to save an about-to-be-removed action!";
         return;
@@ -273,7 +280,7 @@ void ServiceController::event_triggered(const QString& event_id, const char* plu
 
 void ServiceController::execute_action(const QVariantMap& data, const char* pluginid) {
     Q_UNUSED(pluginid);
-    executeService(data);
+    executeAction(data);
 }
 
 void ServiceController::property_changed(const QVariantMap& data, const QString& sessionid, const char* pluginid) {
@@ -495,8 +502,9 @@ void ServiceController::removeService(const QString& uid) {
     removeFromDisk(service->data);
 }
 
-void ServiceController::executeService(const QVariantMap& data) {
-    if (!IS_TOBEEXECUTED() || !validateService((QVariantMap&)data)) return;
+void ServiceController::executeAction(const QVariantMap& data) {
+	if (!IS_ACTION() || !IS_EXECUTE()) return;
+    if (!validateService((QVariantMap&)data)) return;
     AbstractPlugin* plugin = m_id_to_plugin.value(ID());
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*>(plugin);
     if (!executeplugin) {
@@ -506,7 +514,7 @@ void ServiceController::executeService(const QVariantMap& data) {
     executeplugin->execute(data);
 }
 
-void ServiceController::executeService(const QString& uid) {
+void ServiceController::executeActionByUID(const QString& uid) {
     ServiceStruct* service = m_valid_services.value(uid);
     if (!service || !service->plugin) return;
     service->plugin->execute(service->data);

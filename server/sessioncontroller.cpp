@@ -1,6 +1,14 @@
 #include "sessioncontroller.h"
 #include "authThread.h"
 
+SessionController* SessionController::m_sessioncontroller = 0;
+
+SessionController* SessionController::instance(bool create) {
+    if (!m_sessioncontroller && create) m_sessioncontroller = new SessionController();
+	Q_ASSERT(m_sessioncontroller);
+    return m_sessioncontroller;
+}
+
 Session::Session(SessionController* sc, const QString& sessionid, const QString& user) : m_sessioncontroller(sc), m_sessionid(sessionid), m_user(user) {
     m_sessionStarted=QDateTime::currentDateTime();
     m_lastAction=QDateTime::currentDateTime();
@@ -59,7 +67,7 @@ bool SessionController::condition(const QVariantMap& data) {
 }
 
 void SessionController::execute(const QVariantMap& data) {
-    if (IS_ID("sessionlogin")) {
+    if (IS_ID("sessionlogin")) { //nonsense!
         addSession(DATA("user"),DATA("pwd"));
     } else if (IS_ID("sessionlogout")) {
         closeSession(DATA("sessionid"));

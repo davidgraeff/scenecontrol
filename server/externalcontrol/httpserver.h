@@ -21,32 +21,10 @@
 #pragma once
 
 #include <QtNetwork/QTcpServer>
-#include <QtNetwork/QTcpSocket>
-#include <QtNetwork/QSslSocket>
-#include <QByteArray>
-#include <QUuid>
-#include <QStringList>
-
-#include <QDir>
-#include <QTimer>
+#include <QVariantMap>
 
 class ServiceController;
-class ClientConnection : public QObject
-{
-    Q_OBJECT
-public:
-	// identifiers
-	QString sessionid;
-    QSslSocket* socket;
-	// buffer handling
-    QByteArray buffer;
-    int bufferpos;
-    int bufferBrakes;
-	
-    ClientConnection(QSslSocket* s) ;
-    ~ClientConnection() ;
-};
-
+class ClientConnection;
 /**
  * Manages incoming connections and delegate commands to the RoomControlServer
  */
@@ -61,19 +39,12 @@ public:
 private:
     ServiceController* m_service;
     virtual void incomingConnection(int socketDescriptor);
-    QMap<QSslSocket*, ClientConnection*> m_connections;
-    QByteArray getNextJson(ClientConnection*);
-    void syncClient(QSslSocket* socket);
-
-private Q_SLOTS:
-    void readyRead ();
-    void disconnected();
-    void peerVerifyError(QSslError);
-    void sslErrors(QList<QSslError>);
+    QSet<ClientConnection*> m_connections;
 public Q_SLOTS:
-	// service controller signals
-	void dataSync(const QVariantMap& data, bool removed, const QString& sessiondid);
-	// session controller signals
+    void removeConnection(ClientConnection* );
+    // service controller signals
+    void dataSync(const QVariantMap& data, bool removed, const QString& sessiondid);
+    // session controller signals
     void sessionAuthFailed(QString sessionid);
     void sessionBegin(QString sessionid);
     void sessionFinished(QString sessionid, bool timeout);

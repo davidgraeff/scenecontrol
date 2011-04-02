@@ -62,6 +62,8 @@ public:
     const QMap<QString, ServiceStruct*> &valid_services() const;
 
     void load(bool service_dir_watcher);
+	
+	QByteArray getAllAsJSon(){}
 private:
 	QFileSystemWatcher m_dirwatcher;
     // services
@@ -116,8 +118,9 @@ public Q_SLOTS:
      * If the execution flag is set ("__execute"=true) and data describes an action ("__type"=action)
      * then do not add data to m_valid_services but call \link executeService.
      * \param service data
+	 * \param sessionid sessionid that caused this change or empty if not triggered by external sources like network
      */
-    void changeService(QVariantMap& data);
+    void changeService(QVariantMap& data, const QString& sessionid);
 
     /**
      * Remove service from m_valid_services and from disk and propagate that through the dataSync signal
@@ -126,13 +129,13 @@ public Q_SLOTS:
     void removeService(const QString& uid);
 
     /**
-     * Execute service described by data immediately.
+     * Execute action described by data (delegate to plugin)
      */
-    void executeService(const QVariantMap& data);
+    void executeAction(const QVariantMap& data);
     /**
-     * Execute service in m_services with given uid immediately.
+     * Execute action in m_services with given uid immediately.
      */
-    void executeService(const QString& uid);
+    void executeActionByUID(const QString& uid);
     void directoryChanged(QString file, bool loading = false);
 Q_SIGNALS:
     /**

@@ -43,15 +43,15 @@ class Session : public QObject
     Q_OBJECT
 private:
     SessionController* m_sessioncontroller;
-	QTimer m_sessionTimer;
+    QTimer m_sessionTimer;
     QDateTime m_sessionStarted;
     QDateTime m_lastAction;
     QString m_sessionid;
     QString m_user;
 public:
-	Session(SessionController* sc, const QString& sessionid, const QString& user);
+    Session(SessionController* sc, const QString& sessionid, const QString& user);
     ~Session();
-	void resetSessionTimer();
+    void resetSessionTimer();
     QString user();
     QDateTime sessionStarted();
     QDateTime lastAction();
@@ -69,17 +69,17 @@ class SessionController : public QObject, public AbstractPlugin, public Abstract
     Q_OBJECT
     PLUGIN_MACRO
 public:
-    SessionController();
+    static SessionController* instance(bool create = false);
     virtual ~SessionController();
-    virtual void clear(){}
-    virtual void initialize(){}
-	
+    virtual void clear() {}
+    virtual void initialize() {}
+
     Session* getSession(const QString& sessionid);
-	/**
-	 * \return Return temporary session id
-	 */
-	QString addSession(const QString& user, const QString& pwd);
-	void closeSession(const QString& sessionid);
+    /**
+     * \return Return temporary session id
+     */
+    QString addSession(const QString& user, const QString& pwd);
+    void closeSession(const QString& sessionid);
 
     // plugin interface
     virtual bool condition(const QVariantMap& data);
@@ -88,13 +88,15 @@ public:
     virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
 
 private:
+    static SessionController* m_sessioncontroller;
+    SessionController();
     AuthThread* m_auththread;
     QMap<QString, Session*> m_session;
 
 private Q_SLOTS:
     void auth_success(QString sessionid, const QString& name);
     void auth_failed(QString sessionid, const QString& name);
-	void timeoutSession();
+    void timeoutSession();
 Q_SIGNALS:
     void sessionAuthFailed(QString sessionid);
     void sessionBegin(QString sessionid);

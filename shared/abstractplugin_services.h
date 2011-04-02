@@ -28,15 +28,13 @@
 // contains
 #define CONTAINS(ID) data.contains(QLatin1String(ID))
 
-// special attributes
-#define IS_TOBEREMOVED() CONTAINS("__remove")
-#define IS_TOBEEXECUTED() CONTAINS("__execute")
-
 // service type
 #define IS_ACTION() (data[QLatin1String("__type")].toString() == QLatin1String("action"))
 #define IS_CONDITION() (data[QLatin1String("__type")].toString() == QLatin1String("condition"))
 #define IS_EVENT() (data[QLatin1String("__type")].toString() == QLatin1String("event"))
 #define IS_COLLECTION() (data[QLatin1String("__type")].toString() == QLatin1String("collection"))
+#define IS_EXECUTE() (data[QLatin1String("__type")].toString() == QLatin1String("execute"))
+#define IS_REMOVE() (data[QLatin1String("__type")].toString() == QLatin1String("remove"))
 #define IS_PROPERTY() (data[QLatin1String("__type")].toString() == QLatin1String("property"))
 
 // getter
