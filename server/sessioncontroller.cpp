@@ -15,7 +15,8 @@ Session::Session(SessionController* sc, const QString& sessionid, const QString&
     m_lastAction=QDateTime::currentDateTime();
     connect(&m_sessionTimer, SIGNAL(timeout()),SIGNAL(timeoutSession()));
     m_sessionTimer.setSingleShot(true);
-    m_sessionTimer.setInterval(1000*120);
+    m_sessionTimer.setInterval(1000*60*5);
+	m_sessionTimer.start();
 }
 
 Session::~Session() {}

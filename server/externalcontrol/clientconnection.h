@@ -30,15 +30,17 @@ class ClientConnection : public QObject
     Q_OBJECT
 private:
     bool m_authok;
-    bool m_isServerEventConnection;
+    bool m_isWebsocket;
     bool m_inHeader;
-	bool m_oldhandshake;
     QMap<QByteArray,QByteArray> m_header;
     QByteArray m_requestedfile;
     //network
     QSslSocket* m_socket;
-	QTimer m_timeout;
+    QTimer m_timeout;
     void generateResponse(int httpcode, const QByteArray& data = QByteArray(), const QByteArray& contenttype = "text/html");
+    void generateWebsocketResponseV04();
+	void generateWebsocketResponseV00();
+	bool readHttp(const QByteArray& line);
 public:
     QString sessionid;
 
@@ -50,10 +52,10 @@ public:
     bool isAuthentificatedServerEventConnection();
     void writeJSON(const QByteArray& data);
 private Q_SLOTS:
-	/**
-	 * Close this connection after 5min of inactivity 
-	 */
-	void timeout();
+    /**
+     * Close this connection after 5min of inactivity
+     */
+    void timeout();
 
     void readyRead ();
     void disconnected();

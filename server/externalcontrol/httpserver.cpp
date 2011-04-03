@@ -127,7 +127,7 @@ void HttpServer::sessionBegin(QString sessionid) {
     foreach ( ClientConnection* c, m_connections ) {
         if (c->sessionid == sessionid) {
             c->sessionEstablished();
-			c->writeJSON ( m_service->getAllProperties(sessionid) );
+			c->writeJSON ( m_service->getAllPropertiesAndServices(sessionid) );
         }
     }
 }

@@ -461,12 +461,13 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
 }
 
 void ServiceController::removeService(const QString& uid) {
-	ServiceStruct* service = m_valid_services.take(uid);
-	if (!service) return;
-	QVariantMap data = service->data;
-    delete service; service = 0;
+    ServiceStruct* service = m_valid_services.take(uid);
+    if (!service) return;
+    QVariantMap data = service->data;
+    delete service;
+    service = 0;
 
-	const QString filename = serviceFilename ( ID(), uid );
+    const QString filename = serviceFilename ( ID(), uid );
     if ( !QFile::remove ( filename ) || QFileInfo(filename).exists() ) {
         qWarning() << "Couldn't remove file" << filename;
         return;
@@ -492,10 +493,10 @@ void ServiceController::removeService(const QString& uid) {
             removeService(uid);
         }
     }
-    
+
     data.clear();
-	SETUNIQUEID(uid);
-	SETTYPE_REMOVE();
+    SETUNIQUEID(uid);
+    SETTYPE_REMOVE();
     emit dataSync(data);
 }
 
@@ -521,17 +522,23 @@ ServiceController::ServiceStruct* ServiceController::service(const QString& uid)
     return m_valid_services.value(uid);
 }
 
-QByteArray ServiceController::getAllProperties(const QString& sessiondid) {
+QByteArray ServiceController::getAllPropertiesAndServices(const QString& sessiondid) {
     QByteArray data;
-	QJson::Serializer s;
+    QJson::Serializer s;
+	// properties
     foreach (PluginInfo* p, m_plugins) {
-		AbstractPlugin_services* plugin = dynamic_cast<AbstractPlugin_services*>(p->plugin);
-		if (!plugin) continue;
+        AbstractPlugin_services* plugin = dynamic_cast<AbstractPlugin_services*>(p->plugin);
+        if (!plugin) continue;
         QList<QVariantMap> properties = plugin->properties(sessiondid);
         foreach(QVariantMap prop, properties) {
             data.append(s.serialize(prop));
             data.append("\n");
         }
+    }
+    // services
+    foreach(ServiceStruct* service, m_valid_services) {
+        data.append(s.serialize(service->data));
+        data.append("\n");
     }
     return data;
 }

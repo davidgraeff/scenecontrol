@@ -51,10 +51,15 @@ ClientConnection::ClientConnection(QSslSocket* s) : m_socket(s) {
     m_timeout.setInterval(5*60*1000);
     m_timeout.start();
 
-    m_oldhandshake = false;
+    m_isWebsocket = false;
     m_inHeader = false;
 }
 ClientConnection::~ClientConnection() {
+	if (m_isWebsocket) {
+		const char data[] = {0x00, 0xFF, 0x00, 0xFF};
+		m_socket->write(data);
+		m_socket->flush();
+	}
     m_socket->blockSignals(true);
     m_socket->close();
     delete m_socket;
@@ -71,112 +76,33 @@ void ClientConnection::readyRead()
         qWarning() << "receive incomplete";
         return;
     }
-    while (m_socket->canReadLine()) {
-        QByteArray line = m_socket->readLine().trimmed();
-        // in header
-        if (m_oldhandshake) {
-			m_oldhandshake = false;
-            if (line.size()!=8) {
-                qWarning()<<"Websocket: Protocol < 4 Key Handshake failed. Body != 8 Byte";
-                emit removeConnection(this);
-                return;
-            }
-            QByteArray s1 = m_header.value("Sec-WebSocket-Key1");
-            QByteArray s2 = m_header.value("Sec-WebSocket-Key2");
-            uint32_t number1 = 0, number2 = 0;
-            int count1 = 0, count2 = 0;
-            for (int i=0;i<s1.count();++i) {
-                if (s1[i] == ' ') count1++;
-                if (QChar::fromAscii(s1[i]).isDigit()) number1 += i*10+(s1[i]-'0');
-            }
-            for (int i=0;i<s2.count();++i) {
-                if (s2[i] == ' ') count2++;
-                if (QChar::fromAscii(s2[i]).isDigit()) number2 += i*10+(s2[i]-'0');
-            }
-            if (count1==0 || count2==0) {
-                qWarning()<<"Websocket: Protocol < 4 Key Handshake failed. Wrong spaces.";
-                emit removeConnection(this);
-                return;
-            }
-            number1 /= count1;
-            number2 /= count2;
-            QCryptographicHash hash(QCryptographicHash::Md5);
-            hash.addData((char*)&number1,sizeof(uint32_t));
-            hash.addData((char*)&number2,sizeof(uint32_t));
-            hash.addData(line);
-            qDebug() << "hash: "+hash.result().toHex();
-            m_socket->write("\n\n"+hash.result());
-            m_socket->flush();
-        } else if (line.startsWith("GET") && line.endsWith("HTTP/1.1")) {
-            m_requestedfile = line.mid(5,line.length()-9-5).trimmed();
-            if (m_requestedfile=="") m_requestedfile = "index.html";
-            // header leeren
-            m_header.clear();
-            m_inHeader = true;
-        } else if (line.size() && m_inHeader) { // header
-            const QList<QByteArray> key_value = line.split(':');
-            if (key_value.size()!=2) continue;
-            m_header.insert(key_value[0].trimmed(),key_value[1].trimmed());
-        } else if (line.isEmpty() && m_inHeader) {
-            // websocket
 
-            if (m_header.value("Upgrade").toLower() == "websocket" && m_header.value("Connection") == "Upgrade") {
-                qDebug()<<"start websocket...";
-                if (m_header.value("Sec-WebSocket-Protocol") != "roomcontrol") {
-                    qWarning()<<"Websocket: Wrong subprotocol";
-                    emit removeConnection(this);
-                    return;
-                }
-                // auth header
-                if (m_header.contains("sessionid")) {
-                    Session* session = SessionController::instance()->getSession(QString::fromAscii(m_header["sessionid"]));
-                    if (session) {
-                        session->resetSessionTimer();
-                        m_authok = true;
-                    }
-                }
-                m_socket->write("HTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Protocol: roomcontrol\n");
-                if (m_header.contains("Sec-WebSocket-Key")) { //Version 4+
-                    QCryptographicHash hash(QCryptographicHash::Sha1);
-                    hash.addData(m_header.value("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-                    qDebug() << "hash: "+hash.result().toBase64();
-                    m_socket->write("Sec-WebSocket-Accept: "+hash.result().toBase64()+"\n\n");
-                } else if (m_header.contains("Sec-WebSocket-Key1") && m_header.contains("Sec-WebSocket-Key2")) { //Version 0-3
-                    m_oldhandshake = true;
-                }
-                m_socket->flush();
-                m_isServerEventConnection = true;
-                qDebug() << "start server socket";
-            } else {
-                QFile www(wwwFile(QUrl::fromPercentEncoding(m_requestedfile)));
-                QFileInfo wwwinfo(www);
-                if (www.exists()) {
-                    QByteArray type = "text/html";
-                    if (wwwinfo.suffix()==QLatin1String("gif")||wwwinfo.suffix()==QLatin1String("png")) {
-                        type = "image/"+wwwinfo.suffix().toAscii();
-                    } else if (wwwinfo.suffix()==QLatin1String("ico")) {
-                        type = "image/vnd.microsoft.icon";
-                    } else if (wwwinfo.suffix()==QLatin1String("jpg")||wwwinfo.suffix()==QLatin1String("jpeg")) {
-                        type = "image/jpeg";
-                    } else if (wwwinfo.suffix()==QLatin1String("css")) {
-                        type = "text/css";
-                    } else if (wwwinfo.suffix()==QLatin1String("js")) {
-                        type = "application/x-javascript";
-                    }
-                    www.open(QIODevice::ReadOnly);
-                    generateResponse(200, www.readAll(), type);
-                    www.close();
-                } else {
-                    generateResponse(404);
-                }
+    if (m_isWebsocket) {
+        int frameIndex;
+        while (1) {
+            // read until framestart is the first byte (read that one too)
+            frameIndex = m_socket->peek(1000).indexOf(char(0x00));
+            if (frameIndex==-1) return; // No frame start, wait for new data
+            if (frameIndex>0) m_socket->read(frameIndex); // read everything until framestart
+
+			// find frameend
+            frameIndex = m_socket->peek(1000).indexOf(char(0xFF));
+            if (frameIndex==-1) return; // No frame end, wait for new data
+            QByteArray frame = m_socket->read(frameIndex+1); // read everything until framestart
+
+			// remove websocket frame bytes
+            frame.chop(1);
+            frame = frame.mid(1).trimmed();
+			
+            if (!frame.startsWith("{") || !frame.endsWith("}") ) {
+                qWarning()<<"Websocket: Frame received but does not match subprotocol roomcontrol";
+                emit removeConnection(this);
+                return;
             }
-            m_inHeader = false;
-        } else if (line.startsWith("{") && line.endsWith("}")) { // json
-qDebug() << "json receive" << line;
             bool ok = true;
-            const QVariantMap data = QJson::Parser().parse (line, &ok).toMap();
+            const QVariantMap data = QJson::Parser().parse (frame, &ok).toMap();
             if (!ok) continue;
-qDebug() << "json receive" << data;
+            qDebug() << "received json" << data;
             if (IS_ID("sessionlogin")) { // login have to happen here
                 sessionid = SessionController::instance()->addSession(DATA("user"),DATA("pwd"));
             } else if (IS_ID("sessionidle")) {
@@ -185,10 +111,14 @@ qDebug() << "json receive" << data;
                 session->resetSessionTimer();
             }
             else emit dataReceived(data, sessionid);
-        } else {
-            qDebug() << "unknown data" << line;
         }
-    }
+
+    } else
+        while (m_socket->canReadLine()) {
+            if (!readHttp(m_socket->readLine().trimmed())) {
+                return;
+            }
+        }
 }
 
 void ClientConnection::sslErrors(QList< QSslError > errors) {
@@ -243,34 +173,158 @@ void ClientConnection::sessionFailed() {
 }
 
 bool ClientConnection::isAuthentificatedServerEventConnection() {
-    return m_authok && m_isServerEventConnection;
+    return m_authok && m_isWebsocket;
 }
 
 void ClientConnection::writeJSON(const QByteArray& data) {
-    if (!m_isServerEventConnection) return;
-    m_socket->write(data+"\n");
+    if (!m_isWebsocket) return;
+    m_socket->write(char(0x00)+data+char(0xFF)+"\n");
+}
+
+void ClientConnection::timeout() {
+    emit removeConnection(this);
 }
 
 void ClientConnection::generateResponse(int httpcode, const QByteArray& data, const QByteArray& contenttype) {
     switch (httpcode) {
     case 404:
-        m_socket->write("HTTP/1.1 404 Not Found\n");
+        m_socket->write("HTTP/1.1 404 Not Found\r\n");
         break;
     case 200:
-        m_socket->write("HTTP/1.1 200 OK\n");
+        m_socket->write("HTTP/1.1 200 OK\r\n");
         break;
     default:
-        m_socket->write("HTTP/1.1 404 Not Found\n");
+        m_socket->write("HTTP/1.1 404 Not Found\r\n");
         break;
     }
-    m_socket->write("Server: roomcontrolserver\nDate: " + QDateTime::currentDateTime().toString(QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT\n" +
-                    "Content-Language: de\ncharset=utf-8\n");
-    m_socket->write("Content-Type: " + contenttype + "\n");
-    m_socket->write("Content-Length:"+QByteArray::number(data.size())+"\n\n");
+    m_socket->write("Server: roomcontrolserver\r\nDate: " + QDateTime::currentDateTime().toString(QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT\r\n" +
+                    "Content-Language: de\ncharset=utf-8\r\n");
+    m_socket->write("Content-Type: " + contenttype + "\r\n");
+    m_socket->write("Content-Length:"+QByteArray::number(data.size())+"\r\n\r\n");
     if (data.size()) m_socket->write(data);
     m_socket->flush();
 }
 
-void ClientConnection::timeout() {
-    emit removeConnection(this);
+void ClientConnection::generateWebsocketResponseV04() {
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(m_header.value("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+
+    m_socket->write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: roomcontrol\r\n");
+    m_socket->write("Sec-WebSocket-Accept: "+hash.result().toBase64()+"\r\n\r\n");
+    m_socket->flush();
+}
+
+void ClientConnection::generateWebsocketResponseV00() {
+    const QByteArray origin = m_header.value("Origin");
+    if (origin.isEmpty() ) {
+        qWarning()<<"Websocket: Host or Origin not set!"<<m_header;
+        emit removeConnection(this);
+        return;
+    }
+    QByteArray s1 = m_header.value("Sec-WebSocket-Key1");
+    QByteArray s2 = m_header.value("Sec-WebSocket-Key2");
+    QByteArray sn1, sn2;
+    int count1 = 0, count2 = 0;
+    for (int i=0;i<s1.count();++i) {
+        if (s1[i] == ' ') count1++;
+        if (QChar::fromAscii(s1[i]).isDigit()) sn1 += s1[i];
+    }
+    for (int i=0;i<s2.count();++i) {
+        if (s2[i] == ' ') count2++;
+        if (QChar::fromAscii(s2[i]).isDigit()) sn2 += s2[i];
+    }
+    if (count1==0 || count2==0) {
+        qWarning()<<"Websocket: Protocol < 4 Key Handshake failed. Wrong spaces.";
+        emit removeConnection(this);
+        return;
+    }
+    unsigned char sum[16];
+    memcpy(&sum[8], m_socket->read(8).constData(), 8);
+    int32_t number1 = sn1.toUInt() / count1;
+    int32_t number2 = sn2.toUInt() / count2;
+    sum[0] = number1 >> 24;
+    sum[1] = number1 >> 16;
+    sum[2] = number1 >> 8;
+    sum[3] = number1;
+    sum[4] = number2 >> 24;
+    sum[5] = number2 >> 16;
+    sum[6] = number2 >> 8;
+    sum[7] = number2;
+
+    QCryptographicHash hash(QCryptographicHash::Md5);
+    hash.addData((char*)sum,sizeof(sum));
+
+    m_socket->write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: roomcontrol\r\n");
+    m_socket->write("sec-WebSocket-Origin: "+origin+"\r\n");
+    m_socket->write("Sec-WebSocket-Location: wss://"+m_socket->localAddress().toString().toAscii()+":"+QByteArray::number(m_socket->localPort())+"/"+m_requestedfile+"\r\n");
+    m_socket->write("\r\n"+hash.result());
+    m_socket->flush();
+}
+
+bool ClientConnection::readHttp(const QByteArray& line) {        // in header
+    if (line.startsWith("GET") && line.endsWith("HTTP/1.1")) {
+        m_requestedfile = line.mid(5,line.length()-9-5).trimmed();
+        if (m_requestedfile=="") m_requestedfile = "index.html";
+        // header leeren
+        m_header.clear();
+        m_inHeader = true;
+    } else if (line.size() && m_inHeader) { // header
+        int i = line.indexOf(':');
+        if (i==-1) return false;
+        m_header.insert(line.mid(0,i).trimmed(),line.mid(i+1).trimmed());
+    } else if (line.isEmpty() && m_inHeader) {
+        // websocket
+
+        if (m_header.value("Upgrade").toLower() == "websocket" && m_header.value("Connection") == "Upgrade") {
+            if (m_header.value("Sec-WebSocket-Protocol") != "roomcontrol") {
+                qWarning()<<"Websocket: Wrong subprotocol";
+                emit removeConnection(this);
+                return false;
+            }
+            // auth header
+            if (m_header.contains("sessionid")) {
+                Session* session = SessionController::instance()->getSession(QString::fromAscii(m_header["sessionid"]));
+                if (session) {
+                    session->resetSessionTimer();
+                    m_authok = true;
+                }
+            }
+            if (m_header.contains("Sec-WebSocket-Key")) { //Version 4+
+                generateWebsocketResponseV04();
+            } else if (m_header.contains("Sec-WebSocket-Key1") && m_header.contains("Sec-WebSocket-Key2") && m_socket->bytesAvailable()>=8) { //Version 0-3
+                generateWebsocketResponseV00();
+            } else {
+                qWarning()<<"Websocket: Draft Version not recognized. Server supports draft-ietf-hybi-thewebsocketprotocol 00-06";
+                emit removeConnection(this);
+                return false;
+            }
+            m_isWebsocket = true;
+        } else {
+            QFile www(wwwFile(QUrl::fromPercentEncoding(m_requestedfile)));
+            QFileInfo wwwinfo(www);
+            if (www.exists()) {
+                QByteArray type = "text/html";
+                if (wwwinfo.suffix()==QLatin1String("gif")||wwwinfo.suffix()==QLatin1String("png")) {
+                    type = "image/"+wwwinfo.suffix().toAscii();
+                } else if (wwwinfo.suffix()==QLatin1String("ico")) {
+                    type = "image/vnd.microsoft.icon";
+                } else if (wwwinfo.suffix()==QLatin1String("jpg")||wwwinfo.suffix()==QLatin1String("jpeg")) {
+                    type = "image/jpeg";
+                } else if (wwwinfo.suffix()==QLatin1String("css")) {
+                    type = "text/css";
+                } else if (wwwinfo.suffix()==QLatin1String("js")) {
+                    type = "application/x-javascript";
+                }
+                www.open(QIODevice::ReadOnly);
+                generateResponse(200, www.readAll(), type);
+                www.close();
+            } else {
+                generateResponse(404);
+            }
+        }
+        m_inHeader = false;
+    } else {
+        qDebug() << "unknown data" << line;
+    }
+    return true;
 }

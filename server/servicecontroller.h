@@ -67,7 +67,7 @@ public:
 
     void load(bool service_dir_watcher);
 	
-	QByteArray getAllProperties(const QString& sessiondid);
+	QByteArray getAllPropertiesAndServices(const QString& sessiondid);
 private:
 	QFileSystemWatcher m_dirwatcher;
     // services
