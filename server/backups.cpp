@@ -1,10 +1,10 @@
 #include "backups.h"
 #include <QDateTime>
 #include <QDebug>
+#include "paths.h"
 
 Backups::Backups()
 {
-	m_savedir = QDir::home();
 } 
 
 Backups::~Backups()
@@ -15,10 +15,11 @@ Backups::~Backups()
 QList< QVariantMap > Backups::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
-    QStringList backups = m_savedir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
+	QDir backupdir = serviceBackupDir();
+    QStringList backups = backupdir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
     foreach(QString dir, backups) {
 		PROPERTY("backup");
-        QFile namefile(m_savedir.absoluteFilePath ( dir ));
+        QFile namefile(backupdir.absoluteFilePath ( dir ));
         namefile.open(QIODevice::ReadOnly|QIODevice::Truncate);
 		data[QLatin1String("backupid")] = dir;
 		data[QLatin1String("name")] = QString::fromUtf8(namefile.readLine());
@@ -56,13 +57,13 @@ void Backups::clear() {
 void Backups::create(const QString& name)
 {
 	const QString id = QDateTime::currentDateTime().toString();
-    QDir destdir = m_savedir.filePath ( id );
+    QDir destdir = serviceBackupDir().filePath ( id );
     if ( !destdir.exists() && !destdir.mkpath ( destdir.absolutePath() ) )
     {
         qWarning() << "Backup failed" << destdir;
         return;
     }
-    QDir sourcedir = m_savedir;
+    QDir sourcedir = serviceBackupDir();
     QStringList files = sourcedir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     files.removeAll(QLatin1String("name.txt"));
     qDebug() << "Backup" << files.size() << "files to" << destdir.path();
@@ -87,7 +88,7 @@ void Backups::create(const QString& name)
 void Backups::rename(const QString& id, const QString& name)
 {
     if ( id.trimmed().isEmpty() ) return;
-    QDir destdir = m_savedir;
+    QDir destdir = serviceBackupDir();
     if ( !destdir.cd ( id ) ) return;
     if ( destdir.exists() )
     {
@@ -105,7 +106,7 @@ void Backups::rename(const QString& id, const QString& name)
 void Backups::remove ( const QString& id )
 {
     if ( id.trimmed().isEmpty() ) return;
-    QDir destdir = m_savedir;
+    QDir destdir = serviceBackupDir();
     if ( !destdir.cd ( id ) ) return;
     if ( destdir.exists() )
     {
@@ -122,17 +123,18 @@ void Backups::remove ( const QString& id )
 void Backups::restore ( const QString& id )
 {
     if ( id.trimmed().isEmpty() ) return;
-    QDir sourcedir = m_savedir;
+	QDir destdir = serviceBackupDir();
+    QDir sourcedir = serviceBackupDir();
     if ( !sourcedir.cd ( id ) ) return;
 
     //remove current
-    QStringList files = m_savedir.entryList ( QDir::Files );
-    foreach ( QString file, files ) m_savedir.remove ( file );
+    QStringList files = destdir.entryList ( QDir::Files );
+    foreach ( QString file, files ) destdir.remove ( file );
 
     //restore backup
     files = sourcedir.entryList ( QDir::Files );
     foreach ( QString file, files ) {
-		QFile::copy ( sourcedir.filePath ( file ),m_savedir.filePath ( file ) );
+		QFile::copy ( sourcedir.filePath ( file ),destdir.filePath ( file ) );
 	}
 }
 

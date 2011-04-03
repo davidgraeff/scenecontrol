@@ -9,3 +9,4 @@ QString wwwFile(const QString& file);
 // Dirs
 QDir pluginDir();
 QDir serviceDir();
+QDir serviceBackupDir();

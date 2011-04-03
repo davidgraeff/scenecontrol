@@ -47,6 +47,4 @@ public:
 	void rename(const QString& id, const QString& name);
 	void restore ( const QString& id );
 	void remove ( const QString& id );
-private:
-	QDir m_savedir;
 };

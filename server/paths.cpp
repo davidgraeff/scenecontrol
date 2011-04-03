@@ -38,3 +38,12 @@ QDir serviceDir() {
     dir.cd(QLatin1String("services"));
     return dir;
 }
+
+QDir serviceBackupDir() {
+    QDir dir = QDir::home();
+	dir.mkdir(QLatin1String("roomcontrol"));
+    dir.cd(QLatin1String("roomcontrol"));
+	dir.mkdir(QLatin1String("backups"));
+    dir.cd(QLatin1String("backups"));
+    return dir;
+}
