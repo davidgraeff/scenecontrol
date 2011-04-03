@@ -60,9 +60,9 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
     }
 }
 
-QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(const QString& sessionid) {
 Q_UNUSED(sessionid);
-	QMap<QString, QVariantMap> l;
+	QList<QVariantMap> l;
 	return l;
 }
 

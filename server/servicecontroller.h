@@ -38,7 +38,12 @@ class ServiceController: public QObject, public AbstractServer
 {
     Q_OBJECT
 public:
-    ServiceController ();
+    struct ServiceStruct {
+        QVariantMap data;
+        AbstractPlugin_services* plugin;
+    };
+
+	ServiceController ();
     virtual ~ServiceController();
     /**
      * For server objects to register their interface. E.g. the backup object to
@@ -52,18 +57,17 @@ public:
 	 */
 	void removeServerObject(AbstractPlugin* object);
 
-    struct ServiceStruct {
-        QVariantMap data;
-        AbstractPlugin_services* plugin;
-    };
-    ServiceStruct* service(const QString& uid) {
-		return m_valid_services.value(uid);
-    }
+	/**
+	 * Return service with uid
+	 */
+    ServiceStruct* service(const QString& uid);
+    
+    
     const QMap<QString, ServiceStruct*> &valid_services() const;
 
     void load(bool service_dir_watcher);
 	
-	QByteArray getAllAsJSon(){}
+	QByteArray getAllProperties(const QString& sessiondid);
 private:
 	QFileSystemWatcher m_dirwatcher;
     // services
@@ -72,7 +76,6 @@ private:
     // services
     QString serviceFilename(const QString& id, const QString& uid);
     void saveToDisk(const QVariantMap& data );
-    void removeFromDisk( const QVariantMap& data );
     /**
      * Only validated services are propagated to the respective plugin
      * for execution. In m_valid_services are only validated services.
@@ -120,7 +123,7 @@ public Q_SLOTS:
      * \param service data
 	 * \param sessionid sessionid that caused this change or empty if not triggered by external sources like network
      */
-    void changeService(QVariantMap& data, const QString& sessionid);
+    void changeService(const QVariantMap& data, const QString& sessionid);
 
     /**
      * Remove service from m_valid_services and from disk and propagate that through the dataSync signal
@@ -141,7 +144,7 @@ Q_SIGNALS:
     /**
      * Emitted after a service has changed
      */
-    void dataSync(const QVariantMap& data, bool removed = false, const QString& sessiondid = QString());
+    void dataSync(const QVariantMap& data, const QString& sessiondid = QString());
     /**
      * Emitted after all services have been loaded from disk.
      */

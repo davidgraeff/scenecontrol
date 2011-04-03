@@ -84,16 +84,17 @@ void ServiceController::directoryChanged(QString file, bool loading) {
     changeService ( result, QString() );
 }
 
-void ServiceController::changeService ( QVariantMap& data, const QString& sessionid )
+void ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid )
 {
-	Q_UNUSED(sessionid);
+    QVariantMap data = unvalidatedData;
+    Q_UNUSED(sessionid);
     if (!validateService(data)) return;
 
     if (IS_EXECUTE()) {
-		if (UNIQUEID().size())
-			executeActionByUID(UNIQUEID());
-		else
-			executeAction(data);
+        if (UNIQUEID().size())
+            executeActionByUID(UNIQUEID());
+        else
+            executeAction(data);
         return;
     }
 
@@ -156,7 +157,7 @@ bool ServiceController::validateService( QVariantMap& data )
     // check type
     const QString type = node->nodeName();
     if (IS_ACTION() && type != QLatin1String("action")) return false;
-	if (IS_EXECUTE() && type != QLatin1String("action")) return false; //execute commands are actions
+    if (IS_EXECUTE() && type != QLatin1String("action")) return false; //execute commands are actions
     if (IS_EVENT() && type != QLatin1String("event")) return false;
     if (IS_CONDITION() && type != QLatin1String("condition")) return false;
     if (IS_COLLECTION() && type != QLatin1String("collection")) return false;
@@ -195,43 +196,6 @@ bool ServiceController::validateService( QVariantMap& data )
         }
     }
     return true;
-}
-
-void ServiceController::removeFromDisk ( const QVariantMap& data )
-{
-    const QString filename = serviceFilename ( ID(), UNIQUEID() );
-    if ( !QFile::remove ( filename ) || QFileInfo(filename).exists() ) {
-        qWarning() << "Couldn't remove file" << filename;
-        return;
-    }
-
-    // collection: remove all childs
-    if (IS_COLLECTION()) {
-        QSet<QString> uids;
-        QVariantMap actions = MAP("actions");
-        foreach (QVariant v, actions) uids.insert(v.toString());
-        QVariantList events = LIST("events");
-        foreach (QVariant v, actions) uids.insert(v.toString());
-        boolstuff::BoolExprParser parser;
-        try {
-            boolstuff::BoolExpr<std::string>* conditions = parser.parse(DATA("conditions").toStdString());
-            std::set<std::string> vars;
-            conditions->getTreeVariables(vars, vars);
-            foreach (std::string v, vars) uids.insert(QString::fromStdString(v));
-        } catch (boolstuff::BoolExprParser::Error) {
-        }
-
-        foreach (QString uid, uids) {
-            ServiceStruct* s = service(uid);
-            if (!s) continue;
-            removeFromDisk(s->data);
-        }
-    }
-
-    ServiceStruct* service = m_valid_services.take(UNIQUEID());
-    delete service;
-    if (service)
-        emit dataSync(data, true);
 }
 
 void ServiceController::saveToDisk ( const QVariantMap& data )
@@ -285,7 +249,7 @@ void ServiceController::execute_action(const QVariantMap& data, const char* plug
 
 void ServiceController::property_changed(const QVariantMap& data, const QString& sessionid, const char* pluginid) {
     Q_UNUSED(pluginid);
-    emit dataSync(data, false, sessionid);
+    emit dataSync(data, sessionid);
     QSet<QString> plugins = m_propertyid_to_plugins.value(ID());
     foreach(QString plugin_id, plugins) {
         AbstractPlugin_otherproperties* plugin = m_plugin_otherproperties.value(plugin_id);
@@ -301,7 +265,7 @@ void ServiceController::unregister_all_listeners(const char* pluginid) {
     const QString id = QString::fromAscii(pluginid);
     QMutableMapIterator<QString, QSet<QString> > it(m_propertyid_to_plugins);
     while (it.hasNext()) {
-		it.next();
+        it.next();
         it.value().remove(id);
         if (it.value().isEmpty())
             it.remove();
@@ -320,11 +284,11 @@ void ServiceController::loadPlugins() {
     xmldir.cd(QLatin1String("xml"));
 
     AbstractPlugin *plugin;
-	
-	// server objects are already registered. try to load the corresponding xml files
-	foreach (PluginInfo* info, m_plugins) {
-		loadXML(xmldir.absoluteFilePath(info->plugin->pluginid() + QLatin1String(".xml")));
-	}
+
+    // server objects are already registered. try to load the corresponding xml files
+    foreach (PluginInfo* info, m_plugins) {
+        loadXML(xmldir.absoluteFilePath(info->plugin->pluginid() + QLatin1String(".xml")));
+    }
 
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     for (int i=0;i<pluginfiles.size();++i) {
@@ -424,14 +388,14 @@ void ServiceController::loadXML(const QString& filename) {
             qWarning()<<"Multiple xml definition of"<<id<<"for plugin"<<plugin->pluginid()<<item.nodeName();
             continue;
         }
-        
-/*        QString t;
-        QTextStream s(&t);
-		item.save(s,3);
-		qDebug()<<t;*/
+
+        /*        QString t;
+                QTextStream s(&t);
+        		item.save(s,3);
+        		qDebug()<<t;*/
 
         m_id_to_xml.insert(id, new QDomNode(item.cloneNode()));
-		m_id_to_plugin.insert(id, plugin);
+        m_id_to_plugin.insert(id, plugin);
     }
 }
 
@@ -460,7 +424,7 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
     {
         QMutableMapIterator<QString, ServiceStruct* > it(m_valid_services);
         while (it.hasNext()) {
-			it.next();
+            it.next();
             AbstractPlugin* p = dynamic_cast<AbstractPlugin*>(it.value()->plugin);
             if (p && p->pluginid() == pluginid) {
                 it.remove();
@@ -472,7 +436,7 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
     {
         QMutableMapIterator<QString, AbstractPlugin* > it(m_id_to_plugin);
         while (it.hasNext()) {
-			it.next();
+            it.next();
             if (it.value()->pluginid() == pluginid) {
                 it.remove();
             }
@@ -483,7 +447,7 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
     {
         QMutableListIterator<PluginInfo*> it(m_plugins);
         while (it.hasNext()) {
-			it.next();
+            it.next();
             if (it.value()->plugin->pluginid() == pluginid) {
                 it.remove();
             }
@@ -497,13 +461,46 @@ void ServiceController::removeServerObject(AbstractPlugin* object) {
 }
 
 void ServiceController::removeService(const QString& uid) {
-    ServiceStruct* service = m_valid_services.value(uid);
-    if (!service) return;
-    removeFromDisk(service->data);
+	ServiceStruct* service = m_valid_services.take(uid);
+	if (!service) return;
+	QVariantMap data = service->data;
+    delete service; service = 0;
+
+	const QString filename = serviceFilename ( ID(), uid );
+    if ( !QFile::remove ( filename ) || QFileInfo(filename).exists() ) {
+        qWarning() << "Couldn't remove file" << filename;
+        return;
+    }
+
+    // collection: remove all childs
+    if (IS_COLLECTION()) {
+        QSet<QString> uids;
+        QVariantMap actions = MAP("actions");
+        foreach (QVariant v, actions) uids.insert(v.toString());
+        QVariantList events = LIST("events");
+        foreach (QVariant v, actions) uids.insert(v.toString());
+        boolstuff::BoolExprParser parser;
+        try {
+            boolstuff::BoolExpr<std::string>* conditions = parser.parse(DATA("conditions").toStdString());
+            std::set<std::string> vars;
+            conditions->getTreeVariables(vars, vars);
+            foreach (std::string v, vars) uids.insert(QString::fromStdString(v));
+        } catch (boolstuff::BoolExprParser::Error) {
+        }
+
+        foreach (QString uid, uids) {
+            removeService(uid);
+        }
+    }
+    
+    data.clear();
+	SETUNIQUEID(uid);
+	SETTYPE_REMOVE();
+    emit dataSync(data);
 }
 
 void ServiceController::executeAction(const QVariantMap& data) {
-	if (!IS_ACTION() || !IS_EXECUTE()) return;
+    if (!IS_ACTION() || !IS_EXECUTE()) return;
     if (!validateService((QVariantMap&)data)) return;
     AbstractPlugin* plugin = m_id_to_plugin.value(ID());
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*>(plugin);
@@ -518,4 +515,23 @@ void ServiceController::executeActionByUID(const QString& uid) {
     ServiceStruct* service = m_valid_services.value(uid);
     if (!service || !service->plugin) return;
     service->plugin->execute(service->data);
+}
+
+ServiceController::ServiceStruct* ServiceController::service(const QString& uid) {
+    return m_valid_services.value(uid);
+}
+
+QByteArray ServiceController::getAllProperties(const QString& sessiondid) {
+    QByteArray data;
+	QJson::Serializer s;
+    foreach (PluginInfo* p, m_plugins) {
+		AbstractPlugin_services* plugin = dynamic_cast<AbstractPlugin_services*>(p->plugin);
+		if (!plugin) continue;
+        QList<QVariantMap> properties = plugin->properties(sessiondid);
+        foreach(QVariantMap prop, properties) {
+            data.append(s.serialize(prop));
+            data.append("\n");
+        }
+    }
+    return data;
 }

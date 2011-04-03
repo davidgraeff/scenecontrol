@@ -80,12 +80,18 @@ public:
      */
     QString addSession(const QString& user, const QString& pwd);
     void closeSession(const QString& sessionid);
+	
+	/**
+	 * Just create a property for authentification failure
+	 * \return json data of authentification failure property
+	 */
+	static QByteArray authFailed();
 
     // plugin interface
     virtual bool condition(const QVariantMap& data);
     virtual void event_changed(const QVariantMap& data);
     virtual void execute(const QVariantMap& data);
-    virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
+    QList< QVariantMap > properties(const QString& sessionid);
 
 private:
     static SessionController* m_sessioncontroller;

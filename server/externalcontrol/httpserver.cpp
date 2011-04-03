@@ -36,6 +36,7 @@
 #include "servicecontroller.h"
 #include "config.h"
 #include "clientconnection.h"
+#include <sessioncontroller.h>
 
 HttpServer::HttpServer() : m_service(0) {}
 
@@ -103,7 +104,7 @@ void HttpServer::setServiceController ( ServiceController* controller ) {
     m_service = controller;
 }
 
-void HttpServer::dataSync(const QVariantMap& data, bool removed, const QString& sessionid) {
+void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
     if (m_connections.isEmpty()) return;
     const QByteArray cmdbytes = QJson::Serializer().serialize(data);
     foreach ( ClientConnection* c, m_connections ) {
@@ -114,9 +115,10 @@ void HttpServer::dataSync(const QVariantMap& data, bool removed, const QString& 
 }
 
 void HttpServer::sessionAuthFailed(QString sessionid) {
+	SessionController* sc = SessionController::instance();
     foreach ( ClientConnection* c, m_connections ) {
         if (c->sessionid == sessionid) {
-            c->setAuthNotOK();
+            c->writeJSON(sc->authFailed());
         }
     }
 }
@@ -124,21 +126,24 @@ void HttpServer::sessionAuthFailed(QString sessionid) {
 void HttpServer::sessionBegin(QString sessionid) {
     foreach ( ClientConnection* c, m_connections ) {
         if (c->sessionid == sessionid) {
-            c->setAuthOK();
+            c->sessionEstablished();
+			c->writeJSON ( m_service->getAllProperties(sessionid) );
         }
     }
 }
 
 void HttpServer::sessionFinished(QString sessionid, bool timeout) {
+	Q_UNUSED(timeout);
     foreach ( ClientConnection* c, m_connections ) {
         if (c->sessionid == sessionid) {
-            c->setAuthNotOK();
+			removeConnection(c);
         }
     }
 }
 
 
 void HttpServer::removeConnection(ClientConnection* c) {
+	qDebug() << "disconnected"<<m_connections.size();
     m_connections.remove(c);
     c->deleteLater();
 }

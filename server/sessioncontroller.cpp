@@ -1,5 +1,6 @@
 #include "sessioncontroller.h"
 #include "authThread.h"
+#include <serializer.h>
 
 SessionController* SessionController::m_sessioncontroller = 0;
 
@@ -81,9 +82,10 @@ void SessionController::event_changed(const QVariantMap& data) {
     Q_UNUSED(data);
 }
 
-QMap< QString, QVariantMap > SessionController::properties(const QString& sessionid) {
+QList<QVariantMap> SessionController::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
-	return QMap< QString, QVariantMap > ();
+    QList<QVariantMap> l;
+    return l;
 }
 
 QString SessionController::addSession(const QString& user, const QString& pwd) {
@@ -117,4 +119,10 @@ void SessionController::timeoutSession() {
     emit sessionFinished(session->sessionid(), true);
     m_session.remove(session->sessionid());
     session->deleteLater();
+}
+
+QByteArray SessionController::authFailed() {
+    QJson::Serializer s;
+    PROPERTY("authentification_failed");
+    return s.serialize(data);
 }

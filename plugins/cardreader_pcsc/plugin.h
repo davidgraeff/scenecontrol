@@ -38,7 +38,7 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual QMap<QString, QVariantMap> properties(const QString& sessionid);
+    virtual QList<QVariantMap> properties(const QString& sessionid);
     virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
     virtual void execute ( const QVariantMap& data );
     virtual bool condition ( const QVariantMap& data ) ;

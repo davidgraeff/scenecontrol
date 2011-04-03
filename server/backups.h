@@ -41,7 +41,7 @@ public:
     virtual bool condition(const QVariantMap& data);
     virtual void event_changed(const QVariantMap& data);
     virtual void execute(const QVariantMap& data);
-    virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
+    virtual QList<QVariantMap> properties(const QString& sessionid);
 	
 	void create(const QString& name);
 	void rename(const QString& id, const QString& name);

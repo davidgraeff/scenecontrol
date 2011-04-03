@@ -31,9 +31,9 @@ Collections::~Collections() {
     m_collections.clear();
 }
 
-QMap<QString, QVariantMap> Collections::properties(const QString& sessionid) {
+QList< QVariantMap > Collections::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
-    QMap<QString, QVariantMap> l;
+    QList<QVariantMap> l;
     return l;
 }
 
@@ -79,11 +79,11 @@ void Collections::addCollection(const QVariantMap& data) {
     connect(instance,SIGNAL(executeService(QString)),SIGNAL(instanceExecute(QString)));
 }
 
-void Collections::dataSync(const QVariantMap& data, bool removed, const QString& sessionid) {
+void Collections::dataSync(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(sessionid);
     if (!IS_COLLECTION()) return;
     delete m_collections.take(UNIQUEID());
-    if (!removed) addCollection(data);
+    addCollection(data);
 }
 
 void Collections::dataReady() {

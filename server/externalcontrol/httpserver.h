@@ -43,7 +43,7 @@ private:
 public Q_SLOTS:
     void removeConnection(ClientConnection* );
     // service controller signals
-    void dataSync(const QVariantMap& data, bool removed, const QString& sessiondid);
+    void dataSync(const QVariantMap& data, const QString& sessionid);
     // session controller signals
     void sessionAuthFailed(QString sessionid);
     void sessionBegin(QString sessionid);

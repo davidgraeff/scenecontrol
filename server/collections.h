@@ -65,7 +65,7 @@ public:
     virtual bool condition(const QVariantMap& data);
     virtual void event_changed(const QVariantMap& data);
     virtual void execute(const QVariantMap& data);
-    virtual QMap< QString, QVariantMap > properties(const QString& sessionid);
+    virtual QList<QVariantMap> properties(const QString& sessionid);
 private:
 	void addCollection(const QVariantMap& data);
 	ServiceController* m_servicecontroller;
@@ -73,7 +73,7 @@ private:
 	void convertVariantToStringSet(const QVariantList& source, QSet<QString>& destination);
 	void convertVariantToIntStringMap(const QVariantMap& source, QMap<int, QString>& destination);
 public Q_SLOTS:
-    void dataSync(const QVariantMap& data, bool removed = false, const QString& sessionid = QString());
+    void dataSync(const QVariantMap& data, const QString& sessionid = QString());
     void dataReady();
     void eventTriggered(const QString& uid);
 Q_SIGNALS:

@@ -103,9 +103,9 @@ int main(int argc, char *argv[])
     collections->setServiceController(services);
     services->useServerObject(collections);
     collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
-    collections->connect(services, SIGNAL(dataSync(QVariantMap,bool,QString)), collections, SLOT(dataSync(QVariantMap,bool,QString)));
+    collections->connect(services, SIGNAL(dataSync(QVariantMap,QString)), collections, SLOT(dataSync(QVariantMap,QString)));
     collections->connect(services, SIGNAL(eventTriggered(QString)), collections, SLOT(eventTriggered(QString)));
-    services->connect(collections, SIGNAL(instanceExecute(QString)), services, SLOT(executeService(QString)));
+    services->connect(collections, SIGNAL(instanceExecute(QString)), services, SLOT(executeActionByUID(QString)));
 
 	SessionController* sessions = SessionController::instance(true);
 	sessions->connectToServer(services);
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     HttpServer* httpserver = 0;
     if (!cmdargs.contains("--no-network")) {
         httpserver = new HttpServer();
-		httpserver->connect(services,SIGNAL(dataSync(QVariantMap,bool,QString)), httpserver, SLOT(dataSync(QVariantMap,bool,QString)));
+		httpserver->connect(services,SIGNAL(dataSync(QVariantMap,QString)), httpserver, SLOT(dataSync(QVariantMap,QString)));
 		httpserver->connect(sessions,SIGNAL(sessionAuthFailed(QString)),httpserver,SLOT(sessionAuthFailed(QString)));
 		httpserver->connect(sessions,SIGNAL(sessionBegin(QString)),httpserver,SLOT(sessionBegin(QString)));
 		httpserver->connect(sessions,SIGNAL(sessionFinished(QString,bool)),httpserver,SLOT(sessionFinished(QString,bool)));

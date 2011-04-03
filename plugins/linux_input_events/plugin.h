@@ -75,7 +75,7 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual QMap<QString, QVariantMap> properties(const QString& sessionid);
+    virtual QList<QVariantMap> properties(const QString& sessionid);
     virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid);
     virtual void session_change(const QString& id, bool running);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);

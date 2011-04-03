@@ -35,8 +35,8 @@ plugin::~plugin() {
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
-    
+void plugin::initialize() {
+
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
@@ -86,12 +86,9 @@ void plugin::event_changed ( const QVariantMap& data ) {
     Q_UNUSED ( data );
 }
 
-QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
-    QMap<QString, QVariantMap> l;
-    foreach ( ExternalClient* client, m_clients ) {
-        //list.append(client->getStateTracker());
-    }
+QList<QVariantMap> plugin::properties(const QString& sessionid) {
+    Q_UNUSED(sessionid);
+    QList<QVariantMap> l;
     return l;
 }
 

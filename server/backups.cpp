@@ -12,9 +12,9 @@ Backups::~Backups()
 
 }
 
-QMap<QString, QVariantMap> Backups::properties(const QString& sessionid) {
+QList< QVariantMap > Backups::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
-    QMap<QString, QVariantMap> l;
+    QList<QVariantMap> l;
     QStringList backups = m_savedir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
     foreach(QString dir, backups) {
 		PROPERTY("backup");
@@ -23,7 +23,7 @@ QMap<QString, QVariantMap> Backups::properties(const QString& sessionid) {
 		data[QLatin1String("backupid")] = dir;
 		data[QLatin1String("name")] = QString::fromUtf8(namefile.readLine());
         namefile.close();
-		l.insertMulti(QLatin1String("backup"), data);
+		l.append(data);
     }
     return l;
 }

@@ -48,6 +48,7 @@
 
 // setter
 #define SETDATA(ID, DATA) data[QLatin1String(ID)] = DATA
+#define SETTYPE_REMOVE() data[QLatin1String("__type")] = QLatin1String("remove")
 
 /**
  * Plugin interface for dealing with actions, conditions, events and properties
@@ -64,7 +65,7 @@ public:
      * should not block the server noticable!
 	 * \param sessionid id of the client session that requests properties of this plugin
      */
-    virtual QMap<QString, QVariantMap> properties(const QString& sessionid) = 0;
+    virtual QList<QVariantMap> properties(const QString& sessionid) = 0;
     /**
      * Implement execution routines for all provided actions
      */

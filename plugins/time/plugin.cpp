@@ -69,9 +69,9 @@ void plugin::event_changed ( const QVariantMap& data ) {
     calculate_next_events();
 }
 
-QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(const QString& sessionid) {
 Q_UNUSED(sessionid);
-    QMap<QString, QVariantMap> l;
+    QList<QVariantMap> l;
     return l;
 }
 

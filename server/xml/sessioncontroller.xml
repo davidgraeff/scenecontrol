@@ -31,4 +31,7 @@
     <int id="auth_timeout" />
     <int id="session_timeout" />
   </property>
+  
+  <property id="authentification_failed" type="session">
+  </property>
 </plugin>

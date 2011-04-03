@@ -21,9 +21,9 @@
 #include <QDebug>
 #include <QCoreApplication>
 
-QMap<QString, QVariantMap> ServerState::properties(const QString& sessionid) {
+QList< QVariantMap > ServerState::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
-    QMap<QString, QVariantMap> l;
+    QList<QVariantMap> l;
     return l;
 }
 

@@ -22,6 +22,7 @@
 
 #include <QtNetwork/QSslSocket>
 #include <QByteArray>
+#include <QTimer>
 
 class ServiceController;
 class ClientConnection : public QObject
@@ -31,21 +32,29 @@ private:
     bool m_authok;
     bool m_isServerEventConnection;
     bool m_inHeader;
+	bool m_oldhandshake;
     QMap<QByteArray,QByteArray> m_header;
     QByteArray m_requestedfile;
     //network
     QSslSocket* m_socket;
+	QTimer m_timeout;
     void generateResponse(int httpcode, const QByteArray& data = QByteArray(), const QByteArray& contenttype = "text/html");
 public:
     QString sessionid;
 
     ClientConnection(QSslSocket* s) ;
     ~ClientConnection() ;
-    void setAuthOK();
-    void setAuthNotOK();
+    void sessionEstablished();
+    void sessionTimeout();
+    void sessionFailed();
     bool isAuthentificatedServerEventConnection();
     void writeJSON(const QByteArray& data);
 private Q_SLOTS:
+	/**
+	 * Close this connection after 5min of inactivity 
+	 */
+	void timeout();
+
     void readyRead ();
     void disconnected();
     void peerVerifyError(QSslError);

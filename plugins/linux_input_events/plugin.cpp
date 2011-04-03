@@ -107,9 +107,9 @@ void plugin::session_change ( const QString& id, bool running ) {
     }
 }
 
-QMap<QString, QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(const QString& sessionid) {
 Q_UNUSED(sessionid);
-    QMap<QString, QVariantMap> l;
+    QList<QVariantMap> l;
     return l;
 }
 
