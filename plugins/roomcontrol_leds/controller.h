@@ -65,8 +65,7 @@ public:
     void setChannelExponential ( uint channel, int multiplikator, uint fade );
     void setChannelRelative ( uint channel, int value, uint fade );
     unsigned int getChannel(unsigned int channel) const;
-private:
-    AbstractPlugin* m_plugin;
+	
 	struct ledchannel {
 		int value;
 		QString name;
@@ -75,6 +74,9 @@ private:
     QMap<int,ledchannel> m_leds;
 	int m_curtain_max;
 	int m_curtain_value;
+private:
+    AbstractPlugin* m_plugin;
+
     
     int m_channels;
     QByteArray m_buffer;

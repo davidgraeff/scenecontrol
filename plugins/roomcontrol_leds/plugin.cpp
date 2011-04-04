@@ -27,9 +27,9 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
     m_controller = new Controller ( this );
-	connect(m_controller,SIGNAL(curtainChanged(int,int)),SLOT(curtainChanged(int,int)));
-	connect(m_controller,SIGNAL(lednameChanged(int,QString)),SLOT(lednameChanged(int,QString)));
-	connect(m_controller,SIGNAL(ledvalueChanged(int,int)),SLOT(ledvalueChanged(int,int)));
+    connect(m_controller,SIGNAL(curtainChanged(int,int)),SLOT(curtainChanged(int,int)));
+    connect(m_controller,SIGNAL(lednameChanged(int,QString)),SLOT(lednameChanged(int,QString)));
+    connect(m_controller,SIGNAL(ledvalueChanged(int,int)),SLOT(ledvalueChanged(int,int)));
     _config ( this );
 }
 
@@ -38,7 +38,7 @@ plugin::~plugin() {
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
+void plugin::initialize() {
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
@@ -51,15 +51,15 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data ) {
     if ( IS_ID ( "ledvalue_relative" ) ) {
-		m_controller->setChannelRelative ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
+        m_controller->setChannelRelative ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
     } else if ( IS_ID ( "ledvalue_absolut" ) ) {
-		 m_controller->setChannel ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
+        m_controller->setChannel ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
     } else if ( IS_ID ( "ledvalue_invers" ) ) {
-		m_controller->inverseChannel ( INTDATA("channel"),INTDATA("fade") );
+        m_controller->inverseChannel ( INTDATA("channel"),INTDATA("fade") );
     } else if ( IS_ID ( "ledname" ) ) {
-		m_controller->setChannelName ( INTDATA("channel"), DATA("name") );
+        m_controller->setChannelName ( INTDATA("channel"), DATA("name") );
     } else if ( IS_ID ( "curtain" ) ) {
-		m_controller->setCurtain ( INTDATA("value") );
+        m_controller->setCurtain ( INTDATA("value") );
     }
 }
 
@@ -80,28 +80,50 @@ void plugin::event_changed ( const QVariantMap& data ) {
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+
+    QMap<int, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
+    for (;i!=m_controller->m_leds.end();++i) {
+        {
+            PROPERTY("roomcontrol.led.value");
+            data[QLatin1String("channel")] = i.key();
+            data[QLatin1String("value")] = i.value().value;
+            l.append(data);
+        }
+        {
+            PROPERTY("roomcontrol.led.name");
+            data[QLatin1String("channel")] = i.key();
+            data[QLatin1String("name")] = i.value().name;
+            l.append(data);
+        }
+    }
+    {
+        PROPERTY("roomcontrol.curtain.state");
+        data[QLatin1String("value")] = m_controller->m_curtain_value;
+        data[QLatin1String("max")] = m_controller->m_curtain_max;
+        l.append(data);
+    }
     return l;
 }
 
 void plugin::curtainChanged(int current, int max) {
-	PROPERTY("curtainstate");
-	data[QLatin1String("value")] = current;
-	data[QLatin1String("max")] = max;
-	m_server->property_changed(data);
+    PROPERTY("roomcontrol.curtain.state");
+    data[QLatin1String("value")] = current;
+    data[QLatin1String("max")] = max;
+    m_server->property_changed(data);
 }
 
 void plugin::ledvalueChanged(int channel, int value) {
-	PROPERTY("ledvaluechanged");
-	data[QLatin1String("channel")] = channel;
-	data[QLatin1String("value")] = value;
-	m_server->property_changed(data);
+    PROPERTY("roomcontrol.led.value");
+    data[QLatin1String("channel")] = channel;
+    data[QLatin1String("value")] = value;
+    m_server->property_changed(data);
 }
 
 void plugin::lednameChanged(int channel, const QString& name) {
-	PROPERTY("lednamechanged");
-	data[QLatin1String("channel")] = channel;
-	data[QLatin1String("name")] = name;
-	m_server->property_changed(data);
+    PROPERTY("roomcontrol.led.name");
+    data[QLatin1String("channel")] = channel;
+    data[QLatin1String("name")] = name;
+    m_server->property_changed(data);
 }

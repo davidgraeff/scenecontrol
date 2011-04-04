@@ -22,7 +22,7 @@
 #include <QStringList>
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
-#include "shared/pluginsettingshelper.h" 
+#include "shared/pluginsettingshelper.h"
 #include "shared/abstractplugin_services.h"
 
 class ExternalClient;
@@ -43,8 +43,9 @@ public:
     virtual bool condition(const QVariantMap& data) ;
     virtual void event_changed(const QVariantMap& data);
 private:
-	QList<ExternalClient*> specificClients(const QStringList& hosts
-);
-	QList<ExternalClient*> m_clients;
-	QList<ExternalClient*> m_selectedclients;
+    QList<ExternalClient*> specificClients(const QStringList& hosts);
+    QList<ExternalClient*> m_clients;
+    QList<ExternalClient*> m_selectedclients;
+private Q_SLOTS:
+    QVariantMap stateChanged(ExternalClient* client, bool propagate = true);
 };

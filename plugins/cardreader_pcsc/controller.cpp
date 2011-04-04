@@ -261,7 +261,7 @@ void CardThread::run() {
                 if (!m_systemReady) return;
             }
 
-            int cardstate = 2;
+            cardstate = 2;
 
             if (rgReaderStates_t[current_reader].dwEventState &
                     SCARD_STATE_EMPTY)

@@ -34,10 +34,17 @@ private:
     bool m_inHeader;
     QMap<QByteArray,QByteArray> m_header;
     QByteArray m_requestedfile;
+	enum enumRequestType {
+		None,
+		Get,
+		Post,
+		Head
+	} m_requestType;
     //network
     QSslSocket* m_socket;
     QTimer m_timeout;
-    void generateResponse(int httpcode, const QByteArray& data = QByteArray(), const QByteArray& contenttype = "text/html");
+    void generateFileResponse();
+	void writeDefaultHeaders();
     void generateWebsocketResponseV04();
 	void generateWebsocketResponseV00();
 	bool readHttp(const QByteArray& line);

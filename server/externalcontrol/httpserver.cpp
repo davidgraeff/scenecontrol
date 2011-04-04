@@ -89,7 +89,7 @@ void HttpServer::incomingConnection ( int socketDescriptor )
                 connect(c,SIGNAL(dataReceived(QVariantMap,QString)),m_service,SLOT(changeService(QVariantMap,QString)));
                 connect(c,SIGNAL(removeConnection(ClientConnection*)),SLOT(removeConnection(ClientConnection*)));
                 m_connections.insert ( c );
-				qDebug() << "connection"<<m_connections.size();
+				//qDebug() << "connection"<<m_connections.size();
             }
         }
     }
@@ -143,7 +143,7 @@ void HttpServer::sessionFinished(QString sessionid, bool timeout) {
 
 
 void HttpServer::removeConnection(ClientConnection* c) {
-	qDebug() << "disconnected"<<m_connections.size();
+	//qDebug() << "disconnected"<<m_connections.size();
     m_connections.remove(c);
     c->deleteLater();
 }

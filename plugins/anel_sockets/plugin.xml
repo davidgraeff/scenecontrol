@@ -15,11 +15,11 @@
     <string id="channel" model="iochannels" />
     <string id="name" />
   </action>
-  <property id="iovaluehange">
+  <property id="anel.io.value">
     <string id="channel" />
     <int id="value" />
   </property>
-  <property id="ionamechange">
+  <property id="anel.io.name">
     <string id="channel" />
     <string id="name" />
   </property>

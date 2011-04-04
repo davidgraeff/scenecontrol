@@ -31,6 +31,7 @@ plugin::plugin() {
     connect ( m_mediacontroller,SIGNAL ( playlistsChanged ( QString,int ) ),SLOT ( playlistsChanged ( QString,int ) ) );
     connect ( m_mediacontroller,SIGNAL ( trackChanged(QString,QString,int,uint,uint,int)), SLOT(trackChanged(QString,QString,int,uint,uint,int)));
     connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
+	connect ( m_mediacontroller,SIGNAL ( stateChanged(MediaController*)),SLOT(stateChanged(MediaController*) ) );
     _config ( this );
 }
 
@@ -39,7 +40,7 @@ plugin::~plugin() {
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
+void plugin::initialize() {
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
@@ -110,8 +111,9 @@ void plugin::event_changed ( const QVariantMap& data ) {
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+    l.append(stateChanged(m_mediacontroller, false));
     return l;
 }
 
@@ -124,18 +126,18 @@ void plugin::playlistChanged ( QString p ) {
 void plugin::playlistsChanged ( QString p, int pos) {
     PROPERTY ( "mpdplaylists" );
     data[QLatin1String ( "playlistid" ) ] = p;
-	data[QLatin1String ( "position" ) ] = pos;
+    data[QLatin1String ( "position" ) ] = pos;
     m_server->property_changed ( data );
 }
 
 void plugin::trackChanged ( const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
     PROPERTY ( "mpdtrack" );
     data[QLatin1String ( "filename" ) ] = filename;
-	data[QLatin1String ( "trackname" ) ] = trackname;
-	data[QLatin1String ( "track" ) ] = track;
-	data[QLatin1String ( "position_in_ms" ) ] = position_in_ms;
-	data[QLatin1String ( "total_in_ms" ) ] = total_in_ms;
-	data[QLatin1String ( "state" ) ] = state;
+    data[QLatin1String ( "trackname" ) ] = trackname;
+    data[QLatin1String ( "track" ) ] = track;
+    data[QLatin1String ( "position_in_ms" ) ] = position_in_ms;
+    data[QLatin1String ( "total_in_ms" ) ] = total_in_ms;
+    data[QLatin1String ( "state" ) ] = state;
     m_server->property_changed ( data );
 }
 
@@ -143,4 +145,13 @@ void plugin::volumeChanged ( double volume ) {
     PROPERTY ( "mpdvolumechanged" );
     data[QLatin1String ( "volume" ) ] = volume;
     m_server->property_changed ( data );
+}
+
+QVariantMap plugin::stateChanged(MediaController* client, bool propagate) {
+    PROPERTY("mpd.connection.state");
+	const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
+    SETDATA("server",server);
+    SETDATA("state", (int)client->isConnected());
+    if (propagate) m_server->property_changed(data);
+    return data;
 }

@@ -38,10 +38,11 @@ public:
     bool getPin( const QString& pin ) const;
     int countPins();
     void connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd);
-private:
-    AbstractPlugin* m_plugin;
+
     QMap<QString, unsigned char> m_values;
     QMap<QString, QString> m_names;
+private:
+    AbstractPlugin* m_plugin;
     QMap< QString, QPair<QHostAddress,uint> > m_mapPinToHost;
     int m_sendPort;
     QString m_user;

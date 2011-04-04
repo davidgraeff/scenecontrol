@@ -35,55 +35,56 @@ void plugin::initialize() {
 }
 
 void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
-	PluginSettingsHelper::setSetting(name, value, init);
+    PluginSettingsHelper::setSetting(name, value, init);
 }
 
 void plugin::execute(const QVariantMap& data) {
-	if (IS_ID("changemode")) {
-		m_mode = DATA("mode");
-		const QSet<QString> uids = m_mode_events.value(m_mode);
-		foreach(QString uid, uids) {
-			m_server->event_triggered(uid);
-		}
-		modeChanged(m_mode);
-	}
+    if (IS_ID("changemode")) {
+        m_mode = DATA("mode");
+        modeChanged(m_mode);
+    }
 }
 
 bool plugin::condition(const QVariantMap& data)  {
-	if (IS_ID("modecondition")) {
-		return (m_mode == DATA("mode"));
-	}
-	return false;
+    if (IS_ID("modecondition")) {
+        return (m_mode == DATA("mode"));
+    }
+    return false;
 }
 
 void plugin::event_changed(const QVariantMap& data) {
-	if (IS_ID("modeevent")) {
-		// entfernen
-		const QString uid = UNIQUEID();
-		QMutableMapIterator<QString, QSet<QString> > it(m_mode_events);
-		while (it.hasNext()) {
-			it.next();
-			it.value().remove(uid);
-			if (it.value().isEmpty())
-				it.remove();
-		}
-		// hinzufügen
-		m_mode_events[DATA("mode")].insert(uid);
-	}
+    if (IS_ID("modeevent")) {
+        // entfernen
+        const QString uid = UNIQUEID();
+        QMutableMapIterator<QString, QSet<QString> > it(m_mode_events);
+        while (it.hasNext()) {
+            it.next();
+            it.value().remove(uid);
+            if (it.value().isEmpty())
+                it.remove();
+        }
+        // hinzufügen
+        m_mode_events[DATA("mode")].insert(uid);
+    }
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
-	QList<QVariantMap> l;
-	return l;
+    Q_UNUSED(sessionid);
+    QList<QVariantMap> l;
+    {
+        PROPERTY("mode");
+        SETDATA("mode", m_mode);
+        l.append(data);
+    }
+    return l;
 }
 
 void plugin::modeChanged(const QString& mode) {
-	PROPERTY("modechanged");
-	data[QLatin1String("mode")] = mode;
-	m_server->property_changed(data);
-	
-	foreach (QString uid, m_mode_events.value(mode)) {
-		m_server->event_triggered(uid);
-	}
+    PROPERTY("mode");
+    SETDATA("mode", mode);
+    m_server->property_changed(data);
+
+    foreach (QString uid, m_mode_events.value(mode)) {
+        m_server->event_triggered(uid);
+    }
 }

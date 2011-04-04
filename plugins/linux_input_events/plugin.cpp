@@ -53,9 +53,9 @@ plugin::~plugin() {
 void plugin::clear() {}
 void plugin::initialize() {
     m_server->register_listener ( QLatin1String ( "selected_input_device" ) );
-	for (int i=0;keynames[i].name;++i) {
-		m_keymapping[keynames[i].value] = QString::fromAscii(keynames[i].name);
-	}
+    for (int i=0;keynames[i].name;++i) {
+        m_keymapping[keynames[i].value] = QString::fromAscii(keynames[i].name);
+    }
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
@@ -80,7 +80,7 @@ void plugin::event_changed ( const QVariantMap& data ) {
 
         QMutableMapIterator<QString, InputDevice* > it ( m_devices );
         while ( it.hasNext() ) {
-			it.next();
+            it.next();
             it.value()->unregisterKey(uid);
             if ( it.value()->isClosable() )
                 it.remove();
@@ -108,8 +108,14 @@ void plugin::session_change ( const QString& id, bool running ) {
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+    foreach(InputDevice* device, m_devices) {
+        PROPERTY ( "inputdevice" );
+        data[QLatin1String ( "device_path" ) ] = device->device()->devPath;
+        data[QLatin1String ( "device_info" ) ] = device->device()->info;
+        l.append(data);
+    }
     return l;
 }
 
@@ -145,9 +151,15 @@ InputDevice::InputDevice(plugin* plugin) : m_plugin(plugin) {
     m_repeattimer.setSingleShot(true);
     connect(&m_file,SIGNAL(readyRead()),SLOT(eventData()));
 }
+
 InputDevice::~InputDevice() {
     m_file.close();
 }
+
+ManagedDevice* InputDevice::device() {
+    return m_device;
+}
+
 bool InputDevice::isClosable() {
     return (m_sessionids.isEmpty() && m_keyToUids.isEmpty());
 }
@@ -164,7 +176,7 @@ void InputDevice::setDevice(ManagedDevice* device) {
     if (!device)
         m_file.close();
     else if (!m_file.isOpen() && !isClosable()) {
-		m_file.setFileName(device->devPath);
+        m_file.setFileName(device->devPath);
         m_file.open(QIODevice::ReadOnly);
     }
 }
@@ -172,7 +184,7 @@ void InputDevice::setDevice(ManagedDevice* device) {
 void InputDevice::unregisterKey(QString uid) {
     QMutableMapIterator<QString, EventKey* > it ( m_keyToUids );
     while ( it.hasNext() ) {
-		it.next();
+        it.next();
         it.value()->uids.remove(uid);
         if ( it.value()->uids.isEmpty() )
             it.remove();

@@ -24,7 +24,7 @@
 #include <shared/qextserialport/qextserialport.h>
 #include <shared/abstractplugin.h>
 
-Controller::Controller ( AbstractPlugin* plugin ) : m_plugin ( plugin ), m_curtain_max ( 0 ), m_curtain_value ( 0 ), m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {}
+Controller::Controller ( AbstractPlugin* plugin ) : m_curtain_max ( 0 ), m_curtain_value ( 0 ), m_plugin ( plugin ), m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {}
 
 Controller::~Controller() {
     delete m_serial;
@@ -252,7 +252,7 @@ void Controller::connectToLeds ( const QString& device ) {
 
     const char t1[] = {0xef};
     if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1, sizeof ( t1 ) ) ) {
-        qWarning() << m_plugin->pluginid() << "rs232 init fehler";
+        qWarning() << m_plugin->pluginid() << "rs232 error:" << m_serial->errorString();
     }
     // panic counter
     m_panicTimer.setInterval ( 60000 );

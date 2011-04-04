@@ -35,6 +35,9 @@ class ExternalClient : public QTcpSocket
 public:
     ExternalClient(AbstractPlugin* plugin, const QString& host, int port);
     ~ExternalClient();
+	const QString host() const { return m_host; }
+	int port() const { return m_port; }
+	int isConnected() const { return m_connected; }
 
     void setSystemVolume(qreal newvol, bool relative = false);
     void setDisplayState(int state, int display);
@@ -48,11 +51,13 @@ private:
     QString m_host;
     int m_port;
     int m_display;
-    bool m_alreadyWarnedNoHost;
+    bool m_connected;
 private Q_SLOTS:
     void slotreadyRead ();
     void slotconnected();
     void slotdisconnected();
     void sloterror(QAbstractSocket::SocketError);
     void reconnectTimeout();
+Q_SIGNALS:
+	void stateChanged(ExternalClient* client);
 };

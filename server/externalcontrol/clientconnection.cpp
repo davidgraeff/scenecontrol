@@ -55,11 +55,11 @@ ClientConnection::ClientConnection(QSslSocket* s) : m_socket(s) {
     m_inHeader = false;
 }
 ClientConnection::~ClientConnection() {
-	if (m_isWebsocket) {
-		const char data[] = {0x00, 0xFF, 0x00, 0xFF};
-		m_socket->write(data);
-		m_socket->flush();
-	}
+    if (m_isWebsocket) {
+        const char data[] = {0x00, 0xFF, 0x00, 0xFF};
+        m_socket->write(data);
+        m_socket->flush();
+    }
     m_socket->blockSignals(true);
     m_socket->close();
     delete m_socket;
@@ -85,15 +85,15 @@ void ClientConnection::readyRead()
             if (frameIndex==-1) return; // No frame start, wait for new data
             if (frameIndex>0) m_socket->read(frameIndex); // read everything until framestart
 
-			// find frameend
+            // find frameend
             frameIndex = m_socket->peek(1000).indexOf(char(0xFF));
             if (frameIndex==-1) return; // No frame end, wait for new data
             QByteArray frame = m_socket->read(frameIndex+1); // read everything until framestart
 
-			// remove websocket frame bytes
+            // remove websocket frame bytes
             frame.chop(1);
             frame = frame.mid(1).trimmed();
-			
+
             if (!frame.startsWith("{") || !frame.endsWith("}") ) {
                 qWarning()<<"Websocket: Frame received but does not match subprotocol roomcontrol";
                 emit removeConnection(this);
@@ -185,24 +185,54 @@ void ClientConnection::timeout() {
     emit removeConnection(this);
 }
 
-void ClientConnection::generateResponse(int httpcode, const QByteArray& data, const QByteArray& contenttype) {
-    switch (httpcode) {
-    case 404:
-        m_socket->write("HTTP/1.1 404 Not Found\r\n");
-        break;
-    case 200:
+void ClientConnection::generateFileResponse() {
+    QFile www(wwwFile(QUrl::fromPercentEncoding(m_requestedfile)));
+    QFileInfo wwwinfo(www);
+    if (wwwinfo.exists()) {
+        if (!wwwinfo.isReadable()) {
+            m_socket->write("HTTP/1.1 403 Forbidden\r\n");
+			m_socket->write("Content-Length: 0\r\n");
+            writeDefaultHeaders();
+            m_socket->write("\r\n");
+            m_socket->flush();
+            return;
+        }
         m_socket->write("HTTP/1.1 200 OK\r\n");
-        break;
-    default:
+        writeDefaultHeaders();
+
+        QByteArray type = "text/html";
+        if (wwwinfo.suffix()==QLatin1String("gif")||wwwinfo.suffix()==QLatin1String("png")) {
+            type = "image/"+wwwinfo.suffix().toAscii();
+        } else if (wwwinfo.suffix()==QLatin1String("ico")) {
+            type = "image/vnd.microsoft.icon";
+        } else if (wwwinfo.suffix()==QLatin1String("jpg")||wwwinfo.suffix()==QLatin1String("jpeg")) {
+            type = "image/jpeg";
+        } else if (wwwinfo.suffix()==QLatin1String("css")) {
+            type = "text/css";
+        } else if (wwwinfo.suffix()==QLatin1String("js")) {
+            type = "application/x-javascript";
+        }
+
+        m_socket->write("Last-Modified: " + wwwinfo.lastModified().toString(QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT\r\n");
+        m_socket->write("Content-Type: " + type + "\r\n");
+        m_socket->write("Content-Length:"+QByteArray::number(wwwinfo.size())+"\r\n");
+		
+        m_socket->write("\r\n");
+		
+        if (m_requestType==Get) {
+            www.open(QIODevice::ReadOnly);
+            m_socket->write(www.readAll());
+            www.close();
+        }
+        m_socket->flush();
+    } else {
+        qDebug() << "File not found: " << wwwinfo.absoluteFilePath();
         m_socket->write("HTTP/1.1 404 Not Found\r\n");
-        break;
+		m_socket->write("Content-Length: 0\r\n");
+        writeDefaultHeaders();
+        m_socket->write("\r\n");
+        m_socket->flush();
     }
-    m_socket->write("Server: roomcontrolserver\r\nDate: " + QDateTime::currentDateTime().toString(QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT\r\n" +
-                    "Content-Language: de\ncharset=utf-8\r\n");
-    m_socket->write("Content-Type: " + contenttype + "\r\n");
-    m_socket->write("Content-Length:"+QByteArray::number(data.size())+"\r\n\r\n");
-    if (data.size()) m_socket->write(data);
-    m_socket->flush();
 }
 
 void ClientConnection::generateWebsocketResponseV04() {
@@ -257,13 +287,20 @@ void ClientConnection::generateWebsocketResponseV00() {
     m_socket->write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: roomcontrol\r\n");
     m_socket->write("sec-WebSocket-Origin: "+origin+"\r\n");
     m_socket->write("Sec-WebSocket-Location: wss://"+m_socket->localAddress().toString().toAscii()+":"+QByteArray::number(m_socket->localPort())+"/"+m_requestedfile+"\r\n");
+    writeDefaultHeaders();
     m_socket->write("\r\n"+hash.result());
     m_socket->flush();
 }
 
 bool ClientConnection::readHttp(const QByteArray& line) {        // in header
-    if (line.startsWith("GET") && line.endsWith("HTTP/1.1")) {
-        m_requestedfile = line.mid(5,line.length()-9-5).trimmed();
+    if (line.endsWith("HTTP/1.1")) {
+        m_requestType = None;
+        if (line.startsWith("GET")) m_requestType = Get;
+        else if (line.startsWith("HEAD")) m_requestType = Head;
+        else if (line.startsWith("POST")) m_requestType = Post;
+
+        int i = line.indexOf(' ');
+        m_requestedfile = line.mid(i+2,line.length()-10-i).trimmed();
         if (m_requestedfile=="") m_requestedfile = "index.html";
         // header leeren
         m_header.clear();
@@ -300,31 +337,16 @@ bool ClientConnection::readHttp(const QByteArray& line) {        // in header
             }
             m_isWebsocket = true;
         } else {
-            QFile www(wwwFile(QUrl::fromPercentEncoding(m_requestedfile)));
-            QFileInfo wwwinfo(www);
-            if (www.exists()) {
-                QByteArray type = "text/html";
-                if (wwwinfo.suffix()==QLatin1String("gif")||wwwinfo.suffix()==QLatin1String("png")) {
-                    type = "image/"+wwwinfo.suffix().toAscii();
-                } else if (wwwinfo.suffix()==QLatin1String("ico")) {
-                    type = "image/vnd.microsoft.icon";
-                } else if (wwwinfo.suffix()==QLatin1String("jpg")||wwwinfo.suffix()==QLatin1String("jpeg")) {
-                    type = "image/jpeg";
-                } else if (wwwinfo.suffix()==QLatin1String("css")) {
-                    type = "text/css";
-                } else if (wwwinfo.suffix()==QLatin1String("js")) {
-                    type = "application/x-javascript";
-                }
-                www.open(QIODevice::ReadOnly);
-                generateResponse(200, www.readAll(), type);
-                www.close();
-            } else {
-                generateResponse(404);
-            }
+            generateFileResponse();
         }
         m_inHeader = false;
     } else {
         qDebug() << "unknown data" << line;
     }
     return true;
+}
+
+void ClientConnection::writeDefaultHeaders() {
+    m_socket->write("Server: roomcontrolserver\r\nDate: " + QDateTime::currentDateTime().toString(QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT\r\n" +
+                    "Content-Language: de\ncharset=utf-8\r\n");
 }

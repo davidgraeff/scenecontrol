@@ -39,4 +39,8 @@
     <uint id="total_in_ms" />
     <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
   </property>
+  <property id="mpd.connection.state">
+    <string id="server"></string>
+    <enum id="state" n="2" /><!-- not reachable, connected -->
+  </property>
 </plugin>

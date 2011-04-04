@@ -36,6 +36,8 @@ public:
     virtual ~CardThread();
 	virtual void run();
 	void abort();
+	QString getAtr() { return QString::fromAscii(atr); }
+	int getState() {return cardstate; }
 private:
     bool m_systemReady;
     void readReaders();
@@ -52,6 +54,7 @@ private:
 	char **readers;
 	int nbReaders, i;
 	char atr[MAX_ATR_SIZE*3+1];
+	int cardstate;
 	bool pnp;
 Q_SIGNALS:
     void cardDetected(const QString& atr, int state);

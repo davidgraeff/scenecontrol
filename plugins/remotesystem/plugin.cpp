@@ -48,7 +48,9 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
         foreach ( QString address, strings ) {
             const QStringList data ( address.split ( QLatin1Char ( ':' ) ) );
             if ( data.size() !=2 ) continue;
-            m_clients.append ( new ExternalClient ( this,data[0], data[1].toInt() ) );
+            ExternalClient* client = new ExternalClient ( this,data[0], data[1].toInt() );
+            connect(client, SIGNAL(stateChanged(ExternalClient*)),SLOT(stateChanged(ExternalClient*)));
+            m_clients.append ( client );
         }
         // default: select all clients
         m_selectedclients = m_clients;
@@ -89,6 +91,9 @@ void plugin::event_changed ( const QVariantMap& data ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+    foreach (ExternalClient* client, m_clients) {
+        l.append(stateChanged(client, false));
+    }
     return l;
 }
 
@@ -100,4 +105,13 @@ QList< ExternalClient* > plugin::specificClients ( const QStringList& hosts ) {
         }
     }
     return r;
+}
+
+QVariantMap plugin::stateChanged(ExternalClient* client, bool propagate) {
+    PROPERTY("remote.connection.state");
+	const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
+    SETDATA("server",server);
+    SETDATA("state", (int)client->isConnected());
+    if (propagate) m_server->property_changed(data);
+    return data;
 }

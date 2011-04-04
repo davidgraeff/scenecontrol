@@ -9,7 +9,7 @@
   <event id="modeevent">
     <string id="mode"></string>
   </event>
-  <property id="modechanged">
+  <property id="mode">
     <string id="mode"></string>
   </property>
 </plugin>

@@ -24,7 +24,7 @@
 #include <qprocess.h>
 #include <shared/abstractplugin.h>
 
-ExternalClient::ExternalClient(AbstractPlugin* plugin, const QString& host, int port) : m_plugin(plugin), m_alreadyWarnedNoHost(false)
+ExternalClient::ExternalClient(AbstractPlugin* plugin, const QString& host, int port) : m_plugin(plugin), m_connected(false)
 {
     connect(&m_reconnect,SIGNAL(timeout()),SLOT(reconnectTimeout()));
     m_reconnect.setInterval(60000);
@@ -54,26 +54,20 @@ void ExternalClient::reconnectTimeout() {
 
 void ExternalClient::slotconnected()
 {
-    m_alreadyWarnedNoHost = false;
     m_reconnect.stop();
-    qDebug()<< m_plugin->pluginid() << "connected to"<<m_host<<m_port;
+    m_connected = true;
+	emit stateChanged(this);
 }
 
 void ExternalClient::slotdisconnected()
 {
-    qDebug()<< m_plugin->pluginid() << "disconnected from"<<m_host<<m_port;
+    m_connected = false;
+	emit stateChanged(this);
     disconnectFromHost();
     m_reconnect.start();
 }
 
-void ExternalClient::sloterror(QAbstractSocket::SocketError e)
-{
-    if (e == QAbstractSocket::HostNotFoundError) {
-        if (m_alreadyWarnedNoHost) return;
-        m_alreadyWarnedNoHost = true;
-    }
-    qWarning() << m_plugin->pluginid() << m_host << m_port << errorString();
-}
+void ExternalClient::sloterror(QAbstractSocket::SocketError e) {Q_UNUSED(e);}
 
 void ExternalClient::slotreadyRead()
 {

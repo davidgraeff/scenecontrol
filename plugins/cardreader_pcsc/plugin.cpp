@@ -38,7 +38,7 @@ plugin::~plugin() {
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
+void plugin::initialize() {
     m_thread->start();
 }
 
@@ -56,34 +56,39 @@ bool plugin::condition ( const QVariantMap& data )  {
 }
 
 void plugin::event_changed ( const QVariantMap& data ) {
-	if (IS_ID("cardevent")) {
-		// entfernen
-		const QString uid = UNIQUEID();
-		QMutableMapIterator<QString, QSet<QString> > it(m_card_events);
-		while (it.hasNext()) {
-			it.next();
-			it.value().remove(uid);
-			if (it.value().isEmpty())
-				it.remove();
-		}
-		// hinzufügen
-		m_card_events[DATA("cardid")].insert(uid);
-	}
+    if (IS_ID("cardevent")) {
+        // entfernen
+        const QString uid = UNIQUEID();
+        QMutableMapIterator<QString, QSet<QString> > it(m_card_events);
+        while (it.hasNext()) {
+            it.next();
+            it.value().remove(uid);
+            if (it.value().isEmpty())
+                it.remove();
+        }
+        // hinzufügen
+        m_card_events[DATA("cardid")].insert(uid);
+    }
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+    {
+        PROPERTY("cardchanged");
+        data[QLatin1String("cardid")] = m_thread->getAtr();
+        data[QLatin1String("state")] = m_thread->getState();
+    }
     return l;
 }
 
 void plugin::slotcardDetected ( const QString& atr, int state ) {
     PROPERTY("cardchanged");
-	data[QLatin1String("cardid")] = atr;
-	data[QLatin1String("state")] = state;
+    data[QLatin1String("cardid")] = atr;
+    data[QLatin1String("state")] = state;
     m_server->property_changed(data);
-	
-	foreach (QString uid, m_card_events.value(atr)) {
-		m_server->event_triggered(uid);
-	}
+
+    foreach (QString uid, m_card_events.value(atr)) {
+        m_server->event_triggered(uid);
+    }
 }

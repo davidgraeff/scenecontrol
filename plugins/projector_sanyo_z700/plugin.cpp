@@ -58,7 +58,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
         m_serial->setStopBits ( STOP_1 );
         connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
         if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
-            qWarning() << pluginid() << "init fehler";
+            qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
         }
     }
 }

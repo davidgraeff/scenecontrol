@@ -49,4 +49,5 @@ public slots:
     void playlistsChanged ( QString,int );
 	void trackChanged(const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state);
     void volumeChanged ( double );
+	QVariantMap stateChanged(MediaController* client, bool propagate = true);
 };

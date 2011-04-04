@@ -74,18 +74,36 @@ void plugin::event_changed ( const QVariantMap& data ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+    {
+        QMap<QString, unsigned char>::iterator i = m_controller->m_values.begin();
+        for (;i!=m_controller->m_values.end();++i) {
+            PROPERTY("anel.io.value");
+            data[QLatin1String("channel")] = i.key();
+            data[QLatin1String("value")] = i.value();
+            l.append(data);
+        }
+    }
+    {
+        QMap<QString, QString>::iterator i = m_controller->m_names.begin();
+        for (;i!=m_controller->m_names.end();++i) {
+            PROPERTY("anel.io.name");
+            data[QLatin1String("channel")] = i.key();
+            data[QLatin1String("name")] = i.value();
+            l.append(data);
+        }
+    }
     return l;
 }
 
 void plugin::nameChanged(QString channel, QString name) {
-    PROPERTY("ionamechange");
+    PROPERTY("anel.io.name");
     data[QLatin1String("channel")] = channel;
-	data[QLatin1String("name")] = name;
+    data[QLatin1String("name")] = name;
     m_server->property_changed(data);
 }
 
 void plugin::valueChanged(QString channel, int value) {
-    PROPERTY("iovaluechange");
+    PROPERTY("anel.io.value");
     data[QLatin1String("channel")] = channel;
     data[QLatin1String("value")] = value;
     m_server->property_changed(data);

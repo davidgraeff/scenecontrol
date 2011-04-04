@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
         printf("%s - %s\n%s [--no-restart] [--no-event-loop] [--no-network] [--observe-service-dir] [--ignore-lock] [--help] [--version]\nLockfile: %s\n"
                "--no-restart: Do not restart after exit\n--no-event-loop: Shutdown after initialisation\n--no-network: Do not load network objects\n"
 			   "--observe-service-dir: Reload changed files in the service directory\n--ignore-lock: Try to remove lock and acquire lock file\n"
-			   "--help: This help text\n--version: Version information, parseable for scripts",
+			   "--help: This help text\n--version: Version information, parseable for scripts\n",
                ROOM_SERVICENAME, ABOUT_VERSION, argv[0],
                QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath()).toUtf8().constData());
         return 0;
@@ -162,8 +162,10 @@ int main(int argc, char *argv[])
 
     // restart program
     if (ROOM_RESTART_ON_CLOSE) {
-        if (exitByConsoleCommand || cmdargs.contains("--no-restart")) {
-            qDebug() << "Shutdown: Start another instance not allowed";
+        if (exitByConsoleCommand) {
+			qDebug() << "Shutdown: Console shutdown. No restart allowed!";
+		} else if (cmdargs.contains("--no-restart")) {
+            qDebug() << "Shutdown: Start another instance not allowed!";
         } else {
             qDebug() << "Shutdown: Start another instance";
             QProcess::startDetached(QString::fromAscii(argv[0]));

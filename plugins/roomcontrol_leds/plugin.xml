@@ -24,11 +24,11 @@
     <string id="name" />
   </action>
   
-  <property id="ledvaluechanged">
+  <property id="roomcontrol.led.value">
     <int id="channel" />
     <int id="value" />
   </property>
-  <property id="lednamechanged">
+  <property id="roomcontrol.led.name">
     <int id="channel" />
     <string id="name" />
   </property>
@@ -39,7 +39,7 @@
   <condition id="curtaincondition">
     <int id="value" />
   </condition>
-  <property id="curtainstate">
+  <property id="roomcontrol.curtain.state">
     <int id="max" />
     <int id="value" />
   </property>

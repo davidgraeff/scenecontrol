@@ -58,6 +58,7 @@ public:
     void setDevice(ManagedDevice* device);
     void unregisterKey(QString uid);
     void registerKey(QString uid, QString key, bool repeat);
+	ManagedDevice* device();
 private Q_SLOTS:
     void eventData();
     void repeattrigger(bool initial_event = false);

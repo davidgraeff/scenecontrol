@@ -35,7 +35,10 @@ public:
 	};
     MediaController(AbstractPlugin* plugin);
     ~MediaController();
-
+	const QString host() const { return m_host; }
+	int port() const { return m_port; }
+	int isConnected() const { return m_mpdstatus->isOpen()&&m_mpdcmd->isOpen(); }
+	
     /**
      * Return current active playlist or an empty string if no valid playlist is set
      */
@@ -79,8 +82,8 @@ public:
     void connectToMpd(const QString& hostport);
 private:
     AbstractPlugin* m_plugin;
-    QString m_mpdhost;
-    int m_mpdport;
+    QString m_host;
+    int m_port;
     bool m_terminate;
 
     // command queue
@@ -141,4 +144,5 @@ Q_SIGNALS:
 	void playlistsChanged(const QString& playlist, int position);
 	void playlistChanged(const QString& playlist_id);
 	void trackChanged(const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state);
+	void stateChanged(MediaController* client);
 };

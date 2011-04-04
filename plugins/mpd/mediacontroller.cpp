@@ -58,23 +58,25 @@ void MediaController::connectToMpd(const QString& hostport)
 {
     const QStringList data(hostport.split(QLatin1Char(':')));
     if (data.size()!=2) return;
-    m_mpdhost = data[0];
-    m_mpdport = data[1].toInt();
+    m_host = data[0];
+    m_port = data[1].toInt();
 
     reconnectTimeout();
 }
 
 void MediaController::reconnectTimeout() {
     if (m_mpdstatus->state() == QTcpSocket::UnconnectedState)
-        m_mpdstatus->connectToHost(m_mpdhost,m_mpdport);
+        m_mpdstatus->connectToHost(m_host,m_port);
     if (m_mpdcmd->state() == QTcpSocket::UnconnectedState)
-        m_mpdcmd->connectToHost(m_mpdhost,m_mpdport);
+        m_mpdcmd->connectToHost(m_host,m_port);
 }
 
 void MediaController::slotconnected() {
     if (m_terminate) return;
-    if (m_mpdstatus->state() != QTcpSocket::UnconnectedState && m_mpdcmd->state() != QTcpSocket::UnconnectedState)
+    if (m_mpdstatus->state() != QTcpSocket::UnconnectedState && m_mpdcmd->state() != QTcpSocket::UnconnectedState) {
+        emit stateChanged(this);
         m_reconnect.stop();
+    }
     m_needCurrentSong = StatusNoNeed;
     m_needstatus = StatusNeed;
     m_needPlaylists = StatusNeed;
@@ -84,36 +86,40 @@ void MediaController::slotdisconnected()
 {
     if (m_terminate) return;
     if (m_mpdstatus->state() != QTcpSocket::UnconnectedState) return;
+    emit stateChanged(this);
     qWarning() << m_plugin->pluginid() << "Connection lost. Try reconnect (status channel)";
-    m_mpdstatus->connectToHost(m_mpdhost,m_mpdport);
+    m_mpdstatus->connectToHost(m_host,m_port);
 }
 
 void MediaController::sloterror(QAbstractSocket::SocketError)
 {
     if (m_terminate) return;
-    qWarning() << m_plugin->pluginid() << m_mpdhost << m_mpdport << m_mpdstatus->errorString() << "status channel";
+    //qWarning() << m_plugin->pluginid() << m_host << m_port << m_mpdstatus->errorString() << "status channel";
     m_reconnect.start();
 }
 
 void MediaController::slotconnected2() {
     if (m_terminate) return;
     m_mpdchannelfree = false;
-    if (m_mpdstatus->state() != QTcpSocket::UnconnectedState && m_mpdcmd->state() != QTcpSocket::UnconnectedState)
+    if (m_mpdstatus->state() != QTcpSocket::UnconnectedState && m_mpdcmd->state() != QTcpSocket::UnconnectedState) {
         m_reconnect.stop();
+        emit stateChanged(this);
+    }
 }
 
 void MediaController::slotdisconnected2()
 {
     if (m_terminate) return;
     if (m_mpdcmd->state() != QTcpSocket::UnconnectedState) return;
+    emit stateChanged(this);
     qWarning() << m_plugin->pluginid() << "Connection lost. Try reconnect (cmd channel)";
-    m_mpdcmd->connectToHost(m_mpdhost,m_mpdport);
+    m_mpdcmd->connectToHost(m_host,m_port);
 }
 
 void MediaController::sloterror2(QAbstractSocket::SocketError)
 {
     if (m_terminate) return;
-    qWarning() << m_plugin->pluginid() << m_mpdhost << m_mpdport << m_mpdcmd->errorString() << "cmd channel";
+    //qWarning() << m_plugin->pluginid() << m_host << m_port << m_mpdcmd->errorString() << "cmd channel";
     m_reconnect.start();
 }
 
@@ -211,7 +217,7 @@ void MediaController::slotreadyRead()
                 }
             } else if (args[0] == "volume:" && args.size()==2) {
                 m_volume = args[1].toInt();
-				emit volumeChanged(m_volume);
+                emit volumeChanged(m_volume);
             } else if (args[0] == "time:" && args.size()==2) {
                 QList<QByteArray> l = args[1].split(':');
                 if (l.size()==1) l.append(0);
@@ -395,13 +401,13 @@ void MediaController::checkPlaylists() {
             continue;
         }
         m_playlists.append(m_tempplaylists[i]);
-		emit playlistsChanged(m_playlists[i], m_playlists.size());
+        emit playlistsChanged(m_playlists[i], m_playlists.size());
     }
 
     //remove old
     for (int i=vorhanden.size()-1;i>=0;--i) {
         if (vorhanden[i] == true) continue;
-		emit playlistsChanged(m_playlists[i], -1);
+        emit playlistsChanged(m_playlists[i], -1);
         m_playlists.removeAt(i);
     }
 
