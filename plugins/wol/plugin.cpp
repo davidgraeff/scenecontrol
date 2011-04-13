@@ -41,7 +41,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 }
 
 void plugin::execute(const QVariantMap& data) {
-	if (IS_ID("wol")) {
+	if (ServiceID::isId(data,"wol")) {
 		QStringList parts = data["mac"].toString().split(QLatin1Char(':'));
 		if (parts.size()!=6) return;
 		QByteArray mac;

@@ -72,25 +72,25 @@ void plugin::writeToDevice() {
 
 void plugin::execute ( const QVariantMap& data ) {
     if ( !m_serial ) return;
-    if ( IS_ID ( "projector_sanyo_power" ) ) {
+    if ( ServiceID::isId(data, "projector_sanyo_power" ) ) {
         if ( BOOLDATA ( "power" ) )
             strncpy ( m_buffer, "C00", 3 );
         else
             strncpy ( m_buffer, "C01", 3 );
 		writeToDevice();
-    } else if ( IS_ID ( "projector_sanyo_video" ) ) {
+    } else if ( ServiceID::isId(data, "projector_sanyo_video" ) ) {
         if ( BOOLDATA ( "mute" ) )
             strncpy ( m_buffer, "C0D", 3 );
         else
             strncpy ( m_buffer, "C0E", 3 );
 		writeToDevice();
-    } else if ( IS_ID ( "projector_sanyo_lamp" ) ) {
+    } else if ( ServiceID::isId(data, "projector_sanyo_lamp" ) ) {
         if ( BOOLDATA ( "eco" ) )
             strncpy ( m_buffer, "C75", 3 );
         else
             strncpy ( m_buffer, "C74", 3 );
 		writeToDevice();
-    } else if ( IS_ID ( "projector_sanyo_focus" ) ) {
+    } else if ( ServiceID::isId(data, "projector_sanyo_focus" ) ) {
         //TODO
     }
 }

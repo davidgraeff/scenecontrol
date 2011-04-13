@@ -56,9 +56,9 @@ bool plugin::condition ( const QVariantMap& data )  {
 }
 
 void plugin::event_changed ( const QVariantMap& data ) {
-    if (IS_ID("cardevent")) {
+    if (ServiceID::isId(data,"cardevent")) {
         // entfernen
-        const QString uid = UNIQUEID();
+        const QString uid = ServiceType::uniqueID(data);
         QMutableMapIterator<QString, QSet<QString> > it(m_card_events);
         while (it.hasNext()) {
             it.next();
@@ -75,18 +75,20 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
-        PROPERTY("cardchanged");
-        data[QLatin1String("cardid")] = m_thread->getAtr();
-        data[QLatin1String("state")] = m_thread->getState();
+		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "card.atr").getData());
+        ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "card.atr");
+        sc.setData("cardid",m_thread->getAtr());
+        sc.setData("state",m_thread->getState());
+		l.append(sc.getData());
     }
     return l;
 }
 
 void plugin::slotcardDetected ( const QString& atr, int state ) {
-    PROPERTY("cardchanged");
-    data[QLatin1String("cardid")] = atr;
-    data[QLatin1String("state")] = state;
-    m_server->property_changed(data);
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "card.atr");
+    sc.setData("cardid", atr);
+    sc.setData("state", state);
+    m_server->property_changed(sc.getData());
 
     foreach (QString uid, m_card_events.value(atr)) {
         m_server->event_triggered(uid);

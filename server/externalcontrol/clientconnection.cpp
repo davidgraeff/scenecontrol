@@ -103,9 +103,9 @@ void ClientConnection::readyRead()
             const QVariantMap data = QJson::Parser().parse (frame, &ok).toMap();
             if (!ok) continue;
             qDebug() << "received json" << data;
-            if (IS_ID("sessionlogin")) { // login have to happen here
+            if (ServiceID::isId(data,"sessionlogin")) { // login have to happen here
                 sessionid = SessionController::instance()->addSession(DATA("user"),DATA("pwd"));
-            } else if (IS_ID("sessionidle")) {
+            } else if (ServiceID::isId(data,"sessionidle")) {
                 Session* session = SessionController::instance()->getSession(sessionid);
                 Q_ASSERT(session);
                 session->resetSessionTimer();
@@ -154,30 +154,9 @@ void ClientConnection::disconnected()
 
 void ClientConnection::sessionEstablished() {
     m_authok=true;
-//         QByteArray data;
-//         data.append("{\"type\" : \"serverinfo\", \"version\" : \""ROOM_NETWORK_APIVERSION"\", \"auth\" : \"required\", \"auth_timeout\" : \"");
-//         data.append(QByteArray::number(ROOM_NETWORK_AUTHTIMEOUT));
-//         data.append("\", \"plugins\" : \"");
-//         data.append("\"}");
-//         socket->write ( data );
-    //qDebug() << "new connection, waiting for authentification";
-
-}
-
-void ClientConnection::sessionTimeout() {
-    m_authok=false;
-}
-
-void ClientConnection::sessionFailed() {
-    m_authok=false;
-}
-
-bool ClientConnection::isAuthentificatedServerEventConnection() {
-    return m_authok && m_isWebsocket;
 }
 
 void ClientConnection::writeJSON(const QByteArray& data) {
-    if (!m_isWebsocket) return;
     m_socket->write(char(0x00)+data+char(0xFF)+"\n");
 }
 

@@ -44,9 +44,9 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data ) {
-    if ( IS_ID ( "pulsechannelmute" ) ) {
+    if ( ServiceID::isId(data, "pulsechannelmute" ) ) {
         set_sink_muted(DATA("sindid").toUtf8().constData(), INTDATA ( "mute" ) );
-    } else if ( IS_ID ( "pulsechannelvolume" ) ) {
+    } else if ( ServiceID::isId(data, "pulsechannelvolume" ) ) {
         if (BOOLDATA ( "relative" )) {
             set_sink_volume_relative(DATA("sindid").toUtf8(), DOUBLEDATA ( "volume" ));
         } else {
@@ -71,16 +71,16 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 }
 
 void plugin::pulseSinkChanged ( double volume, bool mute, const QString& sinkid ) {
-    PROPERTY ( "pulsechannelstate" );
-    data[QLatin1String ( "sinkid" ) ] = sinkid;
-    data[QLatin1String ( "mute" ) ] = mute;
-    data[QLatin1String ( "volume" ) ] = volume;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulsechannelstate" );
+    sc.setData("sinkid", sinkid);
+    sc.setData("mute", mute);
+    sc.setData("volume", volume);
+    m_server->property_changed ( sc.getData() );
 }
 
 void plugin::pulseVersion(int protocol, int server) {
-    PROPERTY ( "pulseversion" );
-    data[QLatin1String ( "protocol" ) ] = protocol;
-    data[QLatin1String ( "server" ) ] = server;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulseversion" );
+    sc.setData("protocol", protocol);
+    sc.setData("server", server);
+    m_server->property_changed ( sc.getData() );
 }

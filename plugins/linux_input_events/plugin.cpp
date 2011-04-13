@@ -74,9 +74,9 @@ bool plugin::condition ( const QVariantMap& data )  {
 }
 
 void plugin::event_changed ( const QVariantMap& data ) {
-    if ( IS_ID ( "inputevent" ) ) {
+    if ( ServiceID::isId(data, "inputevent" ) ) {
         // entfernen
-        const QString uid = UNIQUEID();
+        const QString uid = ServiceType::uniqueID(data);
 
         QMutableMapIterator<QString, InputDevice* > it ( m_devices );
         while ( it.hasNext() ) {
@@ -92,7 +92,7 @@ void plugin::event_changed ( const QVariantMap& data ) {
 }
 
 void plugin::otherPropertyChanged ( const QVariantMap& data, const QString& sessionid ) {
-    if ( IS_ID ( "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
+    if ( ServiceID::isId(data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
         InputDevice* inputdevice = m_devices.value(DATA ( "inputdevice") );
         if (!inputdevice) return;
         inputdevice->connectSession(sessionid);
@@ -110,20 +110,21 @@ void plugin::session_change ( const QString& id, bool running ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "inputdevice").getData());
     foreach(InputDevice* device, m_devices) {
-        PROPERTY ( "inputdevice" );
-        data[QLatin1String ( "device_path" ) ] = device->device()->devPath;
-        data[QLatin1String ( "device_info" ) ] = device->device()->info;
-        l.append(data);
+        ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "inputdevice" );
+        sc.setData("device_path", device->device()->devPath);
+        sc.setData("device_info", device->device()->info);
+        l.append(sc.getData());
     }
     return l;
 }
 
 void plugin::deviceAdded(ManagedDevice* device) {
-    PROPERTY ( "inputdevice" );
-    data[QLatin1String ( "device_path" ) ] = device->devPath;
-    data[QLatin1String ( "device_info" ) ] = device->info;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "inputdevice" );
+    sc.setData("device_path", device->devPath);
+    sc.setData("device_info", device->info);
+    m_server->property_changed ( sc.getData() );
     InputDevice* inputdevice = m_devices.value(device->devPath);
     if (!inputdevice) {
         inputdevice = new InputDevice(this);
@@ -133,9 +134,9 @@ void plugin::deviceAdded(ManagedDevice* device) {
 }
 
 void plugin::deviceRemoved(ManagedDevice* device) {
-    PROPERTY ( "inputdevice" );
-    data[QLatin1String ( "device_path" ) ] = device->devPath;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createModelRemoveItem(PLUGIN_ID, "inputdevice" );
+    sc.setData("device_path", device->devPath);
+    m_server->property_changed ( sc.getData() );
     InputDevice* inputdevice = m_devices.value(device->devPath);
     if (inputdevice && inputdevice->isClosable()) {
         delete m_devices.take(device->devPath);
@@ -204,13 +205,13 @@ void InputDevice::eventData() {
             // properties
             {
                 // last key property. Will be propagated to interested clients only.
-                PROPERTY ( "lastinputkey" );
-                data[QLatin1String ( "kernelkeyname" ) ] = kernelkeyname;
-                data[QLatin1String ( "inputdevice" ) ] = m_device->devPath;
+                ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "lastinputkey" );
+                sc.setData("kernelkeyname", kernelkeyname);
+                sc.setData("inputdevice", m_device->devPath);
 
                 // Propagate to all interested clients
                 foreach(QString sessionid, m_sessionids) {
-                    m_plugin->m_server->property_changed(data, sessionid);
+                    m_plugin->m_server->property_changed(sc.getData(), sessionid);
                 }
             }
             // repeat stop

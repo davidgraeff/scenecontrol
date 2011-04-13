@@ -102,4 +102,5 @@ Q_SIGNALS:
 	void ledvalueChanged(int channel, int value);
 	void lednameChanged(int channel, const QString& name);
     void dataLoadingComplete();
+    void ledsCleared();
 };

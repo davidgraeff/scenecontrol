@@ -54,9 +54,9 @@ public:
     ClientConnection(QSslSocket* s) ;
     ~ClientConnection() ;
     void sessionEstablished();
-    void sessionTimeout();
-    void sessionFailed();
-    bool isAuthentificatedServerEventConnection();
+	/**
+	 * Has to be websocket connection to write something
+	 */
     void writeJSON(const QByteArray& data);
 private Q_SLOTS:
     /**

@@ -39,23 +39,23 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 }
 
 void plugin::execute(const QVariantMap& data) {
-    if (IS_ID("changemode")) {
+    if (ServiceID::isId(data,"changemode")) {
         m_mode = DATA("mode");
         modeChanged(m_mode);
     }
 }
 
 bool plugin::condition(const QVariantMap& data)  {
-    if (IS_ID("modecondition")) {
+    if (ServiceID::isId(data,"modecondition")) {
         return (m_mode == DATA("mode"));
     }
     return false;
 }
 
 void plugin::event_changed(const QVariantMap& data) {
-    if (IS_ID("modeevent")) {
+    if (ServiceID::isId(data,"modeevent")) {
         // entfernen
-        const QString uid = UNIQUEID();
+        const QString uid = ServiceType::uniqueID(data);
         QMutableMapIterator<QString, QSet<QString> > it(m_mode_events);
         while (it.hasNext()) {
             it.next();
@@ -72,17 +72,17 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
-        PROPERTY("mode");
-        SETDATA("mode", m_mode);
-        l.append(data);
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mode");
+        sc.setData("mode", m_mode);
+        l.append(sc.getData());
     }
     return l;
 }
 
 void plugin::modeChanged(const QString& mode) {
-    PROPERTY("mode");
-    SETDATA("mode", mode);
-    m_server->property_changed(data);
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mode");
+    sc.setData("mode", mode);
+    m_server->property_changed(sc.getData());
 
     foreach (QString uid, m_mode_events.value(mode)) {
         m_server->event_triggered(uid);

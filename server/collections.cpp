@@ -47,10 +47,10 @@ void Collections::event_changed(const QVariantMap& data)  {
 }
 
 void Collections::execute(const QVariantMap& data)  {
-    if (IS_ID("executecollection")) {
+    if (ServiceID::isId(data,"executecollection")) {
         CollectionInstance* instance = m_collections.value(DATA("collectionid"));
         if (instance && instance->enabled) instance->startExecution();
-    } else if (IS_ID("stopcollection")) {
+    } else if (ServiceID::isId(data,"stopcollection")) {
         CollectionInstance* instance = m_collections.value(DATA("collectionid"));
         if (instance) instance->stop();
     }
@@ -65,7 +65,7 @@ void Collections::clear() {
 void Collections::addCollection(const QVariantMap& data) {
 
     CollectionInstance* instance = new CollectionInstance();
-    m_collections.insert(UNIQUEID(), instance);
+    m_collections.insert(ServiceType::uniqueID(data), instance);
     instance->enabled = BOOLDATA("enabled");
     convertVariantToIntStringMap(MAP("actions"), instance->actionids);
     // convert condition string to parsed binary decision diagram
@@ -73,7 +73,7 @@ void Collections::addCollection(const QVariantMap& data) {
     try {
         instance->conditionids = parser.parse(DATA("conditions").toStdString());
     } catch (boolstuff::BoolExprParser::Error e) {
-        qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << UNIQUEID();
+        qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
     }
     convertVariantToStringSet(LIST("events"), instance->eventids);
     connect(instance,SIGNAL(executeService(QString)),SIGNAL(instanceExecute(QString)));
@@ -81,8 +81,8 @@ void Collections::addCollection(const QVariantMap& data) {
 
 void Collections::dataSync(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(sessionid);
-    if (!IS_COLLECTION()) return;
-    delete m_collections.take(UNIQUEID());
+    if (!ServiceType::isCollection(data)) return;
+    delete m_collections.take(ServiceType::uniqueID(data));
     addCollection(data);
 }
 
@@ -95,7 +95,7 @@ void Collections::dataReady() {
 	const QMap< QString, ServiceController::ServiceStruct* > services = m_servicecontroller->valid_services();
     foreach (ServiceController::ServiceStruct* service, services) {
 		const QVariantMap data = service->data;
-        if (IS_COLLECTION()) {
+        if (ServiceType::isCollection(data)) {
             addCollection(data);
         }
     }

@@ -43,7 +43,7 @@ public:
         AbstractPlugin_services* plugin;
     };
 
-	ServiceController ();
+    ServiceController ();
     virtual ~ServiceController();
     /**
      * For server objects to register their interface. E.g. the backup object to
@@ -51,25 +51,25 @@ public:
      * For validation and service description the server.xml file is used.
      */
     void useServerObject(AbstractPlugin* object);
-	/**
-	 * Deregister server objects before deleting them, otherwise ServiceController
-	 * might try to acces them.
-	 */
-	void removeServerObject(AbstractPlugin* object);
+    /**
+     * Deregister server objects before deleting them, otherwise ServiceController
+     * might try to acces them.
+     */
+    void removeServerObject(AbstractPlugin* object);
 
-	/**
-	 * Return service with uid
-	 */
+    /**
+     * Return service with uid
+     */
     ServiceStruct* service(const QString& uid);
-    
-    
+
+
     const QMap<QString, ServiceStruct*> &valid_services() const;
 
     void load(bool service_dir_watcher);
-	
-	QByteArray getAllPropertiesAndServices(const QString& sessiondid);
+
+    QByteArray getAllPropertiesAndServices(const QString& sessiondid);
 private:
-	QFileSystemWatcher m_dirwatcher;
+    QFileSystemWatcher m_dirwatcher;
     // services
     QMap<QString, ServiceStruct*> m_valid_services; // uid -> data+plugin
 
@@ -80,22 +80,27 @@ private:
      * Only validated services are propagated to the respective plugin
      * for execution. In m_valid_services are only validated services.
      */
-    bool validateService( QVariantMap& data );
+    bool validateService(const QVariantMap& data );
+    void setUniqueID(QVariantMap& data);
 
     // plugins
-	struct PluginInfo {
-		AbstractPlugin* plugin;
-		QString version;
-		void setVersion(const QString& version) { this->version = version; }
-		PluginInfo(AbstractPlugin* plugin) {this->plugin=plugin;}
-		~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
-	};
+    struct PluginInfo {
+        AbstractPlugin* plugin;
+        QString version;
+        void setVersion(const QString& version) {
+            this->version = version;
+        }
+        PluginInfo(AbstractPlugin* plugin) {
+            this->plugin=plugin;
+        }
+        ~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
+    };
     QList<PluginInfo*> m_plugins;
     QMap<QString, AbstractPlugin_services*> m_plugin_services;
     QMap<QString, AbstractPlugin_otherproperties*> m_plugin_otherproperties;
     QMap<QString, AbstractPlugin_settings*> m_plugin_settings;
     QMap<QString, QDomNode*> m_id_to_xml;
-	QMap<QString, AbstractPlugin*> m_id_to_plugin;
+    QMap<QString, AbstractPlugin*> m_id_to_plugin;
 
     /**
      * Load plugins and their corresponding xml description file and
@@ -121,7 +126,7 @@ public Q_SLOTS:
      * If the execution flag is set ("__execute"=true) and data describes an action ("__type"=action)
      * then do not add data to m_valid_services but call \link executeService.
      * \param service data
-	 * \param sessionid sessionid that caused this change or empty if not triggered by external sources like network
+     * \param sessionid sessionid that caused this change or empty if not triggered by external sources like network
      */
     void changeService(const QVariantMap& data, const QString& sessionid);
 
@@ -132,7 +137,8 @@ public Q_SLOTS:
     void removeService(const QString& uid);
 
     /**
-     * Execute action described by data (delegate to plugin)
+     * Execute action described by data (delegate to plugin).
+     * Precondition: Data is checked
      */
     void executeAction(const QVariantMap& data);
     /**
@@ -140,6 +146,11 @@ public Q_SLOTS:
      */
     void executeActionByUID(const QString& uid);
     void directoryChanged(QString file, bool loading = false);
+	
+	/**
+	 * Session manager: A valid session started. Send all plugin infos via dataSync.
+	 */
+    void sessionBegin(QString sessionid);
 Q_SIGNALS:
     /**
      * Emitted after a service has changed

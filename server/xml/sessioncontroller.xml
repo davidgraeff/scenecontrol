@@ -11,20 +11,23 @@
 	<action id="sessionidle">
 		<string id="sessionid" />
 	</action>
-  <!-- Propagates all current logins and own logins as well as all endpoints of own logins -->
-  <property id="serverlogins" type="session">
-    <int id="all" />
-    <int id="own" />
-	<string id="endpoints" /><!-- semicolon separated -->
+	
+  <!-- Propagates all endpoints of own logins -->
+  <property id="server.logins.own" session_specific="1" model_key="endpoint">
+	<string id="endpoint" /><!-- semicolon separated -->
   </property>
- 
+
+  <property id="server.logins.all" session_specific="1">
+    <int id="all" />
+  </property>
+
   <!-- Session state -->
-  <property id="session" type="session">
+  <property id="session" session_specific="1">
     <enum id="state" n="6" /><!-- ok, notaccepted(too much clients), missing(require login), failed, timeout, session_closed(leasetime, logout) -->
   </property>
   
   <!-- Server infos -->
-  <property id="serverinfo" type="session">
+  <property id="serverinfo" session_specific="1">
     <string id="appversion" />
     <string id="protocolversion" />
     <bool id="auth_required" />
@@ -32,6 +35,6 @@
     <int id="session_timeout" />
   </property>
   
-  <property id="authentification_failed" type="session">
-  </property>
+  <property id="authentification.failed" session_specific="1"></property>
+  <property id="authentification.success" session_specific="1"></property>
 </plugin>

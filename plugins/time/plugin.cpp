@@ -50,7 +50,7 @@ void plugin::execute ( const QVariantMap& data ) {
 }
 
 bool plugin::condition ( const QVariantMap& data )  {
-    if ( IS_ID ( "timespan" ) ) {
+    if ( ServiceID::isId(data, "timespan" ) ) {
         QTime m_lower = QTime::fromString ( DATA ( "lower" ),Qt::ISODate );
         QTime m_upper = QTime::fromString ( DATA ( "upper" ),Qt::ISODate );
         if ( QTime::currentTime() < m_lower ) return false;
@@ -61,7 +61,7 @@ bool plugin::condition ( const QVariantMap& data )  {
 }
 
 void plugin::event_changed ( const QVariantMap& data ) {
-    const QString uid = UNIQUEID();
+    const QString uid = ServiceType::uniqueID(data);
     // remove from next events
     m_timeout_service_ids.remove ( uid );
     // recalculate next event
@@ -90,20 +90,20 @@ void plugin::calculate_next_events() {
     QSet<QString> remove;
 
     foreach ( QVariantMap data, m_remaining_events ) {
-        if ( IS_ID ( "timedate" ) ) {
+        if ( ServiceID::isId(data, "timedate" ) ) {
             const int sec = QDateTime::currentDateTime().secsTo ( QDateTime::fromString ( DATA ( "date" ),Qt::ISODate ) );
             if ( sec > 86400 ) {
                 qDebug() << "One-time alarm: Armed (next check only)";
                 min_next_time[86400];
             } else if ( sec > 10 ) {
                 qDebug() << "One-time alarm: Armed" << sec;
-                min_next_time[sec].insert ( UNIQUEID() );
-                remove.insert ( UNIQUEID() );
+                min_next_time[sec].insert ( ServiceType::uniqueID(data) );
+                remove.insert ( ServiceType::uniqueID(data) );
             } else if ( sec > -10 && sec < 10 ) {
-                m_server->event_triggered ( UNIQUEID() );
-                remove.insert ( UNIQUEID() );
+                m_server->event_triggered ( ServiceType::uniqueID(data) );
+                remove.insert ( ServiceType::uniqueID(data) );
             }
-        } else if ( IS_ID ( "timeperiodic" ) ) {
+        } else if ( ServiceID::isId(data, "timeperiodic" ) ) {
             QTime m_time = QDateTime::fromString ( DATA ( "time" ),Qt::ISODate ).time();
             QDateTime datetime = QDateTime::currentDateTime();
             datetime.setTime ( m_time );
@@ -130,7 +130,7 @@ void plugin::calculate_next_events() {
 
             if ( offsetdays < 7 ) {
                 const int sec = QDateTime::currentDateTime().secsTo ( datetime.addDays ( offsetdays ) ) + 1;
-				min_next_time[sec].insert ( UNIQUEID() );
+				min_next_time[sec].insert ( ServiceType::uniqueID(data) );
                 qDebug() << "Periodic alarm: " << datetime.addDays ( offsetdays ).toString ( Qt::DefaultLocaleShortDate );
             }
         }

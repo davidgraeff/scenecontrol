@@ -26,6 +26,7 @@
 #include <QUdpSocket>
 #include <QThread>
 #include <QStringList>
+
 Controller::Controller(AbstractPlugin* plugin) : m_plugin(plugin), m_listenSocket(0) {
     m_writesocket = new QUdpSocket(this);
     connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
@@ -44,16 +45,13 @@ void Controller::connectToIOs(int portSend, int portListen, const QString& user,
     connect(m_listenSocket,SIGNAL(readyRead()),SLOT(readyRead()));
     m_listenSocket->bind(QHostAddress::Broadcast,portListen);
 
-    QByteArray str("wer da?");
-    str.append(0x0D);
-    str.append(0x0A);
-    m_writesocket->writeDatagram(str, QHostAddress::Broadcast, portSend);
+    reinitialize();
 }
 
 void Controller::readyRead() {
-	if (!m_listenSocket->hasPendingDatagrams()) {
-		return;
-	}
+    if (!m_listenSocket->hasPendingDatagrams()) {
+        return;
+    }
     QByteArray bytes;
     bytes.resize(1000);
     const int read = m_listenSocket->readDatagram(bytes.data(), 1000);
@@ -127,7 +125,7 @@ void Controller::setPinName ( const QString& pin, const QString& name )
     settings.beginGroup ( QLatin1String("pinnames") );
     settings.setValue ( pin, name );
 
-	emit nameChanged(pin, name);
+    emit nameChanged(pin, name);
 }
 
 void Controller::togglePin ( const QString& pin )
@@ -157,4 +155,14 @@ int Controller::countPins() {
 QString Controller::getPinName(const QString& pin) {
     if (!m_names.contains(pin)) return QString();
     return m_names[pin];
+}
+
+void Controller::reinitialize() {
+	m_values.clear();
+	m_names.clear();
+	
+    QByteArray str("wer da?");
+    str.append(0x0D);
+    str.append(0x0A);
+    m_writesocket->writeDatagram(str, QHostAddress::Broadcast, m_sendPort);
 }

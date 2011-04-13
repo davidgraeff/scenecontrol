@@ -14,7 +14,6 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
 #pragma once
@@ -31,6 +30,7 @@ class Controller : public QObject
 public:
     Controller(AbstractPlugin* plugin);
     ~Controller();
+	void reinitialize();
     QString getPinName ( const QString& pin );
     void setPin ( const QString& pin, bool value );
     void setPinName ( const QString& pin, const QString& name );

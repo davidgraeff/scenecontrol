@@ -27,15 +27,15 @@ void plugin::initialize() {
 
 void plugin::execute(const QVariantMap& data) {
 	if (!m_xbmcClient) return;
-	if (IS_ID("xbmcfocus")) {
+	if (ServiceID::isId(data,"xbmcfocus")) {
 		setSetting(QLatin1String("server"), data["server"].toString());
-	} else if (IS_ID("xbmcvolume")) {
+	} else if (ServiceID::isId(data,"xbmcvolume")) {
 		//todo
-	} else if (IS_ID("xbmcposition")) {
+	} else if (ServiceID::isId(data,"xbmcposition")) {
 		//todo
-	} else if (IS_ID("xbmcmedia")) {
+	} else if (ServiceID::isId(data,"xbmcmedia")) {
 		//todo
-	} else if (IS_ID("xbmccmd")) {
+	} else if (ServiceID::isId(data,"xbmccmd")) {
 		setCommand(data["state"].toInt());
 	}
 }

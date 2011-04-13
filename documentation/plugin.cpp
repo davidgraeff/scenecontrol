@@ -42,7 +42,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 }
 
 void plugin::execute(const QVariantMap& data) {
-	if (IS_ID("bla")) {
+	if (ServiceID::isId(data,"bla")) {
 	}
 }
 

@@ -29,10 +29,18 @@ protected: \
 public: \
 	virtual void connectToServer(AbstractServer* server) {m_server=server; } \
 
-// access and set id
-#define IS_ID(ID) data[QLatin1String("id")].toString() == QLatin1String(ID)
-#define ID() data[QLatin1String("id")].toString()
-#define SETID(VAR) data[QLatin1String("id")] = VAR
+class ServiceID {
+public:
+    static QString id(const QVariantMap& data) {
+        return data[QLatin1String("id")].toString();
+    }
+    static void setId(QVariantMap& data, const QString& id) {
+        data[QLatin1String("id")] = id;
+    }
+    static bool isId(const QVariantMap& data, const char* id) {
+		return data[QLatin1String("id")].toString() == QLatin1String(id);
+	}
+};
 
 class AbstractServer;
 class AbstractPlugin

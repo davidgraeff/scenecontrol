@@ -104,6 +104,7 @@ void Controller::parseLeds ( const QByteArray& data ) {
     settings.beginGroup ( QLatin1String ( "channelnames" ) );
     // clear old
     m_leds.clear();
+	emit ledsCleared();
     // set new
     m_channels = ( int ) data[0];
     qDebug() <<m_plugin->pluginid() << "LED Channels:" << m_channels;

@@ -51,9 +51,9 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data ) {
-    if ( IS_ID ( "mpdvolume" ) ) {
+    if ( ServiceID::isId(data, "mpdvolume" ) ) {
         m_mediacontroller->setVolume ( DOUBLEDATA ( "volume" ), BOOLDATA ( "relative" ) );
-    } else if ( IS_ID ( "mpdcmd" ) ) {
+    } else if ( ServiceID::isId(data, "mpdcmd" ) ) {
         switch ( INTDATA ( "state" ) ) {
         case 0:
             m_mediacontroller->play();
@@ -82,7 +82,7 @@ void plugin::execute ( const QVariantMap& data ) {
         default:
             break;
         }
-    } else if ( IS_ID ( "mpdchangeplaylist" ) ) {
+    } else if ( ServiceID::isId(data, "mpdchangeplaylist" ) ) {
         // set playlist
         const QString playlistid = DATA ( "playlistid" );
         const int track = INTDATA ( "track" );
@@ -94,13 +94,13 @@ void plugin::execute ( const QVariantMap& data ) {
             m_mediacontroller->setCurrentTrack ( track );
         }
 
-    } else if ( IS_ID ( "mpdposition" ) ) {
+    } else if ( ServiceID::isId(data, "mpdposition" ) ) {
         m_mediacontroller->setTrackPosition ( INTDATA ( "position_in_ms" ), BOOLDATA ( "relative" ) );
     }
 }
 
 bool plugin::condition ( const QVariantMap& data )  {
-    if ( IS_ID ( "bla" ) ) {
+    if ( ServiceID::isId(data, "bla" ) ) {
         return ( INTDATA ( "mpdstatecondition" ) == m_mediacontroller->state() );
     }
     return false;
@@ -118,40 +118,40 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 }
 
 void plugin::playlistChanged ( QString p ) {
-    PROPERTY ( "mpdplaylist" );
-    data[QLatin1String ( "playlistid" ) ] = p;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdplaylist" );
+    sc.setData("playlistid", p);
+    m_server->property_changed ( sc.getData() );
 }
 
 void plugin::playlistsChanged ( QString p, int pos) {
-    PROPERTY ( "mpdplaylists" );
-    data[QLatin1String ( "playlistid" ) ] = p;
-    data[QLatin1String ( "position" ) ] = pos;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdplaylists" );
+    sc.setData("playlistid", p);
+    sc.setData("position", pos);
+    m_server->property_changed ( sc.getData() );
 }
 
 void plugin::trackChanged ( const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
-    PROPERTY ( "mpdtrack" );
-    data[QLatin1String ( "filename" ) ] = filename;
-    data[QLatin1String ( "trackname" ) ] = trackname;
-    data[QLatin1String ( "track" ) ] = track;
-    data[QLatin1String ( "position_in_ms" ) ] = position_in_ms;
-    data[QLatin1String ( "total_in_ms" ) ] = total_in_ms;
-    data[QLatin1String ( "state" ) ] = state;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdtrack" );
+    sc.setData("filename", filename);
+    sc.setData("trackname", trackname);
+    sc.setData("track", track);
+    sc.setData("position_in_ms", position_in_ms);
+    sc.setData("total_in_ms", total_in_ms);
+    sc.setData("state", state);
+    m_server->property_changed ( sc.getData() );
 }
 
 void plugin::volumeChanged ( double volume ) {
-    PROPERTY ( "mpdvolumechanged" );
-    data[QLatin1String ( "volume" ) ] = volume;
-    m_server->property_changed ( data );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdvolumechanged" );
+    sc.setData("volume", volume);
+    m_server->property_changed ( sc.getData() );
 }
 
 QVariantMap plugin::stateChanged(MediaController* client, bool propagate) {
-    PROPERTY("mpd.connection.state");
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mpd.connection.state");
 	const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
-    SETDATA("server",server);
-    SETDATA("state", (int)client->isConnected());
-    if (propagate) m_server->property_changed(data);
-    return data;
+    sc.setData("server",server);
+    sc.setData("state", (int)client->isConnected());
+    if (propagate) m_server->property_changed(sc.getData());
+    return sc.getData();
 }

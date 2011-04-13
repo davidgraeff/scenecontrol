@@ -110,7 +110,8 @@ int main(int argc, char *argv[])
 	SessionController* sessions = SessionController::instance(true);
 	sessions->connectToServer(services);
 	services->useServerObject(sessions);
-	
+	services->connect(sessions,SIGNAL(sessionBegin(QString)),services,SLOT(sessionBegin(QString)));
+
     // serverstate
     ServerState* serverstate = new ServerState();
     serverstate->connectToServer(services);
@@ -124,10 +125,9 @@ int main(int argc, char *argv[])
     if (!cmdargs.contains("--no-network")) {
         httpserver = new HttpServer();
 		httpserver->connect(services,SIGNAL(dataSync(QVariantMap,QString)), httpserver, SLOT(dataSync(QVariantMap,QString)));
-		httpserver->connect(sessions,SIGNAL(sessionAuthFailed(QString)),httpserver,SLOT(sessionAuthFailed(QString)));
 		httpserver->connect(sessions,SIGNAL(sessionBegin(QString)),httpserver,SLOT(sessionBegin(QString)));
 		httpserver->connect(sessions,SIGNAL(sessionFinished(QString,bool)),httpserver,SLOT(sessionFinished(QString,bool)));
-        httpserver->setServiceController(services);
+		httpserver->connect(httpserver,SIGNAL(dataReceived(QVariantMap,QString)),services,SLOT(changeService(QVariantMap,QString)));
         httpserver->start();
     }
 #endif

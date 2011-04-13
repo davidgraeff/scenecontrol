@@ -23,7 +23,6 @@
 #include <QtNetwork/QTcpServer>
 #include <QVariantMap>
 
-class ServiceController;
 class ClientConnection;
 /**
  * Manages incoming connections and delegate commands to the RoomControlServer
@@ -33,19 +32,19 @@ class HttpServer: public QTcpServer {
 public:
     HttpServer();
     virtual ~HttpServer();
-    void setServiceController(ServiceController* controller) ;
     bool start();
 
 private:
-    ServiceController* m_service;
     virtual void incomingConnection(int socketDescriptor);
-    QSet<ClientConnection*> m_connections;
+    QList<ClientConnection*> m_temp_connections;
+	QMap<QString, ClientConnection*> m_connections;
 public Q_SLOTS:
     void removeConnection(ClientConnection* );
     // service controller signals
     void dataSync(const QVariantMap& data, const QString& sessionid);
     // session controller signals
-    void sessionAuthFailed(QString sessionid);
     void sessionBegin(QString sessionid);
     void sessionFinished(QString sessionid, bool timeout);
+Q_SIGNALS:
+    void dataReceived(QVariantMap,QString);
 };

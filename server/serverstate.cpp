@@ -33,9 +33,9 @@ bool ServerState::condition(const QVariantMap& data)  {
 }
 
 void ServerState::event_changed(const QVariantMap& data)  {
-	if (IS_ID("serverevent")) {
+	if (ServiceID::isId(data,"serverevent")) {
 		// entfernen
-		const QString uid = UNIQUEID();
+		const QString uid = ServiceType::uniqueID(data);
 		QMutableMapIterator<int, QSet<QString> > it(m_state_events);
 		while (it.hasNext()) {
 			it.next();
@@ -49,7 +49,7 @@ void ServerState::event_changed(const QVariantMap& data)  {
 }
 
 void ServerState::execute(const QVariantMap& data)  {
-    if (IS_ID("servercmd")) {
+    if (ServiceID::isId(data,"servercmd")) {
         switch (INTDATA("state")) {
         case 0:
             QCoreApplication::exit(0);
@@ -61,9 +61,9 @@ void ServerState::execute(const QVariantMap& data)  {
 }
 
 void ServerState::initialize() {
-    PROPERTY("serverstate");
-    data[QLatin1String("state")] = 1;
-    m_server->property_changed(data);
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "serverstate");
+    sc.setData("state", 1);
+    m_server->property_changed(sc.getData());
 	
 	foreach (QString uid, m_state_events.value(1)) {
 		m_server->event_triggered(uid);
@@ -71,9 +71,9 @@ void ServerState::initialize() {
 }
 
 void ServerState::clear() {
-    PROPERTY("serverstate");
-    data[QLatin1String("state")] = 0;
-    m_server->property_changed(data);
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "serverstate");
+    sc.setData("state", 0);
+    m_server->property_changed(sc.getData());
 	
 	foreach (QString uid, m_state_events.value(0)) {
 		m_server->event_triggered(uid);

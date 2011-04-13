@@ -58,21 +58,21 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data ) {
-    if ( IS_ID ( "remotefocus" ) ) {
+    if ( ServiceID::isId(data, "remotefocus" ) ) {
         m_selectedclients = specificClients ( DATA ( "servers" ).split ( QLatin1Char ( ';' ) ) );
-    } else if ( IS_ID ( "remotevolume" ) ) {
+    } else if ( ServiceID::isId(data, "remotevolume" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->setSystemVolume ( DOUBLEDATA ( "volume" ),BOOLDATA ( "relative" ) );
         }
-    } else if ( IS_ID ( "remotenotification" ) ) {
+    } else if ( ServiceID::isId(data, "remotenotification" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->showMessage ( INTDATA ( "duration" ), DATA ( "title" ), DATA ( "audio" ) );
         }
-    } else if ( IS_ID ( "remotevideo" ) ) {
+    } else if ( ServiceID::isId(data, "remotevideo" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->showVideo ( DATA ( "video" ), INTDATA ( "display" ) );
         }
-    } else if ( IS_ID ( "remotedisplay" ) ) {
+    } else if ( ServiceID::isId(data, "remotedisplay" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->setDisplayState ( INTDATA ( "state" ), INTDATA ( "display" ) );
         }
@@ -91,6 +91,7 @@ void plugin::event_changed ( const QVariantMap& data ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "remote.connection.state").getData());
     foreach (ExternalClient* client, m_clients) {
         l.append(stateChanged(client, false));
     }
@@ -108,10 +109,10 @@ QList< ExternalClient* > plugin::specificClients ( const QStringList& hosts ) {
 }
 
 QVariantMap plugin::stateChanged(ExternalClient* client, bool propagate) {
-    PROPERTY("remote.connection.state");
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "remote.connection.state");
 	const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
-    SETDATA("server",server);
-    SETDATA("state", (int)client->isConnected());
-    if (propagate) m_server->property_changed(data);
-    return data;
+    sc.setData("server",server);
+    sc.setData("state", (int)client->isConnected());
+    if (propagate) m_server->property_changed(sc.getData());
+    return sc.getData();
 }

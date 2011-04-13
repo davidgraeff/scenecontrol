@@ -36,23 +36,20 @@
 #include "servicecontroller.h"
 #include "config.h"
 #include "clientconnection.h"
-#include <sessioncontroller.h>
 
-HttpServer::HttpServer() : m_service(0) {}
+HttpServer::HttpServer() {}
 
 HttpServer::~HttpServer()
 {
     qDeleteAll(m_connections);
     m_connections.clear();
+    qDeleteAll(m_temp_connections);
+	m_temp_connections.clear();
     close();
 }
 
 bool HttpServer::start()
 {
-    if (!m_service) {
-        qDebug() << "ServiceController not set in HttpServer before calling start!";
-        return false;
-    }
     if ( !listen ( QHostAddress::Any, ROOM_LISTENPORT ) )
     {
         qCritical() << "TCP Server listen failed on port " << ROOM_LISTENPORT << "!";
@@ -86,10 +83,10 @@ void HttpServer::incomingConnection ( int socketDescriptor )
                 socket->setPeerVerifyMode(QSslSocket::VerifyNone);
                 socket->startServerEncryption();
                 ClientConnection* c = new ClientConnection(socket);
-                connect(c,SIGNAL(dataReceived(QVariantMap,QString)),m_service,SLOT(changeService(QVariantMap,QString)));
+                connect(c,SIGNAL(dataReceived(QVariantMap,QString)),SIGNAL(dataReceived(QVariantMap,QString)));
                 connect(c,SIGNAL(removeConnection(ClientConnection*)),SLOT(removeConnection(ClientConnection*)));
-                m_connections.insert ( c );
-				//qDebug() << "connection"<<m_connections.size();
+                m_temp_connections.append ( c );
+                //qDebug() << "connection"<<m_connections.size();
             }
         }
     }
@@ -100,50 +97,46 @@ void HttpServer::incomingConnection ( int socketDescriptor )
     }
 }
 
-void HttpServer::setServiceController ( ServiceController* controller ) {
-    m_service = controller;
-}
 
 void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
     if (m_connections.isEmpty()) return;
     const QByteArray cmdbytes = QJson::Serializer().serialize(data);
-    foreach ( ClientConnection* c, m_connections ) {
-        if (c->isAuthentificatedServerEventConnection())
-            if (sessionid.isEmpty() || sessionid==c->sessionid)
-                c->writeJSON ( cmdbytes );
-    }
-}
-
-void HttpServer::sessionAuthFailed(QString sessionid) {
-	SessionController* sc = SessionController::instance();
-    foreach ( ClientConnection* c, m_connections ) {
-        if (c->sessionid == sessionid) {
-            c->writeJSON(sc->authFailed());
+    if (sessionid.size()) {
+        ClientConnection *c = m_connections.value(sessionid);
+        if (c) c->writeJSON(cmdbytes);
+    } else {
+        foreach ( ClientConnection* c, m_connections ) {
+            c->writeJSON ( cmdbytes );
         }
     }
+
 }
 
 void HttpServer::sessionBegin(QString sessionid) {
-    foreach ( ClientConnection* c, m_connections ) {
-        if (c->sessionid == sessionid) {
-            c->sessionEstablished();
-			c->writeJSON ( m_service->getAllPropertiesAndServices(sessionid) );
+    ClientConnection* c = 0;
+    for (int index=0;index<m_temp_connections.size();++index) {
+        if (m_temp_connections[index]->sessionid == sessionid) {
+            c = m_temp_connections.takeAt(index);
+            break;
         }
     }
+    if (!c) return;
+    c->sessionEstablished();
+    m_connections.insert(c->sessionid,c);
 }
 
 void HttpServer::sessionFinished(QString sessionid, bool timeout) {
-	Q_UNUSED(timeout);
+    Q_UNUSED(timeout);
     foreach ( ClientConnection* c, m_connections ) {
         if (c->sessionid == sessionid) {
-			removeConnection(c);
+            removeConnection(c);
         }
     }
 }
 
-
 void HttpServer::removeConnection(ClientConnection* c) {
-	//qDebug() << "disconnected"<<m_connections.size();
-    m_connections.remove(c);
+    //qDebug() << "disconnected"<<m_connections.size();
+    m_temp_connections.removeAll(c);
+    m_connections.remove(c->sessionid);
     c->deleteLater();
 }

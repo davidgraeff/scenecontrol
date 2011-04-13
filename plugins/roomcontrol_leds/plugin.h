@@ -48,4 +48,5 @@ private Q_SLOTS:
     void curtainChanged ( int current, int max );
     void ledvalueChanged ( int channel, int value );
     void lednameChanged ( int channel, const QString& name );
+    void ledsCleared();
 };

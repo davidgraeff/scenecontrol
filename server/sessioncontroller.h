@@ -56,7 +56,7 @@ public:
     QDateTime sessionStarted();
     QDateTime lastAction();
     QString sessionid();
-Q_SIGNALS:
+private Q_SLOTS:
     void timeoutSession();
 };
 
@@ -79,14 +79,8 @@ public:
      * \return Return temporary session id
      */
     QString addSession(const QString& user, const QString& pwd);
-    void closeSession(const QString& sessionid);
+    void closeSession(const QString& sessionid, bool timeout);
 	
-	/**
-	 * Just create a property for authentification failure
-	 * \return json data of authentification failure property
-	 */
-	static QByteArray authFailed();
-
     // plugin interface
     virtual bool condition(const QVariantMap& data);
     virtual void event_changed(const QVariantMap& data);
@@ -102,7 +96,6 @@ private:
 private Q_SLOTS:
     void auth_success(QString sessionid, const QString& name);
     void auth_failed(QString sessionid, const QString& name);
-    void timeoutSession();
 Q_SIGNALS:
     void sessionAuthFailed(QString sessionid);
     void sessionBegin(QString sessionid);
