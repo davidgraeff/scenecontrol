@@ -77,7 +77,7 @@ public:
 private:
     AbstractPlugin* m_plugin;
 
-    
+    bool m_connected;
     int m_channels;
     QByteArray m_buffer;
     void parseLeds(const QByteArray& data);

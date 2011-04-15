@@ -31,6 +31,7 @@ Controller::~Controller() {
 }
 
 void Controller::readyRead() {
+	m_connected = true;
     QByteArray bytes;
     bytes.resize ( m_serial->bytesAvailable() );
     m_serial->read ( bytes.data(), bytes.size() );
@@ -221,7 +222,10 @@ void Controller::panicTimeout() {
     if ( !m_serial ) return;
     const char t1[] = {0x00};
     if ( !m_serial->isOpen() || m_serial->write ( t1, sizeof ( t1 ) ) == -1 ) {
-        qWarning() << "IO: Failed to reset panic counter. Try reconnection";
+        if (m_connected) {
+			m_connected = false;
+			qWarning() << "IO: Failed to reset panic counter. Try reconnection";
+		}
         m_serial->close();
         const char t1[] = {0xef};
         if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1,  sizeof ( t1 ) ) ) {
@@ -234,6 +238,7 @@ void Controller::connectToLeds ( const QString& device ) {
     m_panicTimer.stop();
     delete m_serial;
     m_serial = 0;
+	m_connected = false;
     // create new
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );

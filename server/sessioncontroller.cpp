@@ -14,7 +14,7 @@ SessionController* SessionController::instance(bool create) {
 Session::Session(SessionController* sc, const QString& sessionid, const QString& user) : m_sessioncontroller(sc), m_sessionid(sessionid), m_user(user) {
     m_sessionStarted=QDateTime::currentDateTime();
     m_lastAction=QDateTime::currentDateTime();
-    connect(&m_sessionTimer, SIGNAL(timeout()),SIGNAL(timeoutSession()));
+    connect(&m_sessionTimer, SIGNAL(timeout()),SLOT(timeoutSession()));
     m_sessionTimer.setSingleShot(true);
     m_sessionTimer.setInterval(1000*60*5);
     m_sessionTimer.start();
@@ -116,19 +116,21 @@ void SessionController::closeSession(const QString& sessionid, bool timeout) {
 void SessionController::auth_success(QString sessionid, const QString& name) {
     Session* session = new Session(this, sessionid, name);
     m_session.insert(sessionid, session);
-    emit sessionBegin(sessionid);
 
     {
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.success");
+		sc.setData("sessionid", sessionid);
         m_server->property_changed(sc.getData(),sessionid);
     }
 
-    {
+    emit sessionBegin(sessionid);
+
+	{
         ServiceCreation sc = ServiceCreation::createModelReset(PLUGIN_ID, "server.logins.own");
         m_server->property_changed(sc.getData(),sessionid);
     }
 
-    QList<QString> sessions_with_same_user;
+	QList<QString> sessions_with_same_user;
     foreach(Session* session, m_session) {
         if (session->user() == name) {
             sessions_with_same_user.append(session->sessionid());

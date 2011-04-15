@@ -36,5 +36,7 @@
   </property>
   
   <property id="authentification.failed" session_specific="1"></property>
-  <property id="authentification.success" session_specific="1"></property>
+  <property id="authentification.success" session_specific="1">
+	  <string id="sessionid" />
+  </property>
 </plugin>

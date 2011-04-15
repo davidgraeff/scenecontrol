@@ -36,10 +36,13 @@ public:
 
 private:
     virtual void incomingConnection(int socketDescriptor);
-    QList<ClientConnection*> m_temp_connections;
-	QMap<QString, ClientConnection*> m_connections;
+	ClientConnection* findConnection(const QString& sessionid);
+    QList<ClientConnection*> m_http_connections;
+	QList<ClientConnection*> m_websocket_connections;
+	QMap<QString, ClientConnection*> m_session_cache;
 public Q_SLOTS:
     void removeConnection(ClientConnection* );
+	void upgradedConnection();
     // service controller signals
     void dataSync(const QVariantMap& data, const QString& sessionid);
     // session controller signals

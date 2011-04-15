@@ -34,6 +34,7 @@ private:
     bool m_inHeader;
     QMap<QByteArray,QByteArray> m_header;
     QByteArray m_requestedfile;
+	QMap<QByteArray, QByteArray> m_fileparameters;
 	enum enumRequestType {
 		None,
 		Get,
@@ -71,4 +72,5 @@ private Q_SLOTS:
 Q_SIGNALS:
     void dataReceived(const QVariantMap& data, const QString& sessionid);
     void removeConnection(ClientConnection*);
+	void upgradedConnection();
 };
