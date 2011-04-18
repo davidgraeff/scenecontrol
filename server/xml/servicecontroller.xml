@@ -4,7 +4,10 @@
   <property id="serverstate">
     <enum id="state" n="2" /><!-- ready, going offline -->
   </property>
- 
+  <property id="plugininfo">
+    <string id="plugins" separator=";" /><!-- plugin names -->
+  </property>
+  
   <action id="servercmd" group_restriction="adm, roomcontrol_admin">
     <enum id="state" n="3" /><!-- resync client, restart, stop server -->
   </action>

@@ -28,9 +28,9 @@
 #include "logging.h"
 #include "backups.h"
 #include "collections.h"
-#include "serverstate.h"
 #include <stdio.h>
 #include "sessioncontroller.h"
+#include "plugincontroller.h"
 
 bool exitByConsoleCommand = false;
 
@@ -91,17 +91,20 @@ int main(int argc, char *argv[])
 
     // service controller (implements AbstractServer)
     ServiceController* services = new ServiceController();
+    PluginController* plugins = new PluginController(services);
+	plugins->registerPluginFromObject(services);
+
 
     // backups
     Backups* backups = new Backups();
     backups->connectToServer(services);
-    services->useServerObject(backups);
+    plugins->registerPluginFromObject(backups);
 
     // collections
     Collections* collections = new Collections();
     collections->connectToServer(services);
     collections->setServiceController(services);
-    services->useServerObject(collections);
+    plugins->registerPluginFromObject(collections);
     collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
     collections->connect(services, SIGNAL(dataSync(QVariantMap,QString)), collections, SLOT(dataSync(QVariantMap,QString)));
     collections->connect(services, SIGNAL(eventTriggered(QString)), collections, SLOT(eventTriggered(QString)));
@@ -109,15 +112,11 @@ int main(int argc, char *argv[])
 
 	SessionController* sessions = SessionController::instance(true);
 	sessions->connectToServer(services);
-	services->useServerObject(sessions);
+	plugins->registerPluginFromObject(sessions);
 	services->connect(sessions,SIGNAL(sessionBegin(QString)),services,SLOT(sessionBegin(QString)));
 
-    // serverstate
-    ServerState* serverstate = new ServerState();
-    serverstate->connectToServer(services);
-    services->useServerObject(serverstate);
-
     services->load(cmdargs.contains("--observe-service-dir"));
+	plugins->initializePlugins();
 
     // network
 #ifdef WITH_EXTERNAL
@@ -146,11 +145,9 @@ int main(int argc, char *argv[])
 #endif
 
     qDebug() << "Shutdown: Service Controller";
-    services->removeServerObject(serverstate);
-	services->removeServerObject(sessions);
-    services->removeServerObject(collections);
-    services->removeServerObject(backups);
-    delete serverstate;
+	plugins->deregisterPluginFromObject(sessions, services);
+    plugins->deregisterPluginFromObject(collections, services);
+    plugins->deregisterPluginFromObject(backups, services);
 	delete sessions;
     delete collections;
     delete backups;

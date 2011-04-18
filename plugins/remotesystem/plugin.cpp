@@ -91,7 +91,7 @@ void plugin::event_changed ( const QVariantMap& data ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
-	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "remote.connection.state").getData());
+	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "remote.connection.state", "server").getData());
     foreach (ExternalClient* client, m_clients) {
         l.append(stateChanged(client, false));
     }

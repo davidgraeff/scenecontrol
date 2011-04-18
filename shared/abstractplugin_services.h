@@ -101,10 +101,12 @@ public:
 	 * Creates a model reset notification.
 	 * \param plugin_id Which plugin does generate this notification (mostly PLUGIN_ID).
 	 * \param id Notification id. Must be the same as documented in the plugin xml file.
+	 * \param key Model key/index item name
 	 */
-    static ServiceCreation createModelReset(const char* plugin_id, const char* id) {
+    static ServiceCreation createModelReset(const char* plugin_id, const char* id, const char* key) {
         ServiceCreation sc;
         sc.m_map[QLatin1String("id")] =  QLatin1String(id);
+		sc.m_map[QLatin1String("__key")] =  QLatin1String(key);
 		sc.m_map[QLatin1String("__plugin")] = QLatin1String(plugin_id);
         sc.m_map[QLatin1String("__type")] = QLatin1String("model");
 		sc.m_map[QLatin1String("__event")] = QLatin1String("reset");

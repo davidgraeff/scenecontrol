@@ -77,7 +77,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
-		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io.value").getData());
+		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io.value", "channel").getData());
         QMap<QString, unsigned char>::iterator i = m_controller->m_values.begin();
         for (;i!=m_controller->m_values.end();++i) {
             ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io.value");
@@ -87,7 +87,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
         }
     }
     {
-		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io.name").getData());
+		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io.name", "channel").getData());
         QMap<QString, QString>::iterator i = m_controller->m_names.begin();
         for (;i!=m_controller->m_names.end();++i) {
             ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io.name");

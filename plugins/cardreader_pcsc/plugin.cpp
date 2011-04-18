@@ -75,7 +75,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
-		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "card.atr").getData());
+		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "card.atr", "cardid").getData());
         ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "card.atr");
         sc.setData("cardid",m_thread->getAtr());
         sc.setData("state",m_thread->getState());

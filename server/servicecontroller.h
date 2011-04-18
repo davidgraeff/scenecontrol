@@ -34,9 +34,11 @@
 #include <shared/abstractplugin_settings.h>
 #include <shared/abstractserver.h>
 
-class ServiceController: public QObject, public AbstractServer
+class PluginController;
+class ServiceController: public QObject, public AbstractServer, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
+    PLUGIN_MACRO
 public:
     struct ServiceStruct {
         QVariantMap data;
@@ -45,30 +47,23 @@ public:
 
     ServiceController ();
     virtual ~ServiceController();
+    void setPluginController(PluginController* pc);
+
     /**
-     * For server objects to register their interface. E.g. the backup object to
-     * execute backup actions and send changed properties to \link ServiceController.
-     * For validation and service description the server.xml file is used.
+     * Remove services from m_valid_services that are using the plugin referenced by pluginid.
      */
-    void useServerObject(AbstractPlugin* object);
-    /**
-     * Deregister server objects before deleting them, otherwise ServiceController
-     * might try to acces them.
-     */
-    void removeServerObject(AbstractPlugin* object);
+    void removeServicesUsingPlugin(const QString& pluginid);
 
     /**
      * Return service with uid
      */
     ServiceStruct* service(const QString& uid);
 
-
     const QMap<QString, ServiceStruct*> &valid_services() const;
 
     void load(bool service_dir_watcher);
-
-    QByteArray getAllPropertiesAndServices(const QString& sessiondid);
 private:
+    PluginController* m_plugincontroller;
     QFileSystemWatcher m_dirwatcher;
     // services
     QMap<QString, ServiceStruct*> m_valid_services; // uid -> data+plugin
@@ -83,42 +78,25 @@ private:
     bool validateService(const QVariantMap& data );
     void setUniqueID(QVariantMap& data);
 
-    // plugins
-    struct PluginInfo {
-        AbstractPlugin* plugin;
-        QString version;
-        void setVersion(const QString& version) {
-            this->version = version;
-        }
-        PluginInfo(AbstractPlugin* plugin) {
-            this->plugin=plugin;
-        }
-        ~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
-    };
-    QList<PluginInfo*> m_plugins;
-    QMap<QString, AbstractPlugin_services*> m_plugin_services;
-    QMap<QString, AbstractPlugin_otherproperties*> m_plugin_otherproperties;
-    QMap<QString, AbstractPlugin_settings*> m_plugin_settings;
-    QMap<QString, QDomNode*> m_id_to_xml;
-    QMap<QString, AbstractPlugin*> m_id_to_plugin;
-
-    /**
-     * Load plugins and their corresponding xml description file and
-     * registers all provided properties and services
-     */
-    void loadPlugins();
-    void loadXML(const QString& filename);
-
     // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;
 
-    // server interface
+    /////////////// server interface ///////////////
     virtual void event_triggered(const QString& event_id, const char* pluginid = "");
     virtual void execute_action(const QVariantMap& data, const char* pluginid = "");
     virtual void property_changed(const QVariantMap& data, const QString& sessionid = QString(), const char* pluginid = "");
     virtual void register_listener(const QString& unqiue_property_id, const char* pluginid = "");
     virtual void unregister_all_listeners(const char* pluginid = "");
     virtual void unregister_listener(const QString& unqiue_property_id, const char* pluginid = "");
+
+	/////////////// AbstractPlugin, AbstractPlugin_services ///////////////
+    virtual void clear();
+    virtual void initialize();
+    virtual bool condition(const QVariantMap& data);
+    virtual void event_changed(const QVariantMap& data);
+    virtual void execute(const QVariantMap& data);
+    virtual QList<QVariantMap> properties(const QString& sessionid);
+	QMap<int, QSet<QString> > m_state_events; //state->set of uids
 public Q_SLOTS:
     /**
      * Validates data to plugin description xml.
@@ -146,10 +124,10 @@ public Q_SLOTS:
      */
     void executeActionByUID(const QString& uid);
     void directoryChanged(QString file, bool loading = false);
-	
-	/**
-	 * Session manager: A valid session started. Send all plugin infos via dataSync.
-	 */
+
+    /**
+     * Session manager: A valid session started. Send all plugin infos via dataSync.
+     */
     void sessionBegin(QString sessionid);
 Q_SIGNALS:
     /**

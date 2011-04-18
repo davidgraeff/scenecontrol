@@ -10,23 +10,35 @@
 #include <qjson/parser.h>
 #include "boolstuff/BoolExprParser.h"
 #include "paths.h"
+#include "plugincontroller.h"
 
 #define __FUNCTION__ __FUNCTION__
 
-ServiceController::ServiceController ()
+ServiceController::ServiceController () : m_plugincontroller(0)
 {
 }
 
 ServiceController::~ServiceController()
 {
-    qDeleteAll(m_id_to_xml);
+    // server shutdown event
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "serverstate");
+        sc.setData("state", 0);
+        property_changed(sc.getData());
+        const QList<QString> uids = m_state_events.value(0).toList();
+        for (int i=0;i<uids.size();++i) {
+            event_triggered(uids[i]);
+        }
+    }
+
     qDeleteAll(m_valid_services);
-    qDeleteAll(m_plugins);
+}
+
+void ServiceController::setPluginController(PluginController* pc) {
+    m_plugincontroller=pc;
 }
 
 void ServiceController::load(bool service_dir_watcher) {
-    loadPlugins();
-
     qDebug() << "Start: Load service provider";
     // files in {home}/roomcontrol/services
     QDir dir = serviceDir();
@@ -44,7 +56,7 @@ void ServiceController::load(bool service_dir_watcher) {
     emit dataReady();
 
     // stats
-    qDebug() << "Available Services    :" << m_id_to_xml.size();
+    qDebug() << "Available Services    :" << m_plugincontroller->knownServices();
     qDebug() << "Loaded    Services    :" << m_valid_services.size();
 }
 
@@ -114,7 +126,7 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     if (!service) service = new ServiceStruct();
 
     service->data = data;
-    service->plugin = dynamic_cast<AbstractPlugin_services*>(m_id_to_plugin.value(ServiceID::id(data)));
+    service->plugin = dynamic_cast<AbstractPlugin_services*>(m_plugincontroller->getPlugin(ServiceID::id(data)));
 
     m_valid_services.insert(ServiceType::uniqueID(data),service);
 
@@ -134,9 +146,9 @@ bool ServiceController::validateService( const QVariantMap& data )
 
     // check service/property id. collections do not have ids
     if (ServiceID::id(data).size()) {
-        node = m_id_to_xml.value(ServiceID::id(data));
+        node = m_plugincontroller->getPluginDom(ServiceID::id(data));
     } else if (ServiceType::isCollection(data)) {
-        node = m_id_to_xml.value(QLatin1String("collection"));
+        node = m_plugincontroller->getPluginDom(QLatin1String("collection"));
     }
 
     if (!node) {
@@ -146,7 +158,7 @@ bool ServiceController::validateService( const QVariantMap& data )
 
     // check uid and add one if neccessary
     if (!ServiceType::isExecutable(data) && ServiceType::uniqueID(data).isEmpty()) {
-		return false;
+        return false;
     }
 
     // check type
@@ -156,8 +168,8 @@ bool ServiceController::validateService( const QVariantMap& data )
     if (ServiceType::isEvent(data) && type != QLatin1String("event")) return false;
     if (ServiceType::isCondition(data) && type != QLatin1String("condition")) return false;
     if (ServiceType::isCollection(data) && type != QLatin1String("collection")) return false;
-	if (ServiceType::isNotification(data) && type != QLatin1String("notification")) return false;
-	if (ServiceType::isModelItem(data) && type != QLatin1String("model")) return false;
+    if (ServiceType::isNotification(data) && type != QLatin1String("notification")) return false;
+    if (ServiceType::isModelItem(data) && type != QLatin1String("model")) return false;
 
     // check id. collections do not have ids
     {
@@ -250,7 +262,7 @@ void ServiceController::event_triggered(const QString& event_id, const char* plu
 void ServiceController::execute_action(const QVariantMap& data, const char* pluginid) {
     // data from plugins. Check this before execution
     if (!validateService(data)) {
-		qWarning()<<"Invalid data to be executed from"<<pluginid;
+        qWarning()<<"Invalid data to be executed from"<<pluginid;
         return;
     }
     executeAction(data);
@@ -259,9 +271,9 @@ void ServiceController::execute_action(const QVariantMap& data, const char* plug
 void ServiceController::property_changed(const QVariantMap& data, const QString& sessionid, const char* pluginid) {
     Q_UNUSED(pluginid);
     emit dataSync(data, sessionid);
-    QSet<QString> plugins = m_propertyid_to_plugins.value(ServiceID::id(data));
-    foreach(QString plugin_id, plugins) {
-        AbstractPlugin_otherproperties* plugin = m_plugin_otherproperties.value(plugin_id);
+    QList<QString> plugins = m_propertyid_to_plugins.value(ServiceID::id(data)).toList();
+    for (int i=0;i<plugins.size();++i) {
+        AbstractPlugin_otherproperties* plugin = dynamic_cast<AbstractPlugin_otherproperties*>(m_plugincontroller->getPlugin(plugins[i]));
         if (plugin) plugin->otherPropertyChanged(data, sessionid);
     }
 }
@@ -287,187 +299,19 @@ void ServiceController::unregister_listener(const QString& unqiue_property_id, c
         m_propertyid_to_plugins.remove(unqiue_property_id);
 }
 
-void ServiceController::loadPlugins() {
-    const QDir plugindir = pluginDir();
-    QDir xmldir = plugindir;
-    xmldir.cd(QLatin1String("xml"));
-
-    AbstractPlugin *plugin;
-
-    // server objects are already registered. try to load the corresponding xml files
-    foreach (PluginInfo* info, m_plugins) {
-        loadXML(xmldir.absoluteFilePath(info->plugin->pluginid() + QLatin1String(".xml")));
-    }
-
-    QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
-    for (int i=0;i<pluginfiles.size();++i) {
-        const QString filename = plugindir.absoluteFilePath ( pluginfiles[i] );
-        QPluginLoader* loader = new QPluginLoader ( filename, this );
-        loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
-        if (!loader->load()) {
-            qWarning() << "Failed loading Plugin" << pluginfiles[i] << loader->errorString();
-            delete loader;
-            continue;
-        }
-
-        plugin = dynamic_cast<AbstractPlugin*> ( loader->instance() );
-        if (!plugin) {
-            qWarning() << "Failed to get instance" << filename;
-            delete loader;
-            continue;
-        }
-
-        const QString pluginid = plugin->pluginid();
-        PluginInfo* plugininfo = new PluginInfo(plugin);
-        m_plugins.append ( plugininfo );
-
-        loadXML(xmldir.absoluteFilePath ( pluginid + QLatin1String(".xml") ));
-        qDebug() << "Loaded Plugin"<<pluginid<<plugininfo->version;
-
-        if (dynamic_cast<AbstractPlugin_services*>(plugin))
-            m_plugin_services.insert(pluginid, (AbstractPlugin_services*)plugin);
-        if (dynamic_cast<AbstractPlugin_otherproperties*>(plugin))
-            m_plugin_otherproperties.insert(pluginid, (AbstractPlugin_otherproperties*)plugin);
-        if (dynamic_cast<AbstractPlugin_settings*>(plugin))
-            m_plugin_settings.insert(pluginid, (AbstractPlugin_settings*)plugin);
-
-        plugin->connectToServer(this);
-    }
-
-    if (pluginfiles.empty())
-        qDebug() << "No plugins found in" << plugindir;
-
-    // initialize plugins
-    foreach(PluginInfo* p, m_plugins) {
-        p->plugin->initialize();
-    }
-}
-
-void ServiceController::loadXML(const QString& filename) {
-    QDomDocument doc;
-    QFile file(filename);
-    QString errormsg;
-    int line = 0;
-    int column = 0;
-    if (!file.open(QIODevice::ReadOnly) || !doc.setContent(&file, &errormsg, &line, &column)) {
-        file.close();
-        qWarning() << "Failed loading plugin xml"<<filename<<errormsg<<line<<column;
-        return;
-    }
-    file.close();
-
-    // find plugin node
-    AbstractPlugin* plugin = 0;
-    QDomNode node;
-    QDomNodeList childs = doc.childNodes();
-    for (int i=0;i<childs.size();++i) {
-        node = childs.item(i);
-        if (!node.isElement()) continue;
-        if (node.nodeName()!=QLatin1String("plugin"))
-            continue;
-    }
-
-    // get id and version attributes
-    const QString pluginid = node.attributes().namedItem(QLatin1String("id")).nodeValue();
-    const QString version = node.attributes().namedItem(QLatin1String("version")).nodeValue();
-
-    // find the corresponding plugin
-    foreach (PluginInfo* p, m_plugins) {
-        if (p->plugin->pluginid() == pluginid) {
-            p->setVersion(version);
-            plugin = p->plugin;
-            break;
-        }
-    }
-
-    if (!plugin) {
-        qWarning()<<"No plugin for xml description found!" << filename;
-        return;
-    }
-
-    // register all defined actions, events, conditions and properties
-    QDomNodeList items_of_plugin = node.childNodes();
-    for (int j=0;j<items_of_plugin.size();++j) {
-        QDomNode item = items_of_plugin.item(j);
-        if (!item.isElement()) continue;
-        // get id (for example "periodic_time_event")
-        const QString nodeid = item.attributes().namedItem(QLatin1String("id")).nodeValue();
-		const QString id = pluginid + QLatin1String("_") + nodeid;
-
-        if (m_id_to_xml.contains(id)) {
-            qWarning()<<"Multiple xml definition of" << id;
-            continue;
-        }
-
-        /*        QString t;
-                QTextStream s(&t);
-        		item.save(s,3);
-        		qDebug()<<t;*/
-
-        m_id_to_xml.insert(id, new QDomNode(item.cloneNode()));
-        m_id_to_plugin.insert(id, plugin);
-    }
-}
-
 const QMap< QString, ServiceController::ServiceStruct* >& ServiceController::valid_services() const {
     return m_valid_services;
 }
 
-void ServiceController::useServerObject(AbstractPlugin* object) {
-    const QString pluginid = object->pluginid();
-
-    PluginInfo* plugininfo = new PluginInfo(object);
-    m_plugins.append ( plugininfo );
-
-    if (dynamic_cast<AbstractPlugin_services*>(object))
-        m_plugin_services.insert(pluginid, (AbstractPlugin_services*)object);
-    if (dynamic_cast<AbstractPlugin_otherproperties*>(object))
-        m_plugin_otherproperties.insert(pluginid, (AbstractPlugin_otherproperties*)object);
-    if (dynamic_cast<AbstractPlugin_settings*>(object))
-        m_plugin_settings.insert(pluginid, (AbstractPlugin_settings*)object);
-}
-
-void ServiceController::removeServerObject(AbstractPlugin* object) {
-    const QString pluginid = object->pluginid();
-
-    // aus services entfernen
-    {
-        QMutableMapIterator<QString, ServiceStruct* > it(m_valid_services);
-        while (it.hasNext()) {
-            it.next();
-            AbstractPlugin* p = dynamic_cast<AbstractPlugin*>(it.value()->plugin);
-            if (p && p->pluginid() == pluginid) {
-                it.remove();
-            }
+void ServiceController::removeServicesUsingPlugin(const QString& pluginid) {
+    QMutableMapIterator<QString, ServiceStruct* > it(m_valid_services);
+    while (it.hasNext()) {
+        it.next();
+        AbstractPlugin* p = dynamic_cast<AbstractPlugin*>(it.value()->plugin);
+        if (p && p->pluginid() == pluginid) {
+            it.remove();
         }
     }
-
-    // aus id mapping entfernen
-    {
-        QMutableMapIterator<QString, AbstractPlugin* > it(m_id_to_plugin);
-        while (it.hasNext()) {
-            it.next();
-            if (it.value()->pluginid() == pluginid) {
-                it.remove();
-            }
-        }
-    }
-
-    // aus plugin liste entfernen
-    {
-        QMutableListIterator<PluginInfo*> it(m_plugins);
-        while (it.hasNext()) {
-            it.next();
-            if (it.value()->plugin->pluginid() == pluginid) {
-                it.remove();
-            }
-        }
-    }
-
-    m_plugin_services.remove(pluginid);
-    m_plugin_otherproperties.remove(pluginid);
-    m_plugin_settings.remove(pluginid);
-
 }
 
 void ServiceController::removeService(const QString& uid) {
@@ -487,20 +331,27 @@ void ServiceController::removeService(const QString& uid) {
     if (ServiceType::isCollection(data)) {
         QSet<QString> uids;
         QVariantMap actions = MAP("actions");
-        foreach (QVariant v, actions) uids.insert(v.toString());
+        for (QVariantMap::const_iterator i=actions.begin();i!=actions.end();++i) {
+            uids.insert(i->toString());
+        }
         QVariantList events = LIST("events");
-        foreach (QVariant v, actions) uids.insert(v.toString());
+        for (QVariantList::const_iterator i=events.begin();i!=events.end();++i) {
+            uids.insert(i->toString());
+        }
         boolstuff::BoolExprParser parser;
         try {
             boolstuff::BoolExpr<std::string>* conditions = parser.parse(DATA("conditions").toStdString());
             std::set<std::string> vars;
             conditions->getTreeVariables(vars, vars);
-            foreach (std::string v, vars) uids.insert(QString::fromStdString(v));
+            for (std::set<std::string>::const_iterator i=vars.begin();i!=vars.end();++i) {
+                uids.insert(QString::fromStdString(*i));
+            }
         } catch (boolstuff::BoolExprParser::Error) {
         }
 
-        foreach (QString uid, uids) {
-            removeService(uid);
+
+        for (QSet<QString>::const_iterator uid=uids.begin();uid!=uids.end();++uid) {
+            removeService(*uid);
         }
     }
 
@@ -510,7 +361,7 @@ void ServiceController::removeService(const QString& uid) {
 
 void ServiceController::executeAction(const QVariantMap& data) {
     if (!ServiceType::isExecutable(data)) return;
-    AbstractPlugin* plugin = m_id_to_plugin.value(ServiceID::id(data));
+    AbstractPlugin* plugin = m_plugincontroller->getPlugin(ServiceID::id(data));
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*>(plugin);
     if (!executeplugin) {
         qWarning()<<"Cannot execute service. No plugin found:"<<data;
@@ -534,16 +385,103 @@ void ServiceController::sessionBegin(QString sessionid) {
     QByteArray data;
     QJson::Serializer s;
     // properties
-    foreach (PluginInfo* p, m_plugins) {
-        AbstractPlugin_services* plugin = dynamic_cast<AbstractPlugin_services*>(p->plugin);
-        if (!plugin) continue;
+    int index=0;
+    while ( AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin(index) ) {
         QList<QVariantMap> properties = plugin->properties(sessionid);
-        foreach(QVariantMap prop, properties) {
-			emit dataSync(prop, sessionid);
+        for (int i=0;i<properties.size();++i) {
+            const QVariantMap prop = properties[i];
+            emit dataSync(prop, sessionid);
         }
     }
+
     // services
-    foreach(ServiceStruct* service, m_valid_services) {
+    for ( QMap<QString, ServiceStruct*>::const_iterator i=m_valid_services.begin();i!=m_valid_services.end();++i) {
+        const ServiceStruct* service = *i;
         emit dataSync(service->data, sessionid);
+    }
+}
+
+/////////////// AbstractPlugin, AbstractPlugin_services ///////////////
+
+QList< QVariantMap > ServiceController::properties(const QString& sessionid) {
+    Q_UNUSED(sessionid);
+    QList<QVariantMap> l;
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "serverstate");
+        sc.setData("state", 1);
+		sc.setData("version", QCoreApplication::applicationVersion());
+        l.append(sc.getData());
+    }
+    {
+		int index = 0;
+		QString plugins;
+		while (AbstractPlugin* plugin = m_plugincontroller->nextPlugin(index)) {
+			plugins.append(plugin->pluginid());
+			plugins.append(QLatin1String(";"));
+		}
+		plugins.chop(1);
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "plugininfo");
+        sc.setData("plugins", plugins);
+        l.append(sc.getData());
+    }
+    return l;
+}
+
+bool ServiceController::condition(const QVariantMap& data)  {
+    Q_UNUSED(data);
+    return false;
+}
+
+void ServiceController::event_changed(const QVariantMap& data)  {
+    if (ServiceID::isId(data,"serverevent")) {
+        // entfernen
+        const QString uid = ServiceType::uniqueID(data);
+        QMutableMapIterator<int, QSet<QString> > it(m_state_events);
+        while (it.hasNext()) {
+            it.next();
+            it.value().remove(uid);
+            if (it.value().isEmpty())
+                it.remove();
+        }
+        // hinzufügen
+        m_state_events[INTDATA("state")].insert(uid);
+    }
+}
+
+void ServiceController::execute(const QVariantMap& data)  {
+    if (ServiceID::isId(data,"servercmd")) {
+        switch (INTDATA("state")) {
+        case 0:
+            QCoreApplication::exit(0);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void ServiceController::initialize() {
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "serverstate");
+        sc.setData("state", 1);
+		sc.setData("version", QCoreApplication::applicationVersion());
+        property_changed(sc.getData());
+    }
+
+    const QList<QString> uids = m_state_events.value(1).toList();
+    for (int i=0;i<uids.size();++i) {
+        event_triggered(uids[i]);
+    }
+}
+
+void ServiceController::clear() {
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "serverstate");
+    sc.setData("state", 0);
+	sc.setData("version", QCoreApplication::applicationVersion());
+    property_changed(sc.getData());
+
+    const QList<QString> uids = m_state_events.value(0).toList();
+    for (int i=0;i<uids.size();++i) {
+        event_triggered(uids[i]);
     }
 }

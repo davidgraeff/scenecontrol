@@ -83,8 +83,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
 
-	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.led.value").getData());
-	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.led.name").getData());
+	ledsCleared();
     QMap<int, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
     for (;i!=m_controller->m_leds.end();++i) {
         {
@@ -131,6 +130,6 @@ void plugin::lednameChanged(int channel, const QString& name) {
 }
 
 void plugin::ledsCleared() {
-	m_server->property_changed(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.led.value").getData());
-	m_server->property_changed(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.led.name").getData());
+	m_server->property_changed(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.led.value", "channel").getData());
+	m_server->property_changed(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.led.name", "channel").getData());
 }

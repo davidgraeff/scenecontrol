@@ -110,7 +110,7 @@ void plugin::session_change ( const QString& id, bool running ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
-	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "inputdevice").getData());
+	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "inputdevice", "device_path").getData());
     foreach(InputDevice* device, m_devices) {
         ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "inputdevice" );
         sc.setData("device_path", device->device()->devPath);

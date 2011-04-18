@@ -15,7 +15,7 @@ Backups::~Backups()
 QList< QVariantMap > Backups::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
-	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "backup").getData());
+	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "backup", "backupid").getData());
 	QDir backupdir = serviceBackupDir();
     QStringList backups = backupdir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
     foreach(QString dir, backups) {
