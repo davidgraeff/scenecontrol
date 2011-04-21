@@ -44,4 +44,5 @@
     <int id="value" />
   </property>
   
+  <section>switch</section>
 </plugin>

@@ -25,4 +25,6 @@
     <string id="channel" />
     <string id="name" />
   </modelitem>
+  
+  <section>switch</section>
 </plugin>
