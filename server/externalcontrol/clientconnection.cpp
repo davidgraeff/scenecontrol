@@ -168,7 +168,7 @@ void ClientConnection::timeout() {
 }
 
 void ClientConnection::generateFileResponse() {
-    QFile www(wwwFile(QUrl::fromPercentEncoding(m_requestedfile)));
+    QFile www(m_requestedfile);
     QFileInfo wwwinfo(www);
     if (wwwinfo.exists()) {
         if (!wwwinfo.isReadable()) {
@@ -193,6 +193,8 @@ void ClientConnection::generateFileResponse() {
             type = "text/css";
         } else if (wwwinfo.suffix()==QLatin1String("js")) {
             type = "application/x-javascript";
+        } else if (wwwinfo.suffix()==QLatin1String("xml")) {
+            type = "text/xml";
         }
 
         m_socket->write("Last-Modified: " + wwwinfo.lastModified().toString(QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT\r\n");
@@ -270,7 +272,7 @@ void ClientConnection::generateWebsocketResponseV00() {
     m_socket->write("sec-WebSocket-Origin: "+origin+"\r\n");
 	QByteArray location = m_header.value("Host");
 	if (location.isEmpty()) location = m_socket->localAddress().toString().toAscii()+":"+QByteArray::number(m_socket->localPort());
-    m_socket->write("Sec-WebSocket-Location: wss://"+location+"/"+m_requestedfile+"\r\n");
+    m_socket->write("Sec-WebSocket-Location: wss://"+location+"/"+QFileInfo(m_requestedfile).fileName().toLatin1()+"\r\n");
     writeDefaultHeaders();
     m_socket->write("\r\n"+hash.result());
     m_socket->flush();
@@ -285,14 +287,14 @@ bool ClientConnection::readHttp(const QByteArray& line) {
         else if (line.startsWith("POST")) m_requestType = Post;
 		// requested filename
         int i = line.indexOf(' ');
-        m_requestedfile = line.mid(i+2,line.length()-10-i).trimmed();
-        if (m_requestedfile=="") m_requestedfile = "index.html";
+        QByteArray requestedfile = line.mid(i+2,line.length()-10-i).trimmed();
+        if (requestedfile=="") m_requestedfile = wwwFile(QLatin1String("index.html"));
 		// parameters (after "?")
 		else {
-			i = m_requestedfile.indexOf('?');
+			i = requestedfile.indexOf('?');
 			if (i!=-1) {
-				QByteArray parameters = m_requestedfile.mid(i+1);
-				m_requestedfile.truncate(i);
+				QByteArray parameters = requestedfile.mid(i+1);
+				requestedfile.truncate(i);
 				i = 0;
 				while (i!=-1) {
 					i = parameters.indexOf('=', i);
@@ -303,6 +305,16 @@ bool ClientConnection::readHttp(const QByteArray& line) {
 					QByteArray value = parameters.mid(0,i);
 					m_fileparameters[key] = value;
 				}
+			}
+			m_requestedfile = QUrl::fromPercentEncoding(requestedfile);
+			// xml umleitung
+			QFileInfo info(m_requestedfile);
+			if (info.suffix() == QLatin1String("xml")) {
+				QDir xmldir = pluginDir();
+				xmldir.cd(QLatin1String("xml"));
+				m_requestedfile = xmldir.absoluteFilePath(m_requestedfile);
+			} else {
+				m_requestedfile = wwwFile(m_requestedfile);
 			}
 		}
         // header leeren

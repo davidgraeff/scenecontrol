@@ -30,6 +30,14 @@ QString wwwFile(const QString& file) {
 	return dir.absoluteFilePath ( file );
 }
 
+QString xmlFile(const QString& pluginid) {
+	QSettings s(QLatin1String(ABOUT_ORGANIZATIONID), QLatin1String("main"));
+	QDir dir(s.value(QLatin1String("path"), defaultpath).toString());
+	dir.cd(QLatin1String(ROOM_LIBPATH));
+	dir.cd(pluginid);
+	return dir.absoluteFilePath ( QLatin1String("plugin.xml") );
+}
+
 QDir serviceDir() {
     QDir dir = QDir::home();
 	dir.mkdir(QLatin1String("roomcontrol"));

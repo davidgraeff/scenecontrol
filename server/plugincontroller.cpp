@@ -16,15 +16,13 @@ PluginController::PluginController (ServiceController* servicecontroller) {
     servicecontroller->setPluginController(this);
 
     const QDir plugindir = pluginDir();
-    QDir xmldir = plugindir;
-    xmldir.cd(QLatin1String("xml"));
 
     AbstractPlugin *plugin;
 
     // server objects are already registered. try to load the corresponding xml files
     for (int i=0;i<m_plugins.size();++i) {
         PluginInfo* p = m_plugins[i];
-        loadXML(xmldir.absoluteFilePath(p->plugin->pluginid() + QLatin1String(".xml")));
+        loadXML(xmlFile(p->plugin->pluginid()));
     }
 
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
@@ -49,7 +47,7 @@ PluginController::PluginController (ServiceController* servicecontroller) {
         PluginInfo* plugininfo = new PluginInfo(plugin);
         m_plugins.append ( plugininfo );
 
-        loadXML(xmldir.absoluteFilePath ( pluginid + QLatin1String(".xml") ));
+        loadXML(xmlFile(pluginid));
         qDebug() << "Loaded Plugin"<<pluginid<<plugininfo->version;
 
         plugin->connectToServer(servicecontroller);

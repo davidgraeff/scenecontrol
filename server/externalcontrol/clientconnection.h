@@ -33,7 +33,7 @@ private:
     bool m_isWebsocket;
     bool m_inHeader;
     QMap<QByteArray,QByteArray> m_header;
-    QByteArray m_requestedfile;
+    QString m_requestedfile;
 	QMap<QByteArray, QByteArray> m_fileparameters;
 	enum enumRequestType {
 		None,
