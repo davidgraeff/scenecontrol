@@ -24,8 +24,8 @@
 #include "shared/abstractserver.h"
 #include "shared/pluginsettingshelper.h" 
 #include "shared/abstractplugin_services.h"
+#include "mediacontroller.h"
 
-class MediaController;
 class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
 {
     Q_OBJECT
@@ -34,7 +34,7 @@ class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugi
 public:
     plugin();
     virtual ~plugin();
-	void pulseSinkChanged(double volume, bool mute, const QString& sinkid);
+	void pulseSinkChanged(const PulseChannel& channel);
 	void pulseVersion(int protocol, int server);
 
     virtual void initialize();
@@ -44,6 +44,4 @@ public:
     virtual void execute(const QVariantMap& data);
     virtual bool condition(const QVariantMap& data) ;
     virtual void event_changed(const QVariantMap& data);
-private:
-	MediaController* m_controller;
 };

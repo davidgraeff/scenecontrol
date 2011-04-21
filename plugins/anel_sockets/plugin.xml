@@ -17,14 +17,14 @@
   </action>
   <action id="reload">
   </action>
-  <modelitem id="anel.io.value">
+  <model id="anel.io.value" model_key="channel">
     <string id="channel" />
     <int id="value" />
-  </modelitem>
-  <modelitem id="anel.io.name">
+  </model>
+  <model id="anel.io.name" model_key="channel">
     <string id="channel" />
     <string id="name" />
-  </modelitem>
+  </model>
   
   <section>switch</section>
 </plugin>

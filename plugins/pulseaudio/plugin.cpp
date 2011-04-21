@@ -20,7 +20,6 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-#include "mediacontroller.h"
 // #include "configplugin.h"
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
@@ -67,19 +66,37 @@ void plugin::event_changed ( const QVariantMap& data ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulse.version" );
+        sc.setData("protocol", getProtocolVersion());
+        sc.setData("server", getServerVersion());
+		l.append(sc.getData());
+    }
+    {
+        ServiceCreation sc = ServiceCreation::createModelReset(PLUGIN_ID,  "pulse.channels", "sinkid" );
+        l.append(sc.getData());
+    }
+    QList<PulseChannel> channels = getAllChannels();
+    foreach(PulseChannel channel, channels) {
+        ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID,  "pulse.channels" );
+        sc.setData("sinkid", channel.sinkid);
+        sc.setData("mute", channel.mute);
+        sc.setData("volume", channel.volume);
+        l.append(sc.getData());
+    }
     return l;
 }
 
-void plugin::pulseSinkChanged ( double volume, bool mute, const QString& sinkid ) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulsechannelstate" );
-    sc.setData("sinkid", sinkid);
-    sc.setData("mute", mute);
-    sc.setData("volume", volume);
+void plugin::pulseSinkChanged ( const PulseChannel& channel ) {
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID,  "pulse.channels" );
+    sc.setData("sinkid", channel.sinkid);
+    sc.setData("mute", channel.mute);
+    sc.setData("volume", channel.volume);
     m_server->property_changed ( sc.getData() );
 }
 
 void plugin::pulseVersion(int protocol, int server) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulseversion" );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulse.version" );
     sc.setData("protocol", protocol);
     sc.setData("server", server);
     m_server->property_changed ( sc.getData() );

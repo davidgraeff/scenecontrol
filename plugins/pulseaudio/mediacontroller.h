@@ -19,6 +19,15 @@
 
 #pragma once
 #include <glib/gtypes.h>
+#include <QString>
+#include <QList>
+
+struct PulseChannel {
+	double volume;
+	bool mute;
+	QString sinkid;
+	PulseChannel(double volume, bool mute, const QString& sinkid) : volume(volume), mute(mute), sinkid(sinkid) {}
+};
 
 class plugin;
 void reconnect_to_pulse(plugin* p);
@@ -26,3 +35,6 @@ void close_pulseaudio();
 void set_sink_muted(const char* sinkname, int muted);
 void set_sink_volume_relative(const char* sinkname, gdouble percent);
 void set_sink_volume(const char* sinkname, gdouble percent);
+QList<PulseChannel> getAllChannels();
+int getServerVersion();
+int getProtocolVersion();

@@ -429,7 +429,33 @@ void close_pulseaudio()
 static void output_volume(sink_info *value) {
     pa_volume_t vol = pa_cvolume_avg(&value->volume);
     uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
-	if (callbackplugin) callbackplugin->pulseSinkChanged(volume, value->mute, QString::fromLatin1(value->name));
+	if (callbackplugin) callbackplugin->pulseSinkChanged(PulseChannel(volume, value->mute, QString::fromLatin1(value->name)));
+}
+
+QList<PulseChannel> getAllChannels() {
+	QList<PulseChannel> channels;
+	GHashTableIter iter;
+	gpointer valuePointer;
+
+	g_hash_table_iter_init (&iter, sink_hash);
+	while (g_hash_table_iter_next (&iter, NULL, &valuePointer)) 
+	{
+		sink_info *value = (sink_info *)valuePointer;
+		pa_volume_t vol = pa_cvolume_avg(&value->volume);
+		uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
+		channels.append(PulseChannel(volume, value->mute, QString::fromLatin1(value->name)));
+	}
+	return channels;
+}
+
+int getServerVersion() {
+	if (!pulse_context) return 0;
+	return pa_context_get_server_protocol_version(pulse_context);
+}
+
+int getProtocolVersion() {
+	if (!pulse_context) return 0;
+	return pa_context_get_protocol_version(pulse_context);
 }
 
 /* get

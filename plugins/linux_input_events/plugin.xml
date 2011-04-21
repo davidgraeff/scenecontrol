@@ -6,10 +6,10 @@
     <bool id="pressed">1</bool>
     <bool id="repeat">0</bool>
   </event>
-  <property id="inputdevice" model_key="device_path">
+  <model id="inputdevice" model_key="device_path">
     <string id="device_path" />
 	<string id="device_info" />
-  </property>
+  </model>
   
   <property id="lastinputkey" session_specific="1" depends_on="selected_input_device">
 	<string id="inputdevice" />

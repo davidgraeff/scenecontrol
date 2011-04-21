@@ -3,8 +3,8 @@
   <event id="cardevent">
     <string id="cardid" property="card"></string>
   </event>
-  <property id="card.atr">
+  <model id="card.atr" model_key="cardid">
     <string id="cardid"></string>
     <enum id="state" n="2" /><!-- inside, outside -->
-  </property>
+  </model>
 </plugin>

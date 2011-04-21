@@ -24,14 +24,14 @@
     <string id="name" />
   </action>
   
-  <property id="roomcontrol.led.value">
+  <model id="roomcontrol.led.value" model_key="channel">
     <int id="channel" />
     <int id="value" />
-  </property>
-  <property id="roomcontrol.led.name">
+  </model>
+  <model id="roomcontrol.led.name" model_key="channel">
     <int id="channel" />
     <string id="name" />
-  </property>
+  </model>
   
   <action id="curtain">
     <int id="value" />
