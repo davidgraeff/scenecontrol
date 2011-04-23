@@ -20,9 +20,9 @@ PluginController::PluginController (ServiceController* servicecontroller) {
     AbstractPlugin *plugin;
 
     // server objects are already registered. try to load the corresponding xml files
-    for (int i=0;i<m_plugins.size();++i) {
-        PluginInfo* p = m_plugins[i];
-        loadXML(xmlFile(p->plugin->pluginid()));
+    QMap<QString,PluginInfo*>::iterator i = m_plugins.begin();
+    for (;i!=m_plugins.end();++i) {
+        loadXML(xmlFile((*i)->plugin->pluginid()));
     }
 
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
@@ -45,7 +45,7 @@ PluginController::PluginController (ServiceController* servicecontroller) {
 
         const QString pluginid = plugin->pluginid();
         PluginInfo* plugininfo = new PluginInfo(plugin);
-        m_plugins.append ( plugininfo );
+        m_plugins.insert ( pluginid, plugininfo );
 
         loadXML(xmlFile(pluginid));
         qDebug() << "Loaded Plugin"<<pluginid<<plugininfo->version;
@@ -91,14 +91,10 @@ void PluginController::loadXML(const QString& filename) {
     const QString pluginid = node.attributes().namedItem(QLatin1String("id")).nodeValue();
     const QString version = node.attributes().namedItem(QLatin1String("version")).nodeValue();
 
-    // find the corresponding plugin
-    for (int i=0;i<m_plugins.size();++i) {
-        PluginInfo* p = m_plugins[i];
-        if (p->plugin->pluginid() == pluginid) {
-            p->setVersion(version);
-            plugin = p->plugin;
-            break;
-        }
+    PluginInfo* pinfo = m_plugins.value(pluginid);
+    if (pinfo) {
+        pinfo->setVersion(version);
+        plugin = pinfo->plugin;
     }
 
     if (!plugin) {
@@ -113,11 +109,14 @@ void PluginController::loadXML(const QString& filename) {
         if (!item.isElement()) continue;
         // get id (for example "periodic_time_event")
         const QString nodeid = item.attributes().namedItem(QLatin1String("id")).nodeValue();
-        const QString id = pluginid + QLatin1String("_") + nodeid;
+        // plugin id + service id = global unique id
+        const QString gid = pluginid + QLatin1String("_") + nodeid;
 
-        if (m_id_to_xml.contains(id)) {
-            qWarning()<<"Multiple xml definition of" << id;
+        if (m_id_to_xml.contains(gid)) {
+            qWarning()<<"Multiple xml definition of" << gid;
             continue;
+        } else {
+            qDebug()<<"add xml key" << gid;
         }
 
         /*        QString t;
@@ -125,15 +124,16 @@ void PluginController::loadXML(const QString& filename) {
         		item.save(s,3);
         		qDebug()<<t;*/
 
-        m_id_to_xml.insert(id, new QDomNode(item.cloneNode()));
-        m_id_to_plugin.insert(id, plugin);
+        m_id_to_xml.insert(gid, new QDomNode(item.cloneNode()));
     }
 }
 void PluginController::initializePlugins() {
-    for (int i=0;i<m_plugins.size();++i) {
-        m_plugins[i]->plugin->initialize();
+    QMap<QString,PluginInfo*>::iterator i = m_plugins.begin();
+    for (;i!=m_plugins.end();++i) {
+        (*i)->plugin->initialize();
     }
 }
+
 int PluginController::knownServices() {
     return m_id_to_xml.size();
 }
@@ -143,52 +143,37 @@ void PluginController::registerPluginFromObject(AbstractPlugin* object) {
     const QString pluginid = object->pluginid();
 
     PluginInfo* plugininfo = new PluginInfo(object);
-    m_plugins.append ( plugininfo );
+    m_plugins.insert ( pluginid, plugininfo );
 
 }
 
 void PluginController::deregisterPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller) {
     const QString pluginid = object->pluginid();
     servicecontroller->removeServicesUsingPlugin(pluginid);
-
-    // aus id mapping entfernen
-    {
-        QMutableMapIterator<QString, AbstractPlugin* > it(m_id_to_plugin);
-        while (it.hasNext()) {
-            it.next();
-            if (it.value()->pluginid() == pluginid) {
-                it.remove();
-            }
-        }
-    }
-
-    // aus plugin liste entfernen
-    {
-        QMutableListIterator<PluginInfo*> it(m_plugins);
-        while (it.hasNext()) {
-            it.next();
-            if (it.value()->plugin->pluginid() == pluginid) {
-                it.remove();
-            }
-        }
-    }
+    m_plugins.remove(pluginid);
 }
 
-AbstractPlugin* PluginController::nextPlugin(int& index) {
-    if (m_plugins.size()<=index) return 0;
-    return m_plugins[index++]->plugin;
+QMap< QString, PluginInfo* >::iterator PluginController::getPluginIterator() {
+    return m_plugins.begin();
 }
 
-AbstractPlugin_services* PluginController::nextServicePlugin(int& index) {
-    while (m_plugins.size()>index) {
-        AbstractPlugin_services* s = dynamic_cast<AbstractPlugin_services*>(m_plugins[index++]->plugin);
+AbstractPlugin* PluginController::nextPlugin(QMap<QString,PluginInfo*>::iterator& index) {
+    if (m_plugins.end()==index) return 0;
+    return (*(index++))->plugin;
+}
+
+AbstractPlugin_services* PluginController::nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index) {
+    while (m_plugins.end()!=index) {
+        AbstractPlugin_services* s = dynamic_cast<AbstractPlugin_services*>((*(index++))->plugin);
         if (s) return s;
     }
     return 0;
 }
 
 AbstractPlugin* PluginController::getPlugin(const QString& serviceid) {
-    return m_id_to_plugin.value(serviceid);
+	PluginInfo* pinfo = m_plugins.value(serviceid);
+	if (!pinfo) return 0;
+    return pinfo->plugin;
 }
 
 QDomNode* PluginController::getPluginDom(const QString& serviceid) {

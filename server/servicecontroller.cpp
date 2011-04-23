@@ -146,18 +146,19 @@ bool ServiceController::validateService( const QVariantMap& data )
 
     // check service/property id. collections do not have ids
     if (ServiceID::id(data).size()) {
-        node = m_plugincontroller->getPluginDom(ServiceID::id(data));
+        node = m_plugincontroller->getPluginDom(ServiceID::gid(data));
     } else if (ServiceType::isCollection(data)) {
         node = m_plugincontroller->getPluginDom(QLatin1String("collection"));
     }
 
     if (!node) {
-        qWarning()<< "Cannot verify"<<ServiceID::id(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": No description for id found!";
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<<". Data"<<data <<": No description for id found!";
         return false;
     }
 
     // check uid and add one if neccessary
     if (!ServiceType::isExecutable(data) && ServiceType::uniqueID(data).isEmpty()) {
+		qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": No uid found!";
         return false;
     }
 
@@ -174,8 +175,11 @@ bool ServiceController::validateService( const QVariantMap& data )
     // check id. collections do not have ids
     {
         QDomNamedNodeMap attr = node->attributes();
-        const QString id = attr.namedItem(QLatin1String("id")).nodeName();
-        if (!ServiceType::isCollection(data) && id != ServiceID::id(data)) return false;
+        const QString id = attr.namedItem(QLatin1String("id")).nodeValue();
+        if (!ServiceType::isCollection(data) && id != ServiceID::id(data)) {
+			qWarning()<< "Cannot verify"<<id<<ServiceID::id(data)<< ": No id found!";
+			return false;
+		}
     }
 
     // check if all xml child notes are also represented in data
@@ -361,12 +365,12 @@ void ServiceController::removeService(const QString& uid) {
 
 void ServiceController::executeAction(const QVariantMap& data) {
     if (!ServiceType::isExecutable(data)) return;
-    AbstractPlugin* plugin = m_plugincontroller->getPlugin(ServiceID::id(data));
+    AbstractPlugin* plugin = m_plugincontroller->getPlugin(ServiceID::pluginid(data));
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*>(plugin);
     if (!executeplugin) {
         qWarning()<<"Cannot execute service. No plugin found:"<<data;
         return;
-    }
+	}
 
     executeplugin->execute(data);
 }
@@ -385,7 +389,7 @@ void ServiceController::sessionBegin(QString sessionid) {
     QByteArray data;
     QJson::Serializer s;
     // properties
-    int index=0;
+    QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
     while ( AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin(index) ) {
         QList<QVariantMap> properties = plugin->properties(sessionid);
         for (int i=0;i<properties.size();++i) {
@@ -413,7 +417,7 @@ QList< QVariantMap > ServiceController::properties(const QString& sessionid) {
         l.append(sc.getData());
     }
     {
-		int index = 0;
+		QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
 		QString plugins;
 		while (AbstractPlugin* plugin = m_plugincontroller->nextPlugin(index)) {
 			plugins.append(plugin->pluginid());

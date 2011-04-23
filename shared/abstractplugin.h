@@ -34,6 +34,13 @@ public:
     static QString id(const QVariantMap& data) {
         return data[QLatin1String("id")].toString();
     }
+    static QString pluginid(const QVariantMap& data) {
+        return data[QLatin1String("__plugin")].toString();
+    }
+    // plugin id + service id = global unique id
+    static QString gid(const QVariantMap& data) {
+        return data[QLatin1String("__plugin")].toString() + QLatin1String("_") + data[QLatin1String("id")].toString();
+    }
     static void setId(QVariantMap& data, const QString& id) {
         data[QLatin1String("id")] = id;
     }

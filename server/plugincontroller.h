@@ -69,13 +69,13 @@ public:
 	AbstractPlugin* getPlugin(const QString& serviceid);
 	QDomNode* getPluginDom(const QString& serviceid);
 	
-	AbstractPlugin* nextPlugin(int& index);
-	AbstractPlugin_services* nextServicePlugin(int& index);
+	QMap<QString,PluginInfo*>::iterator getPluginIterator();
+	AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);
+	AbstractPlugin_services* nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index);
 
 private:
-    QList<PluginInfo*> m_plugins;
+    QMap<QString,PluginInfo*> m_plugins;
     QMap<QString, QDomNode*> m_id_to_xml;
-    QMap<QString, AbstractPlugin*> m_id_to_plugin;
 
     /**
      * Load plugins and their corresponding xml description file and
