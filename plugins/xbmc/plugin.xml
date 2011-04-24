@@ -37,4 +37,6 @@
     <string id="url" />
     <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
   </property>
+  
+  <section>control</section>
 </plugin>

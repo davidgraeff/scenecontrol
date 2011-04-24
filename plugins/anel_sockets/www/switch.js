@@ -14,13 +14,12 @@ function InitPlugin(pluginid, sectionname, $section) {
 			return key;
 		}
 		
-		function itemHtmlFunction(modelitem, domitem) {
-			domitem.removeClass("anelsockets_activated anelsockets_deactivated");
+		function itemChangeFunction(domitem, modelitem) {
 			if (modelitem.value)
-				domitem.addClass("anelsockets_activated");
+				domitem.removeClass("anelsockets_deactivated").addClass("anelsockets_activated");
 			else
-				domitem.addClass("anelsockets_deactivated");
-			return getName(modelitem.channel);
+				domitem.removeClass("anelsockets_activated").addClass("anelsockets_deactivated");
+			return domitem.text(getName(modelitem.channel));
 		}
 		
 		function tooglevalue(key) {
@@ -35,7 +34,7 @@ function InitPlugin(pluginid, sectionname, $section) {
 		}
 
 		var $rootelement = $('<ul class="anelsockets"></ul>');
-		var listview = new ListView($rootelement, itemHtmlFunction, itemCreationFunction, datamodel);
+		var listview = new ListView($rootelement, itemChangeFunction, itemCreationFunction, datamodel);
 		$section.append($rootelement);
 	}
 }

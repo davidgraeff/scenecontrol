@@ -12,4 +12,6 @@
   <action id="projector_sanyo_lamp">
     <bool id="eco">1</bool>
   </action>
+  
+  <section>onoff</section>
 </plugin>

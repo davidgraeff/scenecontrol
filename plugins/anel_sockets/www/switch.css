@@ -2,10 +2,9 @@
 ul.anelsockets
 {
 	list-style-type:none;
-	margin:0 0 0 80px;
+	margin:0;
 	-webkit-margin-before: 0;
 	padding:0;
-	overflow:hidden;
 }
 
 li.anelsockets
@@ -13,22 +12,27 @@ li.anelsockets
 	cursor: pointer;
 	margin: 2px;
 	text-align: center;
-	float:left;
+	display: inline-block;
 	width:160px;
 	color:#FFFFFF;
 	padding:4px;
 	text-decoration:none;
 }
 
-li.anelsockets:hover
-{
-	background-color:#7A991A;
-}
-
 .anelsockets_activated {
 	background-color:#98bf21;
 }
 
+.anelsockets_activated:hover
+{
+	background-color:#A8Cf31;
+}
+
 .anelsockets_deactivated {
-	background-color:#FFBABA;
+	background-color:#CC0000;
+}
+
+.anelsockets_deactivated:hover
+{
+	background-color:#FF0000;
 }

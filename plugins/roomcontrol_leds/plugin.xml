@@ -24,11 +24,11 @@
     <string id="name" />
   </action>
   
-  <model id="roomcontrol.led.value" model_key="channel">
+  <model id="led.value" model_key="channel">
     <int id="channel" />
     <int id="value" />
   </model>
-  <model id="roomcontrol.led.name" model_key="channel">
+  <model id="led.name" model_key="channel">
     <int id="channel" />
     <string id="name" />
   </model>
@@ -36,10 +36,10 @@
   <action id="curtain">
     <int id="value" />
   </action>
-  <condition id="curtaincondition">
+  <condition id="curtain.condition">
     <int id="value" />
   </condition>
-  <property id="roomcontrol.curtain.state">
+  <property id="curtain.state">
     <int id="max" />
     <int id="value" />
   </property>
