@@ -57,7 +57,7 @@ public:
      * For objects to register their interface. E.g. the backup object to
      * execute backup actions and send changed properties to \link ServiceController.
      * The handling is the same like a plugin from file: Validation and service description
-	 * is made via an xml file in xml/[object-class-name].xml.
+     * is made via an xml file in xml/[object-class-name].xml.
      */
     void registerPluginFromObject(AbstractPlugin* object);
     /**
@@ -66,12 +66,12 @@ public:
      */
     void deregisterPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller);
 
-	AbstractPlugin* getPlugin(const QString& serviceid);
-	QDomNode* getPluginDom(const QString& serviceid);
-	
-	QMap<QString,PluginInfo*>::iterator getPluginIterator();
-	AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);
-	AbstractPlugin_services* nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index);
+    AbstractPlugin* getPlugin(const QString& serviceid);
+    QDomNode* getPluginDom(const QString& serviceid);
+
+    QMap<QString,PluginInfo*>::iterator getPluginIterator();
+    AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);
+    AbstractPlugin_services* nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index);
 
 private:
     QMap<QString,PluginInfo*> m_plugins;
@@ -83,5 +83,5 @@ private:
      */
     void loadXML(const QString& filename);
 
-	int m_index;
+    int m_index;
 };

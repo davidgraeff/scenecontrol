@@ -187,6 +187,8 @@ bool ServiceController::validateService( const QVariantMap& data )
     for (int i=0;i<childs.count();++i) {
         QDomNode node = childs.item(i);
         QString type = node.nodeName();
+		if (type == QLatin1String("#comment")) continue;
+		
         if (type == QLatin1String("string")) {
         } else if (type == QLatin1String("int")) {
         } else if (type == QLatin1String("uint")) {
@@ -196,15 +198,16 @@ bool ServiceController::validateService( const QVariantMap& data )
         } else if (type == QLatin1String("date")) {
         } else if (type == QLatin1String("url")) {
         } else if (type == QLatin1String("bool")) {
+		} else if (type == QLatin1String("enum")) {
         } else {
-            qWarning() << "Cannot verify"<<ServiceID::id(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Unknown type";
+            qWarning() << "Cannot verify"<<ServiceID::gid(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Unknown type" << type;
             return false;
         }
         // check child id
         QDomNamedNodeMap attr = node.attributes();
         const QString id = attr.namedItem(QLatin1String("id")).nodeName();
         if (!data.contains(id)) {
-            qWarning() << "Cannot verify"<<ServiceID::id(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Entry"<<id;
+            qWarning() << "Cannot verify"<<ServiceID::gid(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Entry"<<id;
             return false;
         }
     }

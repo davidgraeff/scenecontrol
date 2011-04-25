@@ -103,12 +103,15 @@ void PluginController::loadXML(const QString& filename) {
     }
 
     // register all defined actions, events, conditions and properties
+    QSet<QString> allowedElements;
+    allowedElements << QLatin1String("action") << QLatin1String("event") << QLatin1String("condition") << QLatin1String("notification") << QLatin1String("model");
     QDomNodeList items_of_plugin = node.childNodes();
     for (int j=0;j<items_of_plugin.size();++j) {
         QDomNode item = items_of_plugin.item(j);
         if (!item.isElement()) continue;
         // get id (for example "periodic_time_event")
         const QString nodeid = item.attributes().namedItem(QLatin1String("id")).nodeValue();
+        if (!allowedElements.contains(item.nodeName()) || nodeid.isEmpty()) continue;
         // plugin id + service id = global unique id
         const QString gid = pluginid + QLatin1String("_") + nodeid;
 
@@ -171,8 +174,8 @@ AbstractPlugin_services* PluginController::nextServicePlugin(QMap<QString,Plugin
 }
 
 AbstractPlugin* PluginController::getPlugin(const QString& serviceid) {
-	PluginInfo* pinfo = m_plugins.value(serviceid);
-	if (!pinfo) return 0;
+    PluginInfo* pinfo = m_plugins.value(serviceid);
+    if (!pinfo) return 0;
     return pinfo->plugin;
 }
 
