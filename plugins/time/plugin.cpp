@@ -45,11 +45,11 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     PluginSettingsHelper::setSetting ( name, value, init );
 }
 
-void plugin::execute ( const QVariantMap& data ) {
+void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
 }
 
-bool plugin::condition ( const QVariantMap& data )  {
+bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     if ( ServiceID::isId(data, "timespan" ) ) {
         QTime m_lower = QTime::fromString ( DATA ( "lower" ),Qt::ISODate );
         QTime m_upper = QTime::fromString ( DATA ( "upper" ),Qt::ISODate );
@@ -60,7 +60,7 @@ bool plugin::condition ( const QVariantMap& data )  {
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data ) {
+void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
     const QString uid = ServiceType::uniqueID(data);
     // remove from next events
     m_timeout_service_ids.remove ( uid );

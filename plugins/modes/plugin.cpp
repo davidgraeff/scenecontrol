@@ -38,21 +38,21 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
     PluginSettingsHelper::setSetting(name, value, init);
 }
 
-void plugin::execute(const QVariantMap& data) {
+void plugin::execute(const QVariantMap& data, const QString& sessionid) {
     if (ServiceID::isId(data,"changemode")) {
         m_mode = DATA("mode");
         modeChanged(m_mode);
     }
 }
 
-bool plugin::condition(const QVariantMap& data)  {
+bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
     if (ServiceID::isId(data,"modecondition")) {
         return (m_mode == DATA("mode"));
     }
     return false;
 }
 
-void plugin::event_changed(const QVariantMap& data) {
+void plugin::event_changed(const QVariantMap& data, const QString& sessionid) {
     if (ServiceID::isId(data,"modeevent")) {
         // entfernen
         const QString uid = ServiceType::uniqueID(data);

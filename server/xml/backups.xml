@@ -10,10 +10,10 @@
   <action id="backup_remove">
     <string id="backupid" model="backups" />
   </action>
-  <property id="backup">
+  <model id="backup" model_key="backupid">
     <string id="backupid"></string>
     <string id="name"></string>
-  </property>
+  </model>
   
   <section>control</section>
 </plugin>

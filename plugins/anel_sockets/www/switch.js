@@ -2,7 +2,11 @@ function InitPlugin(pluginid, sectionname, $section) {
 	var datamodel = modelstorage.getModel("anel.io.value");
 	var namemodel = modelstorage.getModel("anel.io.name");
 	
-	if (datamodel && namemodel) {
+	var $rootelement = $('<ul class="anelsockets"></ul>');
+	$section.append($rootelement);
+
+	function modelsAvailable() {
+		if (!datamodel || !namemodel) return;
 		$.getCss(pluginid+"/"+sectionname+".css");
 
 		function getName(key) {
@@ -33,8 +37,15 @@ function InitPlugin(pluginid, sectionname, $section) {
 			return item;
 		}
 
-		var $rootelement = $('<ul class="anelsockets"></ul>');
 		var listview = new ListView($rootelement, itemChangeFunction, itemCreationFunction, datamodel);
-		$section.append($rootelement);
 	}
+	
+	function modelAvailable(event, modelid, modeldata) {
+		if (modelid == "anel.io.value") datamodel = modeldata;
+		else if (modelid == "anel.io.name") namemodel = modeldata;
+		modelsAvailable();
+	}
+	
+	$(modelstorage).bind('modelAvailable', modelAvailable);
+	modelsAvailable();
 }

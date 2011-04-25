@@ -38,9 +38,9 @@ public:
     virtual ~Backups();
     virtual void clear();
     virtual void initialize();
-    virtual bool condition(const QVariantMap& data);
-    virtual void event_changed(const QVariantMap& data);
-    virtual void execute(const QVariantMap& data);
+    virtual bool condition(const QVariantMap& data, const QString& sessionid);
+    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
+    virtual void execute(const QVariantMap& data, const QString& sessionid);
     virtual QList<QVariantMap> properties(const QString& sessionid);
 	
 	void create(const QString& name);

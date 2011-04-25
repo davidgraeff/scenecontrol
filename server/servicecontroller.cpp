@@ -39,7 +39,6 @@ void ServiceController::setPluginController(PluginController* pc) {
 }
 
 void ServiceController::load(bool service_dir_watcher) {
-    qDebug() << "Start: Load service provider";
     // files in {home}/roomcontrol/services
     QDir dir = serviceDir();
     const QStringList tfiles = dir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
@@ -49,7 +48,6 @@ void ServiceController::load(bool service_dir_watcher) {
 
     connect(&m_dirwatcher, SIGNAL(directoryChanged(QString)), SLOT(directoryChanged(QString)));
     if (service_dir_watcher) {
-        qDebug() << "Start observing directory"<<serviceDir().absolutePath();
         m_dirwatcher.addPath(serviceDir().absolutePath());
     }
 
@@ -99,14 +97,13 @@ void ServiceController::directoryChanged(QString file, bool loading) {
 void ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid )
 {
     QVariantMap data = unvalidatedData;
-    Q_UNUSED(sessionid);
     if (!validateService(data)) return;
 
     if (ServiceType::isExecutable(data)) {
         if (ServiceType::uniqueID(data).size())
-            executeActionByUID(ServiceType::uniqueID(data));
+            executeActionByUID(ServiceType::uniqueID(data), sessionid);
         else
-            executeAction(data);
+            executeAction(data, sessionid);
         return;
     }
 
@@ -158,28 +155,49 @@ bool ServiceController::validateService( const QVariantMap& data )
 
     // check uid and add one if neccessary
     if (!ServiceType::isExecutable(data) && ServiceType::uniqueID(data).isEmpty()) {
-		qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": No uid found!";
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": No uid found!";
         return false;
     }
 
     // check type
     const QString type = node->nodeName();
-    if (ServiceType::isAction(data) && type != QLatin1String("action")) return false;
-    if (ServiceType::isExecutable(data) && type != QLatin1String("action")) return false; //execute commands are actions in the xml
-    if (ServiceType::isEvent(data) && type != QLatin1String("event")) return false;
-    if (ServiceType::isCondition(data) && type != QLatin1String("condition")) return false;
-    if (ServiceType::isCollection(data) && type != QLatin1String("collection")) return false;
-    if (ServiceType::isNotification(data) && type != QLatin1String("notification")) return false;
-    if (ServiceType::isModelItem(data) && type != QLatin1String("model")) return false;
+    if (ServiceType::isAction(data) && type != QLatin1String("action")) {
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": Should be action but is not!";
+        return false;
+    }
+    if (ServiceType::isExecutable(data) && (type != QLatin1String("action") && type != QLatin1String("execute"))) {
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": Should be action or execute but is not!";
+        return false;
+    }
+    if (ServiceType::isEvent(data) && type != QLatin1String("event")) {
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": Should be event but is not!";
+        return false;
+    }
+    if (ServiceType::isCondition(data) && type != QLatin1String("condition")) {
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": Should be condition but is not!";
+        return false;
+    }
+    if (ServiceType::isCollection(data) && type != QLatin1String("collection")) {
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": Should be collection but is not!";
+        return false;
+    }
+    if (ServiceType::isNotification(data) && type != QLatin1String("notification")) {
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": Should be notification but is not!";
+        return false;
+    }
+    if (ServiceType::isModelItem(data) && type != QLatin1String("model")) {
+        qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": Should be model but is not!";
+        return false;
+    }
 
     // check id. collections do not have ids
     {
         QDomNamedNodeMap attr = node->attributes();
         const QString id = attr.namedItem(QLatin1String("id")).nodeValue();
         if (!ServiceType::isCollection(data) && id != ServiceID::id(data)) {
-			qWarning()<< "Cannot verify"<<id<<ServiceID::id(data)<< ": No id found!";
-			return false;
-		}
+            qWarning()<< "Cannot verify"<<id<<ServiceID::id(data)<< ": No id found!";
+            return false;
+        }
     }
 
     // check if all xml child notes are also represented in data
@@ -187,8 +205,8 @@ bool ServiceController::validateService( const QVariantMap& data )
     for (int i=0;i<childs.count();++i) {
         QDomNode node = childs.item(i);
         QString type = node.nodeName();
-		if (type == QLatin1String("#comment")) continue;
-		
+        if (type == QLatin1String("#comment")) continue;
+
         if (type == QLatin1String("string")) {
         } else if (type == QLatin1String("int")) {
         } else if (type == QLatin1String("uint")) {
@@ -198,7 +216,7 @@ bool ServiceController::validateService( const QVariantMap& data )
         } else if (type == QLatin1String("date")) {
         } else if (type == QLatin1String("url")) {
         } else if (type == QLatin1String("bool")) {
-		} else if (type == QLatin1String("enum")) {
+        } else if (type == QLatin1String("enum")) {
         } else {
             qWarning() << "Cannot verify"<<ServiceID::gid(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Unknown type" << type;
             return false;
@@ -272,7 +290,7 @@ void ServiceController::execute_action(const QVariantMap& data, const char* plug
         qWarning()<<"Invalid data to be executed from"<<pluginid;
         return;
     }
-    executeAction(data);
+    executeAction(data, QString());
 }
 
 void ServiceController::property_changed(const QVariantMap& data, const QString& sessionid, const char* pluginid) {
@@ -366,38 +384,37 @@ void ServiceController::removeService(const QString& uid) {
     emit dataSync(sc.getData());
 }
 
-void ServiceController::executeAction(const QVariantMap& data) {
+void ServiceController::executeAction(const QVariantMap& data, const QString& sessionid) {
     if (!ServiceType::isExecutable(data)) return;
     AbstractPlugin* plugin = m_plugincontroller->getPlugin(ServiceID::pluginid(data));
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*>(plugin);
     if (!executeplugin) {
         qWarning()<<"Cannot execute service. No plugin found:"<<data;
         return;
-	}
-
-    executeplugin->execute(data);
+    }
+    executeplugin->execute(data, sessionid);
 }
 
-void ServiceController::executeActionByUID(const QString& uid) {
+void ServiceController::executeActionByUID(const QString& uid, const QString& sessionid) {
     ServiceStruct* service = m_valid_services.value(uid);
     if (!service || !service->plugin) return;
-    service->plugin->execute(service->data);
+    service->plugin->execute(service->data, sessionid);
 }
 
 ServiceController::ServiceStruct* ServiceController::service(const QString& uid) {
     return m_valid_services.value(uid);
 }
 
-void ServiceController::sessionBegin(QString sessionid) {
-    QByteArray data;
-    QJson::Serializer s;
-    // properties
-    QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
-    while ( AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin(index) ) {
-        QList<QVariantMap> properties = plugin->properties(sessionid);
-        for (int i=0;i<properties.size();++i) {
-            const QVariantMap prop = properties[i];
-            emit dataSync(prop, sessionid);
+void ServiceController::sessionBegin(const QString& sessionid) {
+    {
+        // properties
+        QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
+        while ( AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin(index) ) {
+            QList<QVariantMap> properties = plugin->properties(sessionid);
+            for (int i=0;i<properties.size();++i) {
+                const QVariantMap prop = properties[i];
+                emit dataSync(prop, sessionid);
+            }
         }
     }
 
@@ -405,6 +422,25 @@ void ServiceController::sessionBegin(QString sessionid) {
     for ( QMap<QString, ServiceStruct*>::const_iterator i=m_valid_services.begin();i!=m_valid_services.end();++i) {
         const ServiceStruct* service = *i;
         emit dataSync(service->data, sessionid);
+    }
+
+    {
+        // sessions
+        QMap<QString,PluginInfo*>::iterator  index = m_plugincontroller->getPluginIterator();
+        while ( AbstractPlugin_sessions* plugin = m_plugincontroller->nextSessionPlugin(index) ) {
+            plugin->session_change(sessionid, true);
+        }
+    }
+}
+
+void ServiceController::sessionFinished(QString sessionid, bool timeout) {
+    {
+		Q_UNUSED(timeout);
+        // sessions
+        QMap<QString,PluginInfo*>::iterator  index = m_plugincontroller->getPluginIterator();
+        while ( AbstractPlugin_sessions* plugin = m_plugincontroller->nextSessionPlugin(index) ) {
+            plugin->session_change(sessionid, false);
+        }
     }
 }
 
@@ -416,17 +452,17 @@ QList< QVariantMap > ServiceController::properties(const QString& sessionid) {
     {
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "serverstate");
         sc.setData("state", 1);
-		sc.setData("version", QCoreApplication::applicationVersion());
+        sc.setData("version", QCoreApplication::applicationVersion());
         l.append(sc.getData());
     }
     {
-		QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
-		QString plugins;
-		while (AbstractPlugin* plugin = m_plugincontroller->nextPlugin(index)) {
-			plugins.append(plugin->pluginid());
-			plugins.append(QLatin1String(";"));
-		}
-		plugins.chop(1);
+        QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
+        QString plugins;
+        while (AbstractPlugin* plugin = m_plugincontroller->nextPlugin(index)) {
+            plugins.append(plugin->pluginid());
+            plugins.append(QLatin1String(";"));
+        }
+        plugins.chop(1);
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "plugininfo");
         sc.setData("plugins", plugins);
         l.append(sc.getData());
@@ -434,12 +470,14 @@ QList< QVariantMap > ServiceController::properties(const QString& sessionid) {
     return l;
 }
 
-bool ServiceController::condition(const QVariantMap& data)  {
+bool ServiceController::condition(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
+    Q_UNUSED(sessionid);
     return false;
 }
 
-void ServiceController::event_changed(const QVariantMap& data)  {
+void ServiceController::event_changed(const QVariantMap& data, const QString& sessionid)  {
+    Q_UNUSED(sessionid);
     if (ServiceID::isId(data,"serverevent")) {
         // entfernen
         const QString uid = ServiceType::uniqueID(data);
@@ -455,7 +493,8 @@ void ServiceController::event_changed(const QVariantMap& data)  {
     }
 }
 
-void ServiceController::execute(const QVariantMap& data)  {
+void ServiceController::execute(const QVariantMap& data, const QString& sessionid)  {
+    Q_UNUSED(sessionid);
     if (ServiceID::isId(data,"servercmd")) {
         switch (INTDATA("state")) {
         case 0:
@@ -471,7 +510,7 @@ void ServiceController::initialize() {
     {
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "serverstate");
         sc.setData("state", 1);
-		sc.setData("version", QCoreApplication::applicationVersion());
+        sc.setData("version", QCoreApplication::applicationVersion());
         property_changed(sc.getData());
     }
 
@@ -484,7 +523,7 @@ void ServiceController::initialize() {
 void ServiceController::clear() {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "serverstate");
     sc.setData("state", 0);
-	sc.setData("version", QCoreApplication::applicationVersion());
+    sc.setData("version", QCoreApplication::applicationVersion());
     property_changed(sc.getData());
 
     const QList<QString> uids = m_state_events.value(0).toList();

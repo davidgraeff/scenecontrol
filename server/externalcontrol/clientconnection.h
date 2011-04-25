@@ -24,6 +24,7 @@
 #include <QByteArray>
 #include <QTimer>
 
+class HttpServer;
 class ServiceController;
 class ClientConnection : public QObject
 {
@@ -42,6 +43,7 @@ private:
 		Head
 	} m_requestType;
     //network
+	HttpServer* m_server;
     QSslSocket* m_socket;
     QTimer m_timeout;
     void generateFileResponse();
@@ -52,7 +54,7 @@ private:
 public:
     QString sessionid;
 
-    ClientConnection(QSslSocket* s) ;
+    ClientConnection(HttpServer* server, QSslSocket* s) ;
     ~ClientConnection() ;
     void sessionEstablished();
 	/**

@@ -324,7 +324,7 @@ static void destroy_sink_info(void *value)
 Refine the resolution of the slider or binary scale it to achieve a more subtle volume control.
 Use the base volume stored in the sink struct to calculate actual linear volumes.
 */
-void set_sink_volume(const char* sinkname, gdouble percent)
+void set_sink_volume(const char* sinkname, gdouble newvolume)
 {
     if (pa_server_available == FALSE)
         return;
@@ -335,7 +335,7 @@ void set_sink_volume(const char* sinkname, gdouble percent)
         return;
     }
 
-    pa_volume_t new_volume = (pa_volume_t) ((percent * PA_VOLUME_NORM) / 100);
+    pa_volume_t new_volume = (pa_volume_t) (newvolume * PA_VOLUME_NORM);
     pa_cvolume dev_vol;
     pa_cvolume_set(&dev_vol, s->volume.channels, new_volume);
     s->volume = dev_vol;
@@ -343,7 +343,7 @@ void set_sink_volume(const char* sinkname, gdouble percent)
     output_volume(s);
 }
 
-void set_sink_volume_relative(const char* sinkname, gdouble percent)
+void set_sink_volume_relative(const char* sinkname, gdouble newvolume)
 {
     if (pa_server_available == FALSE)
         return;
@@ -355,7 +355,7 @@ void set_sink_volume_relative(const char* sinkname, gdouble percent)
     }
 
     pa_volume_t v = pa_cvolume_avg(&s->volume);
-    pa_volume_t new_volume = (pa_volume_t) ((percent* PA_VOLUME_NORM) / 100) + v;
+    pa_volume_t new_volume = (pa_volume_t) (newvolume* PA_VOLUME_NORM) + v;
     pa_cvolume dev_vol;
     pa_cvolume_set(&dev_vol, s->volume.channels, new_volume);
     s->volume = dev_vol;
@@ -425,10 +425,8 @@ void close_pulseaudio()
     pa_main_loop = NULL;
 }
 
-
 static void output_volume(sink_info *value) {
-    pa_volume_t vol = pa_cvolume_avg(&value->volume);
-    uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
+    double volume = double(pa_cvolume_avg(&value->volume)) / PA_VOLUME_NORM;
 	if (callbackplugin) callbackplugin->pulseSinkChanged(PulseChannel(volume, value->mute, QString::fromLatin1(value->name)));
 }
 
@@ -441,8 +439,7 @@ QList<PulseChannel> getAllChannels() {
 	while (g_hash_table_iter_next (&iter, NULL, &valuePointer)) 
 	{
 		sink_info *value = (sink_info *)valuePointer;
-		pa_volume_t vol = pa_cvolume_avg(&value->volume);
-		uint32_t volume = (vol * 10000) / PA_VOLUME_NORM;
+		double volume = double(pa_cvolume_avg(&value->volume)) / PA_VOLUME_NORM;
 		channels.append(PulseChannel(volume, value->mute, QString::fromLatin1(value->name)));
 	}
 	return channels;

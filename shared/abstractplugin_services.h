@@ -181,17 +181,17 @@ public:
     /**
      * Implement execution routines for all provided actions
      */
-    virtual void execute(const QVariantMap& data) = 0;
+    virtual void execute(const QVariantMap& data, const QString& sessionid) = 0;
 
     /**
     * Implement check routines for all provided conditions
     */
-    virtual bool condition(const QVariantMap& data) = 0;
+    virtual bool condition(const QVariantMap& data, const QString& sessionid) = 0;
 
     /**
     * Event data loaded by the server or changed by a client. Implement routines to trigger the actual event based on these data
     * and remove the event with the event id (from data) that was established by previous data.
     */
-    virtual void event_changed(const QVariantMap& data) = 0;
+    virtual void event_changed(const QVariantMap& data, const QString& sessionid) = 0;
 };
 Q_DECLARE_INTERFACE(AbstractPlugin_services, "com.roomcontrol.PluginServices/2.0")

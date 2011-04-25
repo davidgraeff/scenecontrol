@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="linux_input_events" version="1.0">
   <event id="inputevent">
-    <string id="inputdevice" model="inputdevice" sendback_as="selected_input_device" />
+    <string id="inputdevice" model="inputdevice" />
     <string id="kernelkeyname" property="lastinputkey" />
     <bool id="pressed">1</bool>
     <bool id="repeat">0</bool>
   </event>
-  <model id="inputdevice" model_key="device_path">
+  
+  <execute id="selected_input_device" session_specific="1" >
+    <string id="device_path" />
+  </execute>
+
+  <model id="inputdevice" model_key="device_path" sendback_as="selected_input_device">
     <string id="device_path" />
 	<string id="device_info" />
   </model>
@@ -16,9 +21,5 @@
     <string id="kernelkeyname" />
   </property>
   
-  <property id="selected_input_device" session_specific="1" >
-    <string id="inputdevice" />
-  </property>
-
-	<section>test</section>
+  <section>test</section>
 </plugin>

@@ -36,9 +36,10 @@
 #include <sessioncontroller.h>
 #include <QUrl>
 #include <stdint.h>
+#include "httpserver.h"
 
 
-ClientConnection::ClientConnection(QSslSocket* s) : m_socket(s) {
+ClientConnection::ClientConnection(HttpServer* server, QSslSocket* s) :m_server(server), m_socket(s) {
     connect(m_socket, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
     connect(m_socket, SIGNAL(peerVerifyError(const QSslError &)),
             this, SLOT(peerVerifyError (const QSslError &)));
@@ -56,7 +57,7 @@ ClientConnection::ClientConnection(QSslSocket* s) : m_socket(s) {
 }
 ClientConnection::~ClientConnection() {
     if (m_isWebsocket) {
-		qDebug() << "Disconnect websocket client:"<<m_socket->peerAddress().toString();
+        qDebug() << "Disconnect websocket client:"<<m_socket->peerAddress().toString();
         const char data[] = {0x00, 0xFF, 0x00, 0xFF};
         m_socket->write(data);
         m_socket->flush();
@@ -150,7 +151,7 @@ void ClientConnection::peerVerifyError(QSslError error) {
 
 void ClientConnection::disconnected()
 {
-	qDebug() << "Client disconnected:"<<m_socket->peerAddress().toString()<<m_isWebsocket;
+    qDebug() << "Client disconnected:"<<m_socket->peerAddress().toString()<<m_isWebsocket;
     emit removeConnection(this);
 }
 
@@ -163,7 +164,7 @@ void ClientConnection::writeJSON(const QByteArray& data) {
 }
 
 void ClientConnection::timeout() {
-	qDebug() << "Disconnect client (timeout):"<<m_socket->peerAddress().toString()<<m_isWebsocket;
+    qDebug() << "Disconnect client (timeout):"<<m_socket->peerAddress().toString()<<m_isWebsocket;
     emit removeConnection(this);
 }
 
@@ -173,7 +174,7 @@ void ClientConnection::generateFileResponse() {
     if (wwwinfo.exists()) {
         if (!wwwinfo.isReadable()) {
             m_socket->write("HTTP/1.1 403 Forbidden\r\n");
-			m_socket->write("Content-Length: 0\r\n");
+            m_socket->write("Content-Length: 0\r\n");
             writeDefaultHeaders();
             m_socket->write("\r\n");
             m_socket->flush();
@@ -200,9 +201,9 @@ void ClientConnection::generateFileResponse() {
         m_socket->write("Last-Modified: " + wwwinfo.lastModified().toString(QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT\r\n");
         m_socket->write("Content-Type: " + type + "\r\n");
         m_socket->write("Content-Length:"+QByteArray::number(wwwinfo.size())+"\r\n");
-		
+
         m_socket->write("\r\n");
-		
+
         if (m_requestType==Get || m_requestType==Post) {
             www.open(QIODevice::ReadOnly);
             m_socket->write(www.readAll());
@@ -212,7 +213,7 @@ void ClientConnection::generateFileResponse() {
     } else {
         qDebug() << "File not found: " << wwwinfo.absoluteFilePath();
         m_socket->write("HTTP/1.1 404 Not Found\r\n");
-		m_socket->write("Content-Length: 0\r\n");
+        m_socket->write("Content-Length: 0\r\n");
         writeDefaultHeaders();
         m_socket->write("\r\n");
         m_socket->flush();
@@ -270,8 +271,8 @@ void ClientConnection::generateWebsocketResponseV00() {
 
     m_socket->write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: roomcontrol\r\n");
     m_socket->write("sec-WebSocket-Origin: "+origin+"\r\n");
-	QByteArray location = m_header.value("Host");
-	if (location.isEmpty()) location = m_socket->localAddress().toString().toAscii()+":"+QByteArray::number(m_socket->localPort());
+    QByteArray location = m_header.value("Host");
+    if (location.isEmpty()) location = m_socket->localAddress().toString().toAscii()+":"+QByteArray::number(m_socket->localPort());
     m_socket->write("Sec-WebSocket-Location: wss://"+location+"/"+QFileInfo(m_requestedfile).fileName().toLatin1()+"\r\n");
     writeDefaultHeaders();
     m_socket->write("\r\n"+hash.result());
@@ -280,32 +281,33 @@ void ClientConnection::generateWebsocketResponseV00() {
 
 bool ClientConnection::readHttp(const QByteArray& line) {
     if (line.endsWith("HTTP/1.1")) { // header start line
-		// request type
+        // request type
         m_requestType = None;
         if (line.startsWith("GET")) m_requestType = Get;
         else if (line.startsWith("HEAD")) m_requestType = Head;
         else if (line.startsWith("POST")) m_requestType = Post;
-		// requested filename
+        // requested filename
         int i = line.indexOf(' ');
         QByteArray requestedfile = line.mid(i+2,line.length()-10-i).trimmed();
-        if (requestedfile=="") m_requestedfile = wwwFile(QLatin1String("index.html"));
-		// parameters (after "?")
+        i = requestedfile.indexOf('?');
+        if (i!=-1) {
+            QByteArray parameters = requestedfile.mid(i+1);
+            requestedfile.truncate(i);
+            i = 0;
+            while (i!=-1) {
+                i = parameters.indexOf('=', i);
+                if (i==-1) break;
+                QByteArray key = parameters.mid(0,i);
+                i = parameters.indexOf('&', i);
+                if (i==-1) break;
+                QByteArray value = parameters.mid(0,i);
+                m_fileparameters[key] = value;
+            }
+		}
+		
+		if (requestedfile=="")
+			m_requestedfile = wwwFile(QLatin1String("index.html"));
 		else {
-			i = requestedfile.indexOf('?');
-			if (i!=-1) {
-				QByteArray parameters = requestedfile.mid(i+1);
-				requestedfile.truncate(i);
-				i = 0;
-				while (i!=-1) {
-					i = parameters.indexOf('=', i);
-					if (i==-1) break;
-					QByteArray key = parameters.mid(0,i);
-					i = parameters.indexOf('&', i);
-					if (i==-1) break;
-					QByteArray value = parameters.mid(0,i);
-					m_fileparameters[key] = value;
-				}
-			}
 			m_requestedfile = QUrl::fromPercentEncoding(requestedfile);
 			// xml umleitung
 			QFileInfo info(m_requestedfile);
@@ -317,16 +319,17 @@ bool ClientConnection::readHttp(const QByteArray& line) {
 				m_requestedfile = wwwFile(m_requestedfile);
 			}
 		}
-        // header leeren
+
+		// header leeren
         m_header.clear();
         m_inHeader = true;
     } else if (line.size() && m_inHeader) { // header
         int i = line.indexOf(':');
         if (i==-1) {
-			qWarning() << "Client invalid header:"<<m_socket->peerAddress().toString()<<line;
-			emit removeConnection(this);
-			return false;
-		}
+            qWarning() << "Client invalid header:"<<m_socket->peerAddress().toString()<<line;
+            emit removeConnection(this);
+            return false;
+        }
         m_header.insert(line.mid(0,i).trimmed(),line.mid(i+1).trimmed());
     } else if (line.isEmpty() && m_inHeader) { // header end line, parse header data
         m_inHeader = false;
@@ -341,7 +344,7 @@ bool ClientConnection::readHttp(const QByteArray& line) {
             if (m_header.contains("sessionid")) {
                 Session* session = SessionController::instance()->getSession(QString::fromAscii(m_header["sessionid"]));
                 if (session) {
-					sessionid = session->sessionid();
+                    sessionid = session->sessionid();
                     session->resetSessionTimer();
                     m_authok = true;
                 }
@@ -357,10 +360,10 @@ bool ClientConnection::readHttp(const QByteArray& line) {
             }
             qDebug() << "New websocket client:"<<m_socket->peerAddress().toString();
             m_isWebsocket = true;
-			emit upgradedConnection();
+            emit upgradedConnection();
         } else
-		// file request
-		{
+            // file request
+        {
             generateFileResponse();
         }
     } else {

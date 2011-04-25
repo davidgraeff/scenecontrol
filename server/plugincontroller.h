@@ -30,6 +30,7 @@
 #include <shared/abstractplugin_services.h>
 #include <shared/abstractplugin_otherproperties.h>
 #include <shared/abstractplugin_settings.h>
+#include <shared/abstractplugin_sessions.h>
 
 class ServiceController;
 class PluginInfo {
@@ -72,6 +73,7 @@ public:
     QMap<QString,PluginInfo*>::iterator getPluginIterator();
     AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);
     AbstractPlugin_services* nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index);
+	AbstractPlugin_sessions* nextSessionPlugin(QMap<QString,PluginInfo*>::iterator& index);
 
 private:
     QMap<QString,PluginInfo*> m_plugins;

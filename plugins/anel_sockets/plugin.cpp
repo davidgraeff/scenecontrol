@@ -50,7 +50,8 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     }
 }
 
-void plugin::execute ( const QVariantMap& data ) {
+void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED ( sessionid );
     if ( ServiceID::isId(data, "iovalue_absolut" ) ) {
         m_controller->setPin ( DATA("channel"),BOOLDATA("value") );
     } else if ( ServiceID::isId(data, "iovalue_toogle" ) ) {
@@ -62,14 +63,16 @@ void plugin::execute ( const QVariantMap& data ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data )  {
+bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+	Q_UNUSED ( sessionid );
     if ( ServiceID::isId(data, "iocondition" ) ) {
         return ( m_controller->getPin ( DATA("channel") ) == BOOLDATA("value") );
     }
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data ) {
+void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED ( sessionid );
     Q_UNUSED ( data );
 }
 

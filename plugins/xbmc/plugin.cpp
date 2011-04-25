@@ -25,7 +25,7 @@ void plugin::initialize() {
 }
 
 
-void plugin::execute(const QVariantMap& data) {
+void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 	if (!m_xbmcClient) return;
 	if (ServiceID::isId(data,"xbmcfocus")) {
 		setSetting(QLatin1String("server"), data["server"].toString());
@@ -40,12 +40,12 @@ void plugin::execute(const QVariantMap& data) {
 	}
 }
 
-bool plugin::condition(const QVariantMap& data)  {
+bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
 	Q_UNUSED(data);
 	return false;
 }
 
-void plugin::event_changed(const QVariantMap& data) {
+void plugin::event_changed(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(data);  
 }
 

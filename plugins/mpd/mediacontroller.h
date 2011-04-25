@@ -29,6 +29,7 @@ class MediaController : public QObject
     Q_OBJECT
 public:
 	enum MediaState {
+		NothingLoaded,
 		StopState,
 		PauseState,
 		PlayState
@@ -76,6 +77,10 @@ public:
 
     // volume
     void setVolume(int newvol, bool relative = false);
+	
+	/**
+	 * Return volume. Range 0-100
+	 */
     int volume() const;
 
     void dumpMediaInfo();

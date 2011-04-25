@@ -2,6 +2,7 @@
 #include "authThread.h"
 #include <serializer.h>
 #include <shared/abstractserver.h>
+#include <QDebug>
 
 SessionController* SessionController::m_sessioncontroller = 0;
 
@@ -66,24 +67,28 @@ Session* SessionController::getSession(const QString& sessionid) {
     return m_session.value(sessionid);
 }
 
-bool SessionController::condition(const QVariantMap& data) {
+bool SessionController::condition(const QVariantMap& data, const QString& sessionid) {
     Q_UNUSED(data);
+	Q_UNUSED(sessionid);
     return false;
 }
 
-void SessionController::execute(const QVariantMap& data) {
-    if (ServiceID::isId(data,"sessionlogin")) { //nonsense!
-        addSession(DATA("user"),DATA("pwd"));
+void SessionController::execute(const QVariantMap& data, const QString& sessionid) {
+	Q_UNUSED(sessionid);
+    if (ServiceID::isId(data,"sessionlogin")) { 
+        addSession(DATA("user"),DATA("pwd")); //nonsense: sessionid not saved. This service has to be used in connection classes like the http server
     } else if (ServiceID::isId(data,"sessionlogout")) {
         closeSession(DATA("sessionid"), false);
     } else if (ServiceID::isId(data,"sessionidle")) {
-        Session* session = m_session.value(DATA("sessionid"));
+		if (DATA("sessionid").size() && sessionid != DATA("sessionid")) qWarning()<<"Warning: Idle command tried to idle not its own session!";
+        Session* session = m_session.value(sessionid);
         if (session) session->resetSessionTimer();
     }
 }
 
-void SessionController::event_changed(const QVariantMap& data) {
+void SessionController::event_changed(const QVariantMap& data, const QString& sessionid) {
     Q_UNUSED(data);
+	Q_UNUSED(sessionid);
 }
 
 QList<QVariantMap> SessionController::properties(const QString& sessionid) {

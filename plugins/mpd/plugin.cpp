@@ -31,7 +31,7 @@ plugin::plugin() {
     connect ( m_mediacontroller,SIGNAL ( playlistsChanged ( QString,int ) ),SLOT ( playlistsChanged ( QString,int ) ) );
     connect ( m_mediacontroller,SIGNAL ( trackChanged(QString,QString,int,uint,uint,int)), SLOT(trackChanged(QString,QString,int,uint,uint,int)));
     connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
-	connect ( m_mediacontroller,SIGNAL ( stateChanged(MediaController*)),SLOT(stateChanged(MediaController*) ) );
+    connect ( m_mediacontroller,SIGNAL ( stateChanged(MediaController*)),SLOT(stateChanged(MediaController*) ) );
     _config ( this );
 }
 
@@ -50,7 +50,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     }
 }
 
-void plugin::execute ( const QVariantMap& data ) {
+void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     if ( ServiceID::isId(data, "mpdvolume" ) ) {
         m_mediacontroller->setVolume ( DOUBLEDATA ( "volume" ), BOOLDATA ( "relative" ) );
     } else if ( ServiceID::isId(data, "mpdcmd" ) ) {
@@ -99,14 +99,14 @@ void plugin::execute ( const QVariantMap& data ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data )  {
+bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     if ( ServiceID::isId(data, "bla" ) ) {
         return ( INTDATA ( "mpdstatecondition" ) == m_mediacontroller->state() );
     }
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data ) {
+void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
 }
 
@@ -114,24 +114,42 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     l.append(stateChanged(m_mediacontroller, false));
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "playlist.current" );
+        sc.setData("playlistid", m_mediacontroller->currentplaylist());
+        l.append(sc.getData());
+    }
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "volume.changed" );
+        sc.setData("volume", m_mediacontroller->volume());
+        l.append(sc.getData());
+    }
+    if (m_mediacontroller->state()!=MediaController::NothingLoaded) {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "track.info" );
+		l.append(sc.getData());
+    }
+    {
+        ServiceCreation sc = ServiceCreation::createModelReset(PLUGIN_ID,  "playlists", "playlistid" );
+        l.append(sc.getData());
+    }
     return l;
 }
 
 void plugin::playlistChanged ( QString p ) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdplaylist" );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "playlist.current" );
     sc.setData("playlistid", p);
     m_server->property_changed ( sc.getData() );
 }
 
 void plugin::playlistsChanged ( QString p, int pos) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdplaylists" );
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID,  "playlists" );
     sc.setData("playlistid", p);
     sc.setData("position", pos);
     m_server->property_changed ( sc.getData() );
 }
 
 void plugin::trackChanged ( const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdtrack" );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "track.info" );
     sc.setData("filename", filename);
     sc.setData("trackname", trackname);
     sc.setData("track", track);
@@ -142,14 +160,14 @@ void plugin::trackChanged ( const QString& filename, const QString& trackname, i
 }
 
 void plugin::volumeChanged ( double volume ) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "mpdvolumechanged" );
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "volume.changed" );
     sc.setData("volume", volume);
     m_server->property_changed ( sc.getData() );
 }
 
 QVariantMap plugin::stateChanged(MediaController* client, bool propagate) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mpd.connection.state");
-	const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "connection.state");
+    const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
     sc.setData("server",server);
     sc.setData("state", (int)client->isConnected());
     if (propagate) m_server->property_changed(sc.getData());

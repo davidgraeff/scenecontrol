@@ -40,7 +40,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 	PluginSettingsHelper::setSetting(name, value, init);
 }
 
-void plugin::execute(const QVariantMap& data) {
+void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 	if (ServiceID::isId(data,"wol")) {
 		QStringList parts = data["mac"].toString().split(QLatin1Char(':'));
 		if (parts.size()!=6) return;
@@ -60,12 +60,12 @@ void plugin::execute(const QVariantMap& data) {
 	}
 }
 
-bool plugin::condition(const QVariantMap& data)  {
+bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
 	Q_UNUSED(data);
 	return false;
 }
 
-void plugin::event_changed(const QVariantMap& data) {
+void plugin::event_changed(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(data);
 }
 

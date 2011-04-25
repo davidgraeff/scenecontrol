@@ -108,12 +108,13 @@ int main(int argc, char *argv[])
     collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
     collections->connect(services, SIGNAL(dataSync(QVariantMap,QString)), collections, SLOT(dataSync(QVariantMap,QString)));
     collections->connect(services, SIGNAL(eventTriggered(QString)), collections, SLOT(eventTriggered(QString)));
-    services->connect(collections, SIGNAL(instanceExecute(QString)), services, SLOT(executeActionByUID(QString)));
+    services->connect(collections, SIGNAL(instanceExecute(QString, QString)), services, SLOT(executeActionByUID(QString, QString)));
 
 	SessionController* sessions = SessionController::instance(true);
 	sessions->connectToServer(services);
 	plugins->registerPluginFromObject(sessions);
 	services->connect(sessions,SIGNAL(sessionBegin(QString)),services,SLOT(sessionBegin(QString)));
+	services->connect(sessions,SIGNAL(sessionFinished(QString,bool)),services,SLOT(sessionFinished(QString,bool)));
 
     services->load(cmdargs.contains("--observe-service-dir"));
 	plugins->initializePlugins();

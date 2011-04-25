@@ -82,7 +82,7 @@ void HttpServer::incomingConnection ( int socketDescriptor )
                 socket->setPrivateKey(certificateFile(QLatin1String("server.key")));
                 socket->setPeerVerifyMode(QSslSocket::VerifyNone);
                 socket->startServerEncryption();
-                ClientConnection* c = new ClientConnection(socket);
+                ClientConnection* c = new ClientConnection(this, socket);
                 connect(c,SIGNAL(dataReceived(QVariantMap,QString)),SIGNAL(dataReceived(QVariantMap,QString)));
                 connect(c,SIGNAL(removeConnection(ClientConnection*)),SLOT(removeConnection(ClientConnection*)));
                 connect(c,SIGNAL(upgradedConnection()),SLOT(upgradedConnection()));

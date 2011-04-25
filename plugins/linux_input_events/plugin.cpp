@@ -35,6 +35,7 @@
 #include "plugin.h"
 #include "configplugin.h"
 #include "managed_device_list.h"
+#include <qfileinfo.h>
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
@@ -43,6 +44,8 @@ int plugin::m_repeatInit = 0;
 
 plugin::plugin() {
     m_devicelist = new ManagedDeviceList();
+	connect(m_devicelist,SIGNAL(deviceAdded(ManagedDevice*)),SLOT(deviceAdded(ManagedDevice*)));
+	connect(m_devicelist,SIGNAL(deviceRemoved(ManagedDevice*)),SLOT(deviceRemoved(ManagedDevice*)));
     _config ( this );
 }
 
@@ -56,6 +59,7 @@ void plugin::initialize() {
     for (int i=0;keynames[i].name;++i) {
         m_keymapping[keynames[i].value] = QString::fromAscii(keynames[i].name);
     }
+    m_devicelist->start();
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
@@ -64,16 +68,22 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     else if (name == QLatin1String("repeat_init")) m_repeatInit = value.toInt();
 }
 
-void plugin::execute ( const QVariantMap& data ) {
-    Q_UNUSED ( data );
+void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+    if ( ServiceID::isId(data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
+        InputDevice* inputdevice = m_devices.value(DATA ( "device_path") );
+        if (!inputdevice) return;
+        inputdevice->connectSession(sessionid);
+    }
 }
 
-bool plugin::condition ( const QVariantMap& data )  {
+bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+	Q_UNUSED(sessionid);
     Q_UNUSED ( data );
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data ) {
+void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED(sessionid);
     if ( ServiceID::isId(data, "inputevent" ) ) {
         // entfernen
         const QString uid = ServiceType::uniqueID(data);
@@ -88,14 +98,6 @@ void plugin::event_changed ( const QVariantMap& data ) {
 
         InputDevice* inputdevice = m_devices.value(DATA ( "inputdevice") );
         if (inputdevice) inputdevice->registerKey(uid, DATA ( "kernelkeyname" ), BOOLDATA("repeat"));
-    }
-}
-
-void plugin::otherPropertyChanged ( const QVariantMap& data, const QString& sessionid ) {
-    if ( ServiceID::isId(data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
-        InputDevice* inputdevice = m_devices.value(DATA ( "inputdevice") );
-        if (!inputdevice) return;
-        inputdevice->connectSession(sessionid);
     }
 }
 
@@ -167,10 +169,11 @@ bool InputDevice::isClosable() {
 void InputDevice::connectSession(const QString& sessionid) {
     m_sessionids.insert(sessionid);
     setDevice(m_device);
+	qDebug() << __FILE__ << m_device->devPath<<sessionid;
 }
 void InputDevice::disconnectSession(const QString& sessionid) {
     m_sessionids.remove(sessionid);
-    if (isClosable()) m_file.close();
+    if (isClosable()) setDevice(0);
 }
 void InputDevice::setDevice(ManagedDevice* device) {
     m_device = device;
@@ -178,7 +181,12 @@ void InputDevice::setDevice(ManagedDevice* device) {
         m_file.close();
     else if (!m_file.isOpen() && !isClosable()) {
         m_file.setFileName(device->devPath);
-        m_file.open(QIODevice::ReadOnly);
+		if (QFileInfo(m_file).isReadable()) {
+			qWarning()<<"InputDevice open failed:"<< m_file.fileName() << "No access rights!";
+		} else 
+        if (!m_file.open(QIODevice::ReadOnly)) {
+			qWarning()<<"InputDevice open failed:"<< m_file.fileName();
+		}
     }
 }
 
@@ -200,6 +208,7 @@ void InputDevice::eventData() {
         struct input_event ev;
         if (m_file.read((char*)&ev,sizeof(struct input_event)) == -1) continue;
         if (EV_KEY != ev.type) continue;
+		qDebug() << "key event" << m_device->devPath;
         if ((ev.value == KEY_PRESS) || (ev.value == KEY_KEEPING_PRESSED)) {
             const QString& kernelkeyname = m_plugin->m_keymapping.value(ev.code);
             // properties

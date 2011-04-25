@@ -48,13 +48,12 @@ PluginController::PluginController (ServiceController* servicecontroller) {
         m_plugins.insert ( pluginid, plugininfo );
 
         loadXML(xmlFile(pluginid));
-        qDebug() << "Loaded Plugin"<<pluginid<<plugininfo->version;
 
         plugin->connectToServer(servicecontroller);
     }
 
     if (pluginfiles.empty())
-        qDebug() << "No plugins found in" << plugindir;
+        qWarning() << "No plugins found in" << plugindir;
 }
 
 PluginController::~PluginController()
@@ -104,7 +103,7 @@ void PluginController::loadXML(const QString& filename) {
 
     // register all defined actions, events, conditions and properties
     QSet<QString> allowedElements;
-    allowedElements << QLatin1String("action") << QLatin1String("event") << QLatin1String("condition") << QLatin1String("notification") << QLatin1String("model");
+    allowedElements << QLatin1String("action") << QLatin1String("event") << QLatin1String("condition") << QLatin1String("execute") << QLatin1String("notification") << QLatin1String("model");
     QDomNodeList items_of_plugin = node.childNodes();
     for (int j=0;j<items_of_plugin.size();++j) {
         QDomNode item = items_of_plugin.item(j);
@@ -118,15 +117,7 @@ void PluginController::loadXML(const QString& filename) {
         if (m_id_to_xml.contains(gid)) {
             qWarning()<<"Multiple xml definition of" << gid;
             continue;
-        } else {
-            qDebug()<<"add xml key" << gid;
         }
-
-        /*        QString t;
-                QTextStream s(&t);
-        		item.save(s,3);
-        		qDebug()<<t;*/
-
         m_id_to_xml.insert(gid, new QDomNode(item.cloneNode()));
     }
 }
@@ -144,10 +135,9 @@ int PluginController::knownServices() {
 
 void PluginController::registerPluginFromObject(AbstractPlugin* object) {
     const QString pluginid = object->pluginid();
-
     PluginInfo* plugininfo = new PluginInfo(object);
     m_plugins.insert ( pluginid, plugininfo );
-
+	loadXML(xmlFile(pluginid));
 }
 
 void PluginController::deregisterPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller) {
@@ -168,6 +158,14 @@ AbstractPlugin* PluginController::nextPlugin(QMap<QString,PluginInfo*>::iterator
 AbstractPlugin_services* PluginController::nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index) {
     while (m_plugins.end()!=index) {
         AbstractPlugin_services* s = dynamic_cast<AbstractPlugin_services*>((*(index++))->plugin);
+        if (s) return s;
+    }
+    return 0;
+}
+
+AbstractPlugin_sessions* PluginController::nextSessionPlugin(QMap<QString,PluginInfo*>::iterator& index) {
+    while (m_plugins.end()!=index) {
+        AbstractPlugin_sessions* s = dynamic_cast<AbstractPlugin_sessions*>((*(index++))->plugin);
         if (s) return s;
     }
     return 0;

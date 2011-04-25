@@ -70,7 +70,7 @@ void plugin::writeToDevice() {
     }
 }
 
-void plugin::execute ( const QVariantMap& data ) {
+void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     if ( !m_serial ) return;
     if ( ServiceID::isId(data, "projector_sanyo_power" ) ) {
         if ( BOOLDATA ( "power" ) )
@@ -95,12 +95,12 @@ void plugin::execute ( const QVariantMap& data ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data )  {
+bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     Q_UNUSED ( data );
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data ) {
+void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
 }
 

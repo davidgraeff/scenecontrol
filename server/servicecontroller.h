@@ -92,9 +92,9 @@ private:
 	/////////////// AbstractPlugin, AbstractPlugin_services ///////////////
     virtual void clear();
     virtual void initialize();
-    virtual bool condition(const QVariantMap& data);
-    virtual void event_changed(const QVariantMap& data);
-    virtual void execute(const QVariantMap& data);
+    virtual bool condition(const QVariantMap& data, const QString& sessionid);
+    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
+    virtual void execute(const QVariantMap& data, const QString& sessionid);
     virtual QList<QVariantMap> properties(const QString& sessionid);
 	QMap<int, QSet<QString> > m_state_events; //state->set of uids
 public Q_SLOTS:
@@ -118,17 +118,18 @@ public Q_SLOTS:
      * Execute action described by data (delegate to plugin).
      * Precondition: Data is checked
      */
-    void executeAction(const QVariantMap& data);
+    void executeAction(const QVariantMap& data, const QString& sessionid);
     /**
      * Execute action in m_services with given uid immediately.
      */
-    void executeActionByUID(const QString& uid);
+    void executeActionByUID(const QString& uid, const QString& sessionid);
     void directoryChanged(QString file, bool loading = false);
 
     /**
      * Session manager: A valid session started. Send all plugin infos via dataSync.
      */
-    void sessionBegin(QString sessionid);
+    void sessionBegin(const QString& sessionid);
+	void sessionFinished(QString sessionid, bool timeout);
 Q_SIGNALS:
     /**
      * Emitted after a service has changed

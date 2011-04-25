@@ -12,22 +12,23 @@ struct udev_device;
 
 class ManagedDevice {
 public:
-	QString devPath;
-	QString sysPath;
-	QString info;
+    QString devPath;
+    QString sysPath;
+    QString info;
 };
 
 class ManagedDeviceList : public QObject
 {
     Q_OBJECT
 public:
-	enum StateEnum {
-		Invalid,
-		Valid,
-		ValidWithoutMonitoring
-	};
+    enum StateEnum {
+        Invalid,
+        Valid,
+        ValidWithoutMonitoring
+    };
     ManagedDeviceList();
     ~ManagedDeviceList();
+    void start();
     ManagedDeviceList::StateEnum getState();
     void processDevice(struct udev_device *dev);
 Q_SIGNALS:

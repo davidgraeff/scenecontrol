@@ -20,8 +20,10 @@ QList< QVariantMap > Backups::properties(const QString& sessionid) {
     QStringList backups = backupdir.entryList ( QDir::Dirs|QDir::NoDotAndDotDot );
     foreach(QString dir, backups) {
 		ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "backup");
-        QFile namefile(backupdir.absoluteFilePath ( dir ));
-        namefile.open(QIODevice::ReadOnly|QIODevice::Truncate);
+		QDir backupdir_sub(backupdir);
+		backupdir_sub.cd(dir);
+        QFile namefile(backupdir_sub.absoluteFilePath ( QLatin1String("name.txt") ));
+        namefile.open(QIODevice::ReadOnly);
 		sc.setData("backupid", dir);
 		sc.setData("name", QString::fromUtf8(namefile.readLine()));
         namefile.close();
@@ -30,16 +32,16 @@ QList< QVariantMap > Backups::properties(const QString& sessionid) {
     return l;
 }
 
-bool Backups::condition(const QVariantMap& data)  {
+bool Backups::condition(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
 	return false;
 }
 
-void Backups::event_changed(const QVariantMap& data)  {
+void Backups::event_changed(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
 }
 
-void Backups::execute(const QVariantMap& data)  {
+void Backups::execute(const QVariantMap& data, const QString& sessionid)  {
     if (ServiceID::isId(data,"backup_create")) {
 		create(DATA("name"));
 	} else if (ServiceID::isId(data,"backup_restore")) {
@@ -76,10 +78,12 @@ void Backups::create(const QString& name)
             qDebug() << "Backup of"<<file<<"failed";
         }
     }
-    QFile namefile(destdir.absoluteFilePath ( QLatin1String("name.txt") ));
-    namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
-    namefile.write(name.toUtf8());
-    namefile.close();
+    {
+		QFile namefile(destdir.absoluteFilePath ( QLatin1String("name.txt") ));
+		namefile.open(QIODevice::WriteOnly|QIODevice::Truncate);
+		namefile.write(name.toUtf8());
+		namefile.close();
+	}
     ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "backup");
 	sc.setData("backupid", id);
 	sc.setData("name", name);
@@ -115,9 +119,8 @@ void Backups::remove ( const QString& id )
         foreach ( QString file, files ) destdir.remove ( file );
         destdir.rmdir ( destdir.absolutePath() );
     }
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "backup");
+    ServiceCreation sc = ServiceCreation::createModelRemoveItem(PLUGIN_ID, "backup");
 	sc.setData("backupid", id);
-	sc.setData("name", QString());
 	m_server->property_changed(sc.getData());
 }
 
@@ -137,5 +140,6 @@ void Backups::restore ( const QString& id )
     foreach ( QString file, files ) {
 		QFile::copy ( sourcedir.filePath ( file ),destdir.filePath ( file ) );
 	}
+	qDebug() << "Backup restore " << files.size() << "files to" << destdir.path();
 }
 

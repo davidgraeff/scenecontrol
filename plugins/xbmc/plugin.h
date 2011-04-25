@@ -39,9 +39,9 @@ public:
     virtual void clear();
     virtual QList<QVariantMap> properties(const QString& sessionid);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
-    virtual void execute(const QVariantMap& data);
-    virtual bool condition(const QVariantMap& data) ;
-    virtual void event_changed(const QVariantMap& data);
+    virtual void execute(const QVariantMap& data, const QString& sessionid);
+    virtual bool condition(const QVariantMap& data, const QString& sessionid) ;
+    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
 
     void setCommand(int cmd);
 private:

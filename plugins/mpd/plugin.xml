@@ -18,20 +18,24 @@
   <condition id="mpdstatecondition">
     <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
   </condition>
-  <property id="mpdvolumechanged">
-    <double id="volume" min="0.0" max="1.0" />
+  
+  <property id="volume.changed">
+    <int id="volume" min="0" max="100" />
   </property>
-  <property id="mpdplaylist">
+  
+  <property id="playlist.current">
 	  <string id="playlistid" />
   </property>
+  
   <!-- playlists changed -->
-  <property id="mpdplaylists">
+  <model id="playlists" model_key="playlistid">
 	  <string id="playlistid" />
 	  <int id="position" />
-  </property>
+  </model>
+  
   <!-- only send this notification if a client changes the position or the player engine made unexspected jumps.
   It's up to the client to fake the current postion counter -->
-  <property id="mpdtrack">
+  <property id="track.info">
 	<string id="filename" />
     <string id="trackname" />
 	<int id="track" /><!-- -1 if not a track of a playlist -->
@@ -39,7 +43,8 @@
     <uint id="total_in_ms" />
     <enum id="state" /><!-- PlayCmd,PauseCmd,StopCmd -->
   </property>
-  <property id="mpd.connection.state">
+  
+  <property id="connection.state">
     <string id="server"></string>
     <enum id="state" n="2" /><!-- not reachable, connected -->
   </property>

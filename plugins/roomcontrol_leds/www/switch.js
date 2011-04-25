@@ -1,14 +1,18 @@
 function InitPlugin(pluginid, sectionname, $section) {
 	var datamodel = modelstorage.getModel("led.value");
 	var namemodel = modelstorage.getModel("led.name");
-	
+
+	var $rootelement = $('<div class="roomcontrolleds"></div>');
+	$section.append($rootelement);
+
 	/* fake daten */
 	datamodel.reset({"__key":"channel","id":"led.value"});
 	datamodel.change({"channel":"led1","value":120,"id":"led.value"});
 	namemodel.reset({"__key":"channel","id":"led.name"});
 	namemodel.change({"channel":"led1","name":"Led 1","id":"led.name"});
 	
-	if (datamodel && namemodel) {
+	function modelsAvailable() {
+		if (!datamodel || !namemodel) return;
 		$.getCss(pluginid+"/"+sectionname+".css");
 
 		function getName(key) {
@@ -46,8 +50,15 @@ function InitPlugin(pluginid, sectionname, $section) {
 			return item;
 		}
 
-		var $rootelement = $('<div class="roomcontrolleds"></div>');
 		var listview = new ListView($rootelement, itemChangeFunction, itemCreationFunction, datamodel);
-		$section.append($rootelement);
 	}
+	
+	function modelAvailable(event, modelid, modeldata) {
+		if (modelid == "led.value") datamodel = modeldata;
+		else if (modelid == "led.name") namemodel = modeldata;
+		modelsAvailable();
+	}
+	
+	$(modelstorage).bind('modelAvailable', modelAvailable);
+	modelsAvailable();
 }

@@ -49,7 +49,7 @@ private:
 private Q_SLOTS:
 	void executiontimeout();
 Q_SIGNALS:
-	void executeService(const QString& uid);
+	void executeService(const QString& uid, const QString& sessionid);
 };
 
 class Collections : public QObject, public AbstractPlugin, public AbstractPlugin_services
@@ -62,9 +62,9 @@ public:
 	void setServiceController(ServiceController* sc) { m_servicecontroller = sc; }
     virtual void clear();
     virtual void initialize();
-    virtual bool condition(const QVariantMap& data);
-    virtual void event_changed(const QVariantMap& data);
-    virtual void execute(const QVariantMap& data);
+    virtual bool condition(const QVariantMap& data, const QString& sessionid);
+    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
+    virtual void execute(const QVariantMap& data, const QString& sessionid);
     virtual QList<QVariantMap> properties(const QString& sessionid);
 private:
 	void addCollection(const QVariantMap& data);
@@ -77,5 +77,5 @@ public Q_SLOTS:
     void dataReady();
     void eventTriggered(const QString& uid);
 Q_SIGNALS:
-	void instanceExecute(const QString& uid);
+	void instanceExecute(const QString& uid, const QString& sessionid);
 };

@@ -26,7 +26,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 
-MediaController::MediaController(AbstractPlugin* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(StopState), m_currenttime(0), m_totaltime(0)
+MediaController::MediaController(AbstractPlugin* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(NothingLoaded), m_currenttime(0), m_totaltime(0), m_track(0), m_volume(0)
 {
     m_fakepos.setInterval(1000);
     connect(&m_fakepos, SIGNAL(timeout()),SLOT(updatefakepos()));
@@ -86,6 +86,7 @@ void MediaController::slotdisconnected()
 {
     if (m_terminate) return;
     if (m_mpdstatus->state() != QTcpSocket::UnconnectedState) return;
+	m_mediastate = NothingLoaded;
     emit stateChanged(this);
     qWarning() << m_plugin->pluginid() << "Connection lost. Try reconnect (status channel)";
     m_mpdstatus->connectToHost(m_host,m_port);
@@ -331,7 +332,7 @@ void MediaController::pause()
 {
     if (m_mediastate == PlayState)
         addToCommandQueue("pause 1\n");
-    else
+    else if (m_mediastate == PauseState)
         addToCommandQueue("pause 0\n");
 }
 

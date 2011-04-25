@@ -41,18 +41,21 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 	PluginSettingsHelper::setSetting(name, value, init);
 }
 
-void plugin::execute(const QVariantMap& data) {
+void plugin::execute(const QVariantMap& data, const QString& sessionid) {
+	Q_UNUSED(sessionid);
 	if (ServiceID::isId(data,"bla")) {
 	}
 }
 
-bool plugin::condition(const QVariantMap& data)  {
+bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
 	Q_UNUSED(data);
+	Q_UNUSED(sessionid);
 	return false;
 }
 
-void plugin::event_changed(const QVariantMap& data) {
+void plugin::event_changed(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(data);
+	Q_UNUSED(sessionid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {

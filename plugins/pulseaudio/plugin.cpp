@@ -42,7 +42,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     PluginSettingsHelper::setSetting ( name, value, init );
 }
 
-void plugin::execute ( const QVariantMap& data ) {
+void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     if ( ServiceID::isId(data, "pulsechannelmute" ) ) {
         set_sink_muted(DATA("sindid").toUtf8().constData(), INTDATA ( "mute" ) );
     } else if ( ServiceID::isId(data, "pulsechannelvolume" ) ) {
@@ -54,12 +54,12 @@ void plugin::execute ( const QVariantMap& data ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data )  {
+bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     Q_UNUSED ( data );
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data ) {
+void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
 }
 

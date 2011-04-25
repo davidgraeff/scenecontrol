@@ -37,16 +37,19 @@ QList< QVariantMap > Collections::properties(const QString& sessionid) {
     return l;
 }
 
-bool Collections::condition(const QVariantMap& data)  {
+bool Collections::condition(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
+	Q_UNUSED(sessionid);
 	return false;
 }
 
-void Collections::event_changed(const QVariantMap& data)  {
+void Collections::event_changed(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
+	Q_UNUSED(sessionid);
 }
 
-void Collections::execute(const QVariantMap& data)  {
+void Collections::execute(const QVariantMap& data, const QString& sessionid)  {
+	Q_UNUSED(sessionid);
     if (ServiceID::isId(data,"executecollection")) {
         CollectionInstance* instance = m_collections.value(DATA("collectionid"));
         if (instance && instance->enabled) instance->startExecution();
@@ -76,7 +79,7 @@ void Collections::addCollection(const QVariantMap& data) {
         qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
     }
     convertVariantToStringSet(LIST("events"), instance->eventids);
-    connect(instance,SIGNAL(executeService(QString)),SIGNAL(instanceExecute(QString)));
+    connect(instance,SIGNAL(executeService(QString, QString)),SIGNAL(instanceExecute(QString, QString)));
 }
 
 void Collections::dataSync(const QVariantMap& data, const QString& sessionid) {
@@ -111,7 +114,7 @@ void Collections::eventTriggered(const QString& uid) {
             foreach(std::string uid, positives) {
                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
                 if (!s) continue;
-                if (!s->plugin->condition(s->data)) {
+                if (!s->plugin->condition(s->data, QString())) {
                     ok = false;
                     break;
                 }
@@ -121,7 +124,7 @@ void Collections::eventTriggered(const QString& uid) {
             foreach(std::string uid, negatives) {
                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
                 if (!s) continue;
-                if (s->plugin->condition(s->data)) {
+                if (s->plugin->condition(s->data, QString())) {
                     ok = false;
                     break;
                 }
@@ -168,7 +171,7 @@ void CollectionInstance::executiontimeout()
 {
 	const QList<QString> uids = actionids.values();
     foreach (QString uid, uids) {
-        emit executeService(uid);
+        emit executeService(uid, QString());
     }
 
 	QMap< int, QString >::iterator it = actionids.lowerBound(m_currenttime);
