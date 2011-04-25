@@ -6,4 +6,6 @@
   <action id="stopcollection">
 	  <string id="collectionid" />
   </action>
+  
+  <section>collections</section>
 </plugin>

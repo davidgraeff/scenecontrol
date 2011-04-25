@@ -62,7 +62,7 @@ ELSE()
 	ELSE()
 		SET(LIBPATH "lib/${PRODUCTID}")
 	ENDIF()
-	SET(DATAPATH "shares/${PRODUCTID}")
+	SET(DATAPATH "share/${PRODUCTID}")
 ENDIF()
 
 # prepare configuration file

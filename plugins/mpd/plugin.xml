@@ -43,4 +43,6 @@
     <string id="server"></string>
     <enum id="state" n="2" /><!-- not reachable, connected -->
   </property>
+  
+  <section>control</section>
 </plugin>

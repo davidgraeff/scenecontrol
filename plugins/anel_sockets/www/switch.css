@@ -2,9 +2,13 @@
 ul.anelsockets
 {
 	list-style-type:none;
-	margin:0;
+	display: inline-block;
 	-webkit-margin-before: 0;
-	padding:0;
+	clear: both;
+	padding-top: 0;
+	padding-left: 80px;
+	padding-right: 60px;
+	margin: 0;
 }
 
 li.anelsockets
@@ -13,6 +17,7 @@ li.anelsockets
 	margin: 2px;
 	text-align: center;
 	display: inline-block;
+	float: left;
 	width:160px;
 	color:#FFFFFF;
 	padding:4px;
