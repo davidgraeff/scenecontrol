@@ -31,10 +31,15 @@
 
 class ServiceType {
 public:
+    static QString type(const QVariantMap& data) {
+        return data[QLatin1String("__type")].toString();
+    }
+
     static QString uniqueID(const QVariantMap& data) {
         return data[QLatin1String("__uid")].toString();
     }
-    static void setUniqueID(QVariantMap& data, const QString& uid) {
+
+	static void setUniqueID(QVariantMap& data, const QString& uid) {
         data[QLatin1String("__uid")] = uid;
     }
 

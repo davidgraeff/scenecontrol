@@ -87,7 +87,6 @@ void HttpServer::incomingConnection ( int socketDescriptor )
                 connect(c,SIGNAL(removeConnection(ClientConnection*)),SLOT(removeConnection(ClientConnection*)));
                 connect(c,SIGNAL(upgradedConnection()),SLOT(upgradedConnection()));
                 m_http_connections.append ( c );
-                //qDebug() << "connection"<<m_connections.size();
             }
         }
     }
@@ -127,7 +126,6 @@ void HttpServer::sessionFinished(QString sessionid, bool timeout) {
 }
 
 void HttpServer::removeConnection(ClientConnection* c) {
-    //qDebug() << "disconnected"<<m_connections.size();
     m_http_connections.removeAll(c);
     m_websocket_connections.removeAll(c);
     m_session_cache.remove(c->sessionid);

@@ -57,7 +57,6 @@ ClientConnection::ClientConnection(HttpServer* server, QSslSocket* s) :m_server(
 }
 ClientConnection::~ClientConnection() {
     if (m_isWebsocket) {
-        qDebug() << "Disconnect websocket client:"<<m_socket->peerAddress().toString();
         const char data[] = {0x00, 0xFF, 0x00, 0xFF};
         m_socket->write(data);
         m_socket->flush();
@@ -104,7 +103,6 @@ void ClientConnection::readyRead()
             bool ok = true;
             const QVariantMap data = QJson::Parser().parse (frame, &ok).toMap();
             if (!ok) continue;
-            qDebug() << "received json" << data;
             if (ServiceID::isId(data,"sessionlogin")) { // login have to happen here
                 sessionid = SessionController::instance()->addSession(DATA("user"),DATA("pwd"));
             } else if (ServiceID::isId(data,"sessionidle")) {
@@ -151,7 +149,6 @@ void ClientConnection::peerVerifyError(QSslError error) {
 
 void ClientConnection::disconnected()
 {
-    qDebug() << "Client disconnected:"<<m_socket->peerAddress().toString()<<m_isWebsocket;
     emit removeConnection(this);
 }
 
@@ -164,7 +161,6 @@ void ClientConnection::writeJSON(const QByteArray& data) {
 }
 
 void ClientConnection::timeout() {
-    qDebug() << "Disconnect client (timeout):"<<m_socket->peerAddress().toString()<<m_isWebsocket;
     emit removeConnection(this);
 }
 
@@ -211,7 +207,7 @@ void ClientConnection::generateFileResponse() {
         }
         m_socket->flush();
     } else {
-        qDebug() << "File not found: " << wwwinfo.absoluteFilePath();
+        qWarning() << "File not found: " << wwwinfo.absoluteFilePath();
         m_socket->write("HTTP/1.1 404 Not Found\r\n");
         m_socket->write("Content-Length: 0\r\n");
         writeDefaultHeaders();
@@ -358,7 +354,6 @@ bool ClientConnection::readHttp(const QByteArray& line) {
                 emit removeConnection(this);
                 return false;
             }
-            qDebug() << "New websocket client:"<<m_socket->peerAddress().toString();
             m_isWebsocket = true;
             emit upgradedConnection();
         } else
@@ -367,7 +362,7 @@ bool ClientConnection::readHttp(const QByteArray& line) {
             generateFileResponse();
         }
     } else {
-        qDebug() << "unknown data" << line;
+        qWarning() << "unknown data" << line;
     }
     return true;
 }

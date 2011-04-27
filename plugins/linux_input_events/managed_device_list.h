@@ -15,6 +15,8 @@ public:
     QString devPath;
     QString sysPath;
     QString info;
+	QString vendorid;
+	QString productid;
 };
 
 class ManagedDeviceList : public QObject

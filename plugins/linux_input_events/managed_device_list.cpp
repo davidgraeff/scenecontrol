@@ -81,18 +81,16 @@ void ManagedDeviceList::processDevice(struct udev_device *dev)
     // Ignore child devices
     //if (udev_device_get_property_value(dev, "ID_VENDOR_ID") == 0) return;
 
-    // Ignore devices without special ability
-    //const char* driver = udev_device_get_property_value(dev, "special");
-    //if (!driver) return;
+	const char* attr = udev_device_get_property_value(dev, "RCTR_DEVICE");
+    if (!attr) {
+		return;
+	}
+	
+    struct udev_device * usbdev = udev_device_get_parent_with_subsystem_devtype(dev,"usb","usb_device");
+    if (usbdev == 0)
+        return;
 
-    {
-        struct udev_device * parent_dev = udev_device_get_parent_with_subsystem_devtype(dev, "input", 0);
-        if (parent_dev) {
-            //udev_device_unref(parent_dev);
-            return;
-        }
-    }
-
+	
     const char* action = udev_device_get_action(dev);
     const char* uid_t = udev_device_get_property_value(dev, "DEVPATH");
     if (!uid_t) return;
@@ -116,17 +114,11 @@ void ManagedDeviceList::processDevice(struct udev_device *dev)
         device->devPath = dev_path;
         device->sysPath = uid;
 
-        struct udev_device * usbdev = udev_device_get_parent_with_subsystem_devtype(dev,"usb","usb_device");
-        if (usbdev) {
-            device->info = QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"product")) +
-                           QLatin1Literal(" (") +  QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"manufacturer")) + QLatin1Literal(")");
-        } else {
-            device->info = dev_path;
-            /*
-              udev_device_get_sysattr_value(dev,"id/vendor"),
-              udev_device_get_sysattr_value(dev, "id/product"));
-            */
-        }
+        device->info = QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"product")) +
+                       QLatin1Literal(" - ") +  QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"manufacturer")) +
+                       QLatin1Literal("(") + dev_path + QLatin1Literal(")");
+        device->vendorid = QString::fromUtf8(udev_device_get_sysattr_value(dev, "id/vendor"));
+        device->productid = QString::fromUtf8(udev_device_get_sysattr_value(dev, "id/product"));
 
         /* add to list */
         m_devices.insert(uid, device);
@@ -143,16 +135,19 @@ void ManagedDeviceList::start() {
         return;
     }
 
-    const char* subsystem = "input";
     udev_mon = udev_monitor_new_from_netlink (udev, "udev");
     if (udev_mon == 0)
     {
         m_state = ValidWithoutMonitoring;
         qWarning() << "UDev monitor failed:" << errno;
         // Add filter to only receive events for the usb subsystem
-    } else if (udev_monitor_filter_add_match_subsystem_devtype (udev_mon, subsystem, NULL) != 0) {
+    } else if (udev_monitor_filter_add_match_subsystem_devtype (udev_mon, "input", NULL) != 0) {
         qWarning() << "UDev monitor filter failed:" << errno;
         udev_monitor_unref (udev_mon);
+        // Enable receiving of udev events
+//     } else if (udev_monitor_filter_add_match_subsystem_devtype (udev_mon, "usb", "usb_device") != 0) {
+//         qWarning() << "UDev monitor filter failed:" << errno;
+//         udev_monitor_unref (udev_mon);
         // Enable receiving of udev events
     } else if (udev_monitor_enable_receiving (udev_mon) < 0) {
         qWarning() << "UDev monitor enabling failed:" << strerror(errno);
@@ -176,7 +171,13 @@ void ManagedDeviceList::start() {
         m_state = Invalid;
         return;
     }
-    if (udev_enumerate_add_match_subsystem (devenum, subsystem))
+//     if (udev_enumerate_add_match_sysattr  (devenum, "RCTR_DEVICE", "1"))
+//     {
+//         udev_enumerate_unref (devenum);
+//         m_state = Invalid;
+//         return;
+//     }
+    if (udev_enumerate_add_match_subsystem (devenum, "input"))
     {
         udev_enumerate_unref (devenum);
         m_state = Invalid;

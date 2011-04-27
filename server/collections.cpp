@@ -71,13 +71,16 @@ void Collections::addCollection(const QVariantMap& data) {
     m_collections.insert(ServiceType::uniqueID(data), instance);
     instance->enabled = BOOLDATA("enabled");
     convertVariantToIntStringMap(MAP("actions"), instance->actionids);
-    // convert condition string to parsed binary decision diagram
-    boolstuff::BoolExprParser parser;
-    try {
-        instance->conditionids = parser.parse(DATA("conditions").toStdString());
-    } catch (boolstuff::BoolExprParser::Error e) {
-        qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
-    }
+	const QString conditions = DATA("conditions");
+	if (conditions.size()) {
+		// convert condition string to parsed binary decision diagram
+		boolstuff::BoolExprParser parser;
+		try {
+			instance->conditionids = parser.parse(conditions.toStdString());
+		} catch (boolstuff::BoolExprParser::Error e) {
+			qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
+		}
+	}
     convertVariantToStringSet(LIST("events"), instance->eventids);
     connect(instance,SIGNAL(executeService(QString, QString)),SIGNAL(instanceExecute(QString, QString)));
 }
@@ -137,11 +140,13 @@ void Collections::eventTriggered(const QString& uid) {
         }
     }
 }
+
 void Collections::convertVariantToStringSet(const QVariantList& source, QSet<QString>& destination) {
     foreach (QVariant v, source) {
         destination.insert(v.toString());
     }
 }
+
 void Collections::convertVariantToIntStringMap(const QVariantMap& source, QMap< int, QString >& destination) {
     QVariantMap::const_iterator i = source.constBegin();
     for (;i!=source.constEnd();++i)

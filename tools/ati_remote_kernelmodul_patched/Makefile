@@ -15,3 +15,5 @@ install:
 	service udev reload
 unload:
 	rmmod ati_remote
+load:
+	modprobe ati_remote

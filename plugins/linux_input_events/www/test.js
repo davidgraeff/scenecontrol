@@ -1,7 +1,7 @@
 function InitPlugin(pluginid, sectionname, $section) {
 	$('\
 		<div class="inputdevices">Select input device:\
-			<form class="linux_input_devices" name="linux_input_devices"><select id="linux_input_devices" name="devices" size="1"></select>\
+			<form class="linux_input_devices" name="linux_input_devices"><select id="linux_input_devices" name="devices" size="1"><option value="">-- Select device --</option></select>\
 			</form>\
 		<div id="linux_input_lastkey"></div>\
 		</div>\
@@ -26,16 +26,22 @@ function InitPlugin(pluginid, sectionname, $section) {
 		
 		$root.change(function() {
 			var value = $("select option:selected").val();
-			sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"selected_input_device","device_path":value});
+			if (value.length)
+				sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"selected_input_device","device_path":value});
 		}).change();
 
 		$(sessionmanager).bind('notification', function(event, data) {
 			if (data.__plugin != pluginid)
 				return;
 
-			console.log("linux_input_lastkey", data);
-			if (data.id == "lastinputkey") {
+			if (data.id == "input.device.key") {
 				$('#linux_input_lastkey').text(data.kernelkeyname);
+			} else 
+			if (data.id == "input.device.selected") {
+				if (data.listen)
+					$('#linux_input_lastkey').text("Connected, waiting for event...");
+				else
+					$('#linux_input_lastkey').text("Error: " + data.errormsg);
 			}
 		});
 	}

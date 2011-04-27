@@ -16,9 +16,15 @@
 	<string id="device_info" />
   </model>
   
-  <property id="lastinputkey" session_specific="1" depends_on="selected_input_device">
+  <property id="input.device.key" session_specific="1" depends_on="selected_input_device">
 	<string id="inputdevice" />
     <string id="kernelkeyname" />
+  </property>
+  
+  <property id="input.device.selected" session_specific="1" depends_on="selected_input_device">
+	<string id="inputdevice" />
+	<bool id="listen" />
+    <string id="errormsg" />
   </property>
   
   <section>test</section>

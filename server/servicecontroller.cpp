@@ -59,8 +59,6 @@ void ServiceController::load(bool service_dir_watcher) {
 }
 
 void ServiceController::directoryChanged(QString file, bool loading) {
-    qDebug() <<__LINE__<<"directoryChanged";
-
     if (!loading) {
         if (!QFile::exists(file)) {
             qDebug() << "File removed:"<<file;
@@ -72,7 +70,6 @@ void ServiceController::directoryChanged(QString file, bool loading) {
         qDebug() << "File changed:"<<file;
     }
 
-    qDebug() <<__LINE__<<"directoryChanged";
     QFile f ( file );
     f.open ( QIODevice::ReadOnly );
     if ( !f.isOpen() )
@@ -81,7 +78,6 @@ void ServiceController::directoryChanged(QString file, bool loading) {
         return;
     }
 
-    qDebug() <<__LINE__<<"directoryChanged";
     bool ok = true;
     QVariantMap result = QJson::Parser().parse ( &f, &ok ).toMap();
     f.close();
@@ -98,6 +94,7 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
 {
     QVariantMap data = unvalidatedData;
     if (!validateService(data)) return;
+    qDebug() << "valid data json" << data;
 
     if (ServiceType::isExecutable(data)) {
         if (ServiceType::uniqueID(data).size())
@@ -112,11 +109,8 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         return;
     }
 
-    const QString filename = serviceFilename(ServiceID::id(data), ServiceType::uniqueID(data));
-
-    if ((!ServiceType::isCollection(data) && ServiceID::id(data).isEmpty()) || ServiceType::uniqueID(data).isEmpty()) {
-        QFile::remove(filename);
-        qWarning() << "Invalid service file detected and removed" << filename;
+    if (ServiceType::uniqueID(data).isEmpty()) {
+        setUniqueID(data);
     }
 
     ServiceStruct* service = m_valid_services.value(ServiceType::uniqueID(data));
@@ -126,6 +120,8 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     service->plugin = dynamic_cast<AbstractPlugin_services*>(m_plugincontroller->getPlugin(ServiceID::id(data)));
 
     m_valid_services.insert(ServiceType::uniqueID(data),service);
+
+    saveToDisk(data);
 
     emit dataSync(data);
 }
@@ -154,7 +150,7 @@ bool ServiceController::validateService( const QVariantMap& data )
     }
 
     // check uid and add one if neccessary
-    if (!ServiceType::isExecutable(data) && ServiceType::uniqueID(data).isEmpty()) {
+    if (!ServiceType::isExecutable(data) && !ServiceType::isCollection(data) && ServiceType::uniqueID(data).isEmpty()) {
         qWarning()<< "Cannot verify"<<ServiceID::gid(data)<< ": No uid found!";
         return false;
     }
@@ -221,12 +217,15 @@ bool ServiceController::validateService( const QVariantMap& data )
             qWarning() << "Cannot verify"<<ServiceID::gid(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Unknown type" << type;
             return false;
         }
-        // check child id
-        QDomNamedNodeMap attr = node.attributes();
-        const QString id = attr.namedItem(QLatin1String("id")).nodeName();
-        if (!data.contains(id)) {
-            qWarning() << "Cannot verify"<<ServiceID::gid(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Entry"<<id;
-            return false;
+
+        if (!ServiceType::isCollection(data)) {
+            // check child id
+            QDomNamedNodeMap attr = node.attributes();
+            const QString id = attr.namedItem(QLatin1String("id")).nodeName();
+            if (!data.contains(id)) {
+                qWarning() << "Cannot verify"<<ServiceID::gid(data)<<"with unique id"<<ServiceType::uniqueID(data) <<": Entry"<<id;
+                return false;
+            }
         }
     }
     return true;
@@ -253,7 +252,7 @@ void ServiceController::saveToDisk ( const QVariantMap& data )
         return;
     }
 
-    const QString path = serviceFilename ( ServiceID::id(data), ServiceType::uniqueID(data) );
+    const QString path = serviceFilename ( ServiceType::type(data), ServiceType::uniqueID(data) );
 
     QFile file ( path );
     if ( !file.open ( QIODevice::ReadWrite | QIODevice::Truncate ) )
@@ -274,9 +273,9 @@ void ServiceController::saveToDisk ( const QVariantMap& data )
     file.close();
 }
 
-QString ServiceController::serviceFilename ( const QString& id, const QString& uid )
+QString ServiceController::serviceFilename ( const QString& type, const QString& uid )
 {
-    return serviceDir().absoluteFilePath ( id + QLatin1String(".") + uid );
+    return serviceDir().absoluteFilePath ( type + QLatin1String(".") + uid );
 }
 
 void ServiceController::event_triggered(const QString& event_id, const char* pluginid) {
@@ -346,7 +345,7 @@ void ServiceController::removeService(const QString& uid) {
     delete service;
     service = 0;
 
-    const QString filename = serviceFilename ( ServiceID::id(data), uid );
+    const QString filename = serviceFilename ( ServiceType::type(data), uid );
     if ( !QFile::remove ( filename ) || QFileInfo(filename).exists() ) {
         qWarning() << "Couldn't remove file" << filename;
         return;
@@ -435,7 +434,7 @@ void ServiceController::sessionBegin(const QString& sessionid) {
 
 void ServiceController::sessionFinished(QString sessionid, bool timeout) {
     {
-		Q_UNUSED(timeout);
+        Q_UNUSED(timeout);
         // sessions
         QMap<QString,PluginInfo*>::iterator  index = m_plugincontroller->getPluginIterator();
         while ( AbstractPlugin_sessions* plugin = m_plugincontroller->nextSessionPlugin(index) ) {

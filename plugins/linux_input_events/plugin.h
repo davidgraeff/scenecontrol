@@ -29,6 +29,7 @@
 #include <qfile.h>
 #include <linux/input.h>
 #include <shared/pluginsessionhelper.h>
+#include <QSocketNotifier>
 
 class plugin;
 class ManagedDeviceList;
@@ -42,13 +43,14 @@ struct EventKey {
 struct InputDevice : public QObject {
     Q_OBJECT
 private:
+    plugin* m_plugin;
+	QSocketNotifier* m_socketnotifier;
+    int fd;
     ManagedDevice* m_device;
-    QFile m_file;
     QSet<QString> m_sessionids;
     QMap<QString, EventKey*> m_keyToUids;
     QTimer m_repeattimer;
     QString m_lastkey;
-    plugin* m_plugin;
 public:
     InputDevice(plugin* plugin) ;
     ~InputDevice();
@@ -89,6 +91,7 @@ private:
 
     static int m_repeat;
     static int m_repeatInit;
+	ServiceCreation createServiceOfDevice(ManagedDevice* device);
 private Q_SLOTS:
     void deviceAdded(ManagedDevice*);
     void deviceRemoved(ManagedDevice*);

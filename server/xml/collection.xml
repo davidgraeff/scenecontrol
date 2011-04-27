@@ -7,5 +7,17 @@
 	  <string id="collectionid" />
   </action>
   
+  <execute id="copy">
+	  <string id="collectionid" />
+  </execute>
+  
+  <collection>
+	  <string id="name" />
+	  <string id="actions" />
+	  <string id="conditions" />
+	  <string id="events" />
+	  <bool id="enabled" />
+  </collection>
+  
   <section>collections</section>
 </plugin>

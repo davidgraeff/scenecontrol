@@ -110,15 +110,23 @@ void PluginController::loadXML(const QString& filename) {
         if (!item.isElement()) continue;
         // get id (for example "periodic_time_event")
         const QString nodeid = item.attributes().namedItem(QLatin1String("id")).nodeValue();
-        if (!allowedElements.contains(item.nodeName()) || nodeid.isEmpty()) continue;
-        // plugin id + service id = global unique id
-        const QString gid = pluginid + QLatin1String("_") + nodeid;
+        if (QLatin1String("collection") == item.nodeName()) {
+            if (m_id_to_xml.contains(QLatin1String("collection"))) {
+                qWarning()<<"Multiple xml definition of" << QLatin1String("collection");
+                continue;
+            }
+            m_id_to_xml.insert(QLatin1String("collection"), new QDomNode(item.cloneNode()));
+        } else {
+            if (!allowedElements.contains(item.nodeName()) || nodeid.isEmpty()) continue;
+            // plugin id + service id = global unique id
+            const QString gid = pluginid + QLatin1String("_") + nodeid;
 
-        if (m_id_to_xml.contains(gid)) {
-            qWarning()<<"Multiple xml definition of" << gid;
-            continue;
+            if (m_id_to_xml.contains(gid)) {
+                qWarning()<<"Multiple xml definition of" << gid;
+                continue;
+            }
+            m_id_to_xml.insert(gid, new QDomNode(item.cloneNode()));
         }
-        m_id_to_xml.insert(gid, new QDomNode(item.cloneNode()));
     }
 }
 void PluginController::initializePlugins() {
@@ -137,7 +145,7 @@ void PluginController::registerPluginFromObject(AbstractPlugin* object) {
     const QString pluginid = object->pluginid();
     PluginInfo* plugininfo = new PluginInfo(object);
     m_plugins.insert ( pluginid, plugininfo );
-	loadXML(xmlFile(pluginid));
+    loadXML(xmlFile(pluginid));
 }
 
 void PluginController::deregisterPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller) {

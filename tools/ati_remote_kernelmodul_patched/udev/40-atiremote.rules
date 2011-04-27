@@ -1,1 +1,1 @@
-KERNEL=="event?", ATTRS{name}=="X10 WTI RF receiver", SYMLINK="input/atiremote"
+KERNEL=="event?", ATTRS{name}=="X10 WTI RF receiver", SYMLINK="input/atiremote",ENV{RCTR_DEVICE}="1",GROUP="plugdev"
