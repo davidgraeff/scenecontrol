@@ -39,17 +39,17 @@ QList< QVariantMap > Collections::properties(const QString& sessionid) {
 
 bool Collections::condition(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
-	Q_UNUSED(sessionid);
-	return false;
+    Q_UNUSED(sessionid);
+    return false;
 }
 
 void Collections::event_changed(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
-	Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
 }
 
 void Collections::execute(const QVariantMap& data, const QString& sessionid)  {
-	Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     if (ServiceID::isId(data,"executecollection")) {
         CollectionInstance* instance = m_collections.value(DATA("collectionid"));
         if (instance && instance->enabled) instance->startExecution();
@@ -71,22 +71,23 @@ void Collections::addCollection(const QVariantMap& data) {
     m_collections.insert(ServiceType::uniqueID(data), instance);
     instance->enabled = BOOLDATA("enabled");
     convertVariantToIntStringMap(MAP("actions"), instance->actionids);
-	const QString conditions = DATA("conditions");
-	if (conditions.size()) {
-		// convert condition string to parsed binary decision diagram
-		boolstuff::BoolExprParser parser;
-		try {
-			instance->conditionids = parser.parse(conditions.toStdString());
-		} catch (boolstuff::BoolExprParser::Error e) {
-			qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
-		}
-	}
+    convertVariantToStringSet(LIST("conditions"), instance->conditionids);
+// 	const QString conditions = DATA("conditions");
+// 	if (conditions.size()) {
+// 		// convert condition string to parsed binary decision diagram
+// 		boolstuff::BoolExprParser parser;
+// 		try {
+// 			instance->conditionids = parser.parse(conditions.toStdString());
+// 		} catch (boolstuff::BoolExprParser::Error e) {
+// 			qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
+// 		}
+// 	}
     convertVariantToStringSet(LIST("events"), instance->eventids);
     connect(instance,SIGNAL(executeService(QString, QString)),SIGNAL(instanceExecute(QString, QString)));
 }
 
 void Collections::dataSync(const QVariantMap& data, const QString& sessionid) {
-	Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     if (!ServiceType::isCollection(data)) return;
     delete m_collections.take(ServiceType::uniqueID(data));
     addCollection(data);
@@ -98,9 +99,9 @@ void Collections::dataReady() {
     m_collections.clear();
 
     // get collections
-	const QMap< QString, ServiceController::ServiceStruct* > services = m_servicecontroller->valid_services();
+    const QMap< QString, ServiceController::ServiceStruct* > services = m_servicecontroller->valid_services();
     foreach (ServiceController::ServiceStruct* service, services) {
-		const QVariantMap data = service->data;
+        const QVariantMap data = service->data;
         if (ServiceType::isCollection(data)) {
             addCollection(data);
         }
@@ -111,27 +112,36 @@ void Collections::eventTriggered(const QString& uid) {
     foreach(CollectionInstance* instance, m_collections) {
         if (instance->enabled && instance->eventids.contains(uid)) {
             // conditions
-            std::set<std::string> positives, negatives;
-            instance->conditionids->getTreeVariables(positives, negatives);
             bool ok = true;
-            foreach(std::string uid, positives) {
-                ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
+            foreach(QString uid, instance->conditionids) {
+                ServiceController::ServiceStruct* s =  m_servicecontroller->service(uid);
                 if (!s) continue;
                 if (!s->plugin->condition(s->data, QString())) {
                     ok = false;
                     break;
                 }
             }
-
-            if (!ok) continue;
-            foreach(std::string uid, negatives) {
-                ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
-                if (!s) continue;
-                if (s->plugin->condition(s->data, QString())) {
-                    ok = false;
-                    break;
-                }
-            }
+//             std::set<std::string> positives, negatives;
+//             instance->conditionids->getTreeVariables(positives, negatives);
+//             bool ok = true;
+//             foreach(std::string uid, positives) {
+//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
+//                 if (!s) continue;
+//                 if (!s->plugin->condition(s->data, QString())) {
+//                     ok = false;
+//                     break;
+//                 }
+//             }
+//
+//             if (!ok) continue;
+//             foreach(std::string uid, negatives) {
+//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
+//                 if (!s) continue;
+//                 if (s->plugin->condition(s->data, QString())) {
+//                     ok = false;
+//                     break;
+//                 }
+//             }
 
             if (!ok) continue;
 
@@ -153,37 +163,37 @@ void Collections::convertVariantToIntStringMap(const QVariantMap& source, QMap< 
         destination.insertMulti(i.key().toInt(), i.value().toString());
 }
 
-CollectionInstance::CollectionInstance() : conditionids(0) {
+CollectionInstance::CollectionInstance() : conditionlinks(0) {
     m_executionTimer.setSingleShot ( true );
     connect ( &m_executionTimer, SIGNAL ( timeout() ),SLOT ( executiontimeout() ) );
 }
 
 CollectionInstance::~CollectionInstance() {
-    delete conditionids;
+    delete conditionlinks;
 }
 
 void CollectionInstance::startExecution() {
     m_executionTimer.stop();
-	QMap< int, QString >::iterator it = actionids.lowerBound(0);
-	if (it == actionids.end()) return;
+    QMap< int, QString >::iterator it = actionids.lowerBound(0);
+    if (it == actionids.end()) return;
     m_currenttime = it.key();
     m_executionTimer.start ( 1000*m_currenttime );
-	m_currenttime++;
-	
+    m_currenttime++;
+
 }
 
 void CollectionInstance::executiontimeout()
 {
-	const QList<QString> uids = actionids.values();
+    const QList<QString> uids = actionids.values();
     foreach (QString uid, uids) {
         emit executeService(uid, QString());
     }
 
-	QMap< int, QString >::iterator it = actionids.lowerBound(m_currenttime);
-	if (it == actionids.end()) return;
+    QMap< int, QString >::iterator it = actionids.lowerBound(m_currenttime);
+    if (it == actionids.end()) return;
     m_currenttime = it.key();
     m_executionTimer.start ( 1000*m_currenttime );
-	m_currenttime++;
+    m_currenttime++;
 }
 
 void CollectionInstance::stop() {

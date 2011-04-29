@@ -40,7 +40,8 @@ public:
     void stop();
 
 	QSet<QString> eventids;
-	boolstuff::BoolExpr<std::string>* conditionids;
+	QSet<QString> conditionids;
+	boolstuff::BoolExpr<std::string>* conditionlinks;
 	QMap< int, QString > actionids;
 	bool enabled;
 private:

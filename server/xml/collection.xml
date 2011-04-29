@@ -13,9 +13,10 @@
   
   <collection>
 	  <string id="name" />
-	  <string id="actions" />
-	  <string id="conditions" />
-	  <string id="events" />
+	  <string id="actions" subtype="javascriptArray" />
+	  <string id="conditions" subtype="javascriptArray" />
+	  <string id="events" subtype="javascriptArray" />
+	  <string id="categories" subtype="javascriptArray" />
 	  <bool id="enabled" />
   </collection>
   

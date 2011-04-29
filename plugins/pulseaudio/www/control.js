@@ -59,7 +59,7 @@ function InitPlugin(pluginid, sectionname, $section) {
 			return item;
 		}
 
-		var listview = new ListView($rootelement, itemChangeFunction, itemCreationFunction, modeldata);
+		var listview = new AbstractView($rootelement, itemChangeFunction, itemCreationFunction, modeldata);
 	}
 	
 	$(modelstorage).bind('modelAvailable', modelAvailable);

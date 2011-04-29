@@ -8,21 +8,22 @@
   </event>
   
   <execute id="selected_input_device" session_specific="1" >
-    <string id="device_path" />
+    <string id="udid" />
   </execute>
 
-  <model id="inputdevice" model_key="device_path" sendback_as="selected_input_device">
-    <string id="device_path" />
-	<string id="device_info" />
+  <model id="inputdevice" model_key="udid" sendback_as="selected_input_device">
+    <string id="path" />
+	<string id="info" />
+	<string id="udid" />
   </model>
   
   <property id="input.device.key" session_specific="1" depends_on="selected_input_device">
-	<string id="inputdevice" />
+	<string id="udid" />
     <string id="kernelkeyname" />
   </property>
   
   <property id="input.device.selected" session_specific="1" depends_on="selected_input_device">
-	<string id="inputdevice" />
+	<string id="udid" />
 	<bool id="listen" />
     <string id="errormsg" />
   </property>

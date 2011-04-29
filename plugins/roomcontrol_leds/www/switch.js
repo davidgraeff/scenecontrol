@@ -50,7 +50,7 @@ function InitPlugin(pluginid, sectionname, $section) {
 			return item;
 		}
 
-		var listview = new ListView($rootelement, itemChangeFunction, itemCreationFunction, datamodel);
+		var listview = new AbstractView($rootelement, itemChangeFunction, itemCreationFunction, datamodel);
 	}
 	
 	function modelAvailable(event, modelid, modeldata) {

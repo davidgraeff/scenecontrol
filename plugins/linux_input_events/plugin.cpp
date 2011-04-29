@@ -70,7 +70,11 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     if ( ServiceID::isId(data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
-        InputDevice* inputdevice = m_devices.value(DATA ( "device_path") );
+		QMap<QString, InputDevice*>::iterator it = m_devices.begin();
+		for (;it != m_devices.end();++it) {
+			(*it)->disconnectSession(sessionid);
+		}
+        InputDevice* inputdevice = m_devices.value(DATA ( "udid") );
         if (!inputdevice) return;
         inputdevice->connectSession(sessionid);
     }
@@ -96,7 +100,7 @@ void plugin::event_changed ( const QVariantMap& data, const QString& sessionid )
                 it.remove();
         }
 
-        InputDevice* inputdevice = m_devices.value(DATA ( "inputdevice") );
+        InputDevice* inputdevice = m_devices.value(DATA ( "udid") );
         if (inputdevice) inputdevice->registerKey(uid, DATA ( "kernelkeyname" ), BOOLDATA("repeat"));
     }
 }
@@ -112,7 +116,7 @@ void plugin::session_change ( const QString& id, bool running ) {
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
-    l.append(ServiceCreation::createModelReset(PLUGIN_ID, "inputdevice", "device_path").getData());
+    l.append(ServiceCreation::createModelReset(PLUGIN_ID, "inputdevice", "udid").getData());
     foreach(InputDevice* device, m_devices) {
         l.append(createServiceOfDevice(device->device()).getData());
     }
@@ -121,42 +125,41 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 
 void plugin::deviceAdded(ManagedDevice* device) {
     m_server->property_changed ( createServiceOfDevice(device).getData() );
-    InputDevice* inputdevice = m_devices.value(device->devPath);
+    InputDevice* inputdevice = m_devices.value(device->udid);
     if (!inputdevice) {
         inputdevice = new InputDevice(this);
-        m_devices[device->devPath] = inputdevice;
+        m_devices[device->udid] = inputdevice;
     }
     inputdevice->setDevice(device);
 }
 
 void plugin::deviceRemoved(ManagedDevice* device) {
     ServiceCreation sc = ServiceCreation::createModelRemoveItem(PLUGIN_ID, "inputdevice" );
-    sc.setData("device_path", device->devPath);
+    sc.setData("udid", device->udid);
     m_server->property_changed ( sc.getData() );
-    delete m_devices.take(device->devPath);
+    delete m_devices.take(device->udid);
 }
 
 ServiceCreation plugin::createServiceOfDevice(ManagedDevice* device) {
     ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "inputdevice" );
-    sc.setData("device_path", device->devPath);
-    sc.setData("device_info", device->info);
-    sc.setData("productid", device->productid);
-    sc.setData("vendorid", device->vendorid);
+    sc.setData("path", device->devPath);
+    sc.setData("info", device->info);
+    sc.setData("udid", device->udid);
     return sc;
 }
 
-InputDevice::InputDevice(plugin* plugin) : m_plugin(plugin), m_socketnotifier(0), fd(0) {
+InputDevice::InputDevice(plugin* plugin) : m_plugin(plugin), m_socketnotifier(0), fd(0), m_device(0) {
     connect(&m_repeattimer,SIGNAL(timeout()),SLOT(repeattrigger()));
     m_repeattimer.setSingleShot(true);
 }
 
 InputDevice::~InputDevice() {
-    delete m_socketnotifier;
-    close(fd);
+    disconnectDevice();
 }
 
 ManagedDevice* InputDevice::device() {
     return m_device;
+    delete m_socketnotifier;
 }
 
 bool InputDevice::isClosable() {
@@ -166,9 +169,43 @@ bool InputDevice::isClosable() {
 void InputDevice::connectSession(const QString& sessionid) {
     m_sessionids.insert(sessionid);
     setDevice(m_device);
-    if (!fd) {
+}
+void InputDevice::disconnectSession(const QString& sessionid) {
+    m_sessionids.remove(sessionid);
+    if (m_sessionids.isEmpty()) {
+        disconnectDevice();
+    }
+}
+
+void InputDevice::disconnectDevice() {
+    if (fd) close(fd);
+    fd = 0;
+    delete m_socketnotifier;
+    m_socketnotifier = 0;
+}
+
+void InputDevice::setDevice(ManagedDevice* device) {
+    if (device==m_device && fd) {
+        qDebug() << "setdevice no open";
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "input.device.selected" );
-        sc.setData("inputdevice", m_device->devPath);
+        sc.setData("udid", m_device->udid);
+        sc.setData("listen", true);
+        sc.setData("errormsg", QString());
+        // Propagate to all interested clients
+        foreach(QString sessionid, m_sessionids) {
+            m_plugin->m_server->property_changed(sc.getData(), sessionid);
+        }
+        return;
+    }
+
+    m_device = device;
+    disconnectDevice();
+    if (device) {
+        // only reconnect to new device if a client is actually listening or events are registered
+        if (m_sessionids.isEmpty() && m_keyToUids.isEmpty()) return;
+
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "input.device.selected" );
+        sc.setData("udid", m_device->udid);
 
         if (!QFileInfo(m_device->devPath).isReadable()) {
             // error
@@ -177,15 +214,12 @@ void InputDevice::connectSession(const QString& sessionid) {
         } else {
             fd = open(m_device->devPath.toUtf8(), O_RDONLY|O_NDELAY);
             if (fd!=-1) {
-                delete m_socketnotifier;
                 m_socketnotifier = new QSocketNotifier(fd, QSocketNotifier::Read);
                 connect(m_socketnotifier, SIGNAL(activated(int)), this, SLOT(eventData()));
                 // success
                 sc.setData("listen", true);
                 sc.setData("errormsg", QString());
             } else {
-                fd = 0;
-                // error
                 sc.setData("listen", false);
                 sc.setData("errormsg", QString(QLatin1String("InputDevice open failed: ") + m_device->devPath));
             }
@@ -194,21 +228,6 @@ void InputDevice::connectSession(const QString& sessionid) {
         foreach(QString sessionid, m_sessionids) {
             m_plugin->m_server->property_changed(sc.getData(), sessionid);
         }
-    }
-}
-void InputDevice::disconnectSession(const QString& sessionid) {
-    m_sessionids.remove(sessionid);
-	if (m_sessionids.isEmpty()) {
-		// save ressources and free device if no one is listing to it
-		close(fd);
-        fd = 0;
-	}
-}
-void InputDevice::setDevice(ManagedDevice* device) {
-    m_device = device;
-    if (!device) {
-        close(fd);
-        fd = 0;
     }
 }
 
@@ -226,34 +245,36 @@ void InputDevice::registerKey(QString uid, QString key, bool repeat) {
     m_keyToUids[key]->repeat = repeat;
 }
 void InputDevice::eventData() {
-    const int eventSize(sizeof(struct input_event));
-    struct input_event ev;
-    int ret;
+    static char readbuff[sizeof(struct input_event)] = {0};
+    static struct input_event* ev = (struct input_event*)readbuff;
+	static unsigned int readbuffOffset = 0;
+	
     while ( 1 ) {
-        ret = read ( fd, &ev, eventSize );
-        if (ret == -1 || ret != eventSize) return;
-        if (EV_KEY != ev.type) continue;
-        if ((ev.value == KEY_PRESS) || (ev.value == KEY_KEEPING_PRESSED)) {
-			qDebug() << "key event" << m_device->devPath<<ev.type;
-            const QString& kernelkeyname = m_plugin->m_keymapping.value(ev.code);
+		int ret = read(fd, readbuff+readbuffOffset, sizeof(struct input_event)-readbuffOffset);
+		if (ret == -1) return;
+		readbuffOffset += ret;
+		if (readbuffOffset < sizeof(struct input_event)) return;
+		readbuffOffset = 0;
+        
+        if (ev->type != EV_KEY) return;
+        m_repeattimer.stop();
+        if ((ev->value == KEY_PRESS) || (ev->value == KEY_KEEPING_PRESSED)) {
+            const QString& kernelkeyname = m_plugin->m_keymapping.value(ev->code);
+            qDebug() << "key event" << m_device->devPath << kernelkeyname;
             // properties
             {
                 // last key property. Will be propagated to interested clients only.
                 ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "input.device.key" );
                 sc.setData("kernelkeyname", kernelkeyname);
-                sc.setData("inputdevice", m_device->devPath);
+                sc.setData("udid", m_device->udid);
 
                 // Propagate to all interested clients
                 foreach(QString sessionid, m_sessionids) {
                     m_plugin->m_server->property_changed(sc.getData(), sessionid);
                 }
             }
-            // repeat stop
-            m_repeattimer.stop();
             m_lastkey = kernelkeyname;
             repeattrigger(true);
-        } else {
-            m_repeattimer.stop();
         }
     }
 }
@@ -266,8 +287,7 @@ void InputDevice::repeattrigger(bool initial_event) {
         m_plugin->m_server->event_triggered(uid);
     }
 
-    if (!event->repeat) return;
-
-    if (initial_event)
+    if (event->repeat)
         m_repeattimer.start(initial_event?m_plugin->m_repeatInit:m_plugin->m_repeat);
 }
+
