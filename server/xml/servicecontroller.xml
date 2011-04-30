@@ -8,9 +8,9 @@
     <string id="plugins" separator=";" /><!-- plugin names -->
   </property>
   
-  <action id="servercmd" group_restriction="adm, roomcontrol_admin">
+  <execute id="servercmd" group_restriction="adm, roomcontrol_admin">
     <enum id="state" n="3" /><!-- resync client, restart, stop server -->
-  </action>
+  </execute>
   
   <event id="serverevent">
     <enum id="state" n="2" /><!-- ready, going offline -->

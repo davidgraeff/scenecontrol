@@ -15,8 +15,8 @@
       <relative><titel>Relativ</titel></relative>
   </mpdposition>
   <mpdchangeplaylist>
-      <titel>Position</titel>
-      <description>Setzt die Position in ms im Mediastream</description>
+      <titel>Playlist ändern</titel>
+      <description>Ändert die aktuell laufende Playlist</description>
       <playlistid><titel>Playlist ID</titel></playlistid>
       <track><titel>Track</titel></track>
   </mpdchangeplaylist>

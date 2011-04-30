@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="sessioncontroller" version="1.0">
-	<action id="sessionlogin">
+	<execute id="sessionlogin">
 		<string id="user" />
 		<string id="pwd" />
-	</action>
-	<action id="sessionlogout">
+	</execute>
+	<execute id="sessionlogout">
 		<string id="sessionid" />
-	</action>
+	</execute>
 	<!-- to keep the session alive, otherwise after 120 sec the session will be terminated -->
-	<action id="sessionidle">
+	<execute id="sessionidle">
 		<string id="sessionid" />
-	</action>
+	</execute>
 	
   <!-- Propagates all endpoints of own logins -->
   <property id="server.logins.own" session_specific="1" model_key="endpoint">

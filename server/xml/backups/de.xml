@@ -2,4 +2,21 @@
 <plugin>
 	<titel>Backups</titel>
 	<description>Erstellt und verwaltet Backups</description>
+	
+  <backup_create>
+      <titel>Backup erstellen</titel>
+      <description>Erstellt ein Backup</description>
+      <name><titel>Name</titel></name>
+  </backup_create>
+  <backup_restore>
+      <titel>Backup erstellen</titel>
+      <description>Erstellt ein Backup</description>
+      <backupid><titel>Backupid</titel></backupid>
+  </backup_restore>
+  <backup_remove>
+      <titel>Backup entfernen</titel>
+      <description>Erstellt ein Backup</description>
+      <backupid><titel>Backupid</titel></backupid>
+  </backup_remove>
+
 </plugin>
