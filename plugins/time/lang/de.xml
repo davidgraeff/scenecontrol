@@ -2,8 +2,14 @@
 <plugin>
      <titel>Zeitereignisse</titel>
      <description>Auslösen von Zeitereignissen</description>
+  <datespan>
+      <titel>Zeitspannenbedingung (Datum)</titel>
+      <description>Bedingung, dass das aktuelle Datum zwischen bestimmten Daten liegt</description>
+      <lower><titel>Startdatum</titel></lower>
+      <upper><titel>Enddatum</titel></upper>
+  </datespan>
   <timespan>
-      <titel>Zeitspannenbedingung</titel>
+      <titel>Zeitspannenbedingung (Zeit)</titel>
       <description>Bedingung, dass die aktuelle Zeit zwischen einer bestimmten Zeitspanne liegt</description>
       <lower><titel>Startzeitpunkt</titel></lower>
       <upper><titel>Endzeitpunkt</titel></upper>

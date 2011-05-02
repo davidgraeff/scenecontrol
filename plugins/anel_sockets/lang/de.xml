@@ -2,12 +2,12 @@
 <plugin>
      <titel>Anel Steckdosenleisten</titel>
      <description>Steuert die Netzwerksteckdosen der Firma Anel</description>
-  <iovalue_absolute>
+  <iovalue_absolut>
       <titel>Steckdosen Wert Absolut</titel>
       <description>Setzt Steckdosen Wert</description>
       <channel><titel>Steckdosenkanal</titel></channel>
       <value><titel>Wert</titel></value>
-  </iovalue_absolute>
+  </iovalue_absolut>
   <iovalue_toogle>
       <titel>Steckdosen Wert umschalten</titel>
       <description>Setzt Steckdosen Wert</description>
@@ -31,4 +31,8 @@
       <channel><titel>Steckdosenkanal</titel></channel>
       <name><titel>Name</titel></name>
   </ioname>
+  <reload>
+      <titel>Steckdosen neu Abfragen</titel>
+      <description>Fragt Steckdosenleisten erneut nach Anschlüssen und Zustand</description>
+  </reload>
 </plugin>

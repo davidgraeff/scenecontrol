@@ -47,9 +47,18 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
+	Q_UNUSED ( sessionid );
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+	Q_UNUSED ( sessionid );
+    if ( ServiceID::isId(data, "datespan" ) ) {
+        QDate m_lower = QDate::fromString ( DATA ( "lower" ),Qt::ISODate );
+        QDate m_upper = QDate::fromString ( DATA ( "upper" ),Qt::ISODate );
+        if ( QDate::currentDate() < m_lower ) return false;
+        if ( QDate::currentDate() > m_upper ) return false;
+        return true;
+    } else
     if ( ServiceID::isId(data, "timespan" ) ) {
         QTime m_lower = QTime::fromString ( DATA ( "lower" ),Qt::ISODate );
         QTime m_upper = QTime::fromString ( DATA ( "upper" ),Qt::ISODate );
@@ -61,6 +70,7 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 }
 
 void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED ( sessionid );
     const QString uid = ServiceType::uniqueID(data);
     // remove from next events
     m_timeout_service_ids.remove ( uid );
@@ -91,7 +101,9 @@ void plugin::calculate_next_events() {
 
     foreach ( QVariantMap data, m_remaining_events ) {
         if ( ServiceID::isId(data, "timedate" ) ) {
-            const int sec = QDateTime::currentDateTime().secsTo ( QDateTime::fromString ( DATA ( "date" ),Qt::ISODate ) );
+			const QTime time = QTime::fromString ( DATA ( "time" ),Qt::ISODate );
+			const QDate date = QDate::fromString ( DATA ( "date" ),Qt::ISODate );
+            const int sec = QDateTime::currentDateTime().secsTo ( QDateTime(date, time) );
             if ( sec > 86400 ) {
                 qDebug() << "One-time alarm: Armed (next check only)";
                 min_next_time[86400];

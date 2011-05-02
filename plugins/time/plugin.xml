@@ -5,10 +5,15 @@
     <enum id="days" multiple="true" n="7"></enum>
   </event>
   <event id="timedate">
-    <data id="date"></data>
+    <date id="date"></date>
+	<time id="time"></time>
   </event>
+  <condition id="datespan">
+    <date id="lower"></date>
+    <date id="upper"></date>
+  </condition>
   <condition id="timespan">
-    <data id="lower"></data>
-    <data id="upper"></data>
+    <time id="lower"></time>
+    <time id="upper"></time>
   </condition>
 </plugin>
