@@ -1,4 +1,17 @@
 <plugin>
 	<titel>Profile</titel>
 	<description>Erstellt und verwaltet Profile</description>
+	
+  <backup_create>
+      <titel>Backup erstellen</titel>
+      <description>Erstellt ein Backup</description>
+      <name><titel>Name</titel></name>
+  </backup_create>
+  
+  <action id="executecollection">
+	  <string id="collectionid" />
+  </action>
+  <action id="stopcollection">
+	  <string id="collectionid" />
+  </action>
 </plugin>
