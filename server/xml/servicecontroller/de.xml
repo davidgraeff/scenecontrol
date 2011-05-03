@@ -2,4 +2,10 @@
 <plugin>
 	<titel>ServiceController</titel>
 	<description>Serviceverwaltungsklasse</description>
+	
+  <serverevent>
+      <titel>Serverstatus</titel>
+      <description>Serverstatus</description>
+      <state><titel>Status</titel><entry>Aktiviert</entry><entry>Runterfahren</entry></state>
+  </serverevent>
 </plugin>

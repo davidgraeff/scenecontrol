@@ -17,7 +17,8 @@
   <timedate>
       <titel>Zeitereignis</titel>
       <description>Wird ausgelöst, sobald ein bestimmter Zeitpunkt eintritt</description>
-      <date><titel>Datum/Zeit</titel></date>
+      <date><titel>Datum</titel></date>
+	  <time><titel>Zeit</titel></time>
   </timedate>
   <timeperiodic>
       <titel>Periodisches Ereignis</titel>

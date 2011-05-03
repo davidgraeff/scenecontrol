@@ -1,31 +1,26 @@
-function InitPlugin(pluginid, sectionname, $section) {
-	function activate(value) {
+function RoomPlugin(pluginid, sectionname, $section) {
+	var that = this;
+	this.$formelement = $('<form class="sanyoZ700" />');
+	this.$btnEnable = $('<button>Einschalten</button>').button().click( function() { return that.activate(1); });
+	this.$btnDisable = $('<button>Ausschalten</button>').button().click( function() { return that.activate(0); });
+	this.$btnVideoMute = $('<button>Schwarzes Bild</button>').button().click( function() { return that.mute(1); });
+	this.$btnVideoUnmute = $('<button>Bild wiederherstellen</button>').button().click( function() { return that.mute(0); });
+	
+	this.load = function() {
+		that.$formelement.append(that.$btnEnable).append('<br/>').append(that.$btnDisable).append('<br/>').append(that.$btnVideoMute).append('<br/>').append(that.$btnVideoUnmute).appendTo($section);
+	}
+	
+	this.clear = function() {
+		that.$formelement.remove();
+	}
+	
+	this.activate = function(value) {
 		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_power","power":value});
 		return false;
 	}
-	function mute(value) {
+	
+	this.mute = function(value) {
 		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_video","mute":value});
 		return false;
 	}
-	
-	var $formelement = $('<form class="sanyoZ700" />');
-	var $btnEnable = $('<button>Einschalten</button>');
-	var $btnDisable = $('<button>Ausschalten</button>');
-	var $formelement2 = $('<form class="sanyoZ700" />');
-	var $btnVideoMute = $('<button>Schwarzes Bild</button>');
-	var $btnVideoUnmute = $('<button>Bild wiederherstellen</button>');
-	$btnEnable.button(); $btnDisable.button(); $btnVideoMute.button(); $btnVideoUnmute.button();
-	
-	$btnEnable.click( function() { return activate(1); });
-	$btnDisable.click( function() { return activate(0); });
-	$btnVideoMute.click( function() { return mute(1); });
-	$btnVideoUnmute.click( function() { return mute(0); });
-
-	$formelement.append($btnEnable);
-	$formelement.append($btnDisable);
-	$formelement2.append($btnVideoMute);
-	$formelement2.append($btnVideoUnmute);
-
-	$section.append($formelement);
-	$section.append($formelement2);
 }

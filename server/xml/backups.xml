@@ -5,10 +5,10 @@
     <string id="name" />
   </action>
   <action id="backup_restore">
-    <string id="backupid" model="backups" />
+    <string id="backupid" model="backup" model_key="backupid" model_show="name" />
   </action>
   <action id="backup_remove">
-    <string id="backupid" model="backups" />
+    <string id="backupid" model="backup" model_key="backupid" model_show="name" />
   </action>
   <model id="backup" model_key="backupid">
     <string id="backupid"></string>

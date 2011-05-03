@@ -11,7 +11,7 @@
       <entry>Sofort</entry><entry>Überblenden</entry><entry>Überblenden (Flashy)</entry>
       </fade>
   </ledvalue_relative>
-  <ledvalue_absolute>
+  <ledvalue_absolut>
       <titel>LED Wert Absolut</titel>
       <description>Setzt LED Wert</description>
       <channel><titel>Leuchtkanal</titel></channel>
@@ -19,7 +19,7 @@
       <fade><titel>Farbübernahme</titel>
       <entry>Sofort</entry><entry>Überblenden</entry><entry>Überblenden (Flashy)</entry>
       </fade>
-  </ledvalue_absolute>
+  </ledvalue_absolut>
   <ledvalue_invers>
       <titel>LED Wert Invertieren</titel>
       <description>Setzt LED Wert</description>
@@ -52,15 +52,9 @@
       <description>Rollo Kommando</description>
       <value><titel>Wert</titel></value>
   </curtain>
-  <curtainstate>
-      <titel>Rollo</titel>
-      <description>Rollo</description>
-      <value><titel>Wert</titel></value>
-      <max><titel>Maximal</titel></max>
-  </curtainstate>
-  <curtaincondition>
+  <curtain_condition>
       <titel>Rollobedingung</titel>
       <description>Rollobedingung</description>
       <value><titel>Wert</titel></value>
-  </curtaincondition>
+  </curtain_condition>
 </plugin>

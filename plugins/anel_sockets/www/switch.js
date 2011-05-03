@@ -1,54 +1,72 @@
-function InitPlugin(pluginid, sectionname, $section) {
-	var datamodel = modelstorage.getModel("anel.io.value");
-	var namemodel = modelstorage.getModel("anel.io.name");
+function RoomPlugin(pluginid, sectionname, $section) {
+	var that = this;
+	this.$rootelement = $('<ul class="anelsockets"></ul>');
+	this.datamodel;
+	this.namemodel;
+	this.listview;
 	
-	var $rootelement = $('<ul class="anelsockets"></ul>');
-	$section.append($rootelement);
-
-	$.getCss(pluginid+"/"+sectionname+".css");
-
-	function getName(key) {
-		var count = namemodel.count();
+	this.load = function() {
+		if (!that.$rootelement) return;
+		$section.append(that.$rootelement);
+		$.getCss(pluginid+"/"+sectionname+".css");
+		that.listview = new AbstractView(that.$rootelement, that.itemChangeFunction, that.itemCreationFunction);
+		$(modelstorage.checkExisting(that.modelAvailable)).bind('modelAvailable', that.modelAvailable);
+	}
+	
+	this.clear = function() {
+		that.$rootelement.remove();
+		$(that).unbind();
+		delete that.listview;
+		delete that.datamodel;
+		delete that.namemodel;
+	}
+	
+	this.getName = function(key) {
+		var count = that.namemodel.count();
 		for(i=0;i<count;++i) {
-			var item = namemodel.getItem(i);
+			var item = that.namemodel.getItem(i);
 			if (item.channel == key) return item.name;
 		}
 		return key;
 	}
 	
-	function itemChangeFunction(domitem, modelitem) {
+	this.itemChangeFunction = function(domitem, modelitem) {
 		if (modelitem.value)
-			domitem.removeClass("anelsockets_deactivated").addClass("anelsockets_activated");
+			$(domitem).removeClass("anelsockets_deactivated").addClass("anelsockets_activated");
 		else
-			domitem.removeClass("anelsockets_activated").addClass("anelsockets_deactivated");
-		return domitem.text(getName(modelitem.channel));
+			$(domitem).removeClass("anelsockets_activated").addClass("anelsockets_deactivated");
+		return $(domitem).text(that.getName(modelitem.channel));
 	}
 	
-	function tooglevalue(key) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"iovalue_toogle","channel":key});
-	}
-	
-	function itemCreationFunction(modelitem) {
+	this.itemCreationFunction = function(modelitem) {
 		var item = $('<li class="anelsockets"></li>');
 		item.key = modelitem.channel;
-		item.click( function() { tooglevalue(item.key); });
+		item.click( function() { that.tooglevalue(item.key); });
 		return item;
 	}
 
-	var listview = new AbstractView($rootelement, itemChangeFunction, itemCreationFunction);
+	this.removeDataModel = function() {
+		that.datamodel = 0;
+	}
+	this.removeNameModel = function() {
+		that.namemodel = 0;
+	}
 	
-	function modelsAvailable() {
-		if (!datamodel || !namemodel) return;
+	this.modelAvailable = function(event, modelid, modeldata) {
+		if (that.datamodel && that.namemodel) return;
+		if (modelid == "anel.io.value") {
+			that.datamodel = modeldata;
+			$(that.datamodel).bind('modelremove', that.removeDataModel);
+		}
+		else if (modelid == "anel.io.name") {
+			that.namemodel = modeldata;
+			$(that.namemodel).bind('modelremove', that.removeNameModel);
+		}
+		if (!that.datamodel || !that.namemodel) return;
+		that.listview.setModel(that.datamodel);
+	}
 
-		listview.setModel(datamodel);
-	}
-	
-	function modelAvailable(event, modelid, modeldata) {
-		if (modelid == "anel.io.value") datamodel = modeldata;
-		else if (modelid == "anel.io.name") namemodel = modeldata;
-		modelsAvailable();
-	}
-	
-	$(modelstorage).bind('modelAvailable', modelAvailable);
-	modelsAvailable();
+	this.tooglevalue = function(key) {
+		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"iovalue_toogle","channel":key});
+	}	
 }

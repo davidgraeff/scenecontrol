@@ -50,6 +50,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED ( sessionid );
     if ( ServiceID::isId(data, "ledvalue_relative" ) ) {
         m_controller->setChannelRelative ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
     } else if ( ServiceID::isId(data, "ledvalue_absolut" ) ) {
@@ -64,12 +65,13 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+	Q_UNUSED ( sessionid );
     if ( ServiceID::isId(data, "ledcondition" ) ) {
         const int v = m_controller->getChannel ( INTDATA("channel") );
         if ( v>INTDATA("upper") ) return false;
         if ( v<INTDATA("lower") ) return false;
         return true;
-    } else if ( ServiceID::isId(data, "curtain.condition" ) ) {
+    } else if ( ServiceID::isId(data, "curtain_condition" ) ) {
         return ( INTDATA("value") == m_controller->getCurtain() );
     }
     return false;
@@ -77,6 +79,7 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 
 void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
+	Q_UNUSED ( sessionid );
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {

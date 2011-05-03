@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="cardreader_pcsc" version="1.0">
   <event id="cardevent">
-    <string id="cardid" property="card"></string>
+    <string id="cardid" model="card.atr" model_key="cardid" model_show="cardid"></string>
+	<enum id="state" n="2" /><!-- inside, outside -->
   </event>
   <model id="card.atr" model_key="cardid">
     <string id="cardid"></string>

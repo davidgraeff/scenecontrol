@@ -7,6 +7,8 @@
   <property id="plugininfo">
     <string id="plugins" separator=";" /><!-- plugin names -->
   </property>
+  <property id="transfer.complete">
+  </property>
   
   <execute id="servercmd" group_restriction="adm, roomcontrol_admin">
     <enum id="state" n="3" /><!-- resync client, restart, stop server -->

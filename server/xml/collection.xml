@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="collection" version="1.0">
   <action id="executecollection">
-	  <string id="collectionid" />
+	  <string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
   </action>
   <action id="stopcollection">
-	  <string id="collectionid" />
+	  <string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
   </action>
   
   <execute id="copy">
-	  <string id="collectionid" />
+	  <string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
   </execute>
   
   <collection>
 	  <string id="name" />
-	  <string id="actions" subtype="javascriptArray" />
-	  <string id="conditions" subtype="javascriptArray" />
-	  <string id="events" subtype="javascriptArray" />
-	  <string id="categories" subtype="javascriptArray" />
+	  <stringlist id="actions" />
+	  <stringlist id="conditions" />
+	  <stringlist id="events" />
+	  <stringlist id="categories" />
 	  <bool id="enabled" />
   </collection>
   

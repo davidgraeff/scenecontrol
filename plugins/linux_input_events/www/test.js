@@ -1,25 +1,41 @@
-function InitPlugin(pluginid, sectionname, $section) {
-	$('\
+function RoomPlugin(pluginid, sectionname, $section) {
+	var that = this;
+	this.datamodel = undefined;
+	this.listview = undefined;
+	
+	this.load = function() {
+		$section.append('\
 		<div class="inputdevices">Select input device:\
 			<form class="linux_input_devices" name="linux_input_devices"><select id="linux_input_devices" name="devices" size="1"><option value="">-- Select device --</option></select>\
 			</form>\
 		<div id="linux_input_lastkey"></div>\
 		</div>\
-	').appendTo($section);
-	
-	$.getCss(pluginid+"/"+sectionname+".css");
-	
-	function itemChangeFunction(domitem, modelitem) {
-		return domitem.val(modelitem.udid).text(modelitem.info);
+		');
+		$.getCss(pluginid+"/"+sectionname+".css");
+		
+		var $root = $("#linux_input_devices").change(function() {
+			$('#linux_input_lastkey').empty();
+			var udid = $("#linux_input_devices option:selected").val();
+			sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"selected_input_device","udid":udid});
+		});
+		
+		that.listview = new AbstractView($root, that.itemChangeFunction, that.itemCreationFunction).setModelByName("inputdevice");
+		$(sessionmanager).bind('notification', that.notification);
 	}
 	
-	function itemCreationFunction(modelitem) {
+	this.clear = function() {
+		delete that.listview;
+	}
+	
+	this.itemChangeFunction = function(domitem, modelitem) {
+		return domitem.val(modelitem.udid).text(modelitem.info);
+	}
+
+	this.itemCreationFunction = function(modelitem) {
 		return $('<option value="" />').val(modelitem.udid).text(modelitem.info).appendTo("#linux_input_devices");
 	}
 
-	var $root = $("#linux_input_devices");
-
-	$(sessionmanager).bind('notification', function(event, data) {
+	this.notification = function(event, data) {
 		if (data.__plugin != pluginid)
 			return;
 
@@ -32,20 +48,5 @@ function InitPlugin(pluginid, sectionname, $section) {
 			else
 				$('#linux_input_lastkey').text("Error: " + data.errormsg);
 		}
-	});
-
-	$root.change(function() {
-		$('#linux_input_lastkey').text('');
-		var udid = $("#linux_input_devices option:selected").val();
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"selected_input_device","udid":udid});
-	}).change();
-	
-	function modelAvailable(event, modelid, modeldata) {
-		if (!modeldata || (modelid && modelid != "inputdevice")) return;
-
-		new AbstractView($root, itemChangeFunction, itemCreationFunction, modeldata);
 	}
-	
-	$(modelstorage).bind('modelAvailable', modelAvailable);
-	modelAvailable(0, 0, modelstorage.getModel("inputdevice"));
 }

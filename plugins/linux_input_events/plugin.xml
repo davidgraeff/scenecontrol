@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="linux_input_events" version="1.0">
   <event id="inputevent">
-    <string id="inputdevice" model="inputdevice" />
-    <string id="kernelkeyname" property="lastinputkey" />
+    <string id="inputdevice" model="inputdevice" model_key="udid" model_show="info" />
+    <string id="kernelkeyname" property="input.device.key" property_key="info" />
     <bool id="pressed">1</bool>
     <bool id="repeat">0</bool>
   </event>

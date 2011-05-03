@@ -1,65 +1,71 @@
-function InitPlugin(pluginid, sectionname, $section) {
-	var datamodel = modelstorage.getModel("led.value");
-	var namemodel = modelstorage.getModel("led.name");
-
-	var $rootelement = $('<div class="roomcontrolleds"></div>');
-	$section.append($rootelement);
-
-	/* fake daten */
-	datamodel.reset({"__key":"channel","id":"led.value"});
-	datamodel.change({"channel":"led1","value":120,"id":"led.value"});
-	namemodel.reset({"__key":"channel","id":"led.name"});
-	namemodel.change({"channel":"led1","name":"Led 1","id":"led.name"});
+function RoomPlugin(pluginid, sectionname, $section) {
+	var that = this;
+	this.$rootelement = $('<div class="roomcontrolleds"></div>');
+	this.datamodel;
+	this.namemodel;
+	this.listview;
 	
-	$.getCss(pluginid+"/"+sectionname+".css");
-
-	function getName(key) {
-		var count = namemodel.count();
+	this.load = function() {
+		if (!that.$rootelement) return;
+		$section.append(that.$rootelement);
+		$.getCss(pluginid+"/"+sectionname+".css");
+		that.listview = new AbstractView(that.$rootelement, that.itemChangeFunction, that.itemCreationFunction);
+		// models
+		$(modelstorage.checkExisting(that.modelAvailable)).bind('modelAvailable', that.modelAvailable);
+	}
+	
+	this.clear = function() {
+		if (!that.$rootelement) return;
+		that.$rootelement.remove();
+		delete that.$rootelement;
+		delete that.listview;
+	}
+	
+	this.getName = function(key) {
+		var count = that.namemodel.count();
 		for(i=0;i<count;++i) {
-			var item = namemodel.getItem(i);
+			var item = that.namemodel.getItem(i);
 			if (item.channel == key) return item.name;
 		}
 		return key;
 	}
 	
-	function itemChangeFunction(domitem, modelitem) {
+	this.itemChangeFunction = function(domitem, modelitem) {
 		var itemText = domitem.itemText;
 		var itemSlider = domitem.itemSlider;
-		itemText.text(getName(modelitem.channel));
+		itemText.text(that.getName(modelitem.channel));
 		itemSlider.slider("value", modelitem.value);
 		return domitem;
 	}
 	
-	function changeled(channel, value) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"ledvalue_absolut","channel":channel,"value":value});
-	}
-	
-	function itemCreationFunction(modelitem) {
+	this.itemCreationFunction = function(modelitem) {
 		var item = $('<div class="led"></div>');
 		var itemText = $('<div class="ledtext" />');
 		var itemSlider = $('<div class="ledslider" />');
-		item.itemText = itemText;
-		item.itemSlider = itemSlider;
-		item.append(itemSlider);
-		item.append(itemText);
+		item.append(itemSlider).itemSlider = itemSlider;
+		item.append(itemText).itemText = itemText;
 		
 		itemSlider.slider({min: 0, max: 255, value: 0, orientation: 'horizontal'});
-		itemSlider.bind( "slide", function(event, ui) {changeled(modelitem.channel, ui.value);});
+		itemSlider.bind( "slide", function(event, ui) {that.changeled(modelitem.channel, ui.value);});
 		return item;
 	}
 
-	var listview = new AbstractView($rootelement, itemChangeFunction, itemCreationFunction);
-	function modelsAvailable() {
-		if (!datamodel || !namemodel) return;
-		listview.setModel(datamodel);
+	this.modelAvailable = function(event, modelid, modeldata) {
+		if (that.datamodel && that.namemodel) return;
+		if (modelid == "led.value") that.datamodel = modeldata;
+		else if (modelid == "led.name") that.namemodel = modeldata;
+		if (!that.datamodel || !that.namemodel) return;
+		that.listview.setModel(that.datamodel);
+		
+		/*TODO fake daten */
+		console.log("add fake data", modelid);
+		that.namemodel.reset("channel");
+		that.namemodel.change({"channel":"led1","name":"Led 1","id":"led.name"});
+		that.datamodel.reset("channel");
+		that.datamodel.change({"channel":"led1","value":120,"id":"led.value"});
 	}
-	
-	function modelAvailable(event, modelid, modeldata) {
-		if (modelid == "led.value") datamodel = modeldata;
-		else if (modelid == "led.name") namemodel = modeldata;
-		modelsAvailable();
+
+	this.changeled = function(channel, value) {
+		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"ledvalue_absolut","channel":channel,"value":value});
 	}
-	
-	$(modelstorage).bind('modelAvailable', modelAvailable);
-	modelsAvailable();
 }
