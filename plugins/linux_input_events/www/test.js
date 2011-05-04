@@ -27,8 +27,8 @@ function RoomPlugin(pluginid, sectionname, $section) {
 		delete that.listview;
 	}
 	
-	this.itemChangeFunction = function(domitem, modelitem) {
-		return domitem.val(modelitem.udid).text(modelitem.info);
+	this.itemChangeFunction = function($domitem, modelitem) {
+		return $domitem.val(modelitem.udid).text(modelitem.info);
 	}
 
 	this.itemCreationFunction = function(modelitem) {

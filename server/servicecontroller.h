@@ -76,7 +76,7 @@ private:
      * for execution. In m_valid_services are only validated services.
      */
     bool validateService(const QVariantMap& data );
-    void setUniqueID(QVariantMap& data);
+    QString generateUniqueID();
 
     // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;

@@ -104,10 +104,6 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         return;
     }
 
-    if ( ServiceType::uniqueID ( data ).isEmpty() ) {
-        setUniqueID ( data );
-    }
-
     ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
     if ( !service ) service = new ServiceStruct();
 
@@ -207,7 +203,7 @@ bool ServiceController::validateService ( const QVariantMap& data ) {
         } else if ( type == QLatin1String ( "url" ) ) {
         } else if ( type == QLatin1String ( "bool" ) ) {
         } else if ( type == QLatin1String ( "enum" ) ) {
-		} else if ( type == QLatin1String ( "stringlist" ) ) {
+        } else if ( type == QLatin1String ( "stringlist" ) ) {
         } else {
             qWarning() << "Cannot verify"<<ServiceID::gid ( data ) <<"with unique id"<<ServiceType::uniqueID ( data ) <<": Unknown type" << type;
             return false;
@@ -226,12 +222,12 @@ bool ServiceController::validateService ( const QVariantMap& data ) {
     return true;
 }
 
-void ServiceController::setUniqueID ( QVariantMap& data ) {     // Generate unique ids amoung all existing ids
+QString ServiceController::generateUniqueID () {     // Generate unique ids amoung all existing ids
     QString nid;
     do {
         nid = QUuid::createUuid().toString().remove ( QLatin1Char ( '{' ) ).remove ( QLatin1Char ( '}' ) );
     } while ( m_valid_services.contains ( nid ) );
-    ServiceType::setUniqueID ( data, nid );
+    return nid;
 }
 
 void ServiceController::saveToDisk ( const QVariantMap& data ) {
@@ -494,6 +490,10 @@ void ServiceController::execute ( const QVariantMap& data, const QString& sessio
         default:
             break;
         }
+    } else if ( ServiceID::isId ( data,"generateUniqueID" ) ) {
+        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "generatedUniqueID" );
+        sc.setData ( "uid", generateUniqueID() );
+        property_changed ( sc.getData(), sessionid );
     }
 }
 

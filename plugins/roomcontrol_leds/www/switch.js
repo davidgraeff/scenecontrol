@@ -30,24 +30,24 @@ function RoomPlugin(pluginid, sectionname, $section) {
 		return key;
 	}
 	
-	this.itemChangeFunction = function(domitem, modelitem) {
-		var itemText = domitem.itemText;
-		var itemSlider = domitem.itemSlider;
+	this.itemChangeFunction = function($domitem, modelitem) {
+		var itemText = $domitem.data("itemText");
+		var itemSlider = $domitem.data("itemSlider");
 		itemText.text(that.getName(modelitem.channel));
 		itemSlider.slider("value", modelitem.value);
-		return domitem;
+		return $domitem;
 	}
 	
 	this.itemCreationFunction = function(modelitem) {
-		var item = $('<div class="led"></div>');
+		var $item = $('<div class="led"></div>');
 		var itemText = $('<div class="ledtext" />');
 		var itemSlider = $('<div class="ledslider" />');
-		item.append(itemSlider).itemSlider = itemSlider;
-		item.append(itemText).itemText = itemText;
+		$item.append(itemSlider).data("itemSlider", itemSlider);
+		$item.append(itemText).data("itemText", itemText);
 		
-		itemSlider.slider({min: 0, max: 255, value: 0, orientation: 'horizontal'});
-		itemSlider.bind( "slide", function(event, ui) {that.changeled(modelitem.channel, ui.value);});
-		return item;
+		itemSlider.slider({min: 0, max: 255, value: 0, orientation: 'horizontal'}).attr("channel", modelitem.channel);
+		itemSlider.bind( "slide", function(event, ui) {that.changeled($(this).attr("channel"), ui.value);});
+		return $item;
 	}
 
 	this.modelAvailable = function(event, modelid, modeldata) {

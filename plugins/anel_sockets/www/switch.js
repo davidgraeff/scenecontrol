@@ -30,19 +30,18 @@ function RoomPlugin(pluginid, sectionname, $section) {
 		return key;
 	}
 	
-	this.itemChangeFunction = function(domitem, modelitem) {
+	this.itemChangeFunction = function($domitem, modelitem) {
 		if (modelitem.value)
-			$(domitem).removeClass("anelsockets_deactivated").addClass("anelsockets_activated");
+			$domitem.removeClass("anelsockets_deactivated").addClass("anelsockets_activated");
 		else
-			$(domitem).removeClass("anelsockets_activated").addClass("anelsockets_deactivated");
-		return $(domitem).text(that.getName(modelitem.channel));
+			$domitem.removeClass("anelsockets_activated").addClass("anelsockets_deactivated");
+		return $domitem.text(that.getName(modelitem.channel));
 	}
 	
 	this.itemCreationFunction = function(modelitem) {
-		var item = $('<li class="anelsockets"></li>');
-		item.key = modelitem.channel;
-		item.click( function() { that.tooglevalue(item.key); });
-		return item;
+		var $item = $('<li class="anelsockets"></li>').attr("channel", modelitem.channel);
+		$item.click( function() { that.tooglevalue($(this).attr("channel")); });
+		return $item;
 	}
 
 	this.removeDataModel = function() {

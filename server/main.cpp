@@ -36,7 +36,10 @@ bool exitByConsoleCommand = false;
 
 static void catch_int(int )
 {
+    signal(SIGINT, 0);
+    signal(SIGTERM, 0);
     exitByConsoleCommand = true;
+	printf("\n");
     QCoreApplication::exit(0);
 }
 
@@ -136,9 +139,6 @@ int main(int argc, char *argv[])
     if (!cmdargs.contains("--no-event-loop"))
         exitcode = qapp.exec();
 
-    // remove lockfile
-    lockfile.remove();
-
 #ifdef WITH_EXTERNAL
     qDebug() << "Shutdown: Network server";
     delete httpserver;
@@ -153,7 +153,11 @@ int main(int argc, char *argv[])
     delete collections;
     delete backups;
     delete services;
+	delete plugins;
     services = 0;
+
+    // remove lockfile
+    lockfile.remove();
 
     // close log file. only console log is possible from here on
     logclose();

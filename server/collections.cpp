@@ -72,6 +72,8 @@ void Collections::addCollection(const QVariantMap& data) {
     instance->enabled = BOOLDATA("enabled");
     convertVariantToIntStringMap(MAP("actions"), instance->actionids);
     convertVariantToStringSet(LIST("conditions"), instance->conditionids);
+    convertVariantToStringSet(LIST("events"), instance->eventids);
+	
 // 	const QString conditions = DATA("conditions");
 // 	if (conditions.size()) {
 // 		// convert condition string to parsed binary decision diagram
@@ -82,7 +84,6 @@ void Collections::addCollection(const QVariantMap& data) {
 // 			qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
 // 		}
 // 	}
-    convertVariantToStringSet(LIST("events"), instance->eventids);
     connect(instance,SIGNAL(executeService(QString, QString)),SIGNAL(instanceExecute(QString, QString)));
 }
 
