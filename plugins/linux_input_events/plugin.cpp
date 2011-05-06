@@ -50,7 +50,7 @@ plugin::plugin() : m_events ( QLatin1String ( "inputdevice" ) ) {
 }
 
 plugin::~plugin() {
-	qDeleteAll(m_devices);
+    qDeleteAll(m_devices);
     delete m_devicelist;
 }
 
@@ -128,10 +128,10 @@ void plugin::deviceAdded ( ManagedDevice* device ) {
         m_devices[device->udid] = inputdevice;
     }
     inputdevice->setDevice ( device );
-	const QList<QVariantMap> datas = m_events.data(device->udid);
-	foreach(QVariantMap data, datas) {
-		inputdevice->registerKey ( ServiceType::uniqueID ( data ), ServiceType::getCollectionUid(data), DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
-	}
+    const QList<QVariantMap> datas = m_events.data(device->udid);
+    foreach(QVariantMap data, datas) {
+        inputdevice->registerKey ( ServiceType::uniqueID ( data ), ServiceType::getCollectionUid(data), DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
+    }
 }
 
 void plugin::deviceRemoved ( ManagedDevice* device ) {
@@ -155,14 +155,13 @@ InputDevice::InputDevice ( plugin* plugin ) : m_plugin ( plugin ), m_socketnotif
 }
 
 InputDevice::~InputDevice() {
-	qDeleteAll(m_keyToUids);
-	m_keyToUids.clear();
+    qDeleteAll(m_keyToUids);
+    m_keyToUids.clear();
     disconnectDevice();
 }
 
 ManagedDevice* InputDevice::device() {
     return m_device;
-    delete m_socketnotifier;
 }
 
 bool InputDevice::isClosable() {
@@ -212,6 +211,7 @@ void InputDevice::connectDevice() {
         } else {
             fd = open ( m_device->devPath.toUtf8(), O_RDONLY|O_NDELAY );
             if ( fd!=-1 ) {
+				delete m_socketnotifier;
                 m_socketnotifier = new QSocketNotifier ( fd, QSocketNotifier::Read );
                 connect ( m_socketnotifier, SIGNAL ( activated ( int ) ), this, SLOT ( eventData() ) );
                 // success
@@ -232,7 +232,7 @@ void InputDevice::connectDevice() {
 void InputDevice::setDevice ( ManagedDevice* device ) {
     m_device = device;
     disconnectDevice();
-	connectDevice();
+    connectDevice();
 }
 
 void InputDevice::unregisterKey ( QString uid ) {
@@ -245,29 +245,29 @@ void InputDevice::unregisterKey ( QString uid ) {
     }
     // disconnect if no one is listening anymore
     if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() )
-		disconnectDevice();
+        disconnectDevice();
 }
 void InputDevice::registerKey ( QString uid, QString collectionuid, QString key, bool repeat ) {
-	EventKey* eventkey = m_keyToUids[key];
-	if (!eventkey) eventkey = new EventKey();
+    EventKey* eventkey = m_keyToUids[key];
+    if (!eventkey) eventkey = new EventKey();
     eventkey->ServiceUidToCollectionUid.insertMulti ( uid, collectionuid );
     eventkey->repeat = repeat;
-	m_keyToUids[key] = eventkey;
-	connectDevice();
+    m_keyToUids[key] = eventkey;
+    connectDevice();
 }
 void InputDevice::eventData() {
+    m_socketnotifier->setEnabled(false);
     static char readbuff[sizeof ( struct input_event ) ] = {0};
     static struct input_event* ev = ( struct input_event* ) readbuff;
     static unsigned int readbuffOffset = 0;
-
     while ( 1 ) {
         int ret = read ( fd, readbuff+readbuffOffset, sizeof ( struct input_event )-readbuffOffset );
-        if ( ret == -1 ) return;
+        if ( ret == -1 ) break;
         readbuffOffset += ret;
-        if ( readbuffOffset < sizeof ( struct input_event ) ) return;
+        if ( readbuffOffset < sizeof ( struct input_event ) ) break;
         readbuffOffset = 0;
 
-        if ( ev->type != EV_KEY ) return;
+        if ( ev->type != EV_KEY ) break;
         m_repeattimer.stop();
         if ( ( ev->value == KEY_PRESS ) || ( ev->value == KEY_KEEPING_PRESSED ) ) {
             const QString& kernelkeyname = m_plugin->m_keymapping.value ( ev->code );
@@ -288,17 +288,18 @@ void InputDevice::eventData() {
             repeattrigger ( true );
         }
     }
+    m_socketnotifier->setEnabled(true);
 }
 void InputDevice::repeattrigger ( bool initial_event ) {
     QMap<QString, EventKey*>::iterator it = m_keyToUids.find ( m_lastkey );
     if ( it == m_keyToUids.end() ) return;
 
     const EventKey* event = *it;
-	QMap<QString, QString>::const_iterator i = event->ServiceUidToCollectionUid.constBegin();
-	for (;i!=event->ServiceUidToCollectionUid.constEnd();++i) {
-		m_plugin->m_server->event_triggered ( i.key(), i.value() );
-	}
-	
+    QMap<QString, QString>::const_iterator i = event->ServiceUidToCollectionUid.constBegin();
+    for (;i!=event->ServiceUidToCollectionUid.constEnd();++i) {
+        m_plugin->m_server->event_triggered ( i.key(), i.value() );
+    }
+
     if ( event->repeat )
         m_repeattimer.start ( initial_event?m_plugin->m_repeatInit:m_plugin->m_repeat );
 }

@@ -16,4 +16,9 @@
     <time id="lower"></time>
     <time id="upper"></time>
   </condition>
+  
+  <property id="nextalarm">
+    <date id="date"></date>
+	<time id="time"></time>
+  </property>
 </plugin>

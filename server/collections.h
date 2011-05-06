@@ -38,6 +38,7 @@ public:
     CollectionInstance( ServiceController* sc);
     virtual ~CollectionInstance();
 	void setData(const QVariantMap& data);
+	void registerEvent(QSet<QString>::iterator index);
     void startExecution() ;
     void stop();
 

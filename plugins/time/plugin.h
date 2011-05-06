@@ -27,6 +27,7 @@
 #include "shared/pluginsettingshelper.h" 
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
+#include <QDateTime>
 
 class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
 {
@@ -52,6 +53,7 @@ private:
 	QMap<QString, QVariantMap> m_remaining_events;
 	DataBySC_Uid m_timeout_events;
 	QTimer m_timer;
+	QDateTime m_nextAlarm;
 private Q_SLOTS:
 	void timeout();
 };

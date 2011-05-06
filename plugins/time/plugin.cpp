@@ -33,7 +33,7 @@ plugin::~plugin() {
 
 }
 
-void plugin::initialize(){
+void plugin::initialize() {
     calculate_next_events();
 }
 
@@ -47,11 +47,11 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
     if ( ServiceID::isId(data, "datespan" ) ) {
         QDate m_lower = QDate::fromString ( DATA ( "lower" ),Qt::ISODate );
         QDate m_upper = QDate::fromString ( DATA ( "upper" ),Qt::ISODate );
@@ -59,18 +59,18 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
         if ( QDate::currentDate() > m_upper ) return false;
         return true;
     } else
-    if ( ServiceID::isId(data, "timespan" ) ) {
-        QTime m_lower = QTime::fromString ( DATA ( "lower" ),Qt::ISODate );
-        QTime m_upper = QTime::fromString ( DATA ( "upper" ),Qt::ISODate );
-        if ( QTime::currentTime() < m_lower ) return false;
-        if ( QTime::currentTime() > m_upper ) return false;
-        return true;
-    }
+        if ( ServiceID::isId(data, "timespan" ) ) {
+            QTime m_lower = QTime::fromString ( DATA ( "lower" ),Qt::ISODate );
+            QTime m_upper = QTime::fromString ( DATA ( "upper" ),Qt::ISODate );
+            if ( QTime::currentTime() < m_lower ) return false;
+            if ( QTime::currentTime() > m_upper ) return false;
+            return true;
+        }
     return false;
 }
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
-	Q_UNUSED ( collectionuid );
+    Q_UNUSED ( collectionuid );
     const QString uid = ServiceType::uniqueID(data);
     // remove from next events
     m_timeout_events.remove ( SC_Uid(uid, collectionuid) );
@@ -80,8 +80,8 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
 }
 
 void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
-	Q_UNUSED(collectionuid);
-	const QString uid = ServiceType::uniqueID(data);
+    Q_UNUSED(collectionuid);
+    const QString uid = ServiceType::uniqueID(data);
     // remove from next events
     m_timeout_events.remove ( SC_Uid(uid, collectionuid) );
     // recalculate next event
@@ -89,8 +89,14 @@ void plugin::unregister_event ( const QVariantMap& data, const QString& collecti
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
+    if (!m_nextAlarm.isNull()) {
+        ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "nextalarm");
+        s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
+        s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
+        l.append(s.getData());
+    }
     return l;
 }
 
@@ -110,14 +116,15 @@ void plugin::calculate_next_events() {
 
     foreach ( QVariantMap data, m_remaining_events ) {
         if ( ServiceID::isId(data, "timedate" ) ) {
-			const QTime time = QTime::fromString ( DATA ( "time" ),Qt::ISODate );
-			const QDate date = QDate::fromString ( DATA ( "date" ),Qt::ISODate );
-            const int sec = QDateTime::currentDateTime().secsTo ( QDateTime(date, time) );
+            const QTime time = QTime::fromString ( DATA ( "time" ),QLatin1String("h:m") );
+            const QDate date = QDate::fromString ( DATA ( "date" ),QLatin1String("dd.MM.yyyy"));
+            const QDateTime datetime(date, time);
+            const int sec = QDateTime::currentDateTime().secsTo ( datetime );
             if ( sec > 86400 ) {
-                qDebug() << "One-time alarm: Armed (next check only)";
                 min_next_time[86400];
             } else if ( sec > 10 ) {
                 qDebug() << "One-time alarm: Armed" << sec;
+                m_nextAlarm = datetime;
                 min_next_time[sec].insert ( SC_Uid(ServiceType::uniqueID(data), ServiceType::getCollectionUid(data)), data );
                 remove.insert ( ServiceType::uniqueID(data) );
             } else if ( sec > -10 && sec < 10 ) {
@@ -125,13 +132,15 @@ void plugin::calculate_next_events() {
                 remove.insert ( ServiceType::uniqueID(data) );
             }
         } else if ( ServiceID::isId(data, "timeperiodic" ) ) {
-            QTime m_time = QDateTime::fromString ( DATA ( "time" ),Qt::ISODate ).time();
+            QTime m_time = QDateTime::fromString ( DATA ( "time" ),QLatin1String("h:m") ).time();
             QDateTime datetime = QDateTime::currentDateTime();
             datetime.setTime ( m_time );
             bool days[7];
-            int dayint = INTDATA ( "days" );
-            for ( int i=0;i<7;++i ) {
-                days[i] = dayint & ( 1<<i );
+            {
+                QList<QVariant> tempdays = LIST ( "days" );
+                for ( int i=0;i<7;++i ) {
+                    days[i] = tempdays.contains(i);
+                }
             }
             int dow = QDate::currentDate().dayOfWeek() - 1;
             int offsetdays = 0;
@@ -149,22 +158,30 @@ void plugin::calculate_next_events() {
                 dow = ( dow+1 ) % 7;
             }
 
-            if ( offsetdays < 7 ) {
-                const int sec = QDateTime::currentDateTime().secsTo ( datetime.addDays ( offsetdays ) ) + 1;
-				min_next_time[sec].insert ( SC_Uid(ServiceType::uniqueID(data), ServiceType::getCollectionUid(data)), data );
-                qDebug() << "Periodic alarm: " << datetime.addDays ( offsetdays ).toString ( Qt::DefaultLocaleShortDate );
+            if ( offsetdays < 8 ) {
+                datetime = datetime.addDays ( offsetdays );
+                m_nextAlarm = datetime;
+                const int sec = QDateTime::currentDateTime().secsTo ( datetime ) + 1;
+                min_next_time[sec].insert ( SC_Uid(ServiceType::uniqueID(data), ServiceType::getCollectionUid(data)), data );
             }
         }
     }
 
     // remove remaining events that are in the next event list
     foreach (QString uid, remove)
-		m_remaining_events.remove ( uid );
+    m_remaining_events.remove ( uid );
+
+    if (!m_nextAlarm.isNull()) {
+        ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "nextalarm");
+        s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
+        s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
+        m_server->property_changed(s.getData());
+    }
 
     if ( min_next_time.size() > 0 ) {
         // add entry to next events
-		QMap<int, DataBySC_Uid >::const_iterator i = min_next_time.lowerBound(0);
-		m_timeout_events = i.value();
+        QMap<int, DataBySC_Uid >::const_iterator i = min_next_time.lowerBound(0);
+        m_timeout_events = i.value();
         // start timer
         m_timer.start ( i.key() * 1000 );
     }
