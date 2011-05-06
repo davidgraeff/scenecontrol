@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     plugins->registerPluginFromObject(collections);
     collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
     collections->connect(services, SIGNAL(dataSync(QVariantMap,QString)), collections, SLOT(dataSync(QVariantMap,QString)));
-    collections->connect(services, SIGNAL(eventTriggered(QString)), collections, SLOT(eventTriggered(QString)));
+    collections->connect(services, SIGNAL(eventTriggered(QString,QString)), collections, SLOT(eventTriggered(QString,QString)));
     services->connect(collections, SIGNAL(instanceExecute(QString, QString)), services, SLOT(executeActionByUID(QString, QString)));
 
 	SessionController* sessions = SessionController::instance(true);

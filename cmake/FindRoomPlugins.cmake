@@ -12,13 +12,13 @@ message(STATUS "Configure Plugin: ${targetname}")
 
 find_package(Qt4 4.7.0 COMPONENTS QtCore REQUIRED)
 
-get_filename_component(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
-#set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
-set(SHAREDDIR "${ROOTDIR}/shared")
-set(PLUGINDIR "${ROOTDIR}/plugins")
+# get_filename_component(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+# #set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+# set(SHAREDDIR "${ROOTDIR}/shared")
+# set(PLUGINDIR "${ROOTDIR}/plugins")
 
 LIST(APPEND Shared_SRCS_H "")
-LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginsettingshelper.cpp" "${SHAREDDIR}/pluginsessionhelper.cpp")
+LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginsettingshelper.cpp" "${SHAREDDIR}/pluginsessionhelper.cpp" "${SHAREDDIR}/pluginservicehelper.cpp")
 
 file(GLOB SRCS_SERVER "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB SRCS_SERVER_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")

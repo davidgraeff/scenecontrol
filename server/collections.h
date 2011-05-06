@@ -27,56 +27,62 @@
 #define PLUGIN_ID "collection"
 #include <shared/abstractplugin.h>
 #include <shared/abstractplugin_services.h>
+#include "shared/pluginservicehelper.h"
 #include <shared/abstractserver.h>
 #include "boolstuff/BoolExpr.h"
 
 class ServiceController;
 class CollectionInstance : public QObject {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	CollectionInstance();
-	virtual ~CollectionInstance();
-	void startExecution() ;
+    CollectionInstance( ServiceController* sc, const QVariantMap& data);
+    virtual ~CollectionInstance();
+    void startExecution() ;
     void stop();
 
-	QSet<QString> eventids;
-	QSet<QString> conditionids;
-	boolstuff::BoolExpr<std::string>* conditionlinks;
-	QMap< int, QString > actionids;
-	bool enabled;
+    QSet<QString> eventids;
+    QSet<QString> conditionids;
+	QSet<QString> actionids;
+    boolstuff::BoolExpr<std::string>* conditionlinks;
+    QMap< int, QString > executionids;
+    bool enabled;
+	QString collectionuid;
 private:
-	QTimer m_executionTimer;
-	int m_currenttime;
+    QTimer m_executionTimer;
+    int m_currenttime;
+	ServiceController* m_servicecontroller;
 private Q_SLOTS:
-	void executiontimeout();
+    void executiontimeout();
 Q_SIGNALS:
-	void executeService(const QString& uid, const QString& sessionid);
+    void executeService ( const QString& uid, const QString& sessionid );
 };
 
-class Collections : public QObject, public AbstractPlugin, public AbstractPlugin_services
-{
+class Collections : public QObject, public AbstractPlugin, public AbstractPlugin_services {
     Q_OBJECT
     PLUGIN_MACRO
 public:
-	Collections();
-	virtual ~Collections();
-	void setServiceController(ServiceController* sc) { m_servicecontroller = sc; }
+    Collections();
+    virtual ~Collections();
+    void setServiceController ( ServiceController* sc ) {
+        m_servicecontroller = sc;
+    }
     virtual void clear();
     virtual void initialize();
-    virtual bool condition(const QVariantMap& data, const QString& sessionid);
-    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
-    virtual void execute(const QVariantMap& data, const QString& sessionid);
-    virtual QList<QVariantMap> properties(const QString& sessionid);
+    virtual bool condition ( const QVariantMap& data, const QString& sessionid );
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
+    virtual void execute ( const QVariantMap& data, const QString& sessionid );
+    virtual QList<QVariantMap> properties ( const QString& sessionid );
+    static void convertVariantToStringSet ( const QVariantList& source, QSet<QString>& destination );
+    static void convertVariantToIntStringMap ( const QVariantMap& source, QMap<int, QString>& destination );
 private:
-	void addCollection(const QVariantMap& data);
-	ServiceController* m_servicecontroller;
-	QMap< QString, CollectionInstance* > m_collections;
-	void convertVariantToStringSet(const QVariantList& source, QSet<QString>& destination);
-	void convertVariantToIntStringMap(const QVariantMap& source, QMap<int, QString>& destination);
+    void addCollection ( const QVariantMap& data );
+    ServiceController* m_servicecontroller;
+    QMap< QString, CollectionInstance* > m_collections;
 public Q_SLOTS:
-    void dataSync(const QVariantMap& data, const QString& sessionid = QString());
+    void dataSync ( const QVariantMap& data, const QString& sessionid = QString() );
     void dataReady();
-    void eventTriggered(const QString& uid);
+    void eventTriggered(const QString& event_id, const QString& destination_collectionuid);
 Q_SIGNALS:
-	void instanceExecute(const QString& uid, const QString& sessionid);
+    void instanceExecute ( const QString& uid, const QString& sessionid );
 };

@@ -21,152 +21,6 @@
 #include <QVariantMap>
 #include <QString>
 
-// getter
-#define MAP(ITEMID) data[QLatin1String(ITEMID)].toMap()
-#define LIST(ITEMID) data[QLatin1String(ITEMID)].toList()
-#define DATA(ITEMID) data[QLatin1String(ITEMID)].toString()
-#define INTDATA(ITEMID) data[QLatin1String(ITEMID)].toInt()
-#define BOOLDATA(ITEMID) data[QLatin1String(ITEMID)].toBool()
-#define DOUBLEDATA(ITEMID) data[QLatin1String(ITEMID)].toDouble()
-
-class ServiceType {
-public:
-    static QString type(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString();
-    }
-
-    static QString uniqueID(const QVariantMap& data) {
-        return data[QLatin1String("__uid")].toString();
-    }
-
-	static void setUniqueID(QVariantMap& data, const QString& uid) {
-        data[QLatin1String("__uid")] = uid;
-    }
-
-    static bool isAction(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("action");
-    }
-    static bool isCondition(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("condition");
-    }
-    static bool isEvent(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("event");
-    }
-    static bool isCollection(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("collection");
-    }
-    static bool isExecutable(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("execute");
-    }
-    static bool isRemoveCmd(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("remove");
-    }
-    static bool isNotification(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("notification");
-    }
-    static bool isModelItem(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("model");
-    }
-};
-
-class ServiceCreation {
-private:
-    QVariantMap m_map;
-    ServiceCreation() {}
-public:
-	/**
-	 * Creates a model item remove notification.
-	 * \param plugin_id Which plugin does generate this notification (mostly PLUGIN_ID).
-	 * \param id Notification id. Must be the same as documented in the plugin xml file.
-	 */
-    static ServiceCreation createModelRemoveItem(const char* plugin_id, const char* id) {
-        ServiceCreation sc;
-        sc.m_map[QLatin1String("id")] =  QLatin1String(id);
-		sc.m_map[QLatin1String("__plugin")] = QLatin1String(plugin_id);
-        sc.m_map[QLatin1String("__type")] = QLatin1String("model");
-		sc.m_map[QLatin1String("__event")] = QLatin1String("remove");
-        return sc;
-    }
-    
-	/**
-	 * Creates a model item change notification.
-	 * \param plugin_id Which plugin does generate this notification (mostly PLUGIN_ID).
-	 * \param id Notification id. Must be the same as documented in the plugin xml file.
-	 */
-    static ServiceCreation createModelChangeItem(const char* plugin_id, const char* id) {
-        ServiceCreation sc;
-        sc.m_map[QLatin1String("id")] =  QLatin1String(id);
-		sc.m_map[QLatin1String("__plugin")] = QLatin1String(plugin_id);
-        sc.m_map[QLatin1String("__type")] = QLatin1String("model");
-		sc.m_map[QLatin1String("__event")] = QLatin1String("change");
-        return sc;
-    }
-    
-	/**
-	 * Creates a model reset notification.
-	 * \param plugin_id Which plugin does generate this notification (mostly PLUGIN_ID).
-	 * \param id Notification id. Must be the same as documented in the plugin xml file.
-	 * \param key Model key/index item name
-	 */
-    static ServiceCreation createModelReset(const char* plugin_id, const char* id, const char* key) {
-        ServiceCreation sc;
-        sc.m_map[QLatin1String("id")] =  QLatin1String(id);
-		sc.m_map[QLatin1String("__key")] =  QLatin1String(key);
-		sc.m_map[QLatin1String("__plugin")] = QLatin1String(plugin_id);
-        sc.m_map[QLatin1String("__type")] = QLatin1String("model");
-		sc.m_map[QLatin1String("__event")] = QLatin1String("reset");
-        return sc;
-    }
-    
-	/**
-	 * Creates a notification
-	 * \param plugin_id Which plugin does generate this notification (mostly PLUGIN_ID).
-	 * \param id Notification id. Must be the same as documented in the plugin xml file.
-	 */
-    static ServiceCreation createNotification(const char* plugin_id, const char* id) {
-        ServiceCreation sc;
-        sc.m_map[QLatin1String("id")] =  QLatin1String(id);
-		sc.m_map[QLatin1String("__plugin")] = QLatin1String(plugin_id);
-        sc.m_map[QLatin1String("__type")] = QLatin1String("notification");
-        return sc;
-    }
-
-    static ServiceCreation createRemoveByUidCmd(const QString& uid) {
-        ServiceCreation sc;
-        sc.m_map[QLatin1String("__uid")] = uid;
-        sc.m_map[QLatin1String("__type")] = QLatin1String("remove");
-        return sc;
-    }
-
-    static ServiceCreation createExecuteByUidCmd(const QString& uid) {
-        ServiceCreation sc;
-        sc.m_map[QLatin1String("__uid")] = uid;
-        sc.m_map[QLatin1String("__type")] = QLatin1String("execute");
-        return sc;
-    }
-    
-	/**
-	 * Creates an execute cmd. Will only be propagated to the destination plugin and executed if all necessary data is set.
-	 * \param plugin_id The destination plugin that implements the wanted functionality.
-	 * \param id The id for this action within the destination plugin
-	 */
-    static ServiceCreation createExecuteByDataCmd(const char* plugin_id, const char* id) {
-        ServiceCreation sc;
-        sc.m_map[QLatin1String("id")] = QString(QLatin1String(plugin_id) + QLatin1String("_") + QLatin1String(id));
-        sc.m_map[QLatin1String("__type")] = QLatin1String("execute");
-        return sc;
-    }
-    
-    void setData(const char* index, const QVariant& data) {
-        m_map[QLatin1String(index)] = data;
-    }
-
-    QVariantMap getData() {
-        return m_map;
-    }
-
-};
-
 /**
  * Plugin interface for dealing with actions, conditions, events and properties
  */
@@ -194,9 +48,14 @@ public:
     virtual bool condition(const QVariantMap& data, const QString& sessionid) = 0;
 
     /**
-    * Event data loaded by the server or changed by a client. Implement routines to trigger the actual event based on these data
-    * and remove the event with the event id (from data) that was established by previous data.
+    * Collections may register events here. Events are triggered by plugins with event_trigger.
     */
-    virtual void event_changed(const QVariantMap& data, const QString& sessionid) = 0;
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid ) = 0;
+	
+    /**
+    * When collections get removed they unregister their events with this method. If collections are changed
+	* they will call unregister_event and register_event in sequence.
+    */
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid ) = 0;
 };
 Q_DECLARE_INTERFACE(AbstractPlugin_services, "com.roomcontrol.PluginServices/2.0")

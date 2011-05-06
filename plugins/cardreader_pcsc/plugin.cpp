@@ -25,7 +25,7 @@
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-plugin::plugin() {
+plugin::plugin() : m_card_events(QLatin1String("cardid")) {
     m_thread = new CardThread();
     connect ( m_thread,SIGNAL ( cardDetected ( QString,int ) ),SLOT ( slotcardDetected ( QString,int ) ) );
     //_config(this);
@@ -48,27 +48,23 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( data );
+	Q_UNUSED(sessionid);
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     Q_UNUSED ( data );
+	Q_UNUSED(sessionid);
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     if (ServiceID::isId(data,"cardevent")) {
-        // entfernen
-        const QString uid = ServiceType::uniqueID(data);
-        QMutableMapIterator<QString, QSet<QString> > it(m_card_events);
-        while (it.hasNext()) {
-            it.next();
-            it.value().remove(uid);
-            if (it.value().isEmpty())
-                it.remove();
-        }
-        // hinzufügen
-        m_card_events[DATA("cardid")].insert(uid);
+		m_card_events.add(data, collectionuid);
     }
+}
+
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	m_card_events.remove(data, collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
@@ -90,7 +86,5 @@ void plugin::slotcardDetected ( const QString& atr, int state ) {
     sc.setData("state", state);
     m_server->property_changed(sc.getData());
 
-    foreach (QString uid, m_card_events.value(atr)) {
-        m_server->event_triggered(uid);
-    }
+	m_card_events.triggerEvent(atr, m_server);
 }

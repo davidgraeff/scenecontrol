@@ -25,6 +25,7 @@
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
 #include "shared/pluginsettingshelper.h" 
+#include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 
 class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
@@ -42,11 +43,14 @@ public:
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data, const QString& sessionid);
     virtual bool condition(const QVariantMap& data, const QString& sessionid) ;
-    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
 private:
 	void calculate_next_events();
+	typedef QPair<QString, QString> SC_Uid;
+	typedef QMap<SC_Uid, QVariantMap> DataBySC_Uid;
 	QMap<QString, QVariantMap> m_remaining_events;
-	QSet<QString> m_timeout_service_ids;
+	DataBySC_Uid m_timeout_events;
 	QTimer m_timer;
 private Q_SLOTS:
 	void timeout();

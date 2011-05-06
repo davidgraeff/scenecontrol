@@ -51,6 +51,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED(sessionid);
     if ( ServiceID::isId(data, "mpdvolume" ) ) {
         m_mediacontroller->setVolume ( DOUBLEDATA ( "volume" ), BOOLDATA ( "relative" ) );
     } else if ( ServiceID::isId(data, "mpdcmd" ) ) {
@@ -100,14 +101,21 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+	Q_UNUSED(sessionid);
     if ( ServiceID::isId(data, "bla" ) ) {
         return ( INTDATA ( "mpdstatecondition" ) == m_mediacontroller->state() );
     }
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED ( data );
+	Q_UNUSED(collectionuid);
+}
+
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(data);
+	Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {

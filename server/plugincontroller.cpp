@@ -179,12 +179,12 @@ AbstractPlugin_sessions* PluginController::nextSessionPlugin(QMap<QString,Plugin
     return 0;
 }
 
-AbstractPlugin* PluginController::getPlugin(const QString& serviceid) {
-    PluginInfo* pinfo = m_plugins.value(serviceid);
+AbstractPlugin* PluginController::getPlugin(const QString& pluginid) {
+    PluginInfo* pinfo = m_plugins.value(pluginid);
     if (!pinfo) return 0;
     return pinfo->plugin;
 }
 
-QDomNode* PluginController::getPluginDom(const QString& serviceid) {
-    return m_id_to_xml.value(serviceid);
+QDomNode* PluginController::getPluginDom(const QString& service_gid) {
+    return m_id_to_xml.value(service_gid);
 }

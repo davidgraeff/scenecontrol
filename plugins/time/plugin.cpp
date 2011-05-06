@@ -69,13 +69,22 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
-	Q_UNUSED ( sessionid );
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED ( collectionuid );
     const QString uid = ServiceType::uniqueID(data);
     // remove from next events
-    m_timeout_service_ids.remove ( uid );
+    m_timeout_events.remove ( SC_Uid(uid, collectionuid) );
     // recalculate next event
-    m_remaining_events[data[uid].toString() ] = data;
+    m_remaining_events[uid] = ServiceType::newDataWithCollectionUid(data, collectionuid);
+    calculate_next_events();
+}
+
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(collectionuid);
+	const QString uid = ServiceType::uniqueID(data);
+    // remove from next events
+    m_timeout_events.remove ( SC_Uid(uid, collectionuid) );
+    // recalculate next event
     calculate_next_events();
 }
 
@@ -87,16 +96,16 @@ Q_UNUSED(sessionid);
 
 void plugin::timeout() {
     // events triggered, propagate to server
-    foreach ( QString uid, m_timeout_service_ids ) {
-        m_server->event_triggered ( uid );
+    foreach ( QVariantMap data, m_timeout_events ) {
+        m_server->event_triggered ( ServiceType::uniqueID(data), ServiceType::getCollectionUid(data) );
     }
-    m_timeout_service_ids.clear();
+    m_timeout_events.clear();
     // calculate next events
     calculate_next_events();
 }
 
 void plugin::calculate_next_events() {
-    QMap<int, QSet<QString> > min_next_time;
+    QMap<int, DataBySC_Uid > min_next_time;
     QSet<QString> remove;
 
     foreach ( QVariantMap data, m_remaining_events ) {
@@ -109,10 +118,10 @@ void plugin::calculate_next_events() {
                 min_next_time[86400];
             } else if ( sec > 10 ) {
                 qDebug() << "One-time alarm: Armed" << sec;
-                min_next_time[sec].insert ( ServiceType::uniqueID(data) );
+                min_next_time[sec].insert ( SC_Uid(ServiceType::uniqueID(data), ServiceType::getCollectionUid(data)), data );
                 remove.insert ( ServiceType::uniqueID(data) );
             } else if ( sec > -10 && sec < 10 ) {
-                m_server->event_triggered ( ServiceType::uniqueID(data) );
+                m_server->event_triggered ( ServiceType::uniqueID(data), ServiceType::getCollectionUid(data) );
                 remove.insert ( ServiceType::uniqueID(data) );
             }
         } else if ( ServiceID::isId(data, "timeperiodic" ) ) {
@@ -142,7 +151,7 @@ void plugin::calculate_next_events() {
 
             if ( offsetdays < 7 ) {
                 const int sec = QDateTime::currentDateTime().secsTo ( datetime.addDays ( offsetdays ) ) + 1;
-				min_next_time[sec].insert ( ServiceType::uniqueID(data) );
+				min_next_time[sec].insert ( SC_Uid(ServiceType::uniqueID(data), ServiceType::getCollectionUid(data)), data );
                 qDebug() << "Periodic alarm: " << datetime.addDays ( offsetdays ).toString ( Qt::DefaultLocaleShortDate );
             }
         }
@@ -154,8 +163,8 @@ void plugin::calculate_next_events() {
 
     if ( min_next_time.size() > 0 ) {
         // add entry to next events
-		QMap<int, QSet<QString> >::const_iterator i = min_next_time.lowerBound(0);
-		m_timeout_service_ids = i.value();
+		QMap<int, DataBySC_Uid >::const_iterator i = min_next_time.lowerBound(0);
+		m_timeout_events = i.value();
         // start timer
         m_timer.start ( i.key() * 1000 );
     }

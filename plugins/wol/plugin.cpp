@@ -22,7 +22,7 @@
 #include <QHostAddress>
 #include "plugin.h"
 
-Q_EXPORT_PLUGIN2(libexecute, plugin)
+Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
 }
@@ -36,41 +36,49 @@ void plugin::initialize() {
 }
 
 
-void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
-	PluginSettingsHelper::setSetting(name, value, init);
+void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
+    PluginSettingsHelper::setSetting ( name, value, init );
 }
 
-void plugin::execute(const QVariantMap& data, const QString& sessionid) {
-	if (ServiceID::isId(data,"wol")) {
-		QStringList parts = data["mac"].toString().split(QLatin1Char(':'));
-		if (parts.size()!=6) return;
-		QByteArray mac;
-		for (int i=0;i<6;++i)
-			mac.append(QByteArray::fromHex(parts[i].toAscii()));
+void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED(sessionid);
+    if ( ServiceID::isId ( data,"wol" ) ) {
+        QStringList parts = data["mac"].toString().split ( QLatin1Char ( ':' ) );
+        if ( parts.size() !=6 ) return;
+        QByteArray mac;
+        for ( int i=0;i<6;++i )
+            mac.append ( QByteArray::fromHex ( parts[i].toAscii() ) );
 
-		// 6 mal FF
-		const char header[] = {255,255,255,255,255,255};
-		QByteArray bytes(header);
-		// 16 mal mac
-		for (int i=0;i<16;++i)
-			bytes.append(mac);
+        // 6 mal FF
+        const char header[] = {255,255,255,255,255,255};
+        QByteArray bytes ( header );
+        // 16 mal mac
+        for ( int i=0;i<16;++i )
+            bytes.append ( mac );
 
-		QUdpSocket socket;
-		socket.writeDatagram(bytes,QHostAddress::Broadcast,9);
-	}
+        QUdpSocket socket;
+        socket.writeDatagram ( bytes,QHostAddress::Broadcast,9 );
+    }
 }
 
-bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
+bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+    Q_UNUSED ( data );
+	Q_UNUSED(sessionid);
+    return false;
+}
+
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+    Q_UNUSED ( data );
+	Q_UNUSED(collectionuid);
+}
+
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
 	Q_UNUSED(data);
-	return false;
+	Q_UNUSED(collectionuid);
 }
 
-void plugin::event_changed(const QVariantMap& data, const QString& sessionid) {
-	Q_UNUSED(data);
-}
-
-QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
-	QList<QVariantMap> l;
-	return l;
+QList<QVariantMap> plugin::properties ( const QString& sessionid ) {
+    Q_UNUSED ( sessionid );
+    QList<QVariantMap> l;
+    return l;
 }

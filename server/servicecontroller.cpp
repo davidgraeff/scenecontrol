@@ -14,21 +14,10 @@
 
 #define __FUNCTION__ __FUNCTION__
 
-ServiceController::ServiceController () : m_plugincontroller ( 0 ) {
+ServiceController::ServiceController () : m_plugincontroller ( 0 ), m_state_events ( QLatin1String ( "state" ) ) {
 }
 
 ServiceController::~ServiceController() {
-    // server shutdown event
-    {
-        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "serverstate" );
-        sc.setData ( "state", 0 );
-        property_changed ( sc.getData() );
-        const QList<QString> uids = m_state_events.value ( 0 ).toList();
-        for ( int i=0;i<uids.size();++i ) {
-            event_triggered ( uids[i] );
-        }
-    }
-
     qDeleteAll ( m_valid_services );
 }
 
@@ -49,6 +38,7 @@ void ServiceController::load ( bool service_dir_watcher ) {
         m_dirwatcher.addPath ( serviceDir().absolutePath() );
     }
 
+	removeUnusedServices();
     emit dataReady();
 
     // stats
@@ -83,13 +73,12 @@ void ServiceController::directoryChanged ( QString file, bool loading ) {
         return;
     }
 
-    changeService ( result, QString() );
+    changeService ( result, QString(), true );
 }
 
-void ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid ) {
+void ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading ) {
+    if ( !validateService ( unvalidatedData ) ) return;
     QVariantMap data = unvalidatedData;
-    if ( !validateService ( data ) ) return;
-    qDebug() << "valid data json" << data;
 
     if ( ServiceType::isExecutable ( data ) ) {
         if ( ServiceType::uniqueID ( data ).size() )
@@ -101,20 +90,53 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
 
     if ( ServiceType::isRemoveCmd ( data ) ) {
         removeService ( ServiceType::uniqueID ( data ) );
+        QList<QVariantMap> collections;
+        foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
+            if ( !ServiceType::isCollection ( service->data ) ) continue;
+            removedNotExistingServicesFromCollection(service->data, false);
+        }
         return;
     }
+
+    // set an uid if this collection does not have one
+    bool changed = false;
+    if ( ServiceType::isCollection ( data ) &&  ServiceType::uniqueID ( data ).isEmpty() ) {
+        ServiceType::setUniqueID ( data, generateUniqueID() );
+        changed = true;
+    }
+
 
     ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
     if ( !service ) service = new ServiceStruct();
 
     service->data = data;
-    service->plugin = dynamic_cast<AbstractPlugin_services*> ( m_plugincontroller->getPlugin ( ServiceID::id ( data ) ) );
+    service->plugin = dynamic_cast<AbstractPlugin_services*> ( m_plugincontroller->getPlugin ( ServiceID::pluginid ( data ) ) );
+    if ( service->plugin == 0 ) {
+        qWarning() << "No plugin with AbstractPlugin_services implementation for service found!"<<data;
+    }
 
     m_valid_services.insert ( ServiceType::uniqueID ( data ),service );
+    //qDebug() << "DATA" << data;
 
-    saveToDisk ( data );
+    if ( !loading || changed )
+        saveToDisk ( data );
 
-    emit dataSync ( data );
+    if ( !loading )
+        emit dataSync ( data );
+
+    QString toCollection = ServiceType::toCollection ( data );
+    if ( toCollection.size() ) {
+        ServiceController::ServiceStruct* collection = this->service ( toCollection );
+        if ( !collection ) return;
+        const QString type = ServiceType::type ( data ) + QLatin1String ( "s" ); // e.g. "action" + "s" == "actions"
+        if ( !collection->data.contains ( type ) ) return;
+        QVariantList a = collection->data[ type ].toList();
+        a.removeAll ( ServiceType::uniqueID ( data ) );
+        a.append ( ServiceType::uniqueID ( data ) );
+        collection->data[type] = a;
+        changeService ( collection->data, sessionid );
+    }
+
 }
 
 bool ServiceController::validateService ( const QVariantMap& data ) {
@@ -139,7 +161,7 @@ bool ServiceController::validateService ( const QVariantMap& data ) {
         return false;
     }
 
-    // check uid and add one if neccessary
+    // check uid. Collections may get an uid later
     if ( !ServiceType::isExecutable ( data ) && !ServiceType::isCollection ( data ) && ServiceType::uniqueID ( data ).isEmpty() ) {
         qWarning() << "Cannot verify"<<ServiceID::gid ( data ) << ": No uid found!";
         return false;
@@ -222,6 +244,77 @@ bool ServiceController::validateService ( const QVariantMap& data ) {
     return true;
 }
 
+bool ServiceController::removedNotExistingServicesFromCollection ( const QVariantMap& data, bool withWarning ) {
+    QVariantList actionids = LIST ( "actions" );
+    QVariantList conditionids = LIST ( "conditions" );
+    QVariantList eventids = LIST ( "events" );
+
+    int sum = actionids.size() + conditionids.size() + eventids.size();
+    {
+        QMutableListIterator<QVariant> i ( actionids );
+        while ( i.hasNext() ) {
+            i.next();
+            if ( !service ( i.value().toString() ) ) {
+                i.remove();
+            }
+        }
+    }
+    {
+        QMutableListIterator<QVariant> i ( conditionids );
+        while ( i.hasNext() ) {
+            i.next();
+            if ( !service ( i.value().toString() ) ) {
+                i.remove();
+            }
+        }
+    }
+    {
+        QMutableListIterator<QVariant> i ( eventids );
+        while ( i.hasNext() ) {
+            i.next();
+            if ( !service ( i.value().toString() ) ) {
+                i.remove();
+            }
+        }
+    }
+    if ( sum != actionids.size() + conditionids.size() + eventids.size() ) {
+        ServiceCreation newcollection ( data );
+        newcollection.setData ( "actions", actionids );
+        newcollection.setData ( "conditions", conditionids );
+        newcollection.setData ( "events", eventids );
+        changeService ( newcollection.getData(), QString() );
+        return true;
+    }
+    return false;
+}
+
+void ServiceController::removeUnusedServices() {
+    QList<QVariantMap> collections;
+    foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
+        if ( !ServiceType::isCollection ( service->data ) ) continue;
+        collections.append ( service->data );
+    }
+
+    foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
+        if ( ServiceType::isCollection ( service->data ) ) continue;
+        const QString uid = ServiceType::uniqueID ( service->data );
+
+        bool contained = true;
+        for ( int i=0;i<collections.size();++i ) {
+            if ( collections[i].value ( QLatin1String ( "actions" ) ).toList().contains ( uid ) ||
+                    collections[i].value ( QLatin1String ( "events" ) ).toList().contains ( uid ) ||
+                    collections[i].value ( QLatin1String ( "conditions" ) ).toList().contains ( uid ) ) {
+                contained = true;
+                break;
+            }
+        }
+        if ( !contained ) {
+            qWarning() << "Service consistency check detected not referenced service:" << uid;
+            removeService ( uid );
+        }
+    }
+}
+
 QString ServiceController::generateUniqueID () {     // Generate unique ids amoung all existing ids
     QString nid;
     do {
@@ -261,9 +354,9 @@ QString ServiceController::serviceFilename ( const QString& type, const QString&
     return serviceDir().absoluteFilePath ( type + QLatin1String ( "." ) + uid );
 }
 
-void ServiceController::event_triggered ( const QString& event_id, const char* pluginid ) {
+void ServiceController::event_triggered ( const QString& event_id, const QString& destination_collectionuid, const char* pluginid ) {
     Q_UNUSED ( pluginid );
-    emit eventTriggered ( event_id );
+    emit eventTriggered ( event_id, destination_collectionuid );
 }
 
 void ServiceController::execute_action ( const QVariantMap& data, const char* pluginid ) {
@@ -337,24 +430,28 @@ void ServiceController::removeService ( const QString& uid ) {
     // collection: remove all childs
     if ( ServiceType::isCollection ( data ) ) {
         QSet<QString> uids;
-        QVariantMap actions = MAP ( "actions" );
-        for ( QVariantMap::const_iterator i=actions.begin();i!=actions.end();++i ) {
+        QVariantList actions = LIST ( "actions" );
+        for ( QVariantList::const_iterator i=actions.begin();i!=actions.end();++i ) {
             uids.insert ( i->toString() );
         }
         QVariantList events = LIST ( "events" );
         for ( QVariantList::const_iterator i=events.begin();i!=events.end();++i ) {
             uids.insert ( i->toString() );
         }
-        boolstuff::BoolExprParser parser;
-        try {
-            boolstuff::BoolExpr<std::string>* conditions = parser.parse ( DATA ( "conditions" ).toStdString() );
-            std::set<std::string> vars;
-            conditions->getTreeVariables ( vars, vars );
-            for ( std::set<std::string>::const_iterator i=vars.begin();i!=vars.end();++i ) {
-                uids.insert ( QString::fromStdString ( *i ) );
-            }
-        } catch ( boolstuff::BoolExprParser::Error ) {
+        QVariantList conditions = LIST ( "conditions" );
+        for ( QVariantList::const_iterator i=conditions.begin();i!=conditions.end();++i ) {
+            uids.insert ( i->toString() );
         }
+//         boolstuff::BoolExprParser parser;
+//         try {
+//             boolstuff::BoolExpr<std::string>* conditions = parser.parse ( DATA ( "conditions" ).toStdString() );
+//             std::set<std::string> vars;
+//             conditions->getTreeVariables ( vars, vars );
+//             for ( std::set<std::string>::const_iterator i=vars.begin();i!=vars.end();++i ) {
+//                 uids.insert ( QString::fromStdString ( *i ) );
+//             }
+//         } catch ( boolstuff::BoolExprParser::Error ) {
+//         }
 
 
         for ( QSet<QString>::const_iterator uid=uids.begin();uid!=uids.end();++uid ) {
@@ -380,6 +477,7 @@ void ServiceController::executeAction ( const QVariantMap& data, const QString& 
 void ServiceController::executeActionByUID ( const QString& uid, const QString& sessionid ) {
     ServiceStruct* service = m_valid_services.value ( uid );
     if ( !service || !service->plugin ) return;
+    qDebug() << "execute" << service->data;
     service->plugin->execute ( service->data, sessionid );
 }
 
@@ -463,21 +561,14 @@ bool ServiceController::condition ( const QVariantMap& data, const QString& sess
     return false;
 }
 
-void ServiceController::event_changed ( const QVariantMap& data, const QString& sessionid )  {
-    Q_UNUSED ( sessionid );
+void ServiceController::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     if ( ServiceID::isId ( data,"serverevent" ) ) {
-        // entfernen
-        const QString uid = ServiceType::uniqueID ( data );
-        QMutableMapIterator<int, QSet<QString> > it ( m_state_events );
-        while ( it.hasNext() ) {
-            it.next();
-            it.value().remove ( uid );
-            if ( it.value().isEmpty() )
-                it.remove();
-        }
-        // hinzufügen
-        m_state_events[INTDATA ( "state" ) ].insert ( uid );
+        m_state_events.add ( data, collectionuid );
     }
+}
+
+void ServiceController::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+    m_state_events.remove ( data, collectionuid );
 }
 
 void ServiceController::execute ( const QVariantMap& data, const QString& sessionid )  {
@@ -505,20 +596,17 @@ void ServiceController::initialize() {
         property_changed ( sc.getData() );
     }
 
-    const QList<QString> uids = m_state_events.value ( 1 ).toList();
-    for ( int i=0;i<uids.size();++i ) {
-        event_triggered ( uids[i] );
-    }
+    m_state_events.triggerEvent ( 1, m_server );
 }
 
 void ServiceController::clear() {
-    ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "serverstate" );
-    sc.setData ( "state", 0 );
-    sc.setData ( "version", QCoreApplication::applicationVersion() );
-    property_changed ( sc.getData() );
-
-    const QList<QString> uids = m_state_events.value ( 0 ).toList();
-    for ( int i=0;i<uids.size();++i ) {
-        event_triggered ( uids[i] );
+    // server shutdown event
+    {
+        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "serverstate" );
+        sc.setData ( "state", 0 );
+        sc.setData ( "version", QCoreApplication::applicationVersion() );
+        property_changed ( sc.getData() );
     }
+
+    m_state_events.triggerEvent ( 0, m_server );
 }

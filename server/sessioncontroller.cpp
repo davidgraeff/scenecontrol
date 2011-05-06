@@ -86,9 +86,14 @@ void SessionController::execute(const QVariantMap& data, const QString& sessioni
     }
 }
 
-void SessionController::event_changed(const QVariantMap& data, const QString& sessionid) {
+void SessionController::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED(data);
-	Q_UNUSED(sessionid);
+	Q_UNUSED(collectionuid);
+}
+
+void SessionController::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(data);
+	Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> SessionController::properties(const QString& sessionid) {

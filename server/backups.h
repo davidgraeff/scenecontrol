@@ -27,6 +27,7 @@
 #define PLUGIN_ID "backups"
 #include <shared/abstractplugin.h>
 #include <shared/abstractplugin_services.h>
+#include "shared/pluginservicehelper.h"
 #include <shared/abstractserver.h>
 
 class Backups: public QObject, public AbstractPlugin, public AbstractPlugin_services
@@ -39,7 +40,8 @@ public:
     virtual void clear();
     virtual void initialize();
     virtual bool condition(const QVariantMap& data, const QString& sessionid);
-    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
     virtual void execute(const QVariantMap& data, const QString& sessionid);
     virtual QList<QVariantMap> properties(const QString& sessionid);
 	

@@ -31,8 +31,9 @@ public:
     /**
      * Plugin event triggered
      * \param event_id unqiue id (guid) of the triggered event
+	 * \param destination_collectionuid only send this event trigger to the collection with this uid. Event trigger will be discarded if empty!
      */
-    virtual void event_triggered(const QString& event_id, const char* pluginid = PLUGIN_ID) = 0;
+    virtual void event_triggered(const QString& event_id, const QString& destination_collectionuid, const char* pluginid = PLUGIN_ID) = 0;
     /**
      * A plugin state/property has changed
      * \param data values of the property with special entry id (unqiue identifier within current plugin properties)

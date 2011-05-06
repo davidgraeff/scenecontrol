@@ -34,14 +34,22 @@ QList< QVariantMap > Backups::properties(const QString& sessionid) {
 
 bool Backups::condition(const QVariantMap& data, const QString& sessionid)  {
     Q_UNUSED(data);
+	Q_UNUSED(sessionid);
 	return false;
 }
 
-void Backups::event_changed(const QVariantMap& data, const QString& sessionid)  {
+void Backups::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED(data);
+	Q_UNUSED(collectionuid);
+}
+
+void Backups::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(data);
+	Q_UNUSED(collectionuid);
 }
 
 void Backups::execute(const QVariantMap& data, const QString& sessionid)  {
+	Q_UNUSED(sessionid);
     if (ServiceID::isId(data,"backup_create")) {
 		create(DATA("name"));
 	} else if (ServiceID::isId(data,"backup_restore")) {

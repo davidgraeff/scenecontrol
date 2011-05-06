@@ -23,6 +23,7 @@
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
 #include "shared/pluginsettingshelper.h" 
+#include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 #include <QSet>
 #include <QTimer>
@@ -36,7 +37,7 @@ class ManagedDeviceList;
 class ManagedDevice;
 
 struct EventKey {
-    QSet<QString> uids;
+    QMap<QString, QString> ServiceUidToCollectionUid;
     bool repeat;
 };
 
@@ -60,7 +61,7 @@ public:
     void setDevice(ManagedDevice* device);
 	void disconnectDevice();
     void unregisterKey(QString uid);
-    void registerKey(QString uid, QString key, bool repeat);
+    void registerKey( QString uid, QString collectionuid, QString key, bool repeat);
 	ManagedDevice* device();
 private Q_SLOTS:
     void eventData();
@@ -84,11 +85,13 @@ public:
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data, const QString& sessionid);
     virtual bool condition(const QVariantMap& data, const QString& sessionid) ;
-    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
 private:
     ManagedDeviceList* m_devicelist;
     QMap<QString, InputDevice*> m_devices;
 	QMap<uint, QString> m_keymapping;
+	EventMap<QString> m_events;
 
     static int m_repeat;
     static int m_repeatInit;

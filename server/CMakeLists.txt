@@ -30,6 +30,7 @@ IF (BUILD_SERVER)
 
 	file(GLOB SRCS_H *.h)
 	file(GLOB SRCS *.cpp)
+
 	LIST(APPEND SRCS boolstuff/BoolExprParser.cpp)
 
 	OPTION(BUILD_SERVER_WITH_EXTERNAL "Build server with http server for client support" ON)
@@ -47,7 +48,7 @@ IF (BUILD_SERVER)
 	QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${SRCS_H})
 	#QT4_ADD_RESOURCES(RoomControlServer_RC ../res.qrc)
 
-	add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} ${Shared_SRCS})
+	add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} "${SHAREDDIR}/pluginsettingshelper.cpp" "${SHAREDDIR}/pluginsessionhelper.cpp" "${SHAREDDIR}/pluginservicehelper.cpp")
 
 	target_link_libraries(${PROJECT_NAME}
 	${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}

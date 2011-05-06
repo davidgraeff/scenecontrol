@@ -71,6 +71,7 @@ void plugin::writeToDevice() {
 }
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+	Q_UNUSED(sessionid);
     if ( !m_serial ) return;
     if ( ServiceID::isId(data, "projector_sanyo_power" ) ) {
         if ( BOOLDATA ( "power" ) )
@@ -97,11 +98,18 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     Q_UNUSED ( data );
+	Q_UNUSED(sessionid);
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED ( data );
+	Q_UNUSED(collectionuid);
+}
+
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(data);
+	Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {

@@ -30,13 +30,13 @@
 #define PLUGIN_ID "servicecontroller"
 #include <shared/abstractplugin.h>
 #include <shared/abstractplugin_services.h>
+#include "shared/pluginservicehelper.h"
 #include <shared/abstractplugin_otherproperties.h>
 #include <shared/abstractplugin_settings.h>
 #include <shared/abstractserver.h>
 
 class PluginController;
-class ServiceController: public QObject, public AbstractServer, public AbstractPlugin, public AbstractPlugin_services
-{
+class ServiceController: public QObject, public AbstractServer, public AbstractPlugin, public AbstractPlugin_services {
     Q_OBJECT
     PLUGIN_MACRO
 public:
@@ -47,21 +47,30 @@ public:
 
     ServiceController ();
     virtual ~ServiceController();
-    void setPluginController(PluginController* pc);
+    void setPluginController ( PluginController* pc );
 
     /**
      * Remove services from m_valid_services that are using the plugin referenced by pluginid.
      */
-    void removeServicesUsingPlugin(const QString& pluginid);
+    void removeServicesUsingPlugin ( const QString& pluginid );
+    /**
+     * Check collection (given by data) for not existing services and remove those services.
+     * \return return true if services were removed
+     */
+    bool removedNotExistingServicesFromCollection ( const QVariantMap& data, bool withWarning );
+	/**
+	 * Check for services not referrenced in collections
+	 */
+    void removeUnusedServices();
 
     /**
      * Return service with uid
      */
-    ServiceStruct* service(const QString& uid);
+    ServiceStruct* service ( const QString& uid );
 
     const QMap<QString, ServiceStruct*> &valid_services() const;
 
-    void load(bool service_dir_watcher);
+    void load ( bool service_dir_watcher );
 private:
     PluginController* m_plugincontroller;
     QFileSystemWatcher m_dirwatcher;
@@ -69,34 +78,35 @@ private:
     QMap<QString, ServiceStruct*> m_valid_services; // uid -> data+plugin
 
     // services
-    QString serviceFilename(const QString& id, const QString& uid);
-    void saveToDisk(const QVariantMap& data );
+    QString serviceFilename ( const QString& id, const QString& uid );
+    void saveToDisk ( const QVariantMap& data );
     /**
      * Only validated services are propagated to the respective plugin
      * for execution. In m_valid_services are only validated services.
      */
-    bool validateService(const QVariantMap& data );
+    bool validateService ( const QVariantMap& data );
     QString generateUniqueID();
 
     // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;
 
     /////////////// server interface ///////////////
-    virtual void event_triggered(const QString& event_id, const char* pluginid = "");
-    virtual void execute_action(const QVariantMap& data, const char* pluginid = "");
-    virtual void property_changed(const QVariantMap& data, const QString& sessionid = QString(), const char* pluginid = "");
-    virtual void register_listener(const QString& unqiue_property_id, const char* pluginid = "");
-    virtual void unregister_all_listeners(const char* pluginid = "");
-    virtual void unregister_listener(const QString& unqiue_property_id, const char* pluginid = "");
+    virtual void event_triggered ( const QString& event_id, const QString& destination_collectionuid, const char* pluginid = "" );
+    virtual void execute_action ( const QVariantMap& data, const char* pluginid = "" );
+    virtual void property_changed ( const QVariantMap& data, const QString& sessionid = QString(), const char* pluginid = "" );
+    virtual void register_listener ( const QString& unqiue_property_id, const char* pluginid = "" );
+    virtual void unregister_all_listeners ( const char* pluginid = "" );
+    virtual void unregister_listener ( const QString& unqiue_property_id, const char* pluginid = "" );
 
-	/////////////// AbstractPlugin, AbstractPlugin_services ///////////////
+    /////////////// AbstractPlugin, AbstractPlugin_services ///////////////
     virtual void clear();
     virtual void initialize();
-    virtual bool condition(const QVariantMap& data, const QString& sessionid);
-    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
-    virtual void execute(const QVariantMap& data, const QString& sessionid);
-    virtual QList<QVariantMap> properties(const QString& sessionid);
-	QMap<int, QSet<QString> > m_state_events; //state->set of uids
+    virtual bool condition ( const QVariantMap& data, const QString& sessionid );
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
+    virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
+    virtual void execute ( const QVariantMap& data, const QString& sessionid );
+    virtual QList<QVariantMap> properties ( const QString& sessionid );
+    EventMap<int> m_state_events; //state->set of uids
 public Q_SLOTS:
     /**
      * Validates data to plugin description xml.
@@ -106,35 +116,36 @@ public Q_SLOTS:
      * \param service data
      * \param sessionid sessionid that caused this change or empty if not triggered by external sources like network
      */
-    void changeService(const QVariantMap& data, const QString& sessionid);
+    void changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading = false );
 
     /**
      * Remove service from m_valid_services and from disk and propagate that through the dataSync signal
      * \param uid unique service id
      */
-    void removeService(const QString& uid);
+    void removeService ( const QString& uid );
 
     /**
      * Execute action described by data (delegate to plugin).
      * Precondition: Data is checked
      */
-    void executeAction(const QVariantMap& data, const QString& sessionid);
+    void executeAction ( const QVariantMap& data, const QString& sessionid );
     /**
      * Execute action in m_services with given uid immediately.
      */
-    void executeActionByUID(const QString& uid, const QString& sessionid);
-    void directoryChanged(QString file, bool loading = false);
+    void executeActionByUID ( const QString& uid, const QString& sessionid );
+    void directoryChanged ( QString file, bool loading = false );
 
     /**
      * Session manager: A valid session started. Send all plugin infos via dataSync.
      */
-    void sessionBegin(const QString& sessionid);
-	void sessionFinished(QString sessionid, bool timeout);
+    void sessionBegin ( const QString& sessionid );
+    void sessionFinished ( QString sessionid, bool timeout );
+
 Q_SIGNALS:
     /**
      * Emitted after a service has changed
      */
-    void dataSync(const QVariantMap& data, const QString& sessiondid = QString());
+    void dataSync ( const QVariantMap& data, const QString& sessiondid = QString() );
     /**
      * Emitted after all services have been loaded from disk.
      */
@@ -142,5 +153,5 @@ Q_SIGNALS:
     /**
      * Event triggered
      */
-    void eventTriggered(const QString& event_id);
+    void eventTriggered ( const QString& event_id, const QString& destination_collectionuid );
 };

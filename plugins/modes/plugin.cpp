@@ -23,7 +23,7 @@
 
 Q_EXPORT_PLUGIN2(libexecute, plugin)
 
-plugin::plugin() {
+plugin::plugin() : m_mode_events(QLatin1String("mode")) {
 }
 
 plugin::~plugin() {
@@ -39,6 +39,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 }
 
 void plugin::execute(const QVariantMap& data, const QString& sessionid) {
+	Q_UNUSED(sessionid);
     if (ServiceID::isId(data,"changemode")) {
         m_mode = DATA("mode");
         modeChanged(m_mode);
@@ -46,26 +47,22 @@ void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 }
 
 bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
+	Q_UNUSED(sessionid);
     if (ServiceID::isId(data,"modecondition")) {
         return (m_mode == DATA("mode"));
     }
     return false;
 }
 
-void plugin::event_changed(const QVariantMap& data, const QString& sessionid) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(collectionuid);
     if (ServiceID::isId(data,"modeevent")) {
-        // entfernen
-        const QString uid = ServiceType::uniqueID(data);
-        QMutableMapIterator<QString, QSet<QString> > it(m_mode_events);
-        while (it.hasNext()) {
-            it.next();
-            it.value().remove(uid);
-            if (it.value().isEmpty())
-                it.remove();
-        }
-        // hinzufügen
-        m_mode_events[DATA("mode")].insert(uid);
+        m_mode_events.add(data, collectionuid);
     }
+}
+
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	m_mode_events.remove(data, collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
@@ -84,7 +81,5 @@ void plugin::modeChanged(const QString& mode) {
     sc.setData("mode", mode);
     m_server->property_changed(sc.getData());
 
-    foreach (QString uid, m_mode_events.value(mode)) {
-        m_server->event_triggered(uid);
-    }
+	m_mode_events.triggerEvent(mode, m_server);
 }

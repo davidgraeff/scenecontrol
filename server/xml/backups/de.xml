@@ -9,8 +9,8 @@
       <name><titel>Name</titel></name>
   </backup_create>
   <backup_restore>
-      <titel>Backup erstellen</titel>
-      <description>Erstellt ein Backup</description>
+      <titel>Backup wiederherstellen</titel>
+      <description>Stellt ein Backup wieder her</description>
       <backupid><titel>Backupid</titel></backupid>
   </backup_restore>
   <backup_remove>

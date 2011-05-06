@@ -30,6 +30,7 @@
 #undef PLUGIN_ID
 #define PLUGIN_ID "sessioncontroller"
 #include <shared/abstractplugin_services.h>
+#include "shared/pluginservicehelper.h"
 #include <shared/abstractplugin.h>
 
 class AuthThread;
@@ -83,7 +84,8 @@ public:
 	
     // plugin interface
     virtual bool condition(const QVariantMap& data, const QString& sessionid);
-    virtual void event_changed(const QVariantMap& data, const QString& sessionid);
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
     virtual void execute(const QVariantMap& data, const QString& sessionid);
     QList< QVariantMap > properties(const QString& sessionid);
 

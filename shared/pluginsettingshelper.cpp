@@ -3,6 +3,9 @@
 #include <QString>
 #include <QDebug>
 #include <cstdlib> //getenv
+#ifndef PLUGIN_ID 
+	#define PLUGIN_ID "fake_from_pluginsettingshelper.cpp"
+#endif
 #include "abstractserver.h"
 
 void PluginSettingsHelper::setSetting ( const QString& name, const QVariant& value, bool init ) {

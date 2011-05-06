@@ -23,6 +23,7 @@
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver.h"
 #include "shared/pluginsettingshelper.h" 
+#include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 #include <QSet>
 
@@ -42,10 +43,11 @@ public:
     virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
     virtual void execute ( const QVariantMap& data, const QString& sessionid );
     virtual bool condition ( const QVariantMap& data, const QString& sessionid ) ;
-    virtual void event_changed ( const QVariantMap& data, const QString& sessionid );
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
 private:
     CardThread* m_thread;
-	QMap<QString, QSet<QString> > m_card_events; //atr->set of uids
+	EventMap<QString> m_card_events; //atr->set of uids
 
 private Q_SLOTS:
     void slotcardDetected ( const QString& atr, int state );

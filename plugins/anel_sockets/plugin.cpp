@@ -71,9 +71,14 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     return false;
 }
 
-void plugin::event_changed ( const QVariantMap& data, const QString& sessionid ) {
-	Q_UNUSED ( sessionid );
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED ( collectionuid );
     Q_UNUSED ( data );
+}
+
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(data);
+	Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
