@@ -42,7 +42,7 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 int plugin::m_repeat = 0;
 int plugin::m_repeatInit = 0;
 
-plugin::plugin() : m_events ( QLatin1String ( "udid" ) ) {
+plugin::plugin() : m_events ( QLatin1String ( "inputdevice" ) ) {
     m_devicelist = new ManagedDeviceList();
     connect ( m_devicelist,SIGNAL ( deviceAdded ( ManagedDevice* ) ),SLOT ( deviceAdded ( ManagedDevice* ) ) );
     connect ( m_devicelist,SIGNAL ( deviceRemoved ( ManagedDevice* ) ),SLOT ( deviceRemoved ( ManagedDevice* ) ) );
@@ -50,6 +50,7 @@ plugin::plugin() : m_events ( QLatin1String ( "udid" ) ) {
 }
 
 plugin::~plugin() {
+	qDeleteAll(m_devices);
     delete m_devicelist;
 }
 
@@ -90,15 +91,14 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
     Q_UNUSED ( collectionuid );
     if ( ServiceID::isId ( data, "inputevent" ) ) {
         m_events.add ( data, collectionuid );
-
-        InputDevice* inputdevice = m_devices.value ( DATA ( "udid" ) );
+        InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
         if ( inputdevice ) inputdevice->registerKey ( ServiceType::uniqueID ( data ), collectionuid, DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
     }
 }
 
 void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
     m_events.remove ( data, collectionuid );
-    InputDevice* inputdevice = m_devices.value ( DATA ( "udid" ) );
+    InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
     if ( inputdevice ) inputdevice->unregisterKey ( ServiceType::uniqueID ( data ));
 }
 
@@ -155,6 +155,8 @@ InputDevice::InputDevice ( plugin* plugin ) : m_plugin ( plugin ), m_socketnotif
 }
 
 InputDevice::~InputDevice() {
+	qDeleteAll(m_keyToUids);
+	m_keyToUids.clear();
     disconnectDevice();
 }
 
@@ -169,11 +171,21 @@ bool InputDevice::isClosable() {
 
 void InputDevice::connectSession ( const QString& sessionid ) {
     m_sessionids.insert ( sessionid );
-    setDevice ( m_device );
+    if ( fd ) {
+        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "input.device.selected" );
+        sc.setData ( "udid", m_device->udid );
+        sc.setData ( "listen", true );
+        sc.setData ( "errormsg", QString() );
+        // Propagate to all interested clients
+        foreach ( QString sessionid, m_sessionids ) {
+            m_plugin->m_server->property_changed ( sc.getData(), sessionid );
+        }
+        return;
+    }
 }
 void InputDevice::disconnectSession ( const QString& sessionid ) {
     m_sessionids.remove ( sessionid );
-    if ( m_sessionids.isEmpty() ) {
+    if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() ) {
         disconnectDevice();
     }
 }
@@ -185,23 +197,8 @@ void InputDevice::disconnectDevice() {
     m_socketnotifier = 0;
 }
 
-void InputDevice::setDevice ( ManagedDevice* device ) {
-    if ( device==m_device && fd ) {
-        qDebug() << "setdevice no open";
-        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "input.device.selected" );
-        sc.setData ( "udid", m_device->udid );
-        sc.setData ( "listen", true );
-        sc.setData ( "errormsg", QString() );
-        // Propagate to all interested clients
-        foreach ( QString sessionid, m_sessionids ) {
-            m_plugin->m_server->property_changed ( sc.getData(), sessionid );
-        }
-        return;
-    }
-
-    m_device = device;
-    disconnectDevice();
-    if ( device ) {
+void InputDevice::connectDevice() {
+    if ( m_device ) {
         // only reconnect to new device if a client is actually listening or events are registered
         if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() ) return;
 
@@ -232,6 +229,12 @@ void InputDevice::setDevice ( ManagedDevice* device ) {
     }
 }
 
+void InputDevice::setDevice ( ManagedDevice* device ) {
+    m_device = device;
+    disconnectDevice();
+	connectDevice();
+}
+
 void InputDevice::unregisterKey ( QString uid ) {
     QMutableMapIterator<QString, EventKey* > it ( m_keyToUids );
     while ( it.hasNext() ) {
@@ -240,10 +243,17 @@ void InputDevice::unregisterKey ( QString uid ) {
         if ( it.value()->ServiceUidToCollectionUid.isEmpty() )
             it.remove();
     }
+    // disconnect if no one is listening anymore
+    if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() )
+		disconnectDevice();
 }
 void InputDevice::registerKey ( QString uid, QString collectionuid, QString key, bool repeat ) {
-    m_keyToUids[key]->ServiceUidToCollectionUid.insertMulti ( uid, collectionuid );
-    m_keyToUids[key]->repeat = repeat;
+	EventKey* eventkey = m_keyToUids[key];
+	if (!eventkey) eventkey = new EventKey();
+    eventkey->ServiceUidToCollectionUid.insertMulti ( uid, collectionuid );
+    eventkey->repeat = repeat;
+	m_keyToUids[key] = eventkey;
+	connectDevice();
 }
 void InputDevice::eventData() {
     static char readbuff[sizeof ( struct input_event ) ] = {0};
@@ -261,7 +271,7 @@ void InputDevice::eventData() {
         m_repeattimer.stop();
         if ( ( ev->value == KEY_PRESS ) || ( ev->value == KEY_KEEPING_PRESSED ) ) {
             const QString& kernelkeyname = m_plugin->m_keymapping.value ( ev->code );
-            qDebug() << "key event" << m_device->devPath << kernelkeyname;
+            //qDebug() << "key event" << m_device->devPath << kernelkeyname;
             // properties
             {
                 // last key property. Will be propagated to interested clients only.

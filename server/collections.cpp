@@ -17,6 +17,39 @@
 
 */
 
+// 	const QString conditions = DATA("conditions");
+// 	if (conditions.size()) {
+// 		// convert condition string to parsed binary decision diagram
+// 		boolstuff::BoolExprParser parser;
+// 		try {
+// 			instance->conditionids = parser.parse(conditions.toStdString());
+// 		} catch (boolstuff::BoolExprParser::Error e) {
+// 			qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
+// 		}
+// 	}
+
+//             std::set<std::string> positives, negatives;
+//             instance->conditionids->getTreeVariables(positives, negatives);
+//             bool ok = true;
+//             foreach(std::string uid, positives) {
+//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
+//                 if (!s) continue;
+//                 if (!s->plugin->condition(s->data, QString())) {
+//                     ok = false;
+//                     break;
+//                 }
+//             }
+//
+//             if (!ok) continue;
+//             foreach(std::string uid, negatives) {
+//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
+//                 if (!s) continue;
+//                 if (s->plugin->condition(s->data, QString())) {
+//                     ok = false;
+//                     break;
+//                 }
+//             }
+
 #include "collections.h"
 #include <QDebug>
 #include <QCoreApplication>
@@ -76,26 +109,26 @@ void Collections::addCollection ( const QVariantMap& data ) {
         return;
     }
 
-    CollectionInstance* instance = new CollectionInstance ( m_servicecontroller, data );
+    CollectionInstance* instance = new CollectionInstance ( m_servicecontroller );
+	instance->setData(data);
     m_collections.insert ( ServiceType::uniqueID ( data ), instance );
-// 	const QString conditions = DATA("conditions");
-// 	if (conditions.size()) {
-// 		// convert condition string to parsed binary decision diagram
-// 		boolstuff::BoolExprParser parser;
-// 		try {
-// 			instance->conditionids = parser.parse(conditions.toStdString());
-// 		} catch (boolstuff::BoolExprParser::Error e) {
-// 			qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
-// 		}
-// 	}
+
     connect ( instance,SIGNAL ( executeService ( QString, QString ) ),SIGNAL ( instanceExecute ( QString, QString ) ) );
 }
 
 void Collections::dataSync ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED ( sessionid );
-    if ( !ServiceType::isCollection ( data ) ) return;
-    delete m_collections.take ( ServiceType::uniqueID ( data ) );
-    addCollection ( data );
+	if ( ServiceType::isRemoveCmd ( data ) ) {
+		delete m_collections.take ( ServiceType::uniqueID ( data ) );
+	} else if ( !ServiceType::isCollection ( data ) )
+		return;
+	
+	CollectionInstance*instance = m_collections.value ( ServiceType::uniqueID ( data ) );
+	if (instance) {
+		instance->setData(data);
+	} else {
+		addCollection ( data );
+	}
 }
 
 void Collections::dataReady() {
@@ -126,27 +159,6 @@ void Collections::eventTriggered ( const QString& uid, const QString& destinatio
             break;
         }
     }
-//             std::set<std::string> positives, negatives;
-//             instance->conditionids->getTreeVariables(positives, negatives);
-//             bool ok = true;
-//             foreach(std::string uid, positives) {
-//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
-//                 if (!s) continue;
-//                 if (!s->plugin->condition(s->data, QString())) {
-//                     ok = false;
-//                     break;
-//                 }
-//             }
-//
-//             if (!ok) continue;
-//             foreach(std::string uid, negatives) {
-//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
-//                 if (!s) continue;
-//                 if (s->plugin->condition(s->data, QString())) {
-//                     ok = false;
-//                     break;
-//                 }
-//             }
 
     if ( !ok ) return;
 
@@ -166,24 +178,9 @@ void Collections::convertVariantToIntStringMap ( const QVariantMap& source, QMap
         destination.insertMulti ( i.key().toInt(), i.value().toString() );
 }
 
-CollectionInstance::CollectionInstance ( ServiceController* sc, const QVariantMap& data ) : conditionlinks ( 0 ), m_servicecontroller ( sc ) {
+CollectionInstance::CollectionInstance ( ServiceController* sc) : conditionlinks ( 0 ), m_servicecontroller ( sc ) {
     m_executionTimer.setSingleShot ( true );
     connect ( &m_executionTimer, SIGNAL ( timeout() ),SLOT ( executiontimeout() ) );
-	
-    Collections::convertVariantToStringSet ( LIST ( "actions" ), actionids );
-    Collections::convertVariantToStringSet ( LIST ( "conditions" ), conditionids );
-    Collections::convertVariantToStringSet ( LIST ( "events" ), eventids );
-    enabled = BOOLDATA ( "enabled" );
-	collectionuid = ServiceType::uniqueID ( data );
-	
-	foreach (QString eventuid, eventids) {
-		ServiceController::ServiceStruct* service = m_servicecontroller->service(eventuid);
-		if (!service){
-			qWarning() << "Event"<<eventuid<<"not found for collection"<<collectionuid;
-			continue;
-		}
-		service->plugin->register_event(service->data, collectionuid);
-	}
 }
 
 CollectionInstance::~CollectionInstance() {
@@ -196,6 +193,26 @@ CollectionInstance::~CollectionInstance() {
 		service->plugin->unregister_event(service->data, collectionuid);
 	}
     delete conditionlinks;
+}
+
+void CollectionInstance::setData(const QVariantMap& data){
+    Collections::convertVariantToStringSet ( LIST ( "actions" ), actionids );
+    Collections::convertVariantToStringSet ( LIST ( "conditions" ), conditionids );
+	QSet<QString> oldevents = eventids;
+    Collections::convertVariantToStringSet ( LIST ( "events" ), eventids );
+    enabled = BOOLDATA ( "enabled" );
+	collectionuid = ServiceType::uniqueID ( data );
+	
+	if (eventids != oldevents) {
+		foreach (QString eventuid, eventids) {
+			ServiceController::ServiceStruct* service = m_servicecontroller->service(eventuid);
+			if (!service){
+				qWarning() << "Event"<<eventuid<<"not found for collection"<<collectionuid;
+				continue;
+			}
+			service->plugin->register_event(service->data, collectionuid);
+		}
+	}
 }
 
 void CollectionInstance::startExecution() {
@@ -232,4 +249,5 @@ void CollectionInstance::executiontimeout() {
 void CollectionInstance::stop() {
     m_executionTimer.stop();
 }
+
 

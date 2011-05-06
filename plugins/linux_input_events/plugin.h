@@ -59,6 +59,7 @@ public:
     void connectSession(const QString& sessionid);
     void disconnectSession(const QString& sessionid);
     void setDevice(ManagedDevice* device);
+	void connectDevice();
 	void disconnectDevice();
     void unregisterKey(QString uid);
     void registerKey( QString uid, QString collectionuid, QString key, bool repeat);

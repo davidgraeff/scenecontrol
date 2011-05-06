@@ -177,6 +177,7 @@ void EventMap<T>::add ( const QVariantMap& data, const QString& collectionuid ) 
 
 template <class T>
 void EventMap<T>::remove ( const QVariantMap& data, const QString& collectionuid ) {
+	Q_UNUSED(collectionuid);
     T key = data.value ( m_fieldname ).value<T>();
     QMap<QString, QVariantMap > datas = QMap<T, QMap<QString, QVariantMap > >::take ( key );
     datas.remove ( ServiceType::uniqueID ( data ) );

@@ -35,8 +35,9 @@ class ServiceController;
 class CollectionInstance : public QObject {
     Q_OBJECT
 public:
-    CollectionInstance( ServiceController* sc, const QVariantMap& data);
+    CollectionInstance( ServiceController* sc);
     virtual ~CollectionInstance();
+	void setData(const QVariantMap& data);
     void startExecution() ;
     void stop();
 

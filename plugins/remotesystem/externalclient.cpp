@@ -21,7 +21,6 @@
 #include <QSettings>
 #include <limits>
 #include <stdio.h>
-#include <qprocess.h>
 #include <shared/abstractplugin.h>
 
 ExternalClient::ExternalClient(AbstractPlugin* plugin, const QString& host, int port) : m_plugin(plugin), m_connected(false)

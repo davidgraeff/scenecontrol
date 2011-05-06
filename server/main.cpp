@@ -19,7 +19,7 @@
 
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <QCoreApplication>
-#include <qprocess.h>
+#include <QProcess>
 #include "servicecontroller.h"
 #include "externalcontrol/httpserver.h"
 #include <QSettings>
@@ -170,7 +170,13 @@ int main(int argc, char *argv[])
             qDebug() << "Shutdown: Start another instance not allowed!";
         } else {
             qDebug() << "Shutdown: Start another instance";
-            QProcess::startDetached(QString::fromAscii(argv[0]));
+			int rtry = 0;
+			for (int i=0;i<argc;++i) {
+				QString arg = QString::fromAscii(argv[i]);
+				if (arg.startsWith(QLatin1String("--restart-try="))) rtry = arg.mid(strlen("--restart-try=")).toInt();
+			}
+			QString cmd = QString::fromAscii(argv[0]) + QLatin1String(" --restart-try=") + QString::number(rtry);
+            QProcess::startDetached(cmd);
         }
     }
 

@@ -1,6 +1,5 @@
 #include "servicecontroller.h"
 #include <QCoreApplication>
-#include <qprocess.h>
 #include <QSettings>
 #include <QDateTime>
 #include <QPluginLoader>
@@ -38,7 +37,7 @@ void ServiceController::load ( bool service_dir_watcher ) {
         m_dirwatcher.addPath ( serviceDir().absolutePath() );
     }
 
-	removeUnusedServices();
+	removeUnusedServices(true);
     emit dataReady();
 
     // stats
@@ -88,13 +87,21 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         return;
     }
 
+    ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
+	
     if ( ServiceType::isRemoveCmd ( data ) ) {
+		bool isCollection = service ? ServiceType::isCollection ( service->data ) : false;
         removeService ( ServiceType::uniqueID ( data ) );
-        QList<QVariantMap> collections;
-        foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
-            if ( !ServiceType::isCollection ( service->data ) ) continue;
-            removedNotExistingServicesFromCollection(service->data, false);
-        }
+		service = 0;
+		if ( isCollection ) {
+			removeUnusedServices(false);
+		} else {
+			QList<QVariantMap> collections;
+			foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
+				if ( !ServiceType::isCollection ( service->data ) ) continue;
+				removedNotExistingServicesFromCollection(service->data, false);
+			}
+		}
         return;
     }
 
@@ -105,8 +112,8 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         changed = true;
     }
 
+    QString toCollection = ServiceType::toCollection ( data );
 
-    ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
     if ( !service ) service = new ServiceStruct();
 
     service->data = data;
@@ -124,7 +131,6 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     if ( !loading )
         emit dataSync ( data );
 
-    QString toCollection = ServiceType::toCollection ( data );
     if ( toCollection.size() ) {
         ServiceController::ServiceStruct* collection = this->service ( toCollection );
         if ( !collection ) return;
@@ -278,6 +284,8 @@ bool ServiceController::removedNotExistingServicesFromCollection ( const QVarian
         }
     }
     if ( sum != actionids.size() + conditionids.size() + eventids.size() ) {
+		if (withWarning)
+			qWarning()<<"Removed not existing services from collection"<<DATA("name");
         ServiceCreation newcollection ( data );
         newcollection.setData ( "actions", actionids );
         newcollection.setData ( "conditions", conditionids );
@@ -288,7 +296,7 @@ bool ServiceController::removedNotExistingServicesFromCollection ( const QVarian
     return false;
 }
 
-void ServiceController::removeUnusedServices() {
+void ServiceController::removeUnusedServices(bool warning) {
     QList<QVariantMap> collections;
     foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
         if ( !ServiceType::isCollection ( service->data ) ) continue;
@@ -298,18 +306,16 @@ void ServiceController::removeUnusedServices() {
     foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
         if ( ServiceType::isCollection ( service->data ) ) continue;
         const QString uid = ServiceType::uniqueID ( service->data );
-
-        bool contained = true;
+        bool contained = false;
         for ( int i=0;i<collections.size();++i ) {
-            if ( collections[i].value ( QLatin1String ( "actions" ) ).toList().contains ( uid ) ||
-                    collections[i].value ( QLatin1String ( "events" ) ).toList().contains ( uid ) ||
-                    collections[i].value ( QLatin1String ( "conditions" ) ).toList().contains ( uid ) ) {
+            if ( collections[i].value ( ServiceType::type(service->data) + QLatin1String ( "s" ) ).toList().contains ( uid ) ) {
                 contained = true;
                 break;
             }
         }
-        if ( !contained ) {
-            qWarning() << "Service consistency check detected not referenced service:" << uid;
+
+		if ( !contained ) {
+            if (warning) qWarning() << "Service consistency check detected not referenced service:" << uid << ServiceID::gid(service->data);
             removeService ( uid );
         }
     }
@@ -427,38 +433,6 @@ void ServiceController::removeService ( const QString& uid ) {
         return;
     }
 
-    // collection: remove all childs
-    if ( ServiceType::isCollection ( data ) ) {
-        QSet<QString> uids;
-        QVariantList actions = LIST ( "actions" );
-        for ( QVariantList::const_iterator i=actions.begin();i!=actions.end();++i ) {
-            uids.insert ( i->toString() );
-        }
-        QVariantList events = LIST ( "events" );
-        for ( QVariantList::const_iterator i=events.begin();i!=events.end();++i ) {
-            uids.insert ( i->toString() );
-        }
-        QVariantList conditions = LIST ( "conditions" );
-        for ( QVariantList::const_iterator i=conditions.begin();i!=conditions.end();++i ) {
-            uids.insert ( i->toString() );
-        }
-//         boolstuff::BoolExprParser parser;
-//         try {
-//             boolstuff::BoolExpr<std::string>* conditions = parser.parse ( DATA ( "conditions" ).toStdString() );
-//             std::set<std::string> vars;
-//             conditions->getTreeVariables ( vars, vars );
-//             for ( std::set<std::string>::const_iterator i=vars.begin();i!=vars.end();++i ) {
-//                 uids.insert ( QString::fromStdString ( *i ) );
-//             }
-//         } catch ( boolstuff::BoolExprParser::Error ) {
-//         }
-
-
-        for ( QSet<QString>::const_iterator uid=uids.begin();uid!=uids.end();++uid ) {
-            removeService ( *uid );
-        }
-    }
-
     ServiceCreation sc = ServiceCreation::createRemoveByUidCmd ( uid );
     emit dataSync ( sc.getData() );
 }
@@ -477,7 +451,6 @@ void ServiceController::executeAction ( const QVariantMap& data, const QString& 
 void ServiceController::executeActionByUID ( const QString& uid, const QString& sessionid ) {
     ServiceStruct* service = m_valid_services.value ( uid );
     if ( !service || !service->plugin ) return;
-    qDebug() << "execute" << service->data;
     service->plugin->execute ( service->data, sessionid );
 }
 

@@ -23,7 +23,6 @@
 #include <QUuid>
 #include <QTimer>
 
-#include <qprocess.h>
 #include <QtNetwork/QTcpSocket>
 #include <QtNetwork/QHostAddress>
 #include <QUrl>

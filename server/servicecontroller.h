@@ -61,7 +61,7 @@ public:
 	/**
 	 * Check for services not referrenced in collections
 	 */
-    void removeUnusedServices();
+    void removeUnusedServices(bool warning);
 
     /**
      * Return service with uid
