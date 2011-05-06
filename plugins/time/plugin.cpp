@@ -96,7 +96,10 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
         s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         l.append(s.getData());
-    }
+    } else {
+		ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "nextalarm");
+		 l.append(s.getData());
+	}
     return l;
 }
 
@@ -176,7 +179,10 @@ void plugin::calculate_next_events() {
         s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         m_server->property_changed(s.getData());
-    }
+    } else {
+		ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "nextalarm");
+		m_server->property_changed(s.getData());
+	}
 
     if ( min_next_time.size() > 0 ) {
         // add entry to next events

@@ -120,6 +120,7 @@ void Collections::dataSync ( const QVariantMap& data, const QString& sessionid )
     Q_UNUSED ( sessionid );
     if ( ServiceType::isRemoveCmd ( data ) ) {
         delete m_collections.take ( ServiceType::uniqueID ( data ) );
+		return;
     } else if ( ServiceType::isEvent ( data ) ) {
         const QString eventuid = ServiceType::uniqueID(data);
         QMap<QString, CollectionInstance*>::iterator i = m_collections.begin();
@@ -129,6 +130,7 @@ void Collections::dataSync ( const QVariantMap& data, const QString& sessionid )
                 i.value()->registerEvent(eventit);
             }
         }
+        return;
     } else if ( !ServiceType::isCollection ( data ) )
         return;
 
