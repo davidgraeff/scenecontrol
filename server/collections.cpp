@@ -55,6 +55,7 @@
 #include <QCoreApplication>
 #include "servicecontroller.h"
 #include "boolstuff/BoolExprParser.h"
+#include "plugincontroller.h"
 
 Collections::Collections() : m_servicecontroller ( 0 ) {
 }
@@ -94,6 +95,9 @@ void Collections::execute ( const QVariantMap& data, const QString& sessionid ) 
     } else if ( ServiceID::isId ( data,"stopcollection" ) ) {
         CollectionInstance* instance = m_collections.value ( DATA ( "collectionid" ) );
         if ( instance ) instance->stop();
+    } else if ( ServiceID::isId ( data,"clone" ) ) {
+        CollectionInstance* instance = m_collections.value ( DATA ( "collectionid" ) );
+        if ( instance ) instance->clone();
     }
 }
 
@@ -120,17 +124,17 @@ void Collections::dataSync ( const QVariantMap& data, const QString& sessionid )
     Q_UNUSED ( sessionid );
     if ( ServiceType::isRemoveCmd ( data ) ) {
         delete m_collections.take ( ServiceType::uniqueID ( data ) );
-		return;
+        return;
     } else if ( ServiceType::isEvent ( data ) ) {
         const QString eventuid = ServiceType::uniqueID(data);
         QMap<QString, CollectionInstance*>::iterator i = m_collections.begin();
         for (;i!=m_collections.end();++i) {
-			QSet<QString>::iterator eventit = i.value()->eventids.find(eventuid);
+            QSet<QString>::iterator eventit = i.value()->eventids.find(eventuid);
             if (i.value()->eventids.end() != eventit) {
-                i.value()->registerEvent(eventit);
-            }
-        }
-        return;
+                i.value()->reregisterEvents(eventuid);
+             }
+         }
+         return;
     } else if ( !ServiceType::isCollection ( data ) )
         return;
 
@@ -195,13 +199,9 @@ CollectionInstance::CollectionInstance ( ServiceController* sc) : conditionlinks
 }
 
 CollectionInstance::~CollectionInstance() {
-    foreach (QString eventuid, eventids) {
-        ServiceController::ServiceStruct* service = m_servicecontroller->service(eventuid);
-        if (!service) {
-            qWarning() << "(Unregister) Event"<<eventuid<<"not found for collection"<<collectionuid;
-            continue;
-        }
-        service->plugin->unregister_event(service->data, collectionuid);
+    QMap<QString,QVariantMap>::iterator i = m_eventdataCache.begin();
+    for (;i!=m_eventdataCache.end();++i) {
+        unregisterEvent(i.value());
     }
     delete conditionlinks;
 }
@@ -214,12 +214,7 @@ void CollectionInstance::setData(const QVariantMap& data) {
     enabled = BOOLDATA ( "enabled" );
     collectionuid = ServiceType::uniqueID ( data );
 
-    if (eventids != oldevents) {
-		QSet<QString>::iterator i = eventids.begin();
-		for (;i!=eventids.end();++i) {
-            registerEvent(i);
-        }
-    }
+    reregisterEvents();
 }
 
 void CollectionInstance::startExecution() {
@@ -257,13 +252,88 @@ void CollectionInstance::stop() {
     m_executionTimer.stop();
 }
 
-void CollectionInstance::registerEvent(QSet< QString >::iterator index) {
-    ServiceController::ServiceStruct* service = m_servicecontroller->service(*index);
-    if (!service) {
-        qWarning() << "Event"<<*index<<"not found for collection"<<collectionuid;
-        return;
-    }
-    service->plugin->register_event(service->data, collectionuid);
+void CollectionInstance::registerEvent(const QVariantMap& event) {
+    AbstractPlugin_services* plugin = dynamic_cast<AbstractPlugin_services*>(m_servicecontroller->getPluginController()->getPlugin(ServiceID::pluginid(event)));
+    if (!plugin) return;
+    plugin->register_event(event, collectionuid);
 }
 
+void  CollectionInstance::unregisterEvent(const QVariantMap& event) {
+    AbstractPlugin_services* plugin = dynamic_cast<AbstractPlugin_services*>(m_servicecontroller->getPluginController()->getPlugin(ServiceID::pluginid(event)));
+    if (!plugin) return;
+    plugin->unregister_event(event, collectionuid);
+}
 
+void CollectionInstance::reregisterEvents(const QString& eventuid) {
+    QMap<QString, QVariantMap> eventdataCache;
+    if (eventuid.size()) {
+		eventdataCache = m_eventdataCache;
+        ServiceController::ServiceStruct* service = m_servicecontroller->service(eventuid);
+        if (!service) {
+            qWarning() << "Event"<<eventuid<<"not found for collection"<<collectionuid;
+            return;
+        }
+        eventdataCache.insert(ServiceType::uniqueID(service->data), service->data);
+    } else { // new events data cache
+        QSet<QString>::iterator i = eventids.begin();
+        for (;i!=eventids.end();++i) {
+            ServiceController::ServiceStruct* service = m_servicecontroller->service(*i);
+            if (!service) {
+                qWarning() << "Event"<<*i<<"not found for collection"<<collectionuid;
+                return;
+            }
+            eventdataCache.insert(ServiceType::uniqueID(service->data), service->data);
+        }
+    }
+
+    if (eventdataCache == m_eventdataCache) return;
+
+    QMutableMapIterator<QString, QVariantMap> oldit(m_eventdataCache);
+    while (oldit.hasNext()) {
+        oldit.next();
+        QVariantMap data = oldit.value();
+        QString eventuid = ServiceType::uniqueID(data);
+
+        QMap<QString,QVariantMap>::const_iterator i = eventdataCache.find(eventuid);
+        // nicht in neuen events gefunden, nur unregisteren
+        if (i==eventdataCache.end() || i.value() != data) {
+            unregisterEvent(data);
+            oldit.remove();
+        }
+    }
+
+    QMap<QString,QVariantMap>::const_iterator i = eventdataCache.begin();
+    for (;i!=eventdataCache.end();++i) {
+        if (m_eventdataCache.find(ServiceType::uniqueID(i.value())) == m_eventdataCache.end()) {
+            registerEvent(i.value());
+        }
+    }
+    m_eventdataCache = eventdataCache;
+}
+
+void CollectionInstance::clone() {
+    QVariantMap newcollection = m_servicecontroller->cloneService(collectionuid);
+    if (newcollection.isEmpty()) return;
+    newcollection[QLatin1String("name")] = QString(newcollection[QLatin1String("name")].toString() +  QLatin1String(" (copy)"));
+    newcollection[QLatin1String("actions")] = QVariantList();
+    newcollection[QLatin1String("conditions")] = QVariantList();
+    newcollection[QLatin1String("events")] = QVariantList();
+    m_servicecontroller->changeService(newcollection, QString());
+    QString newcollectionuid = ServiceType::uniqueID(newcollection);
+
+    foreach(QString uid, eventids) {
+        QVariantMap newservice = m_servicecontroller->cloneService(uid);
+        ServiceType::setToCollection(newservice, newcollectionuid);
+        m_servicecontroller->changeService(newservice, QString());
+    }
+    foreach(QString uid, actionids) {
+        QVariantMap newservice = m_servicecontroller->cloneService(uid);
+        ServiceType::setToCollection(newservice, newcollectionuid);
+        m_servicecontroller->changeService(newservice, QString());
+    }
+    foreach(QString uid, conditionids) {
+        QVariantMap newservice = m_servicecontroller->cloneService(uid);
+        ServiceType::setToCollection(newservice, newcollectionuid);
+        m_servicecontroller->changeService(newservice, QString());
+    }
+}

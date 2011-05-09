@@ -88,7 +88,6 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 }
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
-    Q_UNUSED ( collectionuid );
     if ( ServiceID::isId ( data, "inputevent" ) ) {
         m_events.add ( data, collectionuid );
         InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );

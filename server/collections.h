@@ -38,15 +38,19 @@ public:
     CollectionInstance( ServiceController* sc);
     virtual ~CollectionInstance();
 	void setData(const QVariantMap& data);
-	void registerEvent(QSet<QString>::iterator index);
+	void registerEvent(const QVariantMap& event);
+	void unregisterEvent(const QVariantMap& event);
+	void reregisterEvents(const QString& eventuid = QString());
     void startExecution() ;
     void stop();
+	void clone();
 
     QSet<QString> eventids;
     QSet<QString> conditionids;
 	QSet<QString> actionids;
     boolstuff::BoolExpr<std::string>* conditionlinks;
     QMap< int, QString > executionids;
+	QMap<QString, QVariantMap> m_eventdataCache;
     bool enabled;
 	QString collectionuid;
 private:

@@ -37,7 +37,7 @@ void ServiceController::load ( bool service_dir_watcher ) {
         m_dirwatcher.addPath ( serviceDir().absolutePath() );
     }
 
-	removeUnusedServices(true);
+    removeUnusedServices(true);
     emit dataReady();
 
     // stats
@@ -88,20 +88,20 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     }
 
     ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
-	
+
     if ( ServiceType::isRemoveCmd ( data ) ) {
-		bool isCollection = service ? ServiceType::isCollection ( service->data ) : false;
+        bool isCollection = service ? ServiceType::isCollection ( service->data ) : false;
         removeService ( ServiceType::uniqueID ( data ) );
-		service = 0;
-		if ( isCollection ) {
-			removeUnusedServices(false);
-		} else {
-			QList<QVariantMap> collections;
-			foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
-				if ( !ServiceType::isCollection ( service->data ) ) continue;
-				removedNotExistingServicesFromCollection(service->data, false);
-			}
-		}
+        service = 0;
+        if ( isCollection ) {
+            removeUnusedServices(false);
+        } else {
+            QList<QVariantMap> collections;
+            foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
+                if ( !ServiceType::isCollection ( service->data ) ) continue;
+                removedNotExistingServicesFromCollection(service->data, false);
+            }
+        }
         return;
     }
 
@@ -112,7 +112,7 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         changed = true;
     }
 
-    QString toCollection = ServiceType::toCollection ( data );
+    QString toCollection = ServiceType::takeToCollection ( data );
 
     if ( !service ) service = new ServiceStruct();
 
@@ -284,8 +284,8 @@ bool ServiceController::removedNotExistingServicesFromCollection ( const QVarian
         }
     }
     if ( sum != actionids.size() + conditionids.size() + eventids.size() ) {
-		if (withWarning)
-			qWarning()<<"Removed not existing services from collection"<<DATA("name");
+        if (withWarning)
+            qWarning()<<"Removed not existing services from collection"<<DATA("name");
         ServiceCreation newcollection ( data );
         newcollection.setData ( "actions", actionids );
         newcollection.setData ( "conditions", conditionids );
@@ -314,7 +314,7 @@ void ServiceController::removeUnusedServices(bool warning) {
             }
         }
 
-		if ( !contained ) {
+        if ( !contained ) {
             if (warning) qWarning() << "Service consistency check detected not referenced service:" << uid << ServiceID::gid(service->data);
             removeService ( uid );
         }
@@ -582,4 +582,16 @@ void ServiceController::clear() {
     }
 
     m_state_events.triggerEvent ( 0, m_server );
+}
+
+PluginController* ServiceController::getPluginController() {
+    return m_plugincontroller;
+}
+
+QVariantMap ServiceController::cloneService(const QString& uid) {
+    ServiceController::ServiceStruct* s = service(uid);
+	if (!s) return QVariantMap();
+    QVariantMap newservice = s->data;
+    ServiceType::setUniqueID(newservice, generateUniqueID());
+	return newservice;
 }

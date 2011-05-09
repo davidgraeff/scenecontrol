@@ -46,18 +46,31 @@ public:
     }
     
     /**
-	 * Reads toCollection property, remove it from data and return it
+	 * Read toCollection property, remove it from data and return it
 	 */
-    static QString toCollection(QVariantMap& data) {
+    static QString takeToCollection(QVariantMap& data) {
         return data.take(QLatin1String("__toCollection")).toString();
     }
     
+    /**
+	 * Write toCollection property
+	 */
+    static void setToCollection(QVariantMap& data, const QString& collectionuid) {
+        data[QLatin1String("__toCollection")] = collectionuid;
+    }
+    
+    /**
+	 * For eventMap
+	 */
     static QVariantMap newDataWithCollectionUid(const QVariantMap& data, const QString& collectionuid) {
 		QVariantMap modifieddata = data;
 		modifieddata[QLatin1String("__collectionuid")] = collectionuid;
         return modifieddata;
     }
     
+    /**
+	 * For eventMap
+	 */
     static QString getCollectionUid(const QVariantMap& data) {
         return data.value(QLatin1String("__collectionuid")).toString();
     }

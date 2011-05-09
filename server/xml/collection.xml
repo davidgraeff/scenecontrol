@@ -7,7 +7,7 @@
 	  <string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
   </action>
   
-  <execute id="copy">
+  <execute id="clone">
 	  <string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
   </execute>
   

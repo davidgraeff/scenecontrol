@@ -67,8 +67,8 @@ public:
      */
     void deregisterPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller);
 
-    AbstractPlugin* getPlugin(const QString& serviceid);
-    QDomNode* getPluginDom(const QString& serviceid);
+    AbstractPlugin* getPlugin(const QString& pluginid);
+    QDomNode* getPluginDom(const QString& service_gid);
 
     QMap<QString,PluginInfo*>::iterator getPluginIterator();
     AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);

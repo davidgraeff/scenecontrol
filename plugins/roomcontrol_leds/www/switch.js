@@ -57,12 +57,11 @@ function RoomPlugin(pluginid, sectionname, $section) {
 		if (!that.datamodel || !that.namemodel) return;
 		that.listview.setModel(that.datamodel);
 		
-		/*TODO fake daten */
-		console.log("add fake data", modelid);
-		that.namemodel.reset("channel");
-		that.namemodel.change({"channel":"led1","name":"Led 1","id":"led.name"});
-		that.datamodel.reset("channel");
-		that.datamodel.change({"channel":"led1","value":120,"id":"led.value"});
+// 		console.log("add fake data", modelid);
+// 		that.namemodel.reset("channel");
+// 		that.namemodel.change({"channel":"led1","name":"Led 1","id":"led.name"});
+// 		that.datamodel.reset("channel");
+// 		that.datamodel.change({"channel":"led1","value":120,"id":"led.value"});
 	}
 
 	this.changeled = function(channel, value) {

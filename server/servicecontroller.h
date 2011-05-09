@@ -36,6 +36,7 @@
 #include <shared/abstractserver.h>
 
 class PluginController;
+class PluginController;
 class ServiceController: public QObject, public AbstractServer, public AbstractPlugin, public AbstractPlugin_services {
     Q_OBJECT
     PLUGIN_MACRO
@@ -67,10 +68,12 @@ public:
      * Return service with uid
      */
     ServiceStruct* service ( const QString& uid );
+    PluginController* getPluginController();
 
     const QMap<QString, ServiceStruct*> &valid_services() const;
 
     void load ( bool service_dir_watcher );
+	QVariantMap cloneService(const QString& uid);
 private:
     PluginController* m_plugincontroller;
     QFileSystemWatcher m_dirwatcher;

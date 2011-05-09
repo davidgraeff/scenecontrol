@@ -33,24 +33,15 @@ CardThread::CardThread(QObject* parent) : QThread(parent), m_systemReady(true) {
     mszReaders = 0;
     ptr = 0;
     readers = 0;
+	hContext = 0;
     pnp = true;
 	atr[0] = '\0';
 }
 
 CardThread::~CardThread() {
     /* If we get out the loop, GetStatusChange() was unsuccessful */
-    if (rv != SCARD_S_SUCCESS) {
+    if (hContext) {
         (void)SCardReleaseContext(hContext);
-        m_systemReady = false;
-        return;
-    }
-
-    /* We try to leave things as clean as possible */
-    rv = SCardReleaseContext(hContext);
-    if (rv != SCARD_S_SUCCESS) {
-        (void)SCardReleaseContext(hContext);
-        m_systemReady = false;
-        return;
     }
 
     /* free memory possibly allocated */
@@ -116,9 +107,11 @@ void CardThread::readReaders() {    /* free memory possibly allocated in a previ
     }
 }
 void CardThread::run() {
+	return;//FIXME command will fork if server bin is not available
     rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, 0, 0, &hContext);
     if (rv != SCARD_S_SUCCESS) {
         (void)SCardReleaseContext(hContext);
+		hContext = 0;
 		m_systemReady = false;
         return;
     }
