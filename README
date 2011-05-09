@@ -85,7 +85,7 @@ Integrierte Bibliotheken:
 Clients:
 --------
 Ein Webclient in Html5/CSS3/JS Technologie bedient Desktops und Smartphones mit Maus und Touchbedienung. Der Webclient ist
-auf neuere Webkit Browser (Apple iOS Browser, Android Browser, Chrome, etc) ausgelegt. Als Javascript Toolkit wird Sencha Touch verwendet.
+auf neuere Webkit Browser mit WebSocket Unterstützung (Apple iOS 4+ Browser, Android 3+ Browser, Chrome 10+, etc) ausgelegt.
 
 Benötigte Packete für den Server ohne Plugins unter Linux/Ubuntu:
 -----------------------------------------------------------------
