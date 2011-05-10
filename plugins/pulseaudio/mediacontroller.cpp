@@ -275,11 +275,14 @@ static void context_state_callback(pa_context *c, void *userdata) {
 //         g_debug("authorizing");
         break;
     case PA_CONTEXT_SETTING_NAME:
-//         g_debug("context setting name");
+		fprintf (stderr, "PulseAudio Deamon: Application name\n");
         break;
     case PA_CONTEXT_FAILED:
-	case PA_CONTEXT_TERMINATED:
 		fprintf (stderr, "PulseAudio Deamon: Connection failed\n");
+        pa_server_available = FALSE;
+		break;
+	case PA_CONTEXT_TERMINATED:
+		fprintf (stderr, "PulseAudio Deamon: Connection terminated\n");
         pa_server_available = FALSE;
         break;
     case PA_CONTEXT_READY:
