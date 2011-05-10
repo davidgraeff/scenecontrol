@@ -34,9 +34,13 @@ void Controller::readyRead() {
 	m_connected = true;
     QByteArray bytes;
     bytes.resize ( m_serial->bytesAvailable() );
+	qDebug() << __LINE__;
     m_serial->read ( bytes.data(), bytes.size() );
+	qDebug() << __LINE__;
     m_buffer.append ( bytes );
+	qDebug() << __LINE__;
     while ( m_buffer.size() ) {
+	qDebug() << __LINE__;
         if ( m_readState==ReadOK ) {
             for ( int i=m_bufferpos;i<m_buffer.size();++i ) {
                 if ( m_buffer.size() <=i ) break;
@@ -47,12 +51,16 @@ void Controller::readyRead() {
                     break;
                 }
             }
+	qDebug() << __LINE__;
             if ( m_readState==ReadOK ) {
                 m_buffer.clear();
                 return;
             }
+	qDebug() << __LINE__;
         }
+	qDebug() << __LINE__;
         if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
+	qDebug() << __LINE__;
             int leds;
             switch ( m_buffer[0] ) {
             case 'S': //sensors
@@ -78,6 +86,7 @@ void Controller::readyRead() {
                 break;
             }
         }
+	qDebug() << __LINE__;
     } //while
 }
 
