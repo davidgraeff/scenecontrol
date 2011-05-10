@@ -110,12 +110,11 @@ void Controller::parseLeds ( const QByteArray& data ) {
     m_leds.clear();
     emit ledsCleared();
     // set new
-    m_channels = ( int ) data[0];
     qDebug() <<m_plugin->pluginid() << "LED Channels:" << m_channels;
     for ( int i=0;i<m_channels;++i ) {
         const QString name = settings.value ( QLatin1String ( "channel" ) +QString::number ( i ),
                                               tr ( "Channel %1" ).arg ( i ) ).toString();
-        const int value = ( uint8_t ) data[i+1];
+        const int value = ( uint8_t ) data[i];
         m_leds[i].value = value;
         emit ledvalueChanged ( i, value );
         m_leds[i].name = name;
