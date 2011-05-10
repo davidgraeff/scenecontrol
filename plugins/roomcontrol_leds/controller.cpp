@@ -56,28 +56,23 @@ void Controller::readyRead() {
         }
         if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
             qDebug() << __LINE__ << m_buffer.size() << m_buffer;
-            int leds;
             switch ( m_buffer[0] ) {
             case 'S': //sensors
                 if ( m_buffer.size() <2 ) break;
                 parseSensors ( m_buffer[1] );
-                m_buffer.remove ( 0,2 );
                 break;
             case 'M': //curtain motor
                 if ( m_buffer.size() <3 ) break;
                 parseCurtain ( m_buffer[1], m_buffer[2] );
-                m_buffer.remove ( 0,3 );
                 break;
             case 'L': //leds
-                if ( m_buffer.size() <3 ) break;
-                leds = m_buffer[1];
-                parseLeds ( m_buffer.mid ( 1,leds ) );
-                m_buffer.remove ( 0,2+leds );
+                if ( m_buffer.size() <2 ) break;
+                m_channels = m_buffer[1];
+                parseLeds ( m_buffer.mid ( 2,m_channels ) );
                 break;
             case 'I': //init
                 if ( m_buffer.size() <2 ) break;
                 parseInit ( m_buffer[1] );
-                m_buffer.remove ( 0,2 );
                 break;
             default:
                 qWarning()<<"RoomLeds: Not detected:" << m_buffer[0] << m_buffer.size();
@@ -104,8 +99,8 @@ void Controller::parseSensors ( unsigned char s1 ) {
 }
 
 void Controller::parseLeds ( const QByteArray& data ) {
-    if ( data.isEmpty() || data.size() != ( int ) data[0] ) {
-        qWarning() <<m_plugin->pluginid() <<__FUNCTION__<<"size missmatch:"<< ( data.size() ? ( ( int ) data[0] ) :0 ) <<data.size();
+    if ( data.isEmpty() || data.size() != m_channels ) {
+        qWarning() <<m_plugin->pluginid() <<__FUNCTION__<<"size missmatch:"<< m_channels <<data.size();
         return;
     }
     QSettings settings;
