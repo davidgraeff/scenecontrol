@@ -57,6 +57,8 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
         m_controller->setChannel ( INTDATA("channel"),INTDATA("value"),INTDATA("fade") );
     } else if ( ServiceID::isId(data, "ledvalue_invers" ) ) {
         m_controller->inverseChannel ( INTDATA("channel"),INTDATA("fade") );
+    } else if ( ServiceID::isId(data, "ledmoodlight" ) ) {
+        m_controller->moodlight ( INTDATA("channel"),BOOLDATA("moodlight") );
     } else if ( ServiceID::isId(data, "ledname" ) ) {
         m_controller->setChannelName ( INTDATA("channel"), DATA("name") );
     } else if ( ServiceID::isId(data, "curtain" ) ) {

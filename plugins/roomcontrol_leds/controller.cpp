@@ -24,7 +24,11 @@
 #include <shared/qextserialport/qextserialport.h>
 #include <shared/abstractplugin.h>
 
-Controller::Controller ( AbstractPlugin* plugin ) : m_curtain_max ( 0 ), m_curtain_value ( 0 ), m_plugin ( plugin ), m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {}
+Controller::Controller ( AbstractPlugin* plugin ) : m_curtain_max ( 0 ), m_curtain_value ( 0 ), m_plugin ( plugin ), m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {
+    connect(&m_moodlightTimer, SIGNAL(timeout()),SLOT(moodlightTimeout()));
+    m_moodlightTimer.setInterval(5000);
+	srand(100);
+}
 
 Controller::~Controller() {
     delete m_serial;
@@ -36,7 +40,7 @@ void Controller::readyRead() {
     bytes.resize ( m_serial->bytesAvailable() );
     m_serial->read ( bytes.data(), bytes.size() );
     m_buffer.append ( bytes );
-	m_readState = ReadOK;
+    m_readState = ReadOK;
     while ( m_buffer.size() ) {
         if ( m_readState==ReadOK ) {
             for ( int i=m_bufferpos;i<m_buffer.size();++i ) {
@@ -94,7 +98,7 @@ void Controller::parseInit ( unsigned char protocolversion ) {
 }
 
 void Controller::parseSensors ( unsigned char s1 ) {
-	qDebug() <<m_plugin->pluginid() << "Sensors:" << (int)s1;
+    qDebug() <<m_plugin->pluginid() << "Sensors:" << (int)s1;
 }
 
 void Controller::parseLeds ( const QByteArray& data ) {
@@ -104,20 +108,23 @@ void Controller::parseLeds ( const QByteArray& data ) {
     }
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
-    settings.beginGroup ( QLatin1String ( "channelnames" ) );
+    settings.beginGroup ( QLatin1String ( "channels" ) );
     // clear old
     m_leds.clear();
     emit ledsCleared();
     // set new
     qDebug() <<m_plugin->pluginid() << "LED Channels:" << m_channels;
     for ( int i=0;i<m_channels;++i ) {
-        const QString name = settings.value ( QLatin1String ( "channel" ) +QString::number ( i ),
+		ledchannel l;
+        l.value = ( uint8_t ) data[i];
+        l.name = settings.value ( QLatin1String ( "channel_name" ) +QString::number ( i ),
                                               tr ( "Channel %1" ).arg ( i ) ).toString();
-        const int value = ( uint8_t ) data[i];
-        m_leds[i].value = value;
-        emit ledvalueChanged ( i, value );
-        m_leds[i].name = name;
-        emit lednameChanged ( i, name );
+        l.moodlight =  settings.value ( QLatin1String ( "channel_moodlight" ) +QString::number ( i )).toBool();
+        if (l.moodlight) m_moodlightTimer.start();
+		
+		m_leds[i] = l;
+        emit ledvalueChanged ( i, l.value );
+        emit lednameChanged ( i, l.name );
     }
     emit dataLoadingComplete();
 }
@@ -141,8 +148,8 @@ void Controller::setChannelName ( uint channel, const QString& name ) {
 
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
-    settings.beginGroup ( QLatin1String ( "channelnames" ) );
-    settings.setValue ( QLatin1String ( "channel" ) +QString::number ( channel ), name );
+    settings.beginGroup ( QLatin1String ( "channels" ) );
+    settings.setValue ( QLatin1String ( "channel_name" ) +QString::number ( channel ), name );
 }
 
 unsigned int Controller::getChannel ( unsigned int channel ) const {
@@ -175,6 +182,15 @@ void Controller::setChannel ( uint channel, uint value, uint fade ) {
     };
     const char t1[] = {cfade, channel, value};
     m_serial->write ( t1, sizeof ( t1 ) );
+}
+
+void Controller::moodlight(uint channel, bool moodlight) {
+    m_leds[channel].moodlight = moodlight;
+    QSettings settings;
+    settings.beginGroup ( m_plugin->pluginid() );
+    settings.beginGroup ( QLatin1String ( "channels" ) );
+    settings.setValue ( QLatin1String ( "channel_moodlight" ) +QString::number ( channel ), moodlight );
+    if (moodlight) m_moodlightTimer.start();
 }
 
 void Controller::inverseChannel ( uint channel, uint fade ) {
@@ -265,4 +281,17 @@ void Controller::connectToLeds ( const QString& device ) {
     m_panicTimer.setInterval ( 50000 );
     connect ( &m_panicTimer,SIGNAL ( timeout() ),SLOT ( panicTimeout() ) );
     m_panicTimer.start();
+}
+
+void Controller::moodlightTimeout() {
+	QMap<int,ledchannel>::iterator i = m_leds.begin();
+	int c = 0;
+	for (;i != m_leds.end();++i) {
+		if (!i.value().moodlight) continue;
+		++c;
+		if (rand()/RAND_MAX >0.5) continue;
+		setChannel(i.key(),(rand()*255/RAND_MAX),STELLA_SET_FADE);
+	}
+	
+	if (!c) m_moodlightTimer.stop();
 }

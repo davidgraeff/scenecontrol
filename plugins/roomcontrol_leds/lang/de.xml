@@ -28,6 +28,12 @@
       <entry>Sofort</entry><entry>Überblenden</entry><entry>Überblenden (Flashy)</entry>
       </fade>
   </ledvalue_invers>
+  <ledmoodlight>
+      <titel>LED Moodlight</titel>
+      <description>Setzt LED Wert</description>
+      <channel><titel>Leuchtkanal</titel></channel>
+      <moodlight><titel>Moodlight</titel></moodlight>
+  </ledmoodlight>
   <ledvalue>
       <titel>LED Wert Änderung</titel>
       <description>LED Wert hat sich verändert</description>

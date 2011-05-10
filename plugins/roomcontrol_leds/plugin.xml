@@ -14,6 +14,10 @@
     <int id="channel" model="led.name" model_key="channel" model_show="name" />
     <enum id="fade" n="3" />
   </action>
+  <action id="ledmoodlight">
+    <int id="channel" model="led.name" model_key="channel" model_show="name" />
+    <bool id="moodlight" />
+  </action>
   <condition id="ledcondition">
     <int id="channel" model="led.name" model_key="channel" model_show="name" />
     <int id="lower" min="0" max="255" />

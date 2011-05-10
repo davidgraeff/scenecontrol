@@ -65,11 +65,13 @@ public:
     void setChannelExponential ( uint channel, int multiplikator, uint fade );
     void setChannelRelative ( uint channel, int value, uint fade );
     unsigned int getChannel(unsigned int channel) const;
+    void moodlight(uint channel, bool moodlight);
 	
 	struct ledchannel {
 		int value;
 		QString name;
-		ledchannel() { value = 300; }
+		bool moodlight;
+		ledchannel() { value = 300; moodlight = false; }
 	};
     QMap<int,ledchannel> m_leds;
 	int m_curtain_max;
@@ -84,6 +86,7 @@ private:
     void parseCurtain(unsigned char current, unsigned char max);
     void parseInit(unsigned char protocolversion);
     void parseSensors(unsigned char s1);
+	QTimer m_moodlightTimer;
     QTimer m_panicTimer;
     int m_bufferpos;
     enum readStateEnum {
@@ -97,6 +100,7 @@ private Q_SLOTS:
     // LIGHTS //
     void readyRead();
     void panicTimeout();
+	void moodlightTimeout();
 Q_SIGNALS:
     void curtainChanged(int current, int max);
 	void ledvalueChanged(int channel, int value);
