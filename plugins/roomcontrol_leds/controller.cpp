@@ -59,7 +59,7 @@ void Controller::readyRead() {
             int leds;
             switch ( m_buffer[0] ) {
             case 'S': //sensors
-                if ( m_buffer.size() <3 ) break;
+                if ( m_buffer.size() <2 ) break;
                 parseSensors ( m_buffer[1] );
                 m_buffer.remove ( 0,2 );
                 break;
@@ -104,8 +104,8 @@ void Controller::parseSensors ( unsigned char s1 ) {
 }
 
 void Controller::parseLeds ( const QByteArray& data ) {
-    if ( data.isEmpty() || data.size() != ( int ) data[0]+1 ) {
-        qWarning() <<m_plugin->pluginid() <<__FUNCTION__<<"size missmatch:"<< ( data.size() ? ( ( int ) data[0]+1 ) :0 ) <<data.size();
+    if ( data.isEmpty() || data.size() != ( int ) data[0] ) {
+        qWarning() <<m_plugin->pluginid() <<__FUNCTION__<<"size missmatch:"<< ( data.size() ? ( ( int ) data[0] ) :0 ) <<data.size();
         return;
     }
     QSettings settings;
