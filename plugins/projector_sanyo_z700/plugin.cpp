@@ -59,7 +59,9 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
         connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
         if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
             qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
-        }
+        } else {
+			qDebug() << "sanyo connected to"<<device;
+		}
     }
 }
 
@@ -84,7 +86,6 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
             strncpy ( m_buffer, "C0D", 3 );
         else
             strncpy ( m_buffer, "C0E", 3 );
-		qDebug() << "sanyo mute" << m_buffer;
 		writeToDevice();
     } else if ( ServiceID::isId(data, "projector_sanyo_lamp" ) ) {
         if ( BOOLDATA ( "eco" ) )
