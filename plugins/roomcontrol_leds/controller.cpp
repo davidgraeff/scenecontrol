@@ -291,8 +291,7 @@ void Controller::moodlightTimeout() {
 		if (!i.value().moodlight) continue;
 		++c;
 		if (rand()/RAND_MAX >0.5) continue;
-		setChannel(i.key(),uint(rand()*255/RAND_MAX),STELLA_SET_FADE);
-		qDebug() <<"moodlight_" << uint(rand()*255/RAND_MAX) << i.key();
+		setChannel(i.key(),rand()%255,STELLA_SET_FADE);
 	}
 	if (!c) m_moodlightTimer.stop();
 }
