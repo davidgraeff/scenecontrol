@@ -279,7 +279,7 @@ static void context_state_callback(pa_context *c, void *userdata) {
         break;
     case PA_CONTEXT_FAILED:
 	case PA_CONTEXT_TERMINATED:
-		fprintf (stderr, "pa_notready\n");
+		fprintf (stderr, "PulseAudio Deamon: Connection failed\n");
         pa_server_available = FALSE;
         break;
     case PA_CONTEXT_READY:
@@ -411,7 +411,7 @@ void reconnect_to_pulse(plugin* p)
     g_assert(sink_hash);
     // Establish event callback registration
     pa_context_set_state_callback(pulse_context, context_state_callback, NULL);
-    pa_context_connect(pulse_context, NULL, PA_CONTEXT_NOFAIL, NULL);
+    pa_context_connect(pulse_context, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL);
 }
 
 void close_pulseaudio()
