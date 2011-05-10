@@ -55,13 +55,13 @@ void Controller::readyRead() {
             }
         }
         if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
-            qDebug() << __LINE__ << m_buffer.size();
+            qDebug() << __LINE__ << m_buffer.size() << m_buffer;
             int leds;
             switch ( m_buffer[0] ) {
             case 'S': //sensors
                 if ( m_buffer.size() <3 ) return;
-                parseSensors ( m_buffer[1], m_buffer[2] );
-                m_buffer.remove ( 0,3 );
+                parseSensors ( m_buffer[1] );
+                m_buffer.remove ( 0,2 );
                 break;
             case 'M': //curtain motor
                 if ( m_buffer.size() <3 ) return;
@@ -99,9 +99,8 @@ void Controller::parseInit ( unsigned char protocolversion ) {
     qDebug() <<m_plugin->pluginid() << "LED Protocol:" << protocolversion;
 }
 
-void Controller::parseSensors ( unsigned char s1, unsigned char s2 ) {
-    Q_UNUSED(s1);
-    Q_UNUSED(s2);//TODO sensors
+void Controller::parseSensors ( unsigned char s1 ) {
+	qDebug() <<m_plugin->pluginid() << "Sensors:" << (int)s1;
 }
 
 void Controller::parseLeds ( const QByteArray& data ) {
@@ -270,7 +269,7 @@ void Controller::connectToLeds ( const QString& device ) {
         qWarning() << m_plugin->pluginid() << "rs232 error:" << m_serial->errorString();
     }
     // panic counter
-    m_panicTimer.setInterval ( 60000 );
+    m_panicTimer.setInterval ( 50000 );
     connect ( &m_panicTimer,SIGNAL ( timeout() ),SLOT ( panicTimeout() ) );
     m_panicTimer.start();
 }
