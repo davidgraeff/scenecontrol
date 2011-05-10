@@ -333,7 +333,7 @@ void set_sink_volume(const char* sinkname, gdouble newvolume)
 
     sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
     if (!s) {
-        fprintf (stderr, "pa_setvolume_error sink_not_available\n");
+        fprintf (stderr, "pa_setvolume_error sink_not_available: %s\n", sinkname);
         return;
     }
 

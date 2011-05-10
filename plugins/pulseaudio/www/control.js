@@ -59,11 +59,11 @@ function RoomPlugin(pluginid, sectionname, $section) {
 		return $item;
 	}
 
-	this.changeChannel =  function(sindid, volume) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"pulsechannelvolume","volume":volume,"sindid":sindid});
+	this.changeChannel =  function(sinkid, volume) {
+		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"pulsechannelvolume","volume":volume,"sinkid":sinkid});
 	}
 
-	this.muteChannel = function(sindid, mute) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"pulsechannelmute","mute":mute,"sindid":sindid});
+	this.muteChannel = function(sinkid, mute) {
+		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"pulsechannelmute","mute":mute,"sinkid":sinkid});
 	}
 }
