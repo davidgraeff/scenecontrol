@@ -186,13 +186,11 @@ void Controller::setChannel ( uint channel, uint value, uint fade ) {
 
 void Controller::moodlight(uint channel, bool moodlight) {
 	if ( !m_leds.contains(channel) ) return;
-	qDebug() <<"moodlight1";
     m_leds[channel].moodlight = moodlight;
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
     settings.beginGroup ( QLatin1String ( "channels" ) );
     settings.setValue ( QLatin1String ( "channel_moodlight" ) +QString::number ( channel ), moodlight );
-	qDebug() <<"moodlight2";
     if (moodlight) m_moodlightTimer.start();
 }
 
@@ -289,13 +287,12 @@ void Controller::connectToLeds ( const QString& device ) {
 void Controller::moodlightTimeout() {
 	QMap<int,ledchannel>::iterator i = m_leds.begin();
 	int c = 0;
-	qDebug() <<"moodlight3";
 	for (;i != m_leds.end();++i) {
 		if (!i.value().moodlight) continue;
 		++c;
 		if (rand()/RAND_MAX >0.5) continue;
-		setChannel(i.key(),(rand()*255/RAND_MAX),STELLA_SET_FADE);
+		setChannel(i.key(),uint(rand()*255/RAND_MAX),STELLA_SET_FADE);
+		qDebug() <<"moodlight_" << uint(rand()*255/RAND_MAX) << i.key();
 	}
-	qDebug() <<"moodlight4";
 	if (!c) m_moodlightTimer.stop();
 }
