@@ -36,8 +36,8 @@ void Controller::readyRead() {
     bytes.resize ( m_serial->bytesAvailable() );
     m_serial->read ( bytes.data(), bytes.size() );
     m_buffer.append ( bytes );
+	m_readState = ReadOK;
     while ( m_buffer.size() ) {
-        qDebug() << __LINE__ << m_buffer.size();
         if ( m_readState==ReadOK ) {
             for ( int i=m_bufferpos;i<m_buffer.size();++i ) {
                 if ( m_buffer.size() <=i ) break;
@@ -59,23 +59,23 @@ void Controller::readyRead() {
             int leds;
             switch ( m_buffer[0] ) {
             case 'S': //sensors
-                if ( m_buffer.size() <3 ) return;
+                if ( m_buffer.size() <3 ) break;
                 parseSensors ( m_buffer[1] );
                 m_buffer.remove ( 0,2 );
                 break;
             case 'M': //curtain motor
-                if ( m_buffer.size() <3 ) return;
+                if ( m_buffer.size() <3 ) break;
                 parseCurtain ( m_buffer[1], m_buffer[2] );
                 m_buffer.remove ( 0,3 );
                 break;
             case 'L': //leds
-                if ( m_buffer.size() <3 ) return;
+                if ( m_buffer.size() <3 ) break;
                 leds = m_buffer[1];
                 parseLeds ( m_buffer.mid ( 1,leds ) );
                 m_buffer.remove ( 0,2+leds );
                 break;
             case 'I': //init
-                if ( m_buffer.size() <2 ) return;
+                if ( m_buffer.size() <2 ) break;
                 parseInit ( m_buffer[1] );
                 m_buffer.remove ( 0,2 );
                 break;
@@ -84,8 +84,8 @@ void Controller::readyRead() {
                 m_buffer.clear();
                 m_bufferpos = 0;
             }
+            m_readState = ReadOK;
         }
-        qDebug() << __LINE__;
     } //while
 }
 
