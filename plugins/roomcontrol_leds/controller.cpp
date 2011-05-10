@@ -31,16 +31,13 @@ Controller::~Controller() {
 }
 
 void Controller::readyRead() {
-	m_connected = true;
+    m_connected = true;
     QByteArray bytes;
     bytes.resize ( m_serial->bytesAvailable() );
-	qDebug() << __LINE__;
     m_serial->read ( bytes.data(), bytes.size() );
-	qDebug() << __LINE__;
     m_buffer.append ( bytes );
-	qDebug() << __LINE__;
     while ( m_buffer.size() ) {
-	qDebug() << __LINE__;
+        qDebug() << __LINE__ << m_buffer.size();
         if ( m_readState==ReadOK ) {
             for ( int i=m_bufferpos;i<m_buffer.size();++i ) {
                 if ( m_buffer.size() <=i ) break;
@@ -51,16 +48,14 @@ void Controller::readyRead() {
                     break;
                 }
             }
-	qDebug() << __LINE__;
             if ( m_readState==ReadOK ) {
                 m_buffer.clear();
+                m_bufferpos = 0;
                 return;
             }
-	qDebug() << __LINE__;
         }
-	qDebug() << __LINE__;
         if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
-	qDebug() << __LINE__;
+            qDebug() << __LINE__ << m_buffer.size();
             int leds;
             switch ( m_buffer[0] ) {
             case 'S': //sensors
@@ -84,9 +79,13 @@ void Controller::readyRead() {
                 parseInit ( m_buffer[1] );
                 m_buffer.remove ( 0,2 );
                 break;
+            default:
+                qWarning()<<"RoomLeds: Not detected:" << m_buffer[0] << m_buffer.size();
+                m_buffer.clear();
+                m_bufferpos = 0;
             }
         }
-	qDebug() << __LINE__;
+        qDebug() << __LINE__;
     } //while
 }
 
@@ -101,7 +100,8 @@ void Controller::parseInit ( unsigned char protocolversion ) {
 }
 
 void Controller::parseSensors ( unsigned char s1, unsigned char s2 ) {
-Q_UNUSED(s1);Q_UNUSED(s2);//TODO sensors
+    Q_UNUSED(s1);
+    Q_UNUSED(s2);//TODO sensors
 }
 
 void Controller::parseLeds ( const QByteArray& data ) {
@@ -114,7 +114,7 @@ void Controller::parseLeds ( const QByteArray& data ) {
     settings.beginGroup ( QLatin1String ( "channelnames" ) );
     // clear old
     m_leds.clear();
-	emit ledsCleared();
+    emit ledsCleared();
     // set new
     m_channels = ( int ) data[0];
     qDebug() <<m_plugin->pluginid() << "LED Channels:" << m_channels;
@@ -145,7 +145,7 @@ int Controller::getCurtain() {
 void Controller::setChannelName ( uint channel, const QString& name ) {
     if ( !m_leds.contains(channel) ) return;
     m_leds[channel].name = name;
-	emit lednameChanged ( channel, name );
+    emit lednameChanged ( channel, name );
 
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
@@ -162,7 +162,7 @@ void Controller::setChannel ( uint channel, uint value, uint fade ) {
     if ( !m_leds.contains(channel) ) return;
     value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
     m_leds[channel].value = value;
-	emit ledvalueChanged ( channel, value );
+    emit ledvalueChanged ( channel, value );
 
     unsigned char cfade=0;
     switch ( fade ) {
@@ -224,7 +224,7 @@ int Controller::countChannels() {
 }
 
 QString Controller::getChannelName ( uint channel ) {
-	return m_leds.value ( channel ).name;
+    return m_leds.value ( channel ).name;
 }
 
 void Controller::panicTimeout() {
@@ -232,9 +232,9 @@ void Controller::panicTimeout() {
     const char t1[] = {0x00};
     if ( !m_serial->isOpen() || m_serial->write ( t1, sizeof ( t1 ) ) == -1 ) {
         if (m_connected) {
-			m_connected = false;
-			qWarning() << "IO: Failed to reset panic counter. Try reconnection";
-		}
+            m_connected = false;
+            qWarning() << "IO: Failed to reset panic counter. Try reconnection";
+        }
         m_serial->close();
         const char t1[] = {0xef};
         if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1,  sizeof ( t1 ) ) ) {
@@ -247,7 +247,7 @@ void Controller::connectToLeds ( const QString& device ) {
     m_panicTimer.stop();
     delete m_serial;
     m_serial = 0;
-	m_connected = false;
+    m_connected = false;
     // create new
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
