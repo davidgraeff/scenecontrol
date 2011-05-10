@@ -55,7 +55,6 @@ void Controller::readyRead() {
             }
         }
         if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
-            qDebug() << __LINE__ << m_buffer.size() << m_buffer;
             switch ( m_buffer[0] ) {
             case 'S': //sensors
                 if ( m_buffer.size() <2 ) break;
