@@ -40,10 +40,18 @@ function RoomPlugin(pluginid, sectionname, $section) {
 	
 	this.itemCreationFunction = function(modelitem) {
 		var $item = $('<div class="led"></div>');
-		var itemText = $('<div class="ledtext" />');
+		var itemText = $('<div class="ledtext" contentEditable="true" />');
 		var itemSlider = $('<div class="ledslider" />');
 		$item.append(itemSlider).data("itemSlider", itemSlider);
 		$item.append(itemText).data("itemText", itemText);
+		
+		itemText.keydown (filterNamesFunction);
+		itemText.keyup (function() {
+			var newname = $(this).text();
+			if (newname.length && newname != that.getName(modelitem.channel)) {
+				sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"ledname","channel":modelitem.channel,"name":newname});
+			}
+		});
 		
 		itemSlider.slider({min: 0, max: 255, value: 0, orientation: 'horizontal'}).attr("channel", modelitem.channel);
 		itemSlider.bind( "slide", function(event, ui) {that.changeled($(this).attr("channel"), ui.value);});

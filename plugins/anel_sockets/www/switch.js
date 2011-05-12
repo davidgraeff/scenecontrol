@@ -39,8 +39,15 @@ function RoomPlugin(pluginid, sectionname, $section) {
 	}
 	
 	this.itemCreationFunction = function(modelitem) {
-		var $item = $('<li class="anelsockets"></li>').attr("channel", modelitem.channel);
-		$item.click( function() { that.tooglevalue($(this).attr("channel")); });
+		var $item = $('<li class="anelsockets" contentEditable="true"></li>').attr("channel", modelitem.channel);
+		$item.click( function(event) {if(event.shiftKey) {return;} that.tooglevalue($(this).attr("channel")); });
+		$item.keydown (filterNamesFunction);
+		$item.keyup (function() {
+			var newname = $(this).text();
+			if (newname.length && newname != that.getName(modelitem.channel)) {
+				sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"ioname","channel":modelitem.channel,"name":newname});
+			}
+		});
 		return $item;
 	}
 

@@ -191,7 +191,10 @@ void Controller::moodlight(uint channel, bool moodlight) {
     settings.beginGroup ( m_plugin->pluginid() );
     settings.beginGroup ( QLatin1String ( "channels" ) );
     settings.setValue ( QLatin1String ( "channel_moodlight" ) +QString::number ( channel ), moodlight );
-    if (moodlight) m_moodlightTimer.start();
+    if (moodlight) {
+		m_moodlightTimer.start();
+		moodlightTimeout();
+	}
 }
 
 void Controller::inverseChannel ( uint channel, uint fade ) {
