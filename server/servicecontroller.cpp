@@ -548,8 +548,13 @@ void ServiceController::execute ( const QVariantMap& data, const QString& sessio
     Q_UNUSED ( sessionid );
     if ( ServiceID::isId ( data,"servercmd" ) ) {
         switch ( INTDATA ( "state" ) ) {
-        case 0:
+			case 0:
+				break;
+        case 1:
             QCoreApplication::exit ( 0 );
+            break;
+        case 2:
+            QCoreApplication::exit ( 1 );
             break;
         default:
             break;

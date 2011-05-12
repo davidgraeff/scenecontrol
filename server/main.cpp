@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 			qDebug() << "Shutdown: Console shutdown. No restart allowed!";
 		} else if (cmdargs.contains("--no-restart")) {
             qDebug() << "Shutdown: Start another instance not allowed!";
-        } else {
+        } else if (exitcode == 0) {
             qDebug() << "Shutdown: Start another instance";
 			int rtry = 0;
 			for (int i=0;i<argc;++i) {
