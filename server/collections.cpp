@@ -17,44 +17,10 @@
 
 */
 
-// 	const QString conditions = DATA("conditions");
-// 	if (conditions.size()) {
-// 		// convert condition string to parsed binary decision diagram
-// 		boolstuff::BoolExprParser parser;
-// 		try {
-// 			instance->conditionids = parser.parse(conditions.toStdString());
-// 		} catch (boolstuff::BoolExprParser::Error e) {
-// 			qWarning()<<"Collections: Parsing of conditions expression failed! UID: " << ServiceType::uniqueID(data);
-// 		}
-// 	}
-
-//             std::set<std::string> positives, negatives;
-//             instance->conditionids->getTreeVariables(positives, negatives);
-//             bool ok = true;
-//             foreach(std::string uid, positives) {
-//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
-//                 if (!s) continue;
-//                 if (!s->plugin->condition(s->data, QString())) {
-//                     ok = false;
-//                     break;
-//                 }
-//             }
-//
-//             if (!ok) continue;
-//             foreach(std::string uid, negatives) {
-//                 ServiceController::ServiceStruct* s =  m_servicecontroller->service(QString::fromStdString(uid));
-//                 if (!s) continue;
-//                 if (s->plugin->condition(s->data, QString())) {
-//                     ok = false;
-//                     break;
-//                 }
-//             }
-
 #include "collections.h"
 #include <QDebug>
 #include <QCoreApplication>
 #include "servicecontroller.h"
-#include "boolstuff/BoolExprParser.h"
 #include "plugincontroller.h"
 
 Collections::Collections() : m_servicecontroller ( 0 ) {

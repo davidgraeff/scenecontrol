@@ -29,7 +29,6 @@
 #include <shared/abstractplugin_services.h>
 #include "shared/pluginservicehelper.h"
 #include <shared/abstractserver.h>
-#include "boolstuff/BoolExpr.h"
 
 class ServiceController;
 class CollectionInstance : public QObject {
@@ -48,7 +47,6 @@ public:
     QSet<QString> eventids;
     QSet<QString> conditionids;
 	QSet<QString> actionids;
-    boolstuff::BoolExpr<std::string>* conditionlinks;
     QMap< int, QString > executionids;
 	QMap<QString, QVariantMap> m_eventdataCache;
     bool enabled;
