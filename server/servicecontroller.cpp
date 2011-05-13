@@ -40,6 +40,16 @@ void ServiceController::load ( bool service_dir_watcher ) {
     removeUnusedServices(true);
     emit dataReady();
 
+	// trigger serverstate property after all plugins and services have been loaded
+    {
+        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "serverstate" );
+        sc.setData ( "state", 1 );
+        sc.setData ( "version", QCoreApplication::applicationVersion() );
+        property_changed ( sc.getData() );
+    }
+
+    m_state_events.triggerEvent ( 1, m_server );
+	
     // stats
     qDebug() << "Available Services    :" << m_plugincontroller->knownServices();
     qDebug() << "Loaded    Services    :" << m_valid_services.size();
@@ -566,16 +576,7 @@ void ServiceController::execute ( const QVariantMap& data, const QString& sessio
     }
 }
 
-void ServiceController::initialize() {
-    {
-        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "serverstate" );
-        sc.setData ( "state", 1 );
-        sc.setData ( "version", QCoreApplication::applicationVersion() );
-        property_changed ( sc.getData() );
-    }
-
-    m_state_events.triggerEvent ( 1, m_server );
-}
+void ServiceController::initialize() {}
 
 void ServiceController::clear() {
     // server shutdown event
