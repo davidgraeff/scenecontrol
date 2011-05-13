@@ -6,6 +6,6 @@
   <serverevent>
       <titel>Serverstatus</titel>
       <description>Serverstatus</description>
-      <state><titel>Status</titel><entry>Aktiviert</entry><entry>Runterfahren</entry></state>
+      <state><titel>Status</titel><entry>Runterfahren</entry><entry>Gestartet</entry></state>
   </serverevent>
 </plugin>
