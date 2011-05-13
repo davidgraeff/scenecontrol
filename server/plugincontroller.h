@@ -60,7 +60,7 @@ public:
      * The handling is the same like a plugin from file: Validation and service description
      * is made via an xml file in xml/[object-class-name].xml.
      */
-    void registerPluginFromObject(AbstractPlugin* object);
+    void registerPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller);
     /**
      * Deregister an object (e.g. before deleting them). Otherwise ServiceController
      * might try to acces them after deletion.

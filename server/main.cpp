@@ -95,32 +95,29 @@ int main(int argc, char *argv[])
     // service controller (implements AbstractServer)
     ServiceController* services = new ServiceController();
     PluginController* plugins = new PluginController(services);
-	plugins->registerPluginFromObject(services);
+	plugins->registerPluginFromObject(services, services);
 
 
     // backups
     Backups* backups = new Backups();
-    backups->connectToServer(services);
-    plugins->registerPluginFromObject(backups);
+    plugins->registerPluginFromObject(backups, services);
 
     // collections
     Collections* collections = new Collections();
-    collections->connectToServer(services);
     collections->setServiceController(services);
-    plugins->registerPluginFromObject(collections);
+    plugins->registerPluginFromObject(collections, services);
     collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
     collections->connect(services, SIGNAL(dataSync(QVariantMap,QString)), collections, SLOT(dataSync(QVariantMap,QString)));
     collections->connect(services, SIGNAL(eventTriggered(QString,QString)), collections, SLOT(eventTriggered(QString,QString)));
     services->connect(collections, SIGNAL(instanceExecute(QString, QString)), services, SLOT(executeActionByUID(QString, QString)));
 
 	SessionController* sessions = SessionController::instance(true);
-	sessions->connectToServer(services);
-	plugins->registerPluginFromObject(sessions);
+	plugins->registerPluginFromObject(sessions, services);
 	services->connect(sessions,SIGNAL(sessionBegin(QString)),services,SLOT(sessionBegin(QString)));
 	services->connect(sessions,SIGNAL(sessionFinished(QString,bool)),services,SLOT(sessionFinished(QString,bool)));
 
-    services->load(cmdargs.contains("--observe-service-dir"));
 	plugins->initializePlugins();
+    services->load(cmdargs.contains("--observe-service-dir"));
 
     // network
 #ifdef WITH_EXTERNAL

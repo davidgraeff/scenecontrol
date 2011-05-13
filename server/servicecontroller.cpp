@@ -40,6 +40,10 @@ void ServiceController::load ( bool service_dir_watcher ) {
     removeUnusedServices(true);
     emit dataReady();
 
+    // stats
+    qDebug() << "Available Services    :" << m_plugincontroller->knownServices();
+    qDebug() << "Loaded    Services    :" << m_valid_services.size();
+	
 	// trigger serverstate property after all plugins and services have been loaded
     {
         ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "serverstate" );
@@ -49,10 +53,6 @@ void ServiceController::load ( bool service_dir_watcher ) {
     }
 
     m_state_events.triggerEvent ( 1, m_server );
-	
-    // stats
-    qDebug() << "Available Services    :" << m_plugincontroller->knownServices();
-    qDebug() << "Loaded    Services    :" << m_valid_services.size();
 }
 
 void ServiceController::directoryChanged ( QString file, bool loading ) {

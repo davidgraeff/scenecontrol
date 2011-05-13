@@ -141,7 +141,8 @@ int PluginController::knownServices() {
 }
 
 
-void PluginController::registerPluginFromObject(AbstractPlugin* object) {
+void PluginController::registerPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller) {
+	object->connectToServer(servicecontroller);
     const QString pluginid = object->pluginid();
     PluginInfo* plugininfo = new PluginInfo(object);
     m_plugins.insert ( pluginid, plugininfo );
