@@ -48,7 +48,8 @@ void ServiceController::load ( bool service_dir_watcher ) {
         else
             qWarning() << "Failed loading collection";
     }
-    //removeUnusedServices(true);
+
+    removeUnusedServices(true);
 
     emit dataReady();
 
@@ -159,7 +160,6 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         /* change data before it is saved */
         if (removeMissingServicesFromCollection(data, true))
             changed = true;
-
         service->data = data;
 
         CollectionInstance* instance = m_collections.value ( ServiceType::uniqueID ( data ) );
@@ -167,17 +167,23 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
             instance = new CollectionInstance ( service, this );
             m_collections.insert ( ServiceType::uniqueID ( data ), instance );
         }
-        instance->change(data, olddata);
-        if ( !loading || changed )
-            saveToDisk ( data );
 
+        instance->change(data, olddata);
+
+        if ( !loading || changed ) {
+            saveToDisk ( data );
+        }
         if ( !loading ) {
             emit dataSync ( data );
+            ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "collections");
+            sc.setData("uid", ServiceType::uniqueID ( data ));
+            property_changed ( sc.getData() );
         }
-        ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "collections");
-        sc.setData("uid", ServiceType::uniqueID ( data ));
-        property_changed ( sc.getData() );
     } else {
+        // if data contains the field to add the service to a collection (ServiceType::takeToCollection) then adjust service->inCollections
+        CollectionInstance* ci = getCollection(ServiceType::takeToCollection ( data ));
+
+        // save service
         service->data = data;
         if ( !loading || changed )
             saveToDisk ( data );
@@ -185,13 +191,16 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         if ( !loading ) {
             emit dataSync ( data );
         }
-        // if data contains the field to add the service to a collection (ServiceType::takeToCollection) then adjust service->inCollections
-        CollectionInstance* ci = getCollection(ServiceType::takeToCollection ( data ));
+
         if (ci)
             service->inCollections.insert(ci);
         // for all collections where this service is linked to make the collection know about this changed service
         foreach ( CollectionInstance* ci, service->inCollections) {
-            ci->changeService(service, data, olddata);
+            if (ci->changeService(service, data, olddata) && !loading) {
+                // save collection
+                saveToDisk ( ci->serviceStruct()->data );
+                emit dataSync ( ci->serviceStruct()->data );
+            }
         }
     }
 
@@ -452,18 +461,12 @@ void ServiceController::removeService ( const QString& uid, bool removeFileOnly 
 }
 
 void ServiceController::removeUnusedServices(bool warning) {
-    QList<QVariantMap> collections;
-    foreach ( ServiceStruct* service, m_valid_services ) {
-        if ( !ServiceType::isCollection ( service->data ) ) continue;
-        collections.append ( service->data );
-    }
-
     foreach ( ServiceStruct* service, m_valid_services ) {
         if ( ServiceType::isCollection ( service->data ) ) continue;
         const QString uid = ServiceType::uniqueID ( service->data );
         bool contained = false;
-        for ( int i=0;i<collections.size();++i ) {
-            if ( collections[i].value ( QLatin1String ( "services" ) ).toList().contains ( uid ) ) {
+        foreach ( CollectionInstance* collection, m_collections ) {
+            if ( collection->containsService ( uid ) ) {
                 contained = true;
                 break;
             }
@@ -477,27 +480,27 @@ void ServiceController::removeUnusedServices(bool warning) {
 }
 
 bool ServiceController::removeMissingServicesFromCollection(QVariantMap data, bool withWarning) {
-    QVariantList list = data[ QLatin1String( "services" )].toList();
-    int sum = list.size();
-
-    QSet<QString> serviceids;
-    foreach(QVariant v, list) {
-        serviceids.insert(v.toString());
-    }
-
+    QVariantList serviceids = data[ QLatin1String( "services" )].toList();
+    QSet<QString> service_unquie;
+    int sum = serviceids.size();
     {
-        QMutableSetIterator<QString> i ( serviceids );
+        QMutableListIterator<QVariant> i ( serviceids );
         while ( i.hasNext() ) {
             i.next();
-            if ( !service ( i.value() ) ) {
+            const QString uid = i.value().toString();
+            if ( !service ( uid ) || service_unquie.contains(uid) ) {
                 i.remove();
+                continue;
             }
+            service_unquie.insert(uid);
+
         }
     }
+
     if ( sum != serviceids.size() ) {
         if (withWarning)
-            qWarning()<<"Removed not existing services from collection"<<DATA("name");
-        data.insert(QLatin1String("services"), QVariant(serviceids.toList()));
+            qWarning()<<"Removed not existing services from collection"<<DATA("name")<< sum- serviceids.size();
+        data.insert(QLatin1String("services"), serviceids);
         return true;
     }
     return false;

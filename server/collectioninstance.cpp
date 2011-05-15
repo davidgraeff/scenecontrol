@@ -29,9 +29,9 @@ CollectionInstance::CollectionInstance ( ServiceStruct* service, ServiceControll
 }
 
 CollectionInstance::~CollectionInstance() {
-	while (m_serviceids.size()) {
+    while (m_serviceids.size()) {
         removeService(ServiceType::uniqueID(m_serviceids.begin().value()->data));
-	}
+    }
 }
 
 void CollectionInstance::change(const QVariantMap& data, const QVariantMap& olddata) {
@@ -66,13 +66,23 @@ void CollectionInstance::change(const QVariantMap& data, const QVariantMap& oldd
     m_enabled = BOOLDATA ( "enabled" );
 }
 
-void CollectionInstance::changeService ( ServiceStruct* service, const QVariantMap& data, const QVariantMap& olddata ) {
+bool CollectionInstance::changeService ( ServiceStruct* service, const QVariantMap& data, const QVariantMap& olddata ) {
+    bool changed = false;
     ServiceStruct* oldservice = m_serviceids.value(ServiceType::uniqueID(data));
     if (!oldservice || oldservice != service) {
         m_serviceids[ServiceType::uniqueID(data)] = service;
+        if (olddata.size()) {
+            QVariantList list;
+            const QList<QString> stringlist = m_serviceids.keys();
+            foreach(QString s, stringlist)
+            list.append(s);
+
+            m_collection->data[ QLatin1String("services") ] = list;
+            changed = true;
+        }
     }
 
-    if (!ServiceType::isEvent(data)) return;
+    if (!ServiceType::isEvent(data)) return changed;
 
     if (olddata.size() && olddata != data) {
         qDebug() << "unregister event";
@@ -81,6 +91,7 @@ void CollectionInstance::changeService ( ServiceStruct* service, const QVariantM
 
     service->plugin->register_event(service->data, ServiceType::uniqueID(m_collection->data));
 
+    return changed;
 }
 
 void CollectionInstance::removeService(const QString& uid)
@@ -91,6 +102,10 @@ void CollectionInstance::removeService(const QString& uid)
 
     if (!ServiceType::isEvent(service->data)) return;
     service->plugin->unregister_event(service->data, ServiceType::uniqueID(m_collection->data));
+}
+
+bool CollectionInstance::containsService ( const QString& uid ) {
+    return m_serviceids.value(uid);
 }
 
 void CollectionInstance::start()
@@ -108,7 +123,7 @@ void CollectionInstance::start()
                 continue;
             const QString conditionGroup = ServiceType::conditionGroup( i.value()->data );
             bool c =i.value()->plugin->condition ( i.value()->data, QString() );
-			if (ServiceType::isNegatedCondition(i.value()->data)) c = !c;
+            if (ServiceType::isNegatedCondition(i.value()->data)) c = !c;
             if ( c ) {
                 conditionGroups[conditionGroup] = true;
             } else {
@@ -150,7 +165,7 @@ void CollectionInstance::execute() {
 void CollectionInstance::executiontimeout() {
     const QList<ServiceStruct*> executeservices = m_executionids.values ( m_currenttime );
     foreach ( ServiceStruct* service, executeservices ) {
-		service->plugin->execute(service->data, QString());
+        service->plugin->execute(service->data, QString());
     }
 
     ++m_currenttime;
@@ -167,7 +182,7 @@ void CollectionInstance::stop() {
 void CollectionInstance::clone() {
     QVariantMap newcollection = m_servicecontroller->cloneService(m_collection);
     if (newcollection.isEmpty()) return;
-	
+
     QString newcollectionuid = ServiceType::uniqueID(newcollection);
     newcollection[QLatin1String("name")] = QString(newcollection[QLatin1String("name")].toString() +  QLatin1String(" (copy)"));
     newcollection[QLatin1String("enabled")] = true;
@@ -179,4 +194,8 @@ void CollectionInstance::clone() {
         ServiceType::setToCollection(newservice, newcollectionuid);
         m_servicecontroller->changeService(newservice, QString());
     }
+}
+
+ServiceStruct* CollectionInstance::serviceStruct() {
+    return m_collection;
 }

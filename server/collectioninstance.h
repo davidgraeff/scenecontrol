@@ -38,8 +38,11 @@ public:
 	void change(const QVariantMap& data, const QVariantMap& olddata);
 	void clone();
 	void removeService ( const QString& uid );
-	void changeService ( ServiceStruct* service, const QVariantMap& data, const QVariantMap& olddata );
+	bool changeService ( ServiceStruct* service, const QVariantMap& data, const QVariantMap& olddata );
+	bool containsService ( const QString& uid );
 
+	ServiceStruct* serviceStruct();
+	
     void start();
     void stop();
 	void execute();

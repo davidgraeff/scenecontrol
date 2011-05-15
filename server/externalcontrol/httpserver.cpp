@@ -99,7 +99,12 @@ void HttpServer::incomingConnection ( int socketDescriptor )
 
 
 void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
+    if (m_websocket_connections.isEmpty())
+        return;
     const QByteArray cmdbytes = QJson::Serializer().serialize(data);
+    if (cmdbytes.isNull()) {
+        qWarning()<<"JSON failed"<<data;
+    }
     if (sessionid.size()) {
         ClientConnection *c = findConnection(sessionid);
         if (c) c->writeJSON(cmdbytes);
@@ -120,9 +125,9 @@ void HttpServer::sessionBegin(QString sessionid) {
 
 void HttpServer::sessionFinished(QString sessionid, bool timeout) {
     Q_UNUSED(timeout);
-	ClientConnection* c = findConnection(sessionid);
-	if (!c) return;
-	removeConnection(c);
+    ClientConnection* c = findConnection(sessionid);
+    if (!c) return;
+    removeConnection(c);
 }
 
 void HttpServer::removeConnection(ClientConnection* c) {
