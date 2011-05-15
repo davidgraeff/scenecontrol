@@ -1,11 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin>
-	<titel>ServiceController</titel>
-	<description>Serviceverwaltungsklasse</description>
+	<titel>Service Controller</titel>
+	<description>Service- und Profilverwaltung</description>
 	
-  <serverevent>
-      <titel>Serverstatus</titel>
-      <description>Serverstatus</description>
-      <state><titel>Status</titel><entry>Runterfahren</entry><entry>Gestartet</entry></state>
-  </serverevent>
+	<sections>
+		<collections>
+			<titel>Profile</titel>
+			<description>Erstellt und verwaltet Profile</description>
+		</collections>
+	</sections>
+	
+	<executecollection>
+		<titel>Profil ausführen</titel>
+		<description>Führt das ausgewählte Profil aus</description>
+		<collectionid><titel>Profil ID</titel></collectionid>
+	</executecollection>
+	
+	<stopcollection>
+		<titel>Profil Ausführung stoppen</titel>
+		<description>Stoppt die Ausführung eines aktiven Profils</description>
+		<collectionid><titel>Profil ID</titel></collectionid>
+	</stopcollection>
+	
+	<serverevent>
+		<titel>Serverstatus</titel>
+		<description>Serverstatus</description>
+		<state><titel>Status</titel><entry>Runterfahren</entry><entry>Gestartet</entry></state>
+	</serverevent>
 </plugin>

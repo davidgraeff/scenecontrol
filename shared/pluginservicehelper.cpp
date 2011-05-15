@@ -37,10 +37,11 @@ ServiceCreation ServiceCreation::createNotification ( const char* plugin_id, con
     return sc;
 }
 
-ServiceCreation ServiceCreation::createRemoveByUidCmd ( const QString& uid ) {
+ServiceCreation ServiceCreation::createRemoveByUidCmd ( const QString& uid, const QString& type ) {
     ServiceCreation sc;
     sc.m_map[QLatin1String ( "__uid" ) ] = uid;
     sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "remove" );
+	sc.m_map[QLatin1String ( "__oldtype" ) ] = type;
     return sc;
 }
 

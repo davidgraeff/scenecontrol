@@ -1,26 +1,50 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="servicecontroller" version="1.0">
-  <!-- Propagates server condition -->
-  <property id="serverstate">
-    <enum id="state" n="2" /><!-- ready, going offline -->
-  </property>
-  <property id="plugininfo">
-    <string id="plugins" separator=";" /><!-- plugin names -->
-  </property>
-  <property id="transfer.complete">
-  </property>
-  
-  <execute id="servercmd" group_restriction="adm, roomcontrol_admin">
-    <enum id="state" n="3" /><!-- resync client, restart, stop server -->
-  </execute>
-  
-  <execute id="generateUniqueID">
-  </execute>
-  <property id="generatedUniqueID">
-	  <string id="uid" />
-  </property>
-  
-  <event id="serverevent">
-    <enum id="state" n="2" /><!-- ready, going offline -->
-  </event>
+	<!-- Propagates server condition -->
+	<property id="serverstate">
+		<enum id="state" n="2" /><!-- ready, going offline -->
+	</property>
+	<property id="plugininfo">
+		<string id="plugins" separator=";" /><!-- plugin names -->
+	</property>
+	<property id="transfer.complete">
+	</property>
+	
+	<execute id="servercmd" group_restriction="adm, roomcontrol_admin">
+		<enum id="state" n="3" /><!-- resync client, restart, stop server -->
+	</execute>
+	
+	<execute id="generateUniqueID">
+	</execute>
+	<property id="generatedUniqueID">
+		<string id="uid" />
+	</property>
+	
+	<event id="serverevent">
+		<enum id="state" n="2" /><!-- ready, going offline -->
+	</event>
+	
+	<action id="executecollection">
+		<string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
+	</action>
+	<action id="stopcollection">
+		<string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
+	</action>
+	
+	<execute id="clone">
+		<string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
+	</execute>
+	
+	<collection>
+		<string id="name" />
+		<stringlist id="services" />
+		<stringlist id="categories" />
+		<bool id="enabled" />
+	</collection>
+	
+	<model id="collections" model_key="uid">
+		<string id="uid"></string>
+	</model>
+	
+	<section>collections</section>
 </plugin>

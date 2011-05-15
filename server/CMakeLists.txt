@@ -32,8 +32,6 @@ IF (BUILD_SERVER)
 	file(GLOB SRCS_H *.h)
 	file(GLOB SRCS *.cpp)
 
-	LIST(APPEND SRCS boolstuff/BoolExprParser.cpp)
-
 	OPTION(BUILD_SERVER_WITH_EXTERNAL "Build server with http server for client support" ON)
 	IF (BUILD_SERVER_WITH_EXTERNAL)
 		FILE(GLOB SRCS_EXTERNAL_H externalcontrol/*.h)

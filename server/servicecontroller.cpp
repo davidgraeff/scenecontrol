@@ -7,9 +7,9 @@
 #include <QDebug>
 #include <qjson/serializer.h>
 #include <qjson/parser.h>
-#include "boolstuff/BoolExprParser.h"
 #include "paths.h"
 #include "plugincontroller.h"
+#include "collectioninstance.h"
 
 #define __FUNCTION__ __FUNCTION__
 
@@ -17,6 +17,7 @@ ServiceController::ServiceController () : m_plugincontroller ( 0 ), m_state_even
 }
 
 ServiceController::~ServiceController() {
+    qDeleteAll ( m_collections );
     qDeleteAll ( m_valid_services );
 }
 
@@ -32,19 +33,25 @@ void ServiceController::load ( bool service_dir_watcher ) {
         directoryChanged ( dir.absoluteFilePath ( tfiles[i] ), true );
     }
 
-    connect ( &m_dirwatcher, SIGNAL ( directoryChanged ( QString ) ), SLOT ( directoryChanged ( QString ) ) );
+    // init directory watcher
     if ( service_dir_watcher ) {
+        connect ( &m_dirwatcher, SIGNAL ( directoryChanged ( QString ) ), SLOT ( directoryChanged ( QString ) ) );
         m_dirwatcher.addPath ( serviceDir().absolutePath() );
     }
 
-    removeUnusedServices(true);
+    // load collections after all other services
+    while (m_CollectionloadCache.size()) {
+        changeService ( m_CollectionloadCache.takeFirst(), QString(), true );
+    }
+    //removeUnusedServices(true);
+
     emit dataReady();
 
     // stats
     qDebug() << "Available Services    :" << m_plugincontroller->knownServices();
     qDebug() << "Loaded    Services    :" << m_valid_services.size();
-	
-	// trigger serverstate property after all plugins and services have been loaded
+
+    // trigger serverstate property after all plugins and services have been loaded
     {
         ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "serverstate" );
         sc.setData ( "state", 1 );
@@ -82,7 +89,10 @@ void ServiceController::directoryChanged ( QString file, bool loading ) {
         return;
     }
 
-    changeService ( result, QString(), true );
+    if (loading && ServiceType::isCollection(result))
+        m_CollectionloadCache.append(result);
+    else
+        changeService ( result, QString(), true );
 }
 
 void ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading ) {
@@ -97,62 +107,73 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         return;
     }
 
-    ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
-
     if ( ServiceType::isRemoveCmd ( data ) ) {
-        bool isCollection = service ? ServiceType::isCollection ( service->data ) : false;
         removeService ( ServiceType::uniqueID ( data ) );
-        service = 0;
-        if ( isCollection ) {
-            removeUnusedServices(false);
-        } else {
-            QList<QVariantMap> collections;
-            foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
-                if ( !ServiceType::isCollection ( service->data ) ) continue;
-                removedNotExistingServicesFromCollection(service->data, false);
-            }
-        }
         return;
     }
 
-    // set an uid if this collection does not have one
+    // set an uid if this service does not have one
     bool changed = false;
-    if ( ServiceType::isCollection ( data ) &&  ServiceType::uniqueID ( data ).isEmpty() ) {
+    if ( ServiceType::uniqueID ( data ).isEmpty() ) {
         ServiceType::setUniqueID ( data, generateUniqueID() );
         changed = true;
     }
 
-    QString toCollection = ServiceType::takeToCollection ( data );
-
-    if ( !service ) service = new ServiceStruct();
-
-    service->data = data;
+    // get service structure by unique id or create a new one
+    ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
+    if ( !service ) {
+        service = new ServiceStruct();
+        m_valid_services.insert ( ServiceType::uniqueID ( data ),service );
+    }
     service->plugin = dynamic_cast<AbstractPlugin_services*> ( m_plugincontroller->getPlugin ( ServiceID::pluginid ( data ) ) );
     if ( service->plugin == 0 ) {
         qWarning() << "No plugin with AbstractPlugin_services implementation for service found!"<<data;
+        return;
     }
 
-    m_valid_services.insert ( ServiceType::uniqueID ( data ),service );
-    //qDebug() << "DATA" << data;
+    const QVariantMap olddata = service->data;
+
+    if (ServiceType::isCollection(data)) {
+        /* change data before it is saved */
+        if (removeMissingServicesFromCollection(data, true))
+            changed = true;
+
+        /* legacycode */
+        if (data.contains(QLatin1String("actions"))) {
+            data.insert(QLatin1String("services"), data.value(QLatin1String("actions")).toList()+data.value(QLatin1String("events")).toList()+data.value(QLatin1String("conditions")).toList() );
+            data.remove(QLatin1String("actions"));
+            data.remove(QLatin1String("events"));
+            data.remove(QLatin1String("conditions"));
+            changed = true;
+        }
+        CollectionInstance* instance = m_collections.value ( ServiceType::uniqueID ( data ) );
+        if (!instance) {
+            instance = new CollectionInstance ( service, this );
+            m_collections.insert ( ServiceType::uniqueID ( data ), instance );
+        }
+        instance->change(data, olddata);
+        ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "collections");
+        sc.setData("uid", ServiceType::uniqueID ( data ));
+        property_changed ( sc.getData() );
+    } else {
+        // if data contains the field to add the service to a collection (ServiceType::takeToCollection) then adjust service->inCollections
+        CollectionInstance* ci = getCollection(ServiceType::takeToCollection ( data ));
+        if (ci)
+            service->inCollections.insert(ci);
+        // for all collections where this service is linked to make the collection know about this changed service
+        foreach ( CollectionInstance* ci, service->inCollections) {
+            ci->changeService(service, data, olddata);
+        }
+    }
+
+    service->data = data;
 
     if ( !loading || changed )
         saveToDisk ( data );
 
-    if ( !loading )
+    if ( !loading ) {
         emit dataSync ( data );
-
-    if ( toCollection.size() ) {
-        ServiceController::ServiceStruct* collection = this->service ( toCollection );
-        if ( !collection ) return;
-        const QString type = ServiceType::type ( data ) + QLatin1String ( "s" ); // e.g. "action" + "s" == "actions"
-        if ( !collection->data.contains ( type ) ) return;
-        QVariantList a = collection->data[ type ].toList();
-        a.removeAll ( ServiceType::uniqueID ( data ) );
-        a.append ( ServiceType::uniqueID ( data ) );
-        collection->data[type] = a;
-        changeService ( collection->data, sessionid );
     }
-
 }
 
 bool ServiceController::validateService ( const QVariantMap& data ) {
@@ -260,77 +281,6 @@ bool ServiceController::validateService ( const QVariantMap& data ) {
     return true;
 }
 
-bool ServiceController::removedNotExistingServicesFromCollection ( const QVariantMap& data, bool withWarning ) {
-    QVariantList actionids = LIST ( "actions" );
-    QVariantList conditionids = LIST ( "conditions" );
-    QVariantList eventids = LIST ( "events" );
-
-    int sum = actionids.size() + conditionids.size() + eventids.size();
-    {
-        QMutableListIterator<QVariant> i ( actionids );
-        while ( i.hasNext() ) {
-            i.next();
-            if ( !service ( i.value().toString() ) ) {
-                i.remove();
-            }
-        }
-    }
-    {
-        QMutableListIterator<QVariant> i ( conditionids );
-        while ( i.hasNext() ) {
-            i.next();
-            if ( !service ( i.value().toString() ) ) {
-                i.remove();
-            }
-        }
-    }
-    {
-        QMutableListIterator<QVariant> i ( eventids );
-        while ( i.hasNext() ) {
-            i.next();
-            if ( !service ( i.value().toString() ) ) {
-                i.remove();
-            }
-        }
-    }
-    if ( sum != actionids.size() + conditionids.size() + eventids.size() ) {
-        if (withWarning)
-            qWarning()<<"Removed not existing services from collection"<<DATA("name");
-        ServiceCreation newcollection ( data );
-        newcollection.setData ( "actions", actionids );
-        newcollection.setData ( "conditions", conditionids );
-        newcollection.setData ( "events", eventids );
-        changeService ( newcollection.getData(), QString() );
-        return true;
-    }
-    return false;
-}
-
-void ServiceController::removeUnusedServices(bool warning) {
-    QList<QVariantMap> collections;
-    foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
-        if ( !ServiceType::isCollection ( service->data ) ) continue;
-        collections.append ( service->data );
-    }
-
-    foreach ( ServiceController::ServiceStruct* service, m_valid_services ) {
-        if ( ServiceType::isCollection ( service->data ) ) continue;
-        const QString uid = ServiceType::uniqueID ( service->data );
-        bool contained = false;
-        for ( int i=0;i<collections.size();++i ) {
-            if ( collections[i].value ( ServiceType::type(service->data) + QLatin1String ( "s" ) ).toList().contains ( uid ) ) {
-                contained = true;
-                break;
-            }
-        }
-
-        if ( !contained ) {
-            if (warning) qWarning() << "Service consistency check detected not referenced service:" << uid << ServiceID::gid(service->data);
-            removeService ( uid );
-        }
-    }
-}
-
 QString ServiceController::generateUniqueID () {     // Generate unique ids amoung all existing ids
     QString nid;
     do {
@@ -372,7 +322,10 @@ QString ServiceController::serviceFilename ( const QString& type, const QString&
 
 void ServiceController::event_triggered ( const QString& event_id, const QString& destination_collectionuid, const char* pluginid ) {
     Q_UNUSED ( pluginid );
-    emit eventTriggered ( event_id, destination_collectionuid );
+    Q_UNUSED ( event_id );
+    CollectionInstance* instance = m_collections.value ( destination_collectionuid );
+    if ( !instance ) return;
+    instance->start();
 }
 
 void ServiceController::execute_action ( const QVariantMap& data, const char* pluginid ) {
@@ -415,7 +368,7 @@ void ServiceController::unregister_listener ( const QString& unqiue_property_id,
         m_propertyid_to_plugins.remove ( unqiue_property_id );
 }
 
-const QMap< QString, ServiceController::ServiceStruct* >& ServiceController::valid_services() const {
+const QMap< QString, ServiceStruct* >& ServiceController::valid_services() const {
     return m_valid_services;
 }
 
@@ -425,6 +378,9 @@ void ServiceController::removeServicesUsingPlugin ( const QString& pluginid ) {
         it.next();
         AbstractPlugin* p = dynamic_cast<AbstractPlugin*> ( it.value()->plugin );
         if ( p && p->pluginid() == pluginid ) {
+            foreach ( CollectionInstance* ci, it.value()->inCollections) {
+                ci->removeService(ServiceType::uniqueID(it.value()->data));
+            }
             it.remove();
         }
     }
@@ -433,18 +389,84 @@ void ServiceController::removeServicesUsingPlugin ( const QString& pluginid ) {
 void ServiceController::removeService ( const QString& uid ) {
     ServiceStruct* service = m_valid_services.take ( uid );
     if ( !service ) return;
-    QVariantMap data = service->data;
+
+    bool isCollection = ServiceType::isCollection ( service->data );
+    const QString type = ServiceType::type ( service->data );
+    QSet<CollectionInstance*> inCollections = service->inCollections;
     delete service;
     service = 0;
 
-    const QString filename = serviceFilename ( ServiceType::type ( data ), uid );
+    const QString filename = serviceFilename ( type, uid );
     if ( !QFile::remove ( filename ) || QFileInfo ( filename ).exists() ) {
         qWarning() << "Couldn't remove file" << filename;
         return;
     }
 
-    ServiceCreation sc = ServiceCreation::createRemoveByUidCmd ( uid );
+    ServiceCreation sc = ServiceCreation::createRemoveByUidCmd ( uid, type );
     emit dataSync ( sc.getData() );
+
+    if ( isCollection ) {
+        delete m_collections.take (uid);
+        ServiceCreation sc = ServiceCreation::createModelRemoveItem ( PLUGIN_ID, "collections");
+        sc.setData("uid", uid);
+        property_changed(sc.getData());
+    } else {
+        foreach ( CollectionInstance* ci, inCollections) {
+            ci->removeService(uid);
+        }
+    }
+}
+
+void ServiceController::removeUnusedServices(bool warning) {
+    QList<QVariantMap> collections;
+    foreach ( ServiceStruct* service, m_valid_services ) {
+        if ( !ServiceType::isCollection ( service->data ) ) continue;
+        collections.append ( service->data );
+    }
+
+    foreach ( ServiceStruct* service, m_valid_services ) {
+        if ( ServiceType::isCollection ( service->data ) ) continue;
+        const QString uid = ServiceType::uniqueID ( service->data );
+        bool contained = false;
+        for ( int i=0;i<collections.size();++i ) {
+            if ( collections[i].value ( QLatin1String ( "services" ) ).toList().contains ( uid ) ) {
+                contained = true;
+                break;
+            }
+        }
+
+        if ( !contained ) {
+            if (warning) qWarning() << "Service consistency check detected not referenced service:" << uid << ServiceID::gid(service->data);
+            removeService ( uid );
+        }
+    }
+}
+
+bool ServiceController::removeMissingServicesFromCollection(QVariantMap data, bool withWarning) {
+    QVariantList list = data[ QLatin1String( "services" )].toList();
+    int sum = list.size();
+	
+	QSet<QString> serviceids;
+	foreach(QVariant v, list) {
+		serviceids.insert(v.toString());
+	}
+
+    {
+        QMutableSetIterator<QString> i ( serviceids );
+        while ( i.hasNext() ) {
+            i.next();
+            if ( !service ( i.value() ) ) {
+                i.remove();
+            }
+        }
+    }
+    if ( sum != serviceids.size() ) {
+        if (withWarning)
+            qWarning()<<"Removed not existing services from collection"<<DATA("name");
+        data.insert(QLatin1String("services"), QVariant(serviceids.toList()));
+        return true;
+    }
+    return false;
 }
 
 void ServiceController::executeAction ( const QVariantMap& data, const QString& sessionid ) {
@@ -464,8 +486,12 @@ void ServiceController::executeActionByUID ( const QString& uid, const QString& 
     service->plugin->execute ( service->data, sessionid );
 }
 
-ServiceController::ServiceStruct* ServiceController::service ( const QString& uid ) {
+ServiceStruct* ServiceController::service ( const QString& uid ) {
     return m_valid_services.value ( uid );
+}
+
+CollectionInstance* ServiceController::getCollection ( const QString& uid ) {
+    return m_collections.value ( uid );
 }
 
 void ServiceController::sessionBegin ( const QString& sessionid ) {
@@ -535,6 +561,18 @@ QList< QVariantMap > ServiceController::properties ( const QString& sessionid ) 
         sc.setData ( "plugins", plugins );
         l.append ( sc.getData() );
     }
+    {
+        ServiceCreation sc = ServiceCreation::createModelReset ( PLUGIN_ID, "collections", "uid" );
+        l.append ( sc.getData() );
+    }
+    {
+        QMap<QString,CollectionInstance*>::iterator i = m_collections.begin();
+        for (;i!=m_collections.end();++i) {
+            ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "collections");
+            sc.setData("uid", i.key());
+            l.append ( sc.getData() );
+        }
+    }
     return l;
 }
 
@@ -558,8 +596,8 @@ void ServiceController::execute ( const QVariantMap& data, const QString& sessio
     Q_UNUSED ( sessionid );
     if ( ServiceID::isId ( data,"servercmd" ) ) {
         switch ( INTDATA ( "state" ) ) {
-			case 0:
-				break;
+        case 0:
+            break;
         case 1:
             QCoreApplication::exit ( 0 );
             break;
@@ -573,6 +611,15 @@ void ServiceController::execute ( const QVariantMap& data, const QString& sessio
         ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "generatedUniqueID" );
         sc.setData ( "uid", generateUniqueID() );
         property_changed ( sc.getData(), sessionid );
+    } else if ( ServiceID::isId ( data,"executecollection" ) ) {
+        CollectionInstance* instance = m_collections.value ( DATA ( "collectionid" ) );
+        if ( instance ) instance->execute();
+    } else if ( ServiceID::isId ( data,"stopcollection" ) ) {
+        CollectionInstance* instance = m_collections.value ( DATA ( "collectionid" ) );
+        if ( instance ) instance->stop();
+    } else if ( ServiceID::isId ( data,"clone" ) ) {
+        CollectionInstance* instance = m_collections.value ( DATA ( "collectionid" ) );
+        if ( instance ) instance->clone();
     }
 }
 
@@ -594,10 +641,8 @@ PluginController* ServiceController::getPluginController() {
     return m_plugincontroller;
 }
 
-QVariantMap ServiceController::cloneService(const QString& uid) {
-    ServiceController::ServiceStruct* s = service(uid);
-	if (!s) return QVariantMap();
-    QVariantMap newservice = s->data;
+QVariantMap ServiceController::cloneService(ServiceStruct* service) {
+    QVariantMap newservice = service->data;
     ServiceType::setUniqueID(newservice, generateUniqueID());
-	return newservice;
+    return newservice;
 }

@@ -27,7 +27,6 @@
 #include <qtextcodec.h>
 #include "logging.h"
 #include "backups.h"
-#include "collections.h"
 #include <stdio.h>
 #include "sessioncontroller.h"
 #include "plugincontroller.h"
@@ -102,15 +101,6 @@ int main(int argc, char *argv[])
     Backups* backups = new Backups();
     plugins->registerPluginFromObject(backups, services);
 
-    // collections
-    Collections* collections = new Collections();
-    collections->setServiceController(services);
-    plugins->registerPluginFromObject(collections, services);
-    collections->connect(services, SIGNAL(dataReady()), collections, SLOT(dataReady()));
-    collections->connect(services, SIGNAL(dataSync(QVariantMap,QString)), collections, SLOT(dataSync(QVariantMap,QString)));
-    collections->connect(services, SIGNAL(eventTriggered(QString,QString)), collections, SLOT(eventTriggered(QString,QString)));
-    services->connect(collections, SIGNAL(instanceExecute(QString, QString)), services, SLOT(executeActionByUID(QString, QString)));
-
 	SessionController* sessions = SessionController::instance(true);
 	plugins->registerPluginFromObject(sessions, services);
 	services->connect(sessions,SIGNAL(sessionBegin(QString)),services,SLOT(sessionBegin(QString)));
@@ -143,11 +133,10 @@ int main(int argc, char *argv[])
 #endif
 
     qDebug() << "Shutdown: Service Controller";
+	plugins->deregisterPluginFromObject(services, services);
 	plugins->deregisterPluginFromObject(sessions, services);
-    plugins->deregisterPluginFromObject(collections, services);
     plugins->deregisterPluginFromObject(backups, services);
 	delete sessions;
-    delete collections;
     delete backups;
     delete services;
 	delete plugins;

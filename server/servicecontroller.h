@@ -35,17 +35,20 @@
 #include <shared/abstractplugin_settings.h>
 #include <shared/abstractserver.h>
 
+class CollectionInstance;
+class Collections;
 class PluginController;
-class PluginController;
+
+struct ServiceStruct {
+	QSet<CollectionInstance*> inCollections;
+	QVariantMap data;
+	AbstractPlugin_services* plugin;
+};
+
 class ServiceController: public QObject, public AbstractServer, public AbstractPlugin, public AbstractPlugin_services {
     Q_OBJECT
     PLUGIN_MACRO
 public:
-    struct ServiceStruct {
-        QVariantMap data;
-        AbstractPlugin_services* plugin;
-    };
-
     ServiceController ();
     virtual ~ServiceController();
     void setPluginController ( PluginController* pc );
@@ -54,13 +57,8 @@ public:
      * Remove services from m_valid_services that are using the plugin referenced by pluginid.
      */
     void removeServicesUsingPlugin ( const QString& pluginid );
-    /**
-     * Check collection (given by data) for not existing services and remove those services.
-     * \return return true if services were removed
-     */
-    bool removedNotExistingServicesFromCollection ( const QVariantMap& data, bool withWarning );
 	/**
-	 * Check for services not referrenced in collections
+	 * Check for services not referenced in collections
 	 */
     void removeUnusedServices(bool warning);
 
@@ -68,17 +66,24 @@ public:
      * Return service with uid
      */
     ServiceStruct* service ( const QString& uid );
+	CollectionInstance* getCollection ( const QString& uid );
     PluginController* getPluginController();
 
     const QMap<QString, ServiceStruct*> &valid_services() const;
 
     void load ( bool service_dir_watcher );
-	QVariantMap cloneService(const QString& uid);
+	QVariantMap cloneService(ServiceStruct* service);
 private:
     PluginController* m_plugincontroller;
+
+	// loading
     QFileSystemWatcher m_dirwatcher;
+	QList<QVariantMap> m_CollectionloadCache;
+	
     // services
     QMap<QString, ServiceStruct*> m_valid_services; // uid -> data+plugin
+    QMap< QString, CollectionInstance* > m_collections;
+    bool removeMissingServicesFromCollection(QVariantMap data, bool withWarning);
 
     // services
     QString serviceFilename ( const QString& id, const QString& uid );

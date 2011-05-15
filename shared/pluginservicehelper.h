@@ -99,6 +99,14 @@ public:
     static bool isModelItem(const QVariantMap& data) {
         return data[QLatin1String("__type")].toString() == QLatin1String("model");
     }
+    static bool isNegatedCondition(const QVariantMap& data){
+		return data.value(QLatin1String("__negate")).toBool();
+	}
+    static QString conditionGroup(const QVariantMap& data){
+		QString cg = data.value(QLatin1String("__conditionGroup")).toString();
+		if (cg.isEmpty()) cg = QLatin1String("all");
+		return cg;
+	}
 };
 
 class ServiceCreation {
@@ -136,7 +144,7 @@ public:
 	 */
     static ServiceCreation createNotification(const char* plugin_id, const char* id) ;
 
-    static ServiceCreation createRemoveByUidCmd(const QString& uid) ;
+    static ServiceCreation createRemoveByUidCmd(const QString& uid, const QString& type) ;
 
     static ServiceCreation createExecuteByUidCmd(const QString& uid) ;
     
