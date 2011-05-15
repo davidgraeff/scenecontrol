@@ -32,7 +32,7 @@ void ServiceController::load ( bool service_dir_watcher ) {
     const QStringList tfiles = dir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     for ( int i=0;i<tfiles.size();++i ) {
         if (directoryChanged ( dir.absoluteFilePath ( tfiles[i] ), true ))
-			++loaded;
+            ++loaded;
     }
 
     // init directory watcher
@@ -44,7 +44,9 @@ void ServiceController::load ( bool service_dir_watcher ) {
     // load collections after all other services
     while (m_CollectionloadCache.size()) {
         if (changeService ( m_CollectionloadCache.takeFirst(), QString(), true ))
-			++loaded;
+            ++loaded;
+        else
+            qWarning() << "Failed loading collection";
     }
     //removeUnusedServices(true);
 
@@ -54,9 +56,9 @@ void ServiceController::load ( bool service_dir_watcher ) {
     qDebug() << "Available Servicestypes :" << m_plugincontroller->knownServices();
     qDebug() << "Available Servicesfiles :" << tfiles.size();
     qDebug() << "Loaded    Servicesfiles :" << m_valid_services.size();
-	if (loaded != m_valid_services.size()) {
-		qDebug() << "Servicesfiles diff :" << m_valid_services.size() << loaded;
-	}
+    if (loaded != m_valid_services.size()) {
+        qWarning() << "Servicesfiles diff :" << loaded-m_valid_services.size();
+    }
 
     // trigger serverstate property after all plugins and services have been loaded
     {
@@ -98,9 +100,13 @@ bool ServiceController::directoryChanged ( QString file, bool loading ) {
 
     if (loading && ServiceType::isCollection(result))
         m_CollectionloadCache.append(result);
-    else
-        return changeService ( result, QString(), true );
-	return false;
+    else {
+        if (changeService ( result, QString(), true ))
+            return true;
+        else
+            qWarning() << "Failed loading service" << result;
+    }
+    return false;
 }
 
 bool ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading ) {
@@ -127,13 +133,9 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         changed = true;
     }
 
-	/* legacycode */
-	if (data.value(QLatin1String("__plugin")) == QLatin1String("collection")) {
-		data.insert(QLatin1String("__plugin"), QLatin1String("servicecontroller"));
-	}
-
     // get service structure by unique id or create a new one
     ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
+
     if ( !service ) {
         service = new ServiceStruct();
         m_valid_services.insert ( ServiceType::uniqueID ( data ),service );
@@ -145,20 +147,21 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     }
 
     const QVariantMap olddata = service->data;
+	
+	
+	if (olddata.size() && (ServiceType::type(olddata) != ServiceType::type(data))) {
+		// service type changed, but filename consists of service type so remove old service and save new one
+		removeService ( ServiceType::uniqueID ( data ), true );
+		changed = true;
+	}
 
     if (ServiceType::isCollection(data)) {
         /* change data before it is saved */
         if (removeMissingServicesFromCollection(data, true))
             changed = true;
+		
+		service->data = data;
 
-        /* legacycode */
-        if (data.contains(QLatin1String("actions"))) {
-            data.insert(QLatin1String("services"), data.value(QLatin1String("actions")).toList()+data.value(QLatin1String("events")).toList()+data.value(QLatin1String("conditions")).toList() );
-            data.remove(QLatin1String("actions"));
-            data.remove(QLatin1String("events"));
-            data.remove(QLatin1String("conditions"));
-            changed = true;
-        }
         CollectionInstance* instance = m_collections.value ( ServiceType::uniqueID ( data ) );
         if (!instance) {
             instance = new CollectionInstance ( service, this );
@@ -169,6 +172,7 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         sc.setData("uid", ServiceType::uniqueID ( data ));
         property_changed ( sc.getData() );
     } else {
+		service->data = data;
         // if data contains the field to add the service to a collection (ServiceType::takeToCollection) then adjust service->inCollections
         CollectionInstance* ci = getCollection(ServiceType::takeToCollection ( data ));
         if (ci)
@@ -179,15 +183,13 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         }
     }
 
-    service->data = data;
-
     if ( !loading || changed )
         saveToDisk ( data );
 
     if ( !loading ) {
         emit dataSync ( data );
     }
-    
+
     return true;
 }
 
@@ -401,15 +403,24 @@ void ServiceController::removeServicesUsingPlugin ( const QString& pluginid ) {
     }
 }
 
-void ServiceController::removeService ( const QString& uid ) {
-    ServiceStruct* service = m_valid_services.take ( uid );
+void ServiceController::removeService ( const QString& uid, bool removeFileOnly ) {
+    ServiceStruct* service;
+	
+	if (removeFileOnly)
+		service = m_valid_services.value ( uid );
+	else
+		service = m_valid_services.take ( uid );
+	
     if ( !service ) return;
 
     bool isCollection = ServiceType::isCollection ( service->data );
     const QString type = ServiceType::type ( service->data );
     QSet<CollectionInstance*> inCollections = service->inCollections;
-    delete service;
-    service = 0;
+	
+	if (!removeFileOnly) {
+		delete service;
+		service = 0;
+	}
 
     const QString filename = serviceFilename ( type, uid );
     if ( !QFile::remove ( filename ) || QFileInfo ( filename ).exists() ) {
@@ -417,6 +428,9 @@ void ServiceController::removeService ( const QString& uid ) {
         return;
     }
 
+	if (removeFileOnly)
+		return;
+	
     ServiceCreation sc = ServiceCreation::createRemoveByUidCmd ( uid, type );
     emit dataSync ( sc.getData() );
 
@@ -460,11 +474,11 @@ void ServiceController::removeUnusedServices(bool warning) {
 bool ServiceController::removeMissingServicesFromCollection(QVariantMap data, bool withWarning) {
     QVariantList list = data[ QLatin1String( "services" )].toList();
     int sum = list.size();
-	
-	QSet<QString> serviceids;
-	foreach(QVariant v, list) {
-		serviceids.insert(v.toString());
-	}
+
+    QSet<QString> serviceids;
+    foreach(QVariant v, list) {
+        serviceids.insert(v.toString());
+    }
 
     {
         QMutableSetIterator<QString> i ( serviceids );

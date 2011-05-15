@@ -130,7 +130,7 @@ public Q_SLOTS:
      * Remove service from m_valid_services and from disk and propagate that through the dataSync signal
      * \param uid unique service id
      */
-    void removeService ( const QString& uid );
+    void removeService ( const QString& uid, bool removeFileOnly = false );
 
     /**
      * Execute action described by data (delegate to plugin).
