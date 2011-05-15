@@ -11,14 +11,14 @@
 	<pulsechannelvolume>
 		<titel>Pulseaudiokanallautstärke</titel>
 		<description>Steuert die Laustärke eines Pulseaudiokanal</description>
-		<sindid><titel>Kanal</titel></sindid>
+		<sinkid><titel>Kanal</titel></sinkid>
 		<volume><titel>Lautstärke</titel></volume>
 		<relative><titel>Relativ</titel></relative>
 	</pulsechannelvolume>
 	<pulsechannelmute>
 		<titel>Pulseaudiokanal Mute</titel>
 		<description>Steuert die Stummschaltung eines Pulseaudiokanal</description>
-		<sindid><titel>Kanal</titel></sindid>
+		<sinkid><titel>Kanal</titel></sinkid>
 		<mute><titel>Zustand</titel>
 		<entry>Stumm</entry><entry>Hörbar</entry><entry>Umschalten</entry>
 		</mute>
@@ -26,7 +26,7 @@
 	<pulsechannelstate>
 		<titel>Position</titel>
 		<description>Setzt die Position in ms im Mediastream</description>
-		<sindid><titel>Kanal</titel></sindid>
+		<sinkid><titel>Kanal</titel></sinkid>
 		<volume><titel>Lautstärke</titel></volume>
 		<mute><titel>Stumm</titel></mute>
 	</pulsechannelstate>

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="pulseaudio" version="1.0">
   <action id="pulsechannelvolume">
-    <string id="sindid" model="pulse.channels" model_key="sinkid" model_show="sinkid" />
+    <string id="sinkid" model="pulse.channels" model_key="sinkid" model_show="sinkid" />
     <double id="volume" min="-1.0" max="1.0" step="0.1">1.0</double>
     <bool id="relative">1</bool>
   </action>
   <action id="pulsechannelmute">
-    <string id="sindid" model="pulse_sinks" />
+    <string id="sinkid" model="pulse_sinks" />
     <enum id="mute" /><!-- Mute,Unmute,Toggle -->
   </action>
   <model id="pulse.channels" model_key="sinkid">
