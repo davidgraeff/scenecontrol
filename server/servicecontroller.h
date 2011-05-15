@@ -83,7 +83,8 @@ private:
     // services
     QMap<QString, ServiceStruct*> m_valid_services; // uid -> data+plugin
     QMap< QString, CollectionInstance* > m_collections;
-    bool removeMissingServicesFromCollection(QVariantMap data, bool withWarning);
+    bool removeMissingServicesFromCollection(QVariantMap& data, bool withWarning);
+	void syncCollection(const QVariantMap& data, bool saveToDisk);
 
     // services
     QString serviceFilename ( const QString& id, const QString& uid );

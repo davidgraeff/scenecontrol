@@ -37,7 +37,7 @@ public:
     virtual ~CollectionInstance();
 	void change(const QVariantMap& data, const QVariantMap& olddata);
 	void clone();
-	void removeService ( const QString& uid );
+	bool removeService ( const QString& uid );
 	bool changeService ( ServiceStruct* service, const QVariantMap& data, const QVariantMap& olddata );
 	bool containsService ( const QString& uid );
 
@@ -55,6 +55,7 @@ private:
     bool m_enabled;
     QTimer m_executionTimer;
     int m_currenttime;
+	void updateServiceIDs();
 private Q_SLOTS:
     void executiontimeout();
 };

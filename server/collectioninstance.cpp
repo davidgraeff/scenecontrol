@@ -60,7 +60,7 @@ void CollectionInstance::change(const QVariantMap& data, const QVariantMap& oldd
             qWarning()<<"Collection contains not existing service"<< m_collection->data<<uid;
             continue;
         }
-        changeService(service, service->data, QVariantMap());
+        changeService(service, service->data, service->data);
     }
 
     m_enabled = BOOLDATA ( "enabled" );
@@ -71,13 +71,10 @@ bool CollectionInstance::changeService ( ServiceStruct* service, const QVariantM
     ServiceStruct* oldservice = m_serviceids.value(ServiceType::uniqueID(data));
     if (!oldservice || oldservice != service) {
         m_serviceids[ServiceType::uniqueID(data)] = service;
-        if (olddata.size()) {
-            QVariantList list;
-            const QList<QString> stringlist = m_serviceids.keys();
-            foreach(QString s, stringlist)
-            list.append(s);
+        service->inCollections.insert(this);
 
-            m_collection->data[ QLatin1String("services") ] = list;
+        if (olddata != data) {
+            updateServiceIDs();
             changed = true;
         }
     }
@@ -94,14 +91,16 @@ bool CollectionInstance::changeService ( ServiceStruct* service, const QVariantM
     return changed;
 }
 
-void CollectionInstance::removeService(const QString& uid)
+bool CollectionInstance::removeService(const QString& uid)
 {
     ServiceStruct* service = m_serviceids.take(uid);
-    if (!service) return;
+    if (!service) return false;
     service->inCollections.remove(this);
+	updateServiceIDs();
 
-    if (!ServiceType::isEvent(service->data)) return;
+    if (!ServiceType::isEvent(service->data)) return true;
     service->plugin->unregister_event(service->data, ServiceType::uniqueID(m_collection->data));
+    return true;
 }
 
 bool CollectionInstance::containsService ( const QString& uid ) {
@@ -198,4 +197,13 @@ void CollectionInstance::clone() {
 
 ServiceStruct* CollectionInstance::serviceStruct() {
     return m_collection;
+}
+
+void CollectionInstance::updateServiceIDs() {
+    QVariantList list;
+    const QList<QString> stringlist = m_serviceids.keys();
+    foreach(QString s, stringlist)
+    list.append(s);
+
+    m_collection->data[ QLatin1String("services") ] = list;
 }
