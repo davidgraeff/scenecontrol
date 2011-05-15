@@ -6,7 +6,7 @@
     <bool id="relative">1</bool>
   </action>
   <action id="pulsechannelmute">
-    <string id="sinkid" model="pulse_sinks" />
+    <string id="sinkid" model="pulse.channels" />
     <enum id="mute" /><!-- Mute,Unmute,Toggle -->
   </action>
   <model id="pulse.channels" model_key="sinkid">
