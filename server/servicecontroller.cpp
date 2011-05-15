@@ -147,20 +147,20 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     }
 
     const QVariantMap olddata = service->data;
-	
-	
-	if (olddata.size() && (ServiceType::type(olddata) != ServiceType::type(data))) {
-		// service type changed, but filename consists of service type so remove old service and save new one
-		removeService ( ServiceType::uniqueID ( data ), true );
-		changed = true;
-	}
+
+
+    if (olddata.size() && (ServiceType::type(olddata) != ServiceType::type(data))) {
+        // service type changed, but filename consists of service type so remove old service and save new one
+        removeService ( ServiceType::uniqueID ( data ), true );
+        changed = true;
+    }
 
     if (ServiceType::isCollection(data)) {
         /* change data before it is saved */
         if (removeMissingServicesFromCollection(data, true))
             changed = true;
-		
-		service->data = data;
+
+        service->data = data;
 
         CollectionInstance* instance = m_collections.value ( ServiceType::uniqueID ( data ) );
         if (!instance) {
@@ -168,11 +168,23 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
             m_collections.insert ( ServiceType::uniqueID ( data ), instance );
         }
         instance->change(data, olddata);
+        if ( !loading || changed )
+            saveToDisk ( data );
+
+        if ( !loading ) {
+            emit dataSync ( data );
+        }
         ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "collections");
         sc.setData("uid", ServiceType::uniqueID ( data ));
         property_changed ( sc.getData() );
     } else {
-		service->data = data;
+        service->data = data;
+        if ( !loading || changed )
+            saveToDisk ( data );
+
+        if ( !loading ) {
+            emit dataSync ( data );
+        }
         // if data contains the field to add the service to a collection (ServiceType::takeToCollection) then adjust service->inCollections
         CollectionInstance* ci = getCollection(ServiceType::takeToCollection ( data ));
         if (ci)
@@ -181,13 +193,6 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         foreach ( CollectionInstance* ci, service->inCollections) {
             ci->changeService(service, data, olddata);
         }
-    }
-
-    if ( !loading || changed )
-        saveToDisk ( data );
-
-    if ( !loading ) {
-        emit dataSync ( data );
     }
 
     return true;
@@ -405,22 +410,22 @@ void ServiceController::removeServicesUsingPlugin ( const QString& pluginid ) {
 
 void ServiceController::removeService ( const QString& uid, bool removeFileOnly ) {
     ServiceStruct* service;
-	
-	if (removeFileOnly)
-		service = m_valid_services.value ( uid );
-	else
-		service = m_valid_services.take ( uid );
-	
+
+    if (removeFileOnly)
+        service = m_valid_services.value ( uid );
+    else
+        service = m_valid_services.take ( uid );
+
     if ( !service ) return;
 
     bool isCollection = ServiceType::isCollection ( service->data );
     const QString type = ServiceType::type ( service->data );
     QSet<CollectionInstance*> inCollections = service->inCollections;
-	
-	if (!removeFileOnly) {
-		delete service;
-		service = 0;
-	}
+
+    if (!removeFileOnly) {
+        delete service;
+        service = 0;
+    }
 
     const QString filename = serviceFilename ( type, uid );
     if ( !QFile::remove ( filename ) || QFileInfo ( filename ).exists() ) {
@@ -428,9 +433,9 @@ void ServiceController::removeService ( const QString& uid, bool removeFileOnly 
         return;
     }
 
-	if (removeFileOnly)
-		return;
-	
+    if (removeFileOnly)
+        return;
+
     ServiceCreation sc = ServiceCreation::createRemoveByUidCmd ( uid, type );
     emit dataSync ( sc.getData() );
 
