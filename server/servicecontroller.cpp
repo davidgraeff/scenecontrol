@@ -27,10 +27,12 @@ void ServiceController::setPluginController ( PluginController* pc ) {
 
 void ServiceController::load ( bool service_dir_watcher ) {
     // files in {home}/roomcontrol/services
+    int loaded = 0;
     QDir dir = serviceDir();
     const QStringList tfiles = dir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     for ( int i=0;i<tfiles.size();++i ) {
-        directoryChanged ( dir.absoluteFilePath ( tfiles[i] ), true );
+        if (directoryChanged ( dir.absoluteFilePath ( tfiles[i] ), true ))
+			++loaded;
     }
 
     // init directory watcher
@@ -41,15 +43,20 @@ void ServiceController::load ( bool service_dir_watcher ) {
 
     // load collections after all other services
     while (m_CollectionloadCache.size()) {
-        changeService ( m_CollectionloadCache.takeFirst(), QString(), true );
+        if (changeService ( m_CollectionloadCache.takeFirst(), QString(), true ))
+			++loaded;
     }
     //removeUnusedServices(true);
 
     emit dataReady();
 
     // stats
-    qDebug() << "Available Services    :" << m_plugincontroller->knownServices();
-    qDebug() << "Loaded    Services    :" << m_valid_services.size();
+    qDebug() << "Available Servicestypes :" << m_plugincontroller->knownServices();
+    qDebug() << "Available Servicesfiles :" << tfiles.size();
+    qDebug() << "Loaded    Servicesfiles :" << m_valid_services.size();
+	if (loaded != m_valid_services.size()) {
+		qDebug() << "Servicesfiles diff :" << m_valid_services.size() << loaded;
+	}
 
     // trigger serverstate property after all plugins and services have been loaded
     {
@@ -62,14 +69,14 @@ void ServiceController::load ( bool service_dir_watcher ) {
     m_state_events.triggerEvent ( 1, m_server );
 }
 
-void ServiceController::directoryChanged ( QString file, bool loading ) {
+bool ServiceController::directoryChanged ( QString file, bool loading ) {
     if ( !loading ) {
         if ( !QFile::exists ( file ) ) {
             qDebug() << "File removed:"<<file;
             QStringList list = file.split ( QLatin1String ( "." ) );
-            if ( list.size() <3 ) return;
+            if ( list.size() <3 ) return false;
             removeService ( list[1] );
-            return;
+            return false;
         }
         qDebug() << "File changed:"<<file;
     }
@@ -78,7 +85,7 @@ void ServiceController::directoryChanged ( QString file, bool loading ) {
     f.open ( QIODevice::ReadOnly );
     if ( !f.isOpen() ) {
         qWarning() << "Couldn't open file" << file;
-        return;
+        return false;
     }
 
     bool ok = true;
@@ -86,17 +93,18 @@ void ServiceController::directoryChanged ( QString file, bool loading ) {
     f.close();
     if ( !ok ) {
         qWarning() << "Not a json file" << file;
-        return;
+        return false;
     }
 
     if (loading && ServiceType::isCollection(result))
         m_CollectionloadCache.append(result);
     else
-        changeService ( result, QString(), true );
+        return changeService ( result, QString(), true );
+	return false;
 }
 
-void ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading ) {
-    if ( !validateService ( unvalidatedData ) ) return;
+bool ServiceController::changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading ) {
+    if ( !validateService ( unvalidatedData ) ) return false;
     QVariantMap data = unvalidatedData;
 
     if ( ServiceType::isExecutable ( data ) ) {
@@ -104,12 +112,12 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
             executeActionByUID ( ServiceType::uniqueID ( data ), sessionid );
         else
             executeAction ( data, sessionid );
-        return;
+        return false;
     }
 
     if ( ServiceType::isRemoveCmd ( data ) ) {
         removeService ( ServiceType::uniqueID ( data ) );
-        return;
+        return false;
     }
 
     // set an uid if this service does not have one
@@ -118,6 +126,11 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         ServiceType::setUniqueID ( data, generateUniqueID() );
         changed = true;
     }
+
+	/* legacycode */
+	if (data.value(QLatin1String("__plugin")) == QLatin1String("collection")) {
+		data.insert(QLatin1String("__plugin"), QLatin1String("servicecontroller"));
+	}
 
     // get service structure by unique id or create a new one
     ServiceStruct* service = m_valid_services.value ( ServiceType::uniqueID ( data ) );
@@ -128,7 +141,7 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     service->plugin = dynamic_cast<AbstractPlugin_services*> ( m_plugincontroller->getPlugin ( ServiceID::pluginid ( data ) ) );
     if ( service->plugin == 0 ) {
         qWarning() << "No plugin with AbstractPlugin_services implementation for service found!"<<data;
-        return;
+        return false;
     }
 
     const QVariantMap olddata = service->data;
@@ -174,6 +187,8 @@ void ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
     if ( !loading ) {
         emit dataSync ( data );
     }
+    
+    return true;
 }
 
 bool ServiceController::validateService ( const QVariantMap& data ) {

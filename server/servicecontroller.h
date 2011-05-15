@@ -124,7 +124,7 @@ public Q_SLOTS:
      * \param service data
      * \param sessionid sessionid that caused this change or empty if not triggered by external sources like network
      */
-    void changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading = false );
+    bool changeService ( const QVariantMap& unvalidatedData, const QString& sessionid, bool loading = false );
 
     /**
      * Remove service from m_valid_services and from disk and propagate that through the dataSync signal
@@ -141,7 +141,7 @@ public Q_SLOTS:
      * Execute action in m_services with given uid immediately.
      */
     void executeActionByUID ( const QString& uid, const QString& sessionid );
-    void directoryChanged ( QString file, bool loading = false );
+    bool directoryChanged ( QString file, bool loading = false );
 
     /**
      * Session manager: A valid session started. Send all plugin infos via dataSync.
