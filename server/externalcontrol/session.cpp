@@ -53,17 +53,24 @@ void SessionExtension::setWebsocket(WebSocket* websocket) {
 	}
 	m_websocket = websocket;
     connect(websocket,SIGNAL(removeWebSocket(WebSocket*)),SLOT(clearWebSocket(WebSocket*)));
+	m_clearDataCacheTimer.stop();
+	while (m_dataCache.size()) {
+		m_websocket->writeJSON(m_dataCache.takeFirst());
+	}
 }
 
 void SessionExtension::clearDataCache() {
-	if (m_dataCache.size()) m_dataLost = true;
+	if (m_dataCache.size()) {
+		m_dataLost = true;
+		qWarning() << "Session lost cached data: #" << m_dataCache.size();
+	}
     m_dataCache.clear();
 	m_clearDataCacheTimer.stop();
 }
 
 void SessionExtension::clearWebSocket(WebSocket* websocket) {
 	Q_ASSERT(m_websocket==websocket);
-	delete m_websocket;
+	m_websocket->deleteLater();
 	m_websocket = 0;
 }
 

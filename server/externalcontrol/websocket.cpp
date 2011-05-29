@@ -33,14 +33,13 @@
 #include "httpserver.h"
 
 WebSocket* WebSocket::makeWebsocket(HttpRequest* request, QObject* parent) {
-    if (request->m_sessionid.isEmpty() || request->m_header.value("Upgrade").toLower() != "websocket" || request->m_header.value("Connection") != "Upgrade")
+    if (request->m_header.value("Upgrade").toLower() != "websocket" || request->m_header.value("Connection") != "Upgrade")
         return 0;
 
     if (request->m_header.value("Sec-WebSocket-Protocol") != "roomcontrol") {
         qWarning()<<"Websocket: Wrong subprotocol";
         return 0;
     }
-
     if (request->m_header.contains("Sec-WebSocket-Key")) {
         //Version 4+
         QCryptographicHash hash(QCryptographicHash::Sha1);
@@ -171,7 +170,7 @@ void WebSocket::readyRead()
         case 1:
             break;
         case 2:
-			emit authentificated(this, m_sessionid);
+			emit gotSession(this, m_sessionid);
             break;
         default:
             break;
@@ -212,4 +211,7 @@ void WebSocket::disconnected()
 
 void WebSocket::writeJSON(const QByteArray& data) {
     m_socket->write(char(0x00)+data+"\n"+char(0xFF));
+}
+QString WebSocket::getSessionID() {
+    return m_sessionid;
 }

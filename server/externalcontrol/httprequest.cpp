@@ -207,5 +207,6 @@ QSslSocket* HttpRequest::takeOverSocket() {
     disconnect(m_socket, SIGNAL(sslErrors(const QList<QSslError> &)),
                this, SLOT(sslErrors(const QList<QSslError> &)));
     disconnect(m_socket,SIGNAL(disconnected()),this, SLOT(disconnected()));
+	m_socket = 0;
     return s;
 }

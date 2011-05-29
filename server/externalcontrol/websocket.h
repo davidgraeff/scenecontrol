@@ -32,6 +32,7 @@ public:
 	static WebSocket* makeWebsocket(HttpRequest* request, QObject* parent);
     virtual ~WebSocket();
     void writeJSON(const QByteArray& data);
+	QString getSessionID();
 private:
     WebSocket(QObject* parent);
     //network
@@ -46,5 +47,5 @@ private Q_SLOTS:
 Q_SIGNALS:
     void dataReceived(const QVariantMap& data, const QString& sessionid);
     void removeWebSocket(WebSocket*);
-	void authentificated(WebSocket*, const QString& sessionid);
+	void gotSession(WebSocket*, const QString& sessionid);
 };

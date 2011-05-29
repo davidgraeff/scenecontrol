@@ -38,7 +38,7 @@ private:
     QTimer m_clearDataCacheTimer;
 	QList<QByteArray> m_dataCache;
 	bool m_dataLost;
-    void clearDataCache();
 private Q_SLOTS:
+    void clearDataCache();
     void clearWebSocket(WebSocket*);
 };

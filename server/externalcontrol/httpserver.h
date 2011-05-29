@@ -42,11 +42,11 @@ public:
 private:
     virtual void incomingConnection(int socketDescriptor);
     QMap<QString, SessionExtension*> m_session_cache;
+	QSet<WebSocket*> m_sessionLess_websockets;
 
 private Q_SLOTS:
 	// websocket
 	void clearWebSocket(WebSocket* websocket);
-	void authentificatedWebSocket(WebSocket*, const QString& sessionid);
 	
 	// http request
 	void removeConnection(HttpRequest*);
@@ -55,7 +55,7 @@ public Q_SLOTS:
     // service controller signals
     void dataSync(const QVariantMap& data, const QString& sessionid);
     // session controller signals
-    void sessionBegin(QString sessionid);
+    SessionExtension* sessionBegin(QString sessionid);
     void sessionFinished(QString sessionid, bool timeout);
 Q_SIGNALS:
     void dataReceived(QVariantMap,QString);

@@ -114,8 +114,8 @@ void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
     }
 
     if (sessionid.size()) {
-        SessionExtension *c = m_session_cache.value(sessionid);
-        if (c) c->dataChanged(cmdbytes);
+        SessionExtension *c = sessionBegin(sessionid);
+		if (c) c->dataChanged(cmdbytes);
     } else {
         foreach ( SessionExtension* c, m_session_cache ) {
             c->dataChanged ( cmdbytes );
@@ -124,10 +124,27 @@ void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
 
 }
 
-void HttpServer::sessionBegin(QString sessionid) {
+SessionExtension* HttpServer::sessionBegin(QString sessionid) {
+	SessionExtension* se = m_session_cache.value(sessionid);
+	if (se) return se;
+	
     Session* s = SessionController::instance()->getSession(sessionid);
-    if (!s) return;
-    m_session_cache.insert(sessionid,new SessionExtension(this));
+    if (!s) return 0;
+	se = new SessionExtension(this);
+    m_session_cache.insert(sessionid,se);
+	
+	// session less websockets
+	QMutableSetIterator<WebSocket*> i(m_sessionLess_websockets);
+	while (i.hasNext()) {
+		i.next();
+		if (i.value()->getSessionID() == sessionid) {
+			WebSocket* w = i.value();
+			i.remove();
+			disconnect(w, SIGNAL(removeWebSocket(WebSocket*)), this, SLOT(clearWebSocket(WebSocket*)));
+			se->setWebsocket(w);
+		}
+	}
+	return se;
 }
 
 void HttpServer::sessionFinished(QString sessionid, bool timeout) {
@@ -139,28 +156,26 @@ void HttpServer::clearWebSocket(WebSocket* websocket) {
     websocket->deleteLater();
 }
 
-void HttpServer::authentificatedWebSocket(WebSocket* websocket, const QString& sessionid) {
-    SessionExtension* s = m_session_cache.value(sessionid);
-    if (!s) return;
-    disconnect(websocket, SIGNAL(removeWebSocket(WebSocket*)), this, SLOT(clearWebSocket(WebSocket*)));
-    s->setWebsocket(websocket);
-}
-
 void HttpServer::removeConnection(HttpRequest* request) {
     request->deleteLater();
 }
 
 void HttpServer::headerParsed(HttpRequest* request) {
     if (request->httprequestType == HttpRequest::RequestTypeFile) {
-        (new HttpResponseFile(request, this))->deleteLater();
+		
+        HttpResponseFile(request, this);
+		
     } else if (request->httprequestType == HttpRequest::RequestTypeWebsocket) {
+		
         WebSocket* w = WebSocket::makeWebsocket(request, this);
         request->deleteLater();
         if (!w) return;
-        connect(w, SIGNAL(authentificated(WebSocket*,QString)), SLOT(authentificatedWebSocket(WebSocket*,QString)));
         connect(w, SIGNAL(dataReceived(QVariantMap,QString)), SIGNAL(dataReceived(QVariantMap,QString)));
         connect(w, SIGNAL(removeWebSocket(WebSocket*)), SLOT(clearWebSocket(WebSocket*)));
+		m_sessionLess_websockets.insert(w);
+		
     } else if (request->httprequestType == HttpRequest::RequestTypePollJSon) {
+		
         request->m_socket->write("HTTP/1.1 200 OK\r\n");
         HttpServer::writeDefaultHeaders(request->m_socket);
         request->m_socket->write("\r\n");
@@ -173,7 +188,9 @@ void HttpServer::headerParsed(HttpRequest* request) {
             }
         }
         request->m_socket->flush();
+		
     } else if (request->httprequestType == HttpRequest::RequestTypeSendJSon) {
+		
         while (request->m_socket->canReadLine()) {
             const QByteArray line = request->m_socket->readLine().trimmed();
             bool ok = true;
@@ -192,12 +209,15 @@ void HttpServer::headerParsed(HttpRequest* request) {
         HttpServer::writeDefaultHeaders(request->m_socket);
         request->m_socket->write("\r\n");
         request->m_socket->flush();
+		
     } else {
+		
 		qWarning()<<"Internal Server Error" << request->m_requestedfile;
         request->m_socket->write("HTTP/1.1 500 Internal Server Error\r\n");
         request->m_socket->write("Content-Length: 0\r\n");
         HttpServer::writeDefaultHeaders(request->m_socket);
         request->m_socket->write("\r\n");
         request->m_socket->flush();
+		
 	}
 }

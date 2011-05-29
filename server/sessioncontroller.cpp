@@ -127,13 +127,13 @@ void SessionController::auth_success(QString sessionid, const QString& name) {
     Session* session = new Session(this, sessionid, name);
     m_session.insert(sessionid, session);
 
+    emit sessionBegin(sessionid);
+	
     {
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.success");
         sc.setData("sessionid", sessionid);
         m_server->property_changed(sc.getData(),sessionid);
     }
-
-    emit sessionBegin(sessionid);
 
     {
         ServiceCreation sc = ServiceCreation::createModelReset(PLUGIN_ID, "server.logins.own", "endpoint");
