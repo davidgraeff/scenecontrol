@@ -24,55 +24,27 @@
 #include <QByteArray>
 #include <QTimer>
 
-class HttpServer;
-class ServiceController;
-class ClientConnection : public QObject
+class HttpRequest;
+class WebSocket : public QObject
 {
     Q_OBJECT
-private:
-    bool m_authok;
-    bool m_isWebsocket;
-    bool m_inHeader;
-    QMap<QByteArray,QByteArray> m_header;
-    QString m_requestedfile;
-	QMap<QByteArray, QByteArray> m_fileparameters;
-	enum enumRequestType {
-		None,
-		Get,
-		Post,
-		Head
-	} m_requestType;
-    //network
-	HttpServer* m_server;
-    QSslSocket* m_socket;
-    QTimer m_timeout;
-    void generateFileResponse();
-	void writeDefaultHeaders();
-    void generateWebsocketResponseV04();
-	void generateWebsocketResponseV00();
-	bool readHttp(const QByteArray& line);
 public:
-    QString sessionid;
-
-    ClientConnection(HttpServer* server, QSslSocket* s) ;
-    ~ClientConnection() ;
-    void sessionEstablished();
-	/**
-	 * Has to be websocket connection to write something
-	 */
+	static WebSocket* makeWebsocket(HttpRequest* request, QObject* parent);
+    virtual ~WebSocket();
     void writeJSON(const QByteArray& data);
+private:
+    WebSocket(QObject* parent);
+    //network
+    QSslSocket* m_socket;
+    QString m_sessionid;
+	void setSocket(QSslSocket* socket);
 private Q_SLOTS:
-    /**
-     * Close this connection after 5min of inactivity
-     */
-    void timeout();
-
     void readyRead ();
     void disconnected();
     void peerVerifyError(QSslError);
     void sslErrors(QList<QSslError>);
 Q_SIGNALS:
     void dataReceived(const QVariantMap& data, const QString& sessionid);
-    void removeConnection(ClientConnection*);
-	void upgradedConnection();
+    void removeWebSocket(WebSocket*);
+	void authentificated(WebSocket*, const QString& sessionid);
 };

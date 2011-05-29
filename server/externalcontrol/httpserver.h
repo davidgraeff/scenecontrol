@@ -22,8 +22,12 @@
 
 #include <QtNetwork/QTcpServer>
 #include <QVariantMap>
+#include <QTimer>
+#include <QSslSocket>
 
-class ClientConnection;
+class HttpRequest;
+class WebSocket;
+class SessionExtension;
 /**
  * Manages incoming connections and delegate commands to the RoomControlServer
  */
@@ -33,16 +37,21 @@ public:
     HttpServer();
     virtual ~HttpServer();
     bool start();
+	static void writeDefaultHeaders(QSslSocket* socket);
 
 private:
     virtual void incomingConnection(int socketDescriptor);
-	ClientConnection* findConnection(const QString& sessionid);
-    QList<ClientConnection*> m_http_connections;
-	QList<ClientConnection*> m_websocket_connections;
-	QMap<QString, ClientConnection*> m_session_cache;
+    QMap<QString, SessionExtension*> m_session_cache;
+
+private Q_SLOTS:
+	// websocket
+	void clearWebSocket(WebSocket* websocket);
+	void authentificatedWebSocket(WebSocket*, const QString& sessionid);
+	
+	// http request
+	void removeConnection(HttpRequest*);
+	void headerParsed(HttpRequest*);
 public Q_SLOTS:
-    void removeConnection(ClientConnection* );
-	void upgradedConnection();
     // service controller signals
     void dataSync(const QVariantMap& data, const QString& sessionid);
     // session controller signals

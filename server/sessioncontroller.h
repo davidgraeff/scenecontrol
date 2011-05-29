@@ -75,6 +75,7 @@ public:
     virtual void clear() {}
     virtual void initialize() {}
 
+	int tryLogin(const QVariantMap& data, QString& sessionid);
     Session* getSession(const QString& sessionid);
     /**
      * \return Return temporary session id

@@ -69,18 +69,18 @@ Session* SessionController::getSession(const QString& sessionid) {
 
 bool SessionController::condition(const QVariantMap& data, const QString& sessionid) {
     Q_UNUSED(data);
-	Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     return false;
 }
 
 void SessionController::execute(const QVariantMap& data, const QString& sessionid) {
-	Q_UNUSED(sessionid);
-    if (ServiceID::isId(data,"sessionlogin")) { 
+    Q_UNUSED(sessionid);
+    if (ServiceID::isId(data,"sessionlogin")) {
         addSession(DATA("user"),DATA("pwd")); //nonsense: sessionid not saved. This service has to be used in connection classes like the http server
     } else if (ServiceID::isId(data,"sessionlogout")) {
         closeSession(DATA("sessionid"), false);
     } else if (ServiceID::isId(data,"sessionidle")) {
-		if (DATA("sessionid").size() && sessionid != DATA("sessionid")) qWarning()<<"Warning: Idle command tried to idle not its own session!";
+        if (DATA("sessionid").size() && sessionid != DATA("sessionid")) qWarning()<<"Warning: Idle command tried to idle not its own session!";
         Session* session = m_session.value(sessionid);
         if (session) session->resetSessionTimer();
     }
@@ -88,12 +88,12 @@ void SessionController::execute(const QVariantMap& data, const QString& sessioni
 
 void SessionController::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
+    Q_UNUSED(collectionuid);
 }
 
 void SessionController::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
+    Q_UNUSED(data);
+    Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> SessionController::properties(const QString& sessionid) {
@@ -129,18 +129,18 @@ void SessionController::auth_success(QString sessionid, const QString& name) {
 
     {
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.success");
-		sc.setData("sessionid", sessionid);
+        sc.setData("sessionid", sessionid);
         m_server->property_changed(sc.getData(),sessionid);
     }
 
     emit sessionBegin(sessionid);
 
-	{
+    {
         ServiceCreation sc = ServiceCreation::createModelReset(PLUGIN_ID, "server.logins.own", "endpoint");
         m_server->property_changed(sc.getData(),sessionid);
     }
 
-	QList<QString> sessions_with_same_user;
+    QList<QString> sessions_with_same_user;
     foreach(Session* session, m_session) {
         if (session->user() == name) {
             sessions_with_same_user.append(session->sessionid());
@@ -156,4 +156,17 @@ void SessionController::auth_failed(QString sessionid, const QString& name) {
     emit sessionAuthFailed(sessionid);
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.failed");
     m_server->property_changed(sc.getData(),sessionid);
+}
+
+int SessionController::tryLogin(const QVariantMap& data, QString& sessionid) {
+    if (ServiceID::isId(data,"sessionlogin")) { // login have to happen here
+        sessionid = addSession(DATA("user"),DATA("pwd"));
+		return 2;
+    } else if (ServiceID::isId(data,"sessionidle")) {
+        Session* session = getSession(sessionid);
+        if (!session) return 0;
+        session->resetSessionTimer();
+		return 1;
+    }
+	return 0;
 }

@@ -35,16 +35,20 @@
 #include "paths.h"
 #include "servicecontroller.h"
 #include "config.h"
-#include "clientconnection.h"
+#include "httprequest.h"
+#include "websocket.h"
+#include "session.h"
+#include <sessioncontroller.h>
+#include "httpresponsefile.h"
 
-HttpServer::HttpServer() {}
+HttpServer::HttpServer() {
+
+}
 
 HttpServer::~HttpServer()
 {
     qDeleteAll(m_session_cache);
     m_session_cache.clear();
-    qDeleteAll(m_http_connections);
-    m_http_connections.clear();
     close();
 }
 
@@ -57,6 +61,12 @@ bool HttpServer::start()
     } else
         qDebug() << "Listen on port" << ROOM_LISTENPORT;
     return true;
+}
+
+
+void HttpServer::writeDefaultHeaders(QSslSocket* socket) {
+    QByteArray date = QLocale(QLocale::English).toString(QDateTime::currentDateTime(), QLatin1String("ddd, d MMMM yyyy hh:mm:ss")).toAscii() + " GMT";
+    socket->write("Server: roomcontrolserver\r\nDate: " + date + "\r\n" + "Content-Language: de\r\n");
 }
 
 /*
@@ -82,11 +92,9 @@ void HttpServer::incomingConnection ( int socketDescriptor )
                 socket->setPrivateKey(certificateFile(QLatin1String("server.key")));
                 socket->setPeerVerifyMode(QSslSocket::VerifyNone);
                 socket->startServerEncryption();
-                ClientConnection* c = new ClientConnection(this, socket);
-                connect(c,SIGNAL(dataReceived(QVariantMap,QString)),SIGNAL(dataReceived(QVariantMap,QString)));
-                connect(c,SIGNAL(removeConnection(ClientConnection*)),SLOT(removeConnection(ClientConnection*)));
-                connect(c,SIGNAL(upgradedConnection()),SLOT(upgradedConnection()));
-                m_http_connections.append ( c );
+                HttpRequest* r = new HttpRequest(socket, this);
+                connect(r,SIGNAL(headerParsed(HttpRequest*)),SLOT(headerParsed(HttpRequest*)));
+                connect(r,SIGNAL(removeConnection(HttpRequest*)),SLOT(removeConnection(HttpRequest*)));
             }
         }
     }
@@ -99,60 +107,97 @@ void HttpServer::incomingConnection ( int socketDescriptor )
 
 
 void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
-    if (m_websocket_connections.isEmpty())
-        return;
     const QByteArray cmdbytes = QJson::Serializer().serialize(data);
     if (cmdbytes.isNull()) {
         qWarning()<<"JSON failed"<<data;
+        return;
     }
+
     if (sessionid.size()) {
-        ClientConnection *c = findConnection(sessionid);
-        if (c) c->writeJSON(cmdbytes);
+        SessionExtension *c = m_session_cache.value(sessionid);
+        if (c) c->dataChanged(cmdbytes);
     } else {
-        foreach ( ClientConnection* c, m_websocket_connections ) {
-            c->writeJSON ( cmdbytes );
+        foreach ( SessionExtension* c, m_session_cache ) {
+            c->dataChanged ( cmdbytes );
         }
     }
 
 }
 
 void HttpServer::sessionBegin(QString sessionid) {
-    ClientConnection* c = findConnection(sessionid);
-    if (!c) return;
-    c->sessionEstablished();
-    m_session_cache.insert(c->sessionid,c);
+    Session* s = SessionController::instance()->getSession(sessionid);
+    if (!s) return;
+    m_session_cache.insert(sessionid,new SessionExtension(this));
 }
 
 void HttpServer::sessionFinished(QString sessionid, bool timeout) {
     Q_UNUSED(timeout);
-    ClientConnection* c = findConnection(sessionid);
-    if (!c) return;
-    removeConnection(c);
+    delete m_session_cache.take(sessionid);
 }
 
-void HttpServer::removeConnection(ClientConnection* c) {
-    m_http_connections.removeAll(c);
-    m_websocket_connections.removeAll(c);
-    m_session_cache.remove(c->sessionid);
-    c->deleteLater();
+void HttpServer::clearWebSocket(WebSocket* websocket) {
+    websocket->deleteLater();
 }
 
-void HttpServer::upgradedConnection() {
-    ClientConnection* c = qobject_cast< ClientConnection* >(sender());
-    if (!c) return;
-    m_http_connections.removeAll(c);
-    m_websocket_connections.append(c);
+void HttpServer::authentificatedWebSocket(WebSocket* websocket, const QString& sessionid) {
+    SessionExtension* s = m_session_cache.value(sessionid);
+    if (!s) return;
+    disconnect(websocket, SIGNAL(removeWebSocket(WebSocket*)), this, SLOT(clearWebSocket(WebSocket*)));
+    s->setWebsocket(websocket);
 }
 
-ClientConnection* HttpServer::findConnection(const QString& sessionid) {
-    {
-        ClientConnection* c = m_session_cache.value(sessionid);
-        if (c) return c;
-    }
-    foreach ( ClientConnection* c, m_websocket_connections ) {
-        if (c->sessionid == sessionid) {
-            return c;
+void HttpServer::removeConnection(HttpRequest* request) {
+    request->deleteLater();
+}
+
+void HttpServer::headerParsed(HttpRequest* request) {
+    if (request->httprequestType == HttpRequest::RequestTypeFile) {
+        (new HttpResponseFile(request, this))->deleteLater();
+    } else if (request->httprequestType == HttpRequest::RequestTypeWebsocket) {
+        WebSocket* w = WebSocket::makeWebsocket(request, this);
+        request->deleteLater();
+        if (!w) return;
+        connect(w, SIGNAL(authentificated(WebSocket*,QString)), SLOT(authentificatedWebSocket(WebSocket*,QString)));
+        connect(w, SIGNAL(dataReceived(QVariantMap,QString)), SIGNAL(dataReceived(QVariantMap,QString)));
+        connect(w, SIGNAL(removeWebSocket(WebSocket*)), SLOT(clearWebSocket(WebSocket*)));
+    } else if (request->httprequestType == HttpRequest::RequestTypePollJSon) {
+        request->m_socket->write("HTTP/1.1 200 OK\r\n");
+        HttpServer::writeDefaultHeaders(request->m_socket);
+        request->m_socket->write("\r\n");
+
+        SessionExtension* s = m_session_cache.value(request->m_sessionid);
+        if (s) {
+            QList< QByteArray > list = s->getDataCache();
+            while (list.size()) {
+                request->m_socket->write(list.takeFirst()+ "\r\n");
+            }
         }
-    }
-    return 0;
+        request->m_socket->flush();
+    } else if (request->httprequestType == HttpRequest::RequestTypeSendJSon) {
+        while (request->m_socket->canReadLine()) {
+            const QByteArray line = request->m_socket->readLine().trimmed();
+            bool ok = true;
+            const QVariantMap data = QJson::Parser().parse (line, &ok).toMap();
+            if (!ok) {
+                qWarning() << "client requested json per http and json parser failed" << line;
+                continue;
+            }
+            if (request->m_authok) { // accept json commands only after successful login or for a login json command
+                emit dataReceived(data, request->m_sessionid);
+            } else if (!SessionController::instance()->tryLogin(data, request->m_sessionid)) {
+                qWarning() << "client send json per http and login failed with json" << line;
+            }
+        }
+        request->m_socket->write("HTTP/1.1 200 OK\r\n");
+        HttpServer::writeDefaultHeaders(request->m_socket);
+        request->m_socket->write("\r\n");
+        request->m_socket->flush();
+    } else {
+		qWarning()<<"Internal Server Error" << request->m_requestedfile;
+        request->m_socket->write("HTTP/1.1 500 Internal Server Error\r\n");
+        request->m_socket->write("Content-Length: 0\r\n");
+        HttpServer::writeDefaultHeaders(request->m_socket);
+        request->m_socket->write("\r\n");
+        request->m_socket->flush();
+	}
 }
