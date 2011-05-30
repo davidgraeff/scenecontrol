@@ -47,5 +47,4 @@ private Q_SLOTS:
 Q_SIGNALS:
     void dataReceived(const QVariantMap& data, const QString& sessionid);
     void removeWebSocket(WebSocket*);
-	void gotSession(WebSocket*, const QString& sessionid);
 };

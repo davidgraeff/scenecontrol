@@ -199,7 +199,7 @@ bool ServiceController::changeService ( const QVariantMap& unvalidatedData, cons
         // for all collections where this service is linked to make the collection know about this changed service
         foreach ( CollectionInstance* ci, service->inCollections) {
             if (ci->changeService(service, data, olddata) && !loading) {
-				syncCollection(ci->serviceStruct()->data, true);
+                syncCollection(ci->serviceStruct()->data, true);
             }
         }
     }
@@ -449,7 +449,7 @@ void ServiceController::removeService ( const QString& uid, bool removeFileOnly 
     } else {
         foreach ( CollectionInstance* ci, service->inCollections) {
             if (ci->removeService(uid))
-				syncCollection(ci->serviceStruct()->data,true);
+                syncCollection(ci->serviceStruct()->data,true);
         }
     }
 
@@ -528,29 +528,6 @@ CollectionInstance* ServiceController::getCollection ( const QString& uid ) {
 }
 
 void ServiceController::sessionBegin ( const QString& sessionid ) {
-    {
-        // properties
-        QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
-        while ( AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin ( index ) ) {
-            QList<QVariantMap> properties = plugin->properties ( sessionid );
-            for ( int i=0;i<properties.size();++i ) {
-                const QVariantMap prop = properties[i];
-                emit dataSync ( prop, sessionid );
-            }
-        }
-    }
-
-    // services
-    for ( QMap<QString, ServiceStruct*>::const_iterator i=m_valid_services.begin();i!=m_valid_services.end();++i ) {
-        const ServiceStruct* service = *i;
-        emit dataSync ( service->data, sessionid );
-    }
-
-    {
-        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID,  "transfer.complete" );
-        emit dataSync ( sc.getData(), sessionid );
-    }
-
     {
         // sessions
         QMap<QString,PluginInfo*>::iterator  index = m_plugincontroller->getPluginIterator();
@@ -653,6 +630,42 @@ void ServiceController::execute ( const QVariantMap& data, const QString& sessio
     } else if ( ServiceID::isId ( data,"clone" ) ) {
         CollectionInstance* instance = m_collections.value ( DATA ( "collectionid" ) );
         if ( instance ) instance->clone();
+    } else if ( ServiceID::isId ( data,"requestSettings" ) ) {
+        // settings
+        QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
+        while ( AbstractPlugin_settings* plugin = m_plugincontroller->nextSettingsPlugin ( index ) ) {
+            const QVariantMap settings = plugin->getSettings ();
+			if (settings.size())
+				emit dataSync ( settings, sessionid );
+        }
+        {
+            ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID,  "transfer.settings.complete" );
+            emit dataSync ( sc.getData(), sessionid );
+        }
+    } else if ( ServiceID::isId ( data,"requestProperties" ) ) {
+        // properties
+        QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
+        while ( AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin ( index ) ) {
+            QList<QVariantMap> properties = plugin->properties ( sessionid );
+            for ( int i=0;i<properties.size();++i ) {
+                const QVariantMap prop = properties[i];
+                emit dataSync ( prop, sessionid );
+            }
+        }
+        {
+            ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID,  "transfer.properties.complete" );
+            emit dataSync ( sc.getData(), sessionid );
+        }
+    } else if ( ServiceID::isId ( data,"requestServices" ) ) {
+        // services
+        for ( QMap<QString, ServiceStruct*>::const_iterator i=m_valid_services.begin();i!=m_valid_services.end();++i ) {
+            const ServiceStruct* service = *i;
+            emit dataSync ( service->data, sessionid );
+        }
+        {
+            ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID,  "transfer.service.complete" );
+            emit dataSync ( sc.getData(), sessionid );
+        }
     }
 }
 

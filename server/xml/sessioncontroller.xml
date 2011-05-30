@@ -1,42 +1,39 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="sessioncontroller" version="1.0">
+	<!-- login/out -->
 	<execute id="sessionlogin">
 		<string id="user" />
 		<string id="pwd" />
 	</execute>
-	<execute id="sessionlogout">
-		<string id="sessionid" />
-	</execute>
-	<!-- to keep the session alive, otherwise after 120 sec the session will be terminated -->
-	<execute id="sessionidle">
-		<string id="sessionid" />
-	</execute>
+	<execute id="sessionlogout" session_specific="1" />
 	
-  <!-- Propagates all endpoints of own logins -->
-  <property id="server.logins.own" session_specific="1" model_key="endpoint">
-	<string id="endpoint" /><!-- semicolon separated -->
-  </property>
+	<!-- to keep the session alive, otherwise after 120 sec the session will be terminated -->
+	<execute id="sessionidle" session_specific="1" />
 
-  <property id="server.logins.all" session_specific="1">
-    <int id="all" />
-  </property>
+	<!-- Propagates all endpoints of own logins -->
+	<model id="server.logins.own" session_specific="1" model_key="endpoint">
+		<string id="endpoint" /><!-- semicolon separated -->
+	</model>
 
-  <!-- Session state -->
-  <property id="session" session_specific="1">
-    <enum id="state" n="6" /><!-- ok, notaccepted(too much clients), missing(require login), failed, timeout, session_closed(leasetime, logout) -->
-  </property>
-  
-  <!-- Server infos -->
-  <property id="serverinfo" session_specific="1">
-    <string id="appversion" />
-    <string id="protocolversion" />
-    <bool id="auth_required" />
-    <int id="auth_timeout" />
-    <int id="session_timeout" />
-  </property>
-  
-  <property id="authentification.failed" session_specific="1"></property>
-  <property id="authentification.success" session_specific="1">
-	  <string id="sessionid" />
-  </property>
+	<property id="server.logins.all" session_specific="1">
+		<int id="all" />
+	</property>
+
+	<!-- Server infos -->
+	<property id="serverinfo" session_specific="1">
+		<string id="appversion" />
+		<string id="protocolversion" />
+		<bool id="auth_required" />
+		<int id="auth_timeout" />
+		<int id="session_timeout" />
+	</property>
+
+	<property id="authentification.serverfull" session_specific="1"></property>
+	<property id="authentification.revoked" session_specific="1">
+		<bool id="timeout" />
+	</property>
+	<property id="authentification.failed" session_specific="1"></property>
+	<property id="authentification.success" session_specific="1">
+		<string id="sessionid" />
+	</property>
 </plugin>

@@ -7,18 +7,24 @@
 	<property id="plugininfo">
 		<string id="plugins" separator=";" /><!-- plugin names -->
 	</property>
-	<property id="transfer.complete">
-	</property>
-	
+
+	<!-- Server command -->
 	<execute id="servercmd" group_restriction="adm, roomcontrol_admin">
 		<enum id="state" n="3" /><!-- resync client, restart, stop server -->
 	</execute>
 	
-	<execute id="generateUniqueID">
-	</execute>
+	<!-- Generate and send unique id for new services. Security restrictions may forbid generating new ids for a client -->
+	<execute id="generateUniqueID" />
 	<property id="generatedUniqueID">
 		<string id="uid" />
 	</property>
+	
+	<execute id="requestServices" />
+	<execute id="requestProperties" />
+	<execute id="requestSettings" />
+	<property id="transfer.service.complete" />
+	<property id="transfer.properties.complete" />
+	<property id="transfer.settings.complete" />
 	
 	<event id="serverevent">
 		<enum id="state" n="2" /><!-- ready, going offline -->

@@ -115,7 +115,7 @@ void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
 
     if (sessionid.size()) {
         SessionExtension *c = sessionBegin(sessionid);
-		if (c) c->dataChanged(cmdbytes);
+        if (c) c->dataChanged(cmdbytes);
     } else {
         foreach ( SessionExtension* c, m_session_cache ) {
             c->dataChanged ( cmdbytes );
@@ -125,26 +125,26 @@ void HttpServer::dataSync(const QVariantMap& data, const QString& sessionid) {
 }
 
 SessionExtension* HttpServer::sessionBegin(QString sessionid) {
-	SessionExtension* se = m_session_cache.value(sessionid);
-	if (se) return se;
-	
+    SessionExtension* se = m_session_cache.value(sessionid);
+    if (se) return se;
+
     Session* s = SessionController::instance()->getSession(sessionid);
     if (!s) return 0;
-	se = new SessionExtension(this);
+    se = new SessionExtension(this);
     m_session_cache.insert(sessionid,se);
-	
-	// session less websockets
-	QMutableSetIterator<WebSocket*> i(m_sessionLess_websockets);
-	while (i.hasNext()) {
-		i.next();
-		if (i.value()->getSessionID() == sessionid) {
-			WebSocket* w = i.value();
-			i.remove();
-			disconnect(w, SIGNAL(removeWebSocket(WebSocket*)), this, SLOT(clearWebSocket(WebSocket*)));
-			se->setWebsocket(w);
-		}
-	}
-	return se;
+
+    // session less websockets
+    QMutableSetIterator<WebSocket*> i(m_sessionLess_websockets);
+    while (i.hasNext()) {
+        i.next();
+        if (i.value()->getSessionID() == sessionid) {
+            WebSocket* w = i.value();
+            i.remove();
+            disconnect(w, SIGNAL(removeWebSocket(WebSocket*)), this, SLOT(clearWebSocket(WebSocket*)));
+            se->setWebsocket(w);
+        }
+    }
+    return se;
 }
 
 void HttpServer::sessionFinished(QString sessionid, bool timeout) {
@@ -162,62 +162,78 @@ void HttpServer::removeConnection(HttpRequest* request) {
 
 void HttpServer::headerParsed(HttpRequest* request) {
     if (request->httprequestType == HttpRequest::RequestTypeFile) {
-		
+
         HttpResponseFile(request, this);
-		
+
     } else if (request->httprequestType == HttpRequest::RequestTypeWebsocket) {
-		
+
         WebSocket* w = WebSocket::makeWebsocket(request, this);
         request->deleteLater();
         if (!w) return;
         connect(w, SIGNAL(dataReceived(QVariantMap,QString)), SIGNAL(dataReceived(QVariantMap,QString)));
         connect(w, SIGNAL(removeWebSocket(WebSocket*)), SLOT(clearWebSocket(WebSocket*)));
-		m_sessionLess_websockets.insert(w);
-		
+        m_sessionLess_websockets.insert(w);
+
     } else if (request->httprequestType == HttpRequest::RequestTypePollJSon) {
-		
+
         request->m_socket->write("HTTP/1.1 200 OK\r\n");
         HttpServer::writeDefaultHeaders(request->m_socket);
-        request->m_socket->write("\r\n");
 
+		QByteArray data;
         SessionExtension* s = m_session_cache.value(request->m_sessionid);
         if (s) {
             QList< QByteArray > list = s->getDataCache();
             while (list.size()) {
-                request->m_socket->write(list.takeFirst()+ "\r\n");
+                data.append(list.takeFirst()+ "\r\n");
             }
         }
+		request->m_socket->write("Content-Length: "+QByteArray::number(data.size())+"\r\n");
+        request->m_socket->write("\r\n");
+        request->m_socket->write(data);
         request->m_socket->flush();
-		
+
     } else if (request->httprequestType == HttpRequest::RequestTypeSendJSon) {
-		
-        while (request->m_socket->canReadLine()) {
-            const QByteArray line = request->m_socket->readLine().trimmed();
-            bool ok = true;
-            const QVariantMap data = QJson::Parser().parse (line, &ok).toMap();
-            if (!ok) {
-                qWarning() << "client requested json per http and json parser failed" << line;
-                continue;
-            }
-            if (request->m_authok) { // accept json commands only after successful login or for a login json command
-                emit dataReceived(data, request->m_sessionid);
-            } else if (!SessionController::instance()->tryLogin(data, request->m_sessionid)) {
-                qWarning() << "client send json per http and login failed with json" << line;
-            }
-        }
+		// write http response header
         request->m_socket->write("HTTP/1.1 200 OK\r\n");
         HttpServer::writeDefaultHeaders(request->m_socket);
+		request->m_socket->write("Content-Length: 5\r\n");
         request->m_socket->write("\r\n");
+		
+        // if not logged in, the first line have to be the sessionlogin command! All following commands are ignored for this request!
+        if (!request->m_authok) {
+            if (request->m_socket->canReadLine()) {
+                const QByteArray line = request->m_socket->readLine().trimmed();
+                bool ok = true;
+                const QVariantMap data = QJson::Parser().parse (line, &ok).toMap();
+                if (!ok || SessionController::instance()->tryLoginAndResetSessionTimer(data, request->m_sessionid) != SessionController::SessionRequestValidation) {
+                    qWarning() << "client send json per http and login failed with json" << line;
+					request->m_socket->write("ERR\r\n");
+                } else
+					request->m_socket->write("ACK\r\n");
+            }
+        } else {
+            while (request->m_socket->canReadLine()) {
+                const QByteArray line = request->m_socket->readLine().trimmed();
+                bool ok = true;
+                const QVariantMap data = QJson::Parser().parse (line, &ok).toMap();
+                if (!ok) {
+                    qWarning() << "client requested json per http and json parser failed" << line;
+                    continue;
+                }
+                emit dataReceived(data, request->m_sessionid);
+            }
+            request->m_socket->write("ACK\r\n");
+        }
         request->m_socket->flush();
-		
+
     } else {
-		
-		qWarning()<<"Internal Server Error" << request->m_requestedfile;
+
+        qWarning()<<"Internal Server Error" << request->m_requestedfile;
         request->m_socket->write("HTTP/1.1 500 Internal Server Error\r\n");
         request->m_socket->write("Content-Length: 0\r\n");
         HttpServer::writeDefaultHeaders(request->m_socket);
         request->m_socket->write("\r\n");
         request->m_socket->flush();
-		
-	}
+
+    }
 }

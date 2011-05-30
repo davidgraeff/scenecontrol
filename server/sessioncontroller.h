@@ -75,12 +75,14 @@ public:
     virtual void clear() {}
     virtual void initialize() {}
 
-	int tryLogin(const QVariantMap& data, QString& sessionid);
+	enum SessionState {
+		SessionRequestValidation,
+		SessionNewSessionDenied,
+		SessionValid,
+		SessionInValid
+	};
+	SessionState tryLoginAndResetSessionTimer(const QVariantMap& data, QString& sessionid);
     Session* getSession(const QString& sessionid);
-    /**
-     * \return Return temporary session id
-     */
-    QString addSession(const QString& user, const QString& pwd);
     void closeSession(const QString& sessionid, bool timeout);
 	
     // plugin interface
@@ -95,6 +97,11 @@ private:
     SessionController();
     AuthThread* m_auththread;
     QMap<QString, Session*> m_session;
+    /**
+	 * \param sessionid return new temporary session id
+     * \return Return true if authThread accepted a new validation request
+     */
+    bool addSession(const QString& user, const QString& pwd, QString& sessionid);
 
 private Q_SLOTS:
     void auth_success(QString sessionid, const QString& name);

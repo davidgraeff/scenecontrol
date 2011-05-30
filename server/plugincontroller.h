@@ -72,6 +72,7 @@ public:
 
     QMap<QString,PluginInfo*>::iterator getPluginIterator();
     AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);
+	AbstractPlugin_settings* nextSettingsPlugin(QMap<QString,PluginInfo*>::iterator& index);
     AbstractPlugin_services* nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index);
 	AbstractPlugin_sessions* nextSessionPlugin(QMap<QString,PluginInfo*>::iterator& index);
 

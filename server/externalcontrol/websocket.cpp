@@ -162,19 +162,18 @@ void WebSocket::readyRead()
         bool ok = true;
         const QVariantMap data = QJson::Parser().parse (frame, &ok).toMap();
         if (!ok) continue;
-        int i = SessionController::instance()->tryLogin(data, m_sessionid);
-        switch (i) {
-        case 0:
-            emit dataReceived(data, m_sessionid);
-            break;
-        case 1:
-            break;
-        case 2:
-			emit gotSession(this, m_sessionid);
-            break;
-        default:
-            break;
-        }
+		SessionController::SessionState c = SessionController::instance()->tryLoginAndResetSessionTimer(data, m_sessionid);
+		if (c == SessionController::SessionValid)
+			emit dataReceived(data, m_sessionid);
+		else if (c == SessionController::SessionNewSessionDenied) {
+			// login not possible. Auth thread does not accept new validation requests
+			ServiceCreation sc = ServiceCreation::createNotification("sessioncontroller", "authentification.serverfull");
+			writeJSON(QJson::Serializer().serialize(sc.getData()));
+		} else if (c == SessionController::SessionInValid) {
+			// There is no valid session connected to this websocket. Remember the client of this fact.
+			ServiceCreation sc = ServiceCreation::createNotification("sessioncontroller", "authentification.failed");
+			writeJSON(QJson::Serializer().serialize(sc.getData()));
+		}
     }
 }
 

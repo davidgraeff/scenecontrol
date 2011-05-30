@@ -164,6 +164,14 @@ AbstractPlugin* PluginController::nextPlugin(QMap<QString,PluginInfo*>::iterator
     return (*(index++))->plugin;
 }
 
+AbstractPlugin_settings* PluginController::nextSettingsPlugin(QMap<QString,PluginInfo*>::iterator& index) {
+    while (m_plugins.end()!=index) {
+        AbstractPlugin_settings* s = dynamic_cast<AbstractPlugin_settings*>((*(index++))->plugin);
+        if (s) return s;
+    }
+    return 0;	
+}
+
 AbstractPlugin_services* PluginController::nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index) {
     while (m_plugins.end()!=index) {
         AbstractPlugin_services* s = dynamic_cast<AbstractPlugin_services*>((*(index++))->plugin);

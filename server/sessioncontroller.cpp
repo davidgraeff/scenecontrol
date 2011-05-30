@@ -75,14 +75,8 @@ bool SessionController::condition(const QVariantMap& data, const QString& sessio
 
 void SessionController::execute(const QVariantMap& data, const QString& sessionid) {
     Q_UNUSED(sessionid);
-    if (ServiceID::isId(data,"sessionlogin")) {
-        addSession(DATA("user"),DATA("pwd")); //nonsense: sessionid not saved. This service has to be used in connection classes like the http server
-    } else if (ServiceID::isId(data,"sessionlogout")) {
-        closeSession(DATA("sessionid"), false);
-    } else if (ServiceID::isId(data,"sessionidle")) {
-        if (DATA("sessionid").size() && sessionid != DATA("sessionid")) qWarning()<<"Warning: Idle command tried to idle not its own session!";
-        Session* session = m_session.value(sessionid);
-        if (session) session->resetSessionTimer();
+    if (ServiceID::isId(data,"sessionlogout")) {
+        closeSession(sessionid, false);
     }
 }
 
@@ -97,42 +91,11 @@ void SessionController::unregister_event ( const QVariantMap& data, const QStrin
 }
 
 QList<QVariantMap> SessionController::properties(const QString& sessionid) {
-    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "server.logins.all");
         sc.setData("all", m_session.size());
         l.append(sc.getData());
-    }
-    return l;
-}
-
-QString SessionController::addSession(const QString& user, const QString& pwd) {
-    QString sessionid = QUuid::createUuid().toString();
-    m_auththread->query(sessionid, user, pwd);
-    return sessionid;
-}
-
-void SessionController::closeSession(const QString& sessionid, bool timeout) {
-    Session* session = m_session.take(sessionid);
-    if (!session) return;
-    emit sessionFinished(sessionid, timeout);
-    session->deleteLater();
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "server.logins.all");
-    sc.setData("all", m_session.size());
-    m_server->property_changed(sc.getData());
-}
-
-void SessionController::auth_success(QString sessionid, const QString& name) {
-    Session* session = new Session(this, sessionid, name);
-    m_session.insert(sessionid, session);
-
-    emit sessionBegin(sessionid);
-	
-    {
-        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.success");
-        sc.setData("sessionid", sessionid);
-        m_server->property_changed(sc.getData(),sessionid);
     }
 
     {
@@ -140,33 +103,76 @@ void SessionController::auth_success(QString sessionid, const QString& name) {
         m_server->property_changed(sc.getData(),sessionid);
     }
 
-    QList<QString> sessions_with_same_user;
-    foreach(Session* session, m_session) {
-        if (session->user() == name) {
-            sessions_with_same_user.append(session->sessionid());
-            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "server.logins.own");
-            sc.setData("endpoint", session->sessionid());
-            m_server->property_changed(sc.getData(),sessionid);
+    Session* ownsession = m_session.value(sessionid);
+    if (ownsession) {
+        QList<QString> sessions_with_same_user;
+        foreach(Session* session, m_session) {
+            if (session->user() == ownsession->user()) {
+                sessions_with_same_user.append(session->sessionid());
+                ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "server.logins.own");
+                sc.setData("endpoint", session->sessionid());
+                m_server->property_changed(sc.getData(),sessionid);
+            }
         }
     }
+    return l;
+}
+
+bool SessionController::addSession(const QString& user, const QString& pwd, QString& sessionid) {
+    sessionid = QUuid::createUuid().toString();
+    return m_auththread->query(sessionid, user, pwd);
+}
+
+void SessionController::closeSession(const QString& sessionid, bool timeout) {
+    Session* session = m_session.take(sessionid);
+    if (!session) return;
+    emit sessionFinished(sessionid, timeout);
+    session->deleteLater();
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "server.logins.all");
+        sc.setData("all", m_session.size());
+        m_server->property_changed(sc.getData());
+    }
+    {
+        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.revoked");
+		sc.setData("timeout", timeout);
+        m_server->property_changed(sc.getData(), sessionid);
+    }
+}
+
+void SessionController::auth_success(QString sessionid, const QString& name) {
+    Session* session = new Session(this, sessionid, name);
+    m_session.insert(sessionid, session);
+
+    emit sessionBegin(sessionid);
+
+    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.success");
+    sc.setData("sessionid", sessionid);
+    m_server->property_changed(sc.getData(),sessionid);
 }
 
 void SessionController::auth_failed(QString sessionid, const QString& name) {
     Q_UNUSED(name);
+
     emit sessionAuthFailed(sessionid);
+
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "authentification.failed");
     m_server->property_changed(sc.getData(),sessionid);
 }
 
-int SessionController::tryLogin(const QVariantMap& data, QString& sessionid) {
+SessionController::SessionState SessionController::tryLoginAndResetSessionTimer(const QVariantMap& data, QString& sessionid) {
     if (ServiceID::isId(data,"sessionlogin")) { // login have to happen here
-        sessionid = addSession(DATA("user"),DATA("pwd"));
-		return 2;
-    } else if (ServiceID::isId(data,"sessionidle")) {
-        Session* session = getSession(sessionid);
-        if (!session) return 0;
-        session->resetSessionTimer();
-		return 1;
+        if (addSession(DATA("user"),DATA("pwd"), sessionid))
+			return SessionRequestValidation;
+		else
+			return SessionNewSessionDenied;;
     }
-	return 0;
+
+    Session* session = getSession(sessionid);
+    if (!session)
+        return SessionInValid;
+
+    session->resetSessionTimer();
+
+    return SessionValid;
 }
