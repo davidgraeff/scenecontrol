@@ -162,7 +162,6 @@ void HttpServer::removeConnection(HttpRequest* request) {
 
 void HttpServer::headerParsed(HttpRequest* request) {
     if (request->httprequestType == HttpRequest::RequestTypeFile) {
-
         HttpResponseFile(request, this);
 
     } else if (request->httprequestType == HttpRequest::RequestTypeWebsocket) {
@@ -176,10 +175,7 @@ void HttpServer::headerParsed(HttpRequest* request) {
 
     } else if (request->httprequestType == HttpRequest::RequestTypePollJSon) {
 
-        request->m_socket->write("HTTP/1.1 200 OK\r\n");
-        HttpServer::writeDefaultHeaders(request->m_socket);
-
-		QByteArray data;
+        QByteArray data;
         SessionExtension* s = m_session_cache.value(request->m_sessionid);
         if (s) {
             QList< QByteArray > list = s->getDataCache();
@@ -187,43 +183,62 @@ void HttpServer::headerParsed(HttpRequest* request) {
                 data.append(list.takeFirst()+ "\r\n");
             }
         }
-		request->m_socket->write("Content-Length: "+QByteArray::number(data.size())+"\r\n");
+
+        request->m_socket->write("HTTP/1.1 200 OK\r\n");
+        HttpServer::writeDefaultHeaders(request->m_socket);
+        request->m_socket->write("Content-Length: "+QByteArray::number(data.size())+"\r\n");
+		request->m_socket->write("Content-Type: application/json\r\n");
+		request->m_socket->write("Cache-Control: max-age=0\r\n");
         request->m_socket->write("\r\n");
         request->m_socket->write(data);
         request->m_socket->flush();
 
     } else if (request->httprequestType == HttpRequest::RequestTypeSendJSon) {
-		// write http response header
+        if (request->m_header.value("Content-Type") != "application/json")  {
+            qWarning() << "Http Ajax Send: Only accept application/json";
+            request->m_socket->write("HTTP/1.1 400 Bad request\r\n");
+            request->m_socket->write("Content-Length: 0\r\n");
+            HttpServer::writeDefaultHeaders(request->m_socket);
+            request->m_socket->write("\r\n");
+            request->m_socket->flush();
+            return;
+        }
+
+        QByteArray data;
+        const QByteArray line = request->m_socket->readAll().trimmed();
+
+        // Ignore all but the first line
+        if (line.size()) {
+            bool ok = true;
+            const QVariantMap json = QJson::Parser().parse (line, &ok).toMap();
+
+            SessionController::SessionState c = SessionController::instance()->tryLoginAndResetSessionTimer(json, request->m_sessionid);
+			
+            if (c == SessionController::SessionValid)
+                emit dataReceived(json, request->m_sessionid);
+            else if (c == SessionController::SessionNewSessionDenied) {
+                // login not possible. Auth thread does not accept new validation requests
+                ServiceCreation sc = ServiceCreation::createNotification("sessioncontroller", "authentification.serverfull");
+                data.append(QJson::Serializer().serialize(sc.getData()));
+            } else if (c == SessionController::SessionInValid) {
+                // There is no valid session for the given sessionid. Remember the client of this fact.
+                ServiceCreation sc = ServiceCreation::createNotification("sessioncontroller", "authentification.failed");
+                data.append(QJson::Serializer().serialize(sc.getData()));
+				qDebug() << "compare session" <<  request->m_sessionid << request->m_header << line;
+            } else if (c == SessionController::SessionRequestValidation) {
+                ServiceCreation sc = ServiceCreation::createNotification("sessioncontroller", "authentification.temporary_sessionid");
+				sc.setData("sessionid", request->m_sessionid);
+                data.append(QJson::Serializer().serialize(sc.getData()));
+			}
+        }
+
         request->m_socket->write("HTTP/1.1 200 OK\r\n");
         HttpServer::writeDefaultHeaders(request->m_socket);
-		request->m_socket->write("Content-Length: 5\r\n");
+        request->m_socket->write("Content-Length: "+QByteArray::number(data.size())+"\r\n");
+		request->m_socket->write("Content-Type: application/json\r\n");
+		request->m_socket->write("Cache-Control: max-age=0\r\n");
         request->m_socket->write("\r\n");
-		
-        // if not logged in, the first line have to be the sessionlogin command! All following commands are ignored for this request!
-        if (!request->m_authok) {
-            if (request->m_socket->canReadLine()) {
-                const QByteArray line = request->m_socket->readLine().trimmed();
-                bool ok = true;
-                const QVariantMap data = QJson::Parser().parse (line, &ok).toMap();
-                if (!ok || SessionController::instance()->tryLoginAndResetSessionTimer(data, request->m_sessionid) != SessionController::SessionRequestValidation) {
-                    qWarning() << "client send json per http and login failed with json" << line;
-					request->m_socket->write("ERR\r\n");
-                } else
-					request->m_socket->write("ACK\r\n");
-            }
-        } else {
-            while (request->m_socket->canReadLine()) {
-                const QByteArray line = request->m_socket->readLine().trimmed();
-                bool ok = true;
-                const QVariantMap data = QJson::Parser().parse (line, &ok).toMap();
-                if (!ok) {
-                    qWarning() << "client requested json per http and json parser failed" << line;
-                    continue;
-                }
-                emit dataReceived(data, request->m_sessionid);
-            }
-            request->m_socket->write("ACK\r\n");
-        }
+        request->m_socket->write(data);
         request->m_socket->flush();
 
     } else {

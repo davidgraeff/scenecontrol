@@ -40,9 +40,13 @@ HttpRequest::HttpRequest(QSslSocket* s, QObject* parent) : QObject(parent), m_so
     connect(m_socket,SIGNAL(disconnected()),SLOT(disconnected()));
     connect(&m_timeout, SIGNAL(timeout()), SLOT(disconnected()));
 
-    httprequestType = RequestTypeFile;
+    httprequestType = RequestTypeNone;
     m_inHeader = false;
 
+	connect(&m_waitForData, SIGNAL(timeout()), SLOT(timeoutWaitForData()));
+	m_waitForData.setSingleShot(true);
+	m_waitForData.setInterval(1000);
+	
     m_timeout.setSingleShot(true);
     m_timeout.setInterval(5*60*1000); // keep inactive sockets 5 minutes
     m_timeout.start();
@@ -72,25 +76,30 @@ void HttpRequest::readyRead()
         const QByteArray line = m_socket->readLine().trimmed();
         bool s = false;
         if (line.endsWith("HTTP/1.1") || line.endsWith("HTTP/1.0")) { // header start line
+			httprequestType = RequestTypeNone;
             s = readHttpRequest(line);
         } else if (line.size() && m_inHeader) { // header
             s = readHttpHeader(line);
         } else if (line.isEmpty() && m_inHeader) { // header end line, parse header data
             m_inHeader = false;
             // auth header
-            if (!m_authok && m_header.contains("sessionid")) {
-                Session* session = SessionController::instance()->getSession(QString::fromAscii(m_header["sessionid"]));
+            if (m_sessionid.isEmpty() && m_header.contains("Sessionid")) {
+                Session* session = SessionController::instance()->getSession(QString::fromAscii(m_header["Sessionid"]));
                 if (session) {
                     m_sessionid = session->sessionid();
                     session->resetSessionTimer();
-                    m_authok = true;
                 }
             }
             // websocket request
             if (m_header.value("Upgrade").toLower() == "websocket" && m_header.value("Connection") == "Upgrade") {
                 httprequestType = RequestTypeWebsocket;
             }
-            emit headerParsed(this);
+            // wait for data, if Content-Length given. Cases: Timeout, socket close; Data received; New http request
+            if (m_header.contains("Content-Length") &&  m_socket->bytesAvailable() < m_header.value("Content-Length").toInt()) {
+				m_waitForData.start();
+				return;
+			} else 
+				emit headerParsed(this);
             break; // do not read further after http header ended
         } else {
             qWarning() << "unknown data" << line;
@@ -138,12 +147,16 @@ void HttpRequest::timeout() {
 bool HttpRequest::readHttpRequest(const QByteArray& line) {
     // request type
     m_requestType = None;
+	m_sessionid = QString();
     if (line.startsWith("GET")) m_requestType = Get;
     else if (line.startsWith("HEAD")) m_requestType = Head;
     else if (line.startsWith("POST")) m_requestType = Post;
     else
         return false;
+	
     // requested filename
+	httprequestType = RequestTypeFile;
+	
     int i = line.indexOf(' ');
     QByteArray requestedfile = line.mid(i+2,line.length()-10-i).trimmed();
     i = requestedfile.indexOf('?');
@@ -209,4 +222,8 @@ QSslSocket* HttpRequest::takeOverSocket() {
     disconnect(m_socket,SIGNAL(disconnected()),this, SLOT(disconnected()));
 	m_socket = 0;
     return s;
+}
+
+void HttpRequest::timeoutWaitForData() {
+    emit headerParsed(this);
 }

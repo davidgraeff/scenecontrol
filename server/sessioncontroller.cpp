@@ -161,7 +161,7 @@ void SessionController::auth_failed(QString sessionid, const QString& name) {
 }
 
 SessionController::SessionState SessionController::tryLoginAndResetSessionTimer(const QVariantMap& data, QString& sessionid) {
-    if (ServiceID::isId(data,"sessionlogin")) { // login have to happen here
+    if (ServiceID::pluginid(data)==QLatin1String(PLUGIN_ID) && ServiceID::isId(data,"sessionlogin")) { // login have to happen here
         if (addSession(DATA("user"),DATA("pwd"), sessionid))
 			return SessionRequestValidation;
 		else

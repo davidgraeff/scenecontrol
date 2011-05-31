@@ -45,7 +45,6 @@ public:
 	} httprequestType;
 private:
     QString m_sessionid;
-    bool m_authok;
     bool m_inHeader;
     QMap<QByteArray,QByteArray> m_header;
     QString m_requestedfile;
@@ -59,6 +58,7 @@ private:
     //network
     QSslSocket* m_socket;
     QTimer m_timeout;
+	QTimer m_waitForData;
     bool readHttpRequest(const QByteArray& line);
     bool readHttpHeader(const QByteArray& line);
     void parseHeaders();
@@ -67,6 +67,7 @@ private Q_SLOTS:
      * Close this connection after 5min of inactivity
      */
     void timeout();
+	void timeoutWaitForData();
 	/**
 	 * Socket closed
 	 */

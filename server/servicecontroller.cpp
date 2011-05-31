@@ -560,18 +560,6 @@ QList< QVariantMap > ServiceController::properties ( const QString& sessionid ) 
         l.append ( sc.getData() );
     }
     {
-        QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
-        QString plugins;
-        while ( AbstractPlugin* plugin = m_plugincontroller->nextPlugin ( index ) ) {
-            plugins.append ( plugin->pluginid() );
-            plugins.append ( QLatin1String ( ";" ) );
-        }
-        plugins.chop ( 1 );
-        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "plugininfo" );
-        sc.setData ( "plugins", plugins );
-        l.append ( sc.getData() );
-    }
-    {
         ServiceCreation sc = ServiceCreation::createModelReset ( PLUGIN_ID, "collections", "uid" );
         l.append ( sc.getData() );
     }
@@ -630,13 +618,24 @@ void ServiceController::execute ( const QVariantMap& data, const QString& sessio
     } else if ( ServiceID::isId ( data,"clone" ) ) {
         CollectionInstance* instance = m_collections.value ( DATA ( "collectionid" ) );
         if ( instance ) instance->clone();
+    } else if ( ServiceID::isId ( data,"requestPluginInfos" ) ) {
+        QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
+        QString plugins;
+        while ( AbstractPlugin* plugin = m_plugincontroller->nextPlugin ( index ) ) {
+            plugins.append ( plugin->pluginid() );
+            plugins.append ( QLatin1String ( ";" ) );
+        }
+        plugins.chop ( 1 );
+        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "plugininfo" );
+        sc.setData ( "plugins", plugins );
+		emit dataSync ( sc.getData(), sessionid );
     } else if ( ServiceID::isId ( data,"requestSettings" ) ) {
         // settings
         QMap<QString,PluginInfo*>::iterator index = m_plugincontroller->getPluginIterator();
         while ( AbstractPlugin_settings* plugin = m_plugincontroller->nextSettingsPlugin ( index ) ) {
             const QVariantMap settings = plugin->getSettings ();
-			if (settings.size())
-				emit dataSync ( settings, sessionid );
+            if (settings.size())
+                emit dataSync ( settings, sessionid );
         }
         {
             ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID,  "transfer.settings.complete" );

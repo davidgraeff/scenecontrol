@@ -19,6 +19,7 @@
 		<string id="uid" />
 	</property>
 	
+	<execute id="requestPluginInfos" />
 	<execute id="requestServices" />
 	<execute id="requestProperties" />
 	<execute id="requestSettings" />
