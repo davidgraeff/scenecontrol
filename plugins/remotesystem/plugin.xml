@@ -34,8 +34,8 @@
     <serverfile id="video"></serverfile>
     <enum id="state" n="3" /><!-- play, pause, stopped, error -->
   </property>
-  <property id="remote.connection.state">
+  <model id="remote.connection.state" model_key="server">
     <string id="server"></string>
     <enum id="state" n="2" /><!-- not reachable, connected -->
-  </property>
+  </model>
 </plugin>

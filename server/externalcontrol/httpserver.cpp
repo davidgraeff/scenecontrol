@@ -224,7 +224,6 @@ void HttpServer::headerParsed(HttpRequest* request) {
                 // There is no valid session for the given sessionid. Remember the client of this fact.
                 ServiceCreation sc = ServiceCreation::createNotification("sessioncontroller", "authentification.failed");
                 data.append(QJson::Serializer().serialize(sc.getData()));
-				qDebug() << "compare session" <<  request->m_sessionid << request->m_header << line;
             } else if (c == SessionController::SessionRequestValidation) {
                 ServiceCreation sc = ServiceCreation::createNotification("sessioncontroller", "authentification.temporary_sessionid");
 				sc.setData("sessionid", request->m_sessionid);

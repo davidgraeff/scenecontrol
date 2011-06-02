@@ -139,7 +139,7 @@ void WebSocket::readyRead()
     }
 
     int frameIndex;
-    while (1) {
+    while (m_socket->isOpen()) {
         // read until framestart is the first byte (read that one too)
         frameIndex = m_socket->peek(1000).indexOf(char(0x00));
         if (frameIndex==-1) return; // No frame start, wait for new data
@@ -205,6 +205,7 @@ void WebSocket::peerVerifyError(QSslError error) {
 
 void WebSocket::disconnected()
 {
+	
     emit removeWebSocket(this);
 }
 

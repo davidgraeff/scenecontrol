@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="wol" version="1.0">
-  <action id="wol">
-    <string id="mac"></string>
-  </action>
+	<action id="wol">
+		<string id="mac" model="wol.arpcache" model_key="mac" model_show="ip" model_edit="1"></string>
+	</action>
+	
+	<model id="wol.arpcache" model_key="mac">
+		<string id="mac"></string>
+		<string id="ip"></string>
+	</model>
 </plugin>

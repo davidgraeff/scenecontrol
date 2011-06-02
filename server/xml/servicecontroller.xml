@@ -51,7 +51,19 @@
 	
 	<model id="collections" model_key="uid">
 		<string id="uid"></string>
+		<string id="name"></string>
 	</model>
-	
+
+	<model id="plugins" model_key="pluginid">
+		<string id="pluginid"></string>
+		<string id="pluginname"></string>
+	</model>
+
+	<model id="functions" model_key="functionid">
+		<string id="functionid"></string>
+		<string id="pluginid"></string>
+		<string id="sectionname"></string>
+	</model>
+
 	<section>collections</section>
 </plugin>

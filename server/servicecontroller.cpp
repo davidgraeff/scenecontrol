@@ -116,6 +116,7 @@ void ServiceController::syncCollection(const QVariantMap& data, bool saveToDiskF
     emit dataSync ( data );
     ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "collections");
     sc.setData("uid", ServiceType::uniqueID ( data ));
+	sc.setData("name", data.value(QLatin1String("name")));
     property_changed ( sc.getData() );
 
 }
@@ -568,6 +569,7 @@ QList< QVariantMap > ServiceController::properties ( const QString& sessionid ) 
         for (;i!=m_collections.end();++i) {
             ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "collections");
             sc.setData("uid", i.key());
+			sc.setData("name", i.value()->name());
             l.append ( sc.getData() );
         }
     }

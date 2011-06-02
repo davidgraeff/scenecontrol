@@ -35,6 +35,7 @@ class CollectionInstance : public QObject {
 public:
     CollectionInstance( ServiceStruct* service, ServiceController* sc);
     virtual ~CollectionInstance();
+    QString name();
 	void change(const QVariantMap& data, const QVariantMap& olddata);
 	void clone();
 	bool removeService ( const QString& uid );

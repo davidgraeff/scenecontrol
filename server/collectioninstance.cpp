@@ -207,3 +207,7 @@ void CollectionInstance::updateServiceIDs() {
 
     m_collection->data[ QLatin1String("services") ] = list;
 }
+
+QString CollectionInstance::name() {
+    return m_collection->data.value(QLatin1String("name")).toString();
+}

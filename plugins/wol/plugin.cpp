@@ -21,6 +21,7 @@
 #include <QUdpSocket>
 #include <QHostAddress>
 #include "plugin.h"
+#include <qfileinfo.h>
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
@@ -80,5 +81,32 @@ void plugin::unregister_event ( const QVariantMap& data, const QString& collecti
 QList<QVariantMap> plugin::properties ( const QString& sessionid ) {
     Q_UNUSED ( sessionid );
     QList<QVariantMap> l;
+	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "wol.arpcache", "mac").getData());
+	
+    QFile file(QLatin1String("/proc/net/arp"));
+    if (file.exists() && file.open(QFile::ReadOnly)) {
+		file.readLine(); // ignore first line
+		while (file.canReadLine()) {
+			QByteArray line = file.readLine();
+			// get ip
+			int c = line.indexOf(' ', 0);
+			QByteArray ip = line.mid(0, c);
+			while (line.size()>c && line[c] == ' ') ++c;
+			// jump over HW type
+			c = line.indexOf(' ', c);
+			while (line.size()>c && line[c] == ' ') ++c;
+			// jump over flags
+			c = line.indexOf(' ', c);
+			while (line.size()>c && line[c] == ' ') ++c;
+			// get mac
+			QByteArray mac = line.mid(c, line.indexOf(' ', c) - c);
+			
+			ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "wol.arpcache");
+            sc.setData("mac", mac);
+            sc.setData("ip", ip);
+            l.append(sc.getData());
+		}
+		file.close();
+	}
     return l;
 }

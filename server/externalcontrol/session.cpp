@@ -34,7 +34,8 @@ SessionExtension::SessionExtension(QObject* parent) : QObject(parent), m_websock
 }
 
 SessionExtension::~SessionExtension() {
-    delete m_websocket;
+	if (m_websocket)
+		m_websocket->deleteLater();
 }
 
 void SessionExtension::dataChanged(const QByteArray& data) {
