@@ -28,17 +28,23 @@ class SessionExtension : public QObject
 {
     Q_OBJECT
 public:
-    SessionExtension(QObject* parent) ;
+    SessionExtension(const QString& sessionid, QObject* parent) ;
     ~SessionExtension() ;
     void dataChanged(const QByteArray& data);
 	void setWebsocket(WebSocket* websocket);
 	QList<QByteArray> getDataCache();
+	QString sessionid();
+	void finishAfterTimeout();
 private:
+	QString m_sessionid;
 	WebSocket* m_websocket;
     QTimer m_clearDataCacheTimer;
 	QList<QByteArray> m_dataCache;
 	bool m_dataLost;
+	bool m_closeAfterTimeout;
 private Q_SLOTS:
     void clearDataCache();
     void clearWebSocket(WebSocket*);
+Q_SIGNALS:
+	void removeSession(SessionExtension*);
 };

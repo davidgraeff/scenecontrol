@@ -126,7 +126,6 @@ bool SessionController::addSession(const QString& user, const QString& pwd, QStr
 void SessionController::closeSession(const QString& sessionid, bool timeout) {
     Session* session = m_session.take(sessionid);
     if (!session) return;
-    emit sessionFinished(sessionid, timeout);
     session->deleteLater();
     {
         ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "server.logins.all");
@@ -138,6 +137,7 @@ void SessionController::closeSession(const QString& sessionid, bool timeout) {
 		sc.setData("timeout", timeout);
         m_server->property_changed(sc.getData(), sessionid);
     }
+    emit sessionFinished(sessionid, timeout);
 }
 
 void SessionController::auth_success(QString sessionid, const QString& name) {

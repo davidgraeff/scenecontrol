@@ -24,6 +24,7 @@
 #include <QByteArray>
 #include <QTimer>
 
+class HttpServer;
 class HttpRequest : public QObject
 {
     Q_OBJECT
@@ -33,7 +34,7 @@ class HttpRequest : public QObject
 	friend class HttpResponseSendJson;
 	friend class HttpResponseReceiveJson;
 public:
-    HttpRequest(QSslSocket* s, QObject* parent) ;
+    HttpRequest(QSslSocket* s, HttpServer* parent) ;
     ~HttpRequest() ;
 	QSslSocket* takeOverSocket();
 	enum HttpRequestType {
@@ -44,6 +45,7 @@ public:
 		RequestTypePollJSon
 	} httprequestType;
 private:
+	HttpServer* m_server;
     QString m_sessionid;
     bool m_inHeader;
     QMap<QByteArray,QByteArray> m_header;

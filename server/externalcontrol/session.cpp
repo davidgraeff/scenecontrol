@@ -26,7 +26,7 @@
 #include "session.h"
 #include "websocket.h"
 
-SessionExtension::SessionExtension(QObject* parent) : QObject(parent), m_websocket(0) {
+SessionExtension::SessionExtension(const QString& sessionid, QObject* parent) : QObject(parent), m_sessionid(sessionid), m_websocket(0), m_closeAfterTimeout(false) {
 	m_dataLost = false;
     m_clearDataCacheTimer.setSingleShot(true);
     m_clearDataCacheTimer.setInterval(5000);
@@ -67,17 +67,32 @@ void SessionExtension::clearDataCache() {
 	}
     m_dataCache.clear();
 	m_clearDataCacheTimer.stop();
+	if (m_closeAfterTimeout)
+		emit removeSession(this);
 }
 
-void SessionExtension::clearWebSocket(WebSocket* websocket) {
-	Q_ASSERT(m_websocket==websocket);
-	m_websocket->deleteLater();
-	m_websocket = 0;
+void SessionExtension::clearWebSocket(WebSocket*) {
+	emit removeSession(this);
 }
 
 QList< QByteArray > SessionExtension::getDataCache() {
 	QList< QByteArray > a = m_dataCache;
 	m_dataCache.clear();
-	m_clearDataCacheTimer.stop();
+	clearDataCache();
 	return a;
+}
+
+void SessionExtension::finishAfterTimeout()
+{
+	if (m_websocket) {
+		emit removeSession(this);
+	} else {
+		m_closeAfterTimeout = true;
+		m_clearDataCacheTimer.stop();
+		m_clearDataCacheTimer.start();
+	}
+}
+
+QString SessionExtension::sessionid() {
+    return m_sessionid;
 }

@@ -130,7 +130,9 @@ SessionExtension* HttpServer::sessionBegin(QString sessionid) {
 
     Session* s = SessionController::instance()->getSession(sessionid);
     if (!s) return 0;
-    se = new SessionExtension(this);
+    se = new SessionExtension(sessionid, this);
+	qDebug() << "Start session" << se->sessionid();
+	connect(se, SIGNAL(removeSession(SessionExtension*)), SLOT(removeSession(SessionExtension*)));
     m_session_cache.insert(sessionid,se);
 
     // session less websockets
@@ -149,7 +151,21 @@ SessionExtension* HttpServer::sessionBegin(QString sessionid) {
 
 void HttpServer::sessionFinished(QString sessionid, bool timeout) {
     Q_UNUSED(timeout);
-    delete m_session_cache.take(sessionid);
+	SessionExtension* s = m_session_cache.value(sessionid);
+    if (s) {
+		s->finishAfterTimeout();
+	}
+}
+
+void HttpServer::removeSession(SessionExtension* se)
+{
+	qDebug() << "End session" << se->sessionid();
+	m_session_cache.remove(se->sessionid());
+	se->deleteLater();
+}
+
+SessionExtension* HttpServer::getSession(const QString& sessionid) {
+	return m_session_cache.value(sessionid);
 }
 
 void HttpServer::clearWebSocket(WebSocket* websocket) {
@@ -174,7 +190,6 @@ void HttpServer::headerParsed(HttpRequest* request) {
         m_sessionLess_websockets.insert(w);
 
     } else if (request->httprequestType == HttpRequest::RequestTypePollJSon) {
-
         QByteArray data;
         SessionExtension* s = m_session_cache.value(request->m_sessionid);
         if (s) {

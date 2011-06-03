@@ -26,11 +26,12 @@
 #include "config.h"
 #include "paths.h"
 #include "httprequest.h"
-#include "sessioncontroller.h"
+#include "httpserver.h"
+#include "session.h"
 
 #define __FUNCTION__ __FUNCTION__
 
-HttpRequest::HttpRequest(QSslSocket* s, QObject* parent) : QObject(parent), m_socket(s) {
+HttpRequest::HttpRequest(QSslSocket* s, HttpServer* parent) : QObject(parent), m_server(parent), m_socket(s) {
     connect(m_socket, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
     connect(m_socket, SIGNAL(peerVerifyError(const QSslError &)),
             this, SLOT(peerVerifyError (const QSslError &)));
@@ -84,10 +85,9 @@ void HttpRequest::readyRead()
             m_inHeader = false;
             // auth header
             if (m_sessionid.isEmpty() && m_header.contains("Sessionid")) {
-                Session* session = SessionController::instance()->getSession(QString::fromAscii(m_header["Sessionid"]));
+                SessionExtension* session = m_server->getSession(QString::fromAscii(m_header["Sessionid"]));
                 if (session) {
                     m_sessionid = session->sessionid();
-                    session->resetSessionTimer();
                 }
             }
             // websocket request

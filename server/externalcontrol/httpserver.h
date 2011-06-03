@@ -51,12 +51,16 @@ private Q_SLOTS:
 	// http request
 	void removeConnection(HttpRequest*);
 	void headerParsed(HttpRequest*);
+	
+	// session extension
+	void removeSession(SessionExtension*);
 public Q_SLOTS:
     // service controller signals
     void dataSync(const QVariantMap& data, const QString& sessionid);
     // session controller signals
     SessionExtension* sessionBegin(QString sessionid);
     void sessionFinished(QString sessionid, bool timeout);
+    SessionExtension* getSession(const QString& sessionid);
 Q_SIGNALS:
     void dataReceived(QVariantMap,QString);
 };
