@@ -64,6 +64,4 @@
 		<string id="pluginid"></string>
 		<string id="sectionname"></string>
 	</model>
-
-	<section>collections</section>
 </plugin>

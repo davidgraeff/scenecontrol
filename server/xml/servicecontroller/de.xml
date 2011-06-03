@@ -2,14 +2,7 @@
 <plugin>
 	<titel>Service Controller</titel>
 	<description>Service- und Profilverwaltung</description>
-	
-	<sections>
-		<collections>
-			<titel>Profile</titel>
-			<description>Erstellt und verwaltet Profile</description>
-		</collections>
-	</sections>
-	
+
 	<executecollection>
 		<titel>Profil ausführen</titel>
 		<description>Führt das ausgewählte Profil aus</description>
