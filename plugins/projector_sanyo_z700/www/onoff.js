@@ -1,26 +1,46 @@
-function RoomPlugin(pluginid, sectionname, $section) {
+function RoomcontrolPlugin(pluginid, sectionname) {
 	var that = this;
-	this.$formelement = $('<form class="sanyoZ700" />');
-	this.$btnEnable = $('<button>Einschalten</button>').button().click( function() { return that.activate(1); });
-	this.$btnDisable = $('<button>Ausschalten</button>').button().click( function() { return that.activate(0); });
-	this.$btnVideoMute = $('<button>Schwarzes Bild</button>').button().click( function() { return that.mute(1); });
-	this.$btnVideoUnmute = $('<button>Bild wiederherstellen</button>').button().click( function() { return that.mute(0); });
+	this.status = new Ext.Toolbar();
 	
-	this.load = function() {
-		that.$formelement.append(that.$btnEnable).append('<br/>').append(that.$btnDisable).append('<br/>').append(that.$btnVideoMute).append('<br/>').append(that.$btnVideoUnmute).appendTo($section);
+	this.card = new Ext.Panel({
+		defaults: {
+			xtype: 'button',
+			margin: 10
+		},
+		items: [
+			{
+				text: 'Einschalten',
+				ui: 'confirm',
+				handler : function() {
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_power","power":1});
+				}
+			},
+			{
+				text: 'Ausschalten',
+				ui: 'decline',
+				handler : function() {
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_power","power":0});
+				}
+			},
+			{
+				text: 'Schwarzes Bild',
+				handler : function() {
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_video","mute":1});
+				}
+			},
+			{
+				text: 'Bild wiederherstellen',
+				handler : function() {
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_video","mute":0});
+				}
+			}
+		]
+	});
+	
+	this.init = function() {
 	}
 	
 	this.clear = function() {
-		that.$formelement.remove();
-	}
-	
-	this.activate = function(value) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_power","power":value});
-		return false;
-	}
-	
-	this.mute = function(value) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"projector_sanyo_video","mute":value});
-		return false;
+		
 	}
 }
