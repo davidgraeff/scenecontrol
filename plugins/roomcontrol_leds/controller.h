@@ -58,14 +58,14 @@ public:
     int getCurtain();
 
     int countChannels();
-    QString getChannelName ( uint channel );
-    void setChannel ( uint channel, uint value, uint fade );
-    void setChannelName ( uint channel, const QString& name );
-    void inverseChannel(uint channel, uint fade);
-    void setChannelExponential ( uint channel, int multiplikator, uint fade );
-    void setChannelRelative ( uint channel, int value, uint fade );
-    unsigned int getChannel(unsigned int channel) const;
-    void moodlight(uint channel, bool moodlight);
+    QString getChannelName ( const QString& channel );
+    void setChannel ( const QString& channel, uint value, uint fade );
+    void setChannelName ( const QString& channel, const QString& name );
+    void inverseChannel(const QString& channel, uint fade);
+    void setChannelExponential ( const QString& channel, int multiplikator, uint fade );
+    void setChannelRelative ( const QString& channel, int value, uint fade );
+    unsigned int getChannel(const QString& channel) const;
+    void moodlight(const QString& channel, bool moodlight);
 	
 	struct ledchannel {
 		int value;
@@ -73,7 +73,7 @@ public:
 		bool moodlight;
 		ledchannel() { value = 300; moodlight = false; }
 	};
-    QMap<int,ledchannel> m_leds;
+    QMap<QString,ledchannel> m_leds;
 	int m_curtain_max;
 	int m_curtain_value;
 private:
@@ -103,8 +103,7 @@ private Q_SLOTS:
 	void moodlightTimeout();
 Q_SIGNALS:
     void curtainChanged(int current, int max);
-	void ledvalueChanged(int channel, int value);
-	void lednameChanged(int channel, const QString& name);
+	void ledChanged(const QString& id, const QString& name, int value);
     void dataLoadingComplete();
     void ledsCleared();
 };

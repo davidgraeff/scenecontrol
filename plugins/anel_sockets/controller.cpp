@@ -75,17 +75,24 @@ void Controller::readyRead() {
         const QStringList data = QString::fromLatin1(cmd[i]).split(QLatin1Char(','));
         const QString initialname = data[0];
         const int value = data[1].toInt();
-        const QString name = settings.value ( initialname, initialname ).toString();
+        QString name = settings.value ( initialname ).toString();
+		if (name.isEmpty())
+			name = initialname;
+		
         const bool alreadyinside = m_mapPinToHost.contains(initialname);
         m_mapPinToHost[initialname] = QPair<QHostAddress,uint>(host,pin);
-        bool changed = false;
-        if (!alreadyinside || (m_values[initialname] != value)) changed = true;
-        m_values[initialname] = value;
-        if (changed) emit valueChanged(initialname, value);
-        changed = false;
-        if (!alreadyinside || (m_names[initialname] != name)) changed = true;
-        m_names[initialname] = name;
-        if (changed) emit nameChanged(initialname, name);
+        bool changedvalue = false;
+        if (m_ios[initialname].value != value)
+			changedvalue = true;
+		
+        m_ios[initialname].value = value;
+        m_ios[initialname].name = name;
+		
+        if (!alreadyinside)
+			emit dataChanged(initialname, name, value);
+		else if (changedvalue)
+			emit dataChanged(initialname, QString::null, value);
+		
         // update cache
         if (value)
             m_cache[host.toString()] |= (unsigned char)(1 << pin);
@@ -98,8 +105,8 @@ void Controller::readyRead() {
 
 bool Controller::getPin(const QString& pin) const
 {
-    if (!m_values.contains(pin)) return false;
-    return m_values[pin];
+    if (!m_ios.contains(pin)) return false;
+    return m_ios[pin].value;
 }
 
 void Controller::setPin ( const QString& pin, bool value )
@@ -117,21 +124,21 @@ void Controller::setPin ( const QString& pin, bool value )
 
 void Controller::setPinName ( const QString& pin, const QString& name )
 {
-    if ( !m_names.contains(pin) ) return;
-    m_names[pin] = name;
+    if ( !m_ios.contains(pin) ) return;
+    m_ios[pin].name = name;
 
     QSettings settings;
     settings.beginGroup(m_plugin->pluginid());
     settings.beginGroup ( QLatin1String("pinnames") );
     settings.setValue ( pin, name );
 
-    emit nameChanged(pin, name);
+    emit dataChanged(pin, name, -1);
 }
 
 void Controller::togglePin ( const QString& pin )
 {
-    if (!m_values.contains(pin)) return;
-    setPin ( pin, !m_values[pin] );
+    if (!m_ios.contains(pin)) return;
+    setPin ( pin, !m_ios[pin].value );
 }
 
 void Controller::cacheToDevice()
@@ -149,17 +156,17 @@ void Controller::cacheToDevice()
 }
 
 int Controller::countPins() {
-    return m_values.size();
+    return m_ios.size();
 }
 
 QString Controller::getPinName(const QString& pin) {
-    if (!m_names.contains(pin)) return QString();
-    return m_names[pin];
+    if (!m_ios.contains(pin)) return QString();
+    return m_ios[pin].name;
 }
 
 void Controller::reinitialize() {
-	m_values.clear();
-	m_names.clear();
+	m_ios.clear();
+	m_ios.clear();
 	
     QByteArray str("wer da?");
     str.append(0x0D);

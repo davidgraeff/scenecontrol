@@ -12,53 +12,53 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 			{
 				text: 'Vorheriger',
 				handler : function() {
-					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":"mpd","id":"mpdcmd","state":4});
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"mpdcmd","state":4});
 				}
 			},
 			{
 				text: 'Zurückspulen',
 				handler : function() {
-					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":"mpd","id":"mpdposition","relative":1,"position_in_ms":-5000});
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"mpdposition","relative":1,"position_in_ms":-5000});
 				}
 			},
 			{
 				text: 'Start/Pause',
 				handler : function() {
-					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":"mpd","id":"mpdcmd","state":0});
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"mpdcmd","state":0});
 				}
 			},
 			{
 				text: 'Stop',
 				ui: 'decline',
 				handler : function() {
-					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":"mpd","id":"mpdcmd","state":2});
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"mpdcmd","state":2});
 				}
 			},
 			{
 				text: 'Vorspulen',
 				handler : function() {
-					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":"mpd","id":"mpdposition","relative":1,"position_in_ms":5000});
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"mpdposition","relative":1,"position_in_ms":5000});
 				}
 			},
 			{
 				text: 'Nächster',
 				handler : function() {
-					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":"mpd","id":"mpdcmd","state":3});
+					roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"mpdcmd","state":3});
 				}
 			}
 		]
 	});
 	
 	this.init = function() {
-		$(roomcontrol.SessionManager).bind('notification', that.notification);
+		roomcontrol.SessionController.events.on('notification', that.notification, this);
 	}
 	
 	this.clear = function() {
 		
 	}
 
-	this.notification = function(event, data) {
-		if (data.__plugin != "mpd")
+	this.notification = function(data) {
+		if (data.__plugin != pluginid)
 			return;
 
 		if (data.id == "connection.state") {

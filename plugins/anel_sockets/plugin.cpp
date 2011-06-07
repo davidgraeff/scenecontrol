@@ -27,8 +27,7 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
     m_controller = new Controller ( this );
-    connect ( m_controller,SIGNAL(nameChanged(QString,QString)),SLOT(nameChanged(QString,QString)));
-    connect ( m_controller,SIGNAL(valueChanged(QString,int)),SLOT(valueChanged(QString,int)));
+    connect ( m_controller,SIGNAL(dataChanged(QString,QString,int)),SLOT(dataChanged(QString,QString,int)));
     _config ( this );
 }
 
@@ -85,38 +84,25 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
-		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io.value", "channel").getData());
-        QMap<QString, unsigned char>::iterator i = m_controller->m_values.begin();
-        for (;i!=m_controller->m_values.end();++i) {
-            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io.value");
+		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io", "channel").getData());
+        QMap<QString, Controller::iochannel>::iterator i = m_controller->m_ios.begin();
+        for (;i!=m_controller->m_ios.end();++i) {
+			const Controller::iochannel str = i.value();
+            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io");
             sc.setData("channel", i.key());
-            sc.setData("value", i.value());
-            l.append(sc.getData());
-        }
-    }
-    {
-		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io.name", "channel").getData());
-        QMap<QString, QString>::iterator i = m_controller->m_names.begin();
-        for (;i!=m_controller->m_names.end();++i) {
-            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io.name");
-            sc.setData("channel", i.key());
-            sc.setData("name", i.value());
+            sc.setData("value", str.value);
+            sc.setData("name", str.name);
             l.append(sc.getData());
         }
     }
     return l;
 }
 
-void plugin::nameChanged(QString channel, QString name) {
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io.name");
+void plugin::dataChanged(QString channel, QString name, int value) {
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io");
     sc.setData("channel", channel);
-    sc.setData("name", name);
-    m_server->property_changed(sc.getData());
-}
+    if (!name.isNull()) sc.setData("name", name);
+    if (value != -1) sc.setData("value", value);
 
-void plugin::valueChanged(QString channel, int value) {
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io.value");
-    sc.setData("channel", channel);
-    sc.setData("value", value);
     m_server->property_changed(sc.getData());
 }

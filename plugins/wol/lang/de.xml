@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin>
-     <titel>WakeUpOnLan</titel>
-     <description>Weckt einen PC über die angegebene MAC Adresse auf (Netzwerkkarte muss dies unterstützen)</description>
-  <wol>
-      <titel>WakeUpOnLan</titel>
-      <description>Weckt einen PC über die angegebene MAC Adresse auf (Netzwerkkarte muss dies unterstützen)</description>
-      <mac><titel>MAC</titel></mac>
-  </wol>
+	<titel>WakeUpOnLan</titel>
+	<description>Weckt einen PC über die angegebene MAC Adresse auf (Netzwerkkarte muss dies unterstützen)</description>
+	<sections>
+		<control>
+			<titel>PC einschalten</titel>
+			<description>Schaltet einen PC per Netzwerk MAC ein</description>
+		</control>
+	</sections>
+	<wol>
+		<titel>WakeUpOnLan</titel>
+		<description>Weckt einen PC über die angegebene MAC Adresse auf (Netzwerkkarte muss dies unterstützen)</description>
+		<mac><titel>MAC</titel></mac>
+	</wol>
 </plugin>

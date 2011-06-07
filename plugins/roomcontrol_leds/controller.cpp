@@ -115,6 +115,7 @@ void Controller::parseLeds ( const QByteArray& data ) {
     // set new
     qDebug() <<m_plugin->pluginid() << "LED Channels:" << m_channels;
     for ( int i=0;i<m_channels;++i ) {
+		const QString channelid = QString::number(i);
 		ledchannel l;
         l.value = ( uint8_t ) data[i];
         l.name = settings.value ( QLatin1String ( "channel_name" ) +QString::number ( i ),
@@ -122,9 +123,8 @@ void Controller::parseLeds ( const QByteArray& data ) {
         l.moodlight =  settings.value ( QLatin1String ( "channel_moodlight" ) +QString::number ( i )).toBool();
         if (l.moodlight) m_moodlightTimer.start();
 		
-		m_leds[i] = l;
-        emit ledvalueChanged ( i, l.value );
-        emit lednameChanged ( i, l.name );
+		m_leds[channelid] = l;
+        emit ledChanged ( channelid, l.name, l.value );
     }
     emit dataLoadingComplete();
 }
@@ -141,27 +141,27 @@ int Controller::getCurtain() {
     return m_curtain_value;
 }
 
-void Controller::setChannelName ( uint channel, const QString& name ) {
+void Controller::setChannelName ( const QString& channel, const QString& name ) {
     if ( !m_leds.contains(channel) ) return;
     m_leds[channel].name = name;
-    emit lednameChanged ( channel, name );
+    emit ledChanged ( channel, name, -1 );
 
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
     settings.beginGroup ( QLatin1String ( "channels" ) );
-    settings.setValue ( QLatin1String ( "channel_name" ) +QString::number ( channel ), name );
+    settings.setValue ( QLatin1String ( "channel_name" ) + channel , name );
 }
 
-unsigned int Controller::getChannel ( unsigned int channel ) const {
+unsigned int Controller::getChannel ( const QString& channel ) const {
     return m_leds.value ( channel ).value;
 }
 
-void Controller::setChannel ( uint channel, uint value, uint fade ) {
+void Controller::setChannel ( const QString& channel, uint value, uint fade ) {
     if ( !m_serial ) return;
     if ( !m_leds.contains(channel) ) return;
     value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
     m_leds[channel].value = value;
-    emit ledvalueChanged ( channel, value );
+    emit ledChanged ( channel, QString::null, value );
 
     unsigned char cfade=0;
     switch ( fade ) {
@@ -180,31 +180,31 @@ void Controller::setChannel ( uint channel, uint value, uint fade ) {
     default:
         break;
     };
-    const char t1[] = {cfade, channel, value};
+    const char t1[] = {cfade, channel.toUInt(), value};
     m_serial->write ( t1, sizeof ( t1 ) );
 }
 
-void Controller::moodlight(uint channel, bool moodlight) {
+void Controller::moodlight(const QString& channel, bool moodlight) {
 	if ( !m_leds.contains(channel) ) return;
     m_leds[channel].moodlight = moodlight;
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
     settings.beginGroup ( QLatin1String ( "channels" ) );
-    settings.setValue ( QLatin1String ( "channel_moodlight" ) +QString::number ( channel ), moodlight );
+    settings.setValue ( QLatin1String ( "channel_moodlight" ) +channel , moodlight );
     if (moodlight) {
 		m_moodlightTimer.start();
 		moodlightTimeout();
 	}
 }
 
-void Controller::inverseChannel ( uint channel, uint fade ) {
-    if ( channel>= ( unsigned int ) m_leds.size() ) return;
+void Controller::inverseChannel ( const QString& channel, uint fade ) {
+    if ( !m_leds.contains(channel) ) return;
     const unsigned int newvalue = 255 - m_leds[channel].value;
     setChannel ( channel, newvalue, fade );
 }
 
-void Controller::setChannelExponential ( uint channel, int multiplikator, uint fade ) {
-    if ( channel>= ( unsigned int ) m_leds.size() ) return;
+void Controller::setChannelExponential ( const QString& channel, int multiplikator, uint fade ) {
+    if ( !m_leds.contains(channel) ) return;
     unsigned int v = m_leds[channel].value;
     if ( multiplikator>100 ) {
         if ( v==0 )
@@ -223,8 +223,8 @@ void Controller::setChannelExponential ( uint channel, int multiplikator, uint f
     setChannel ( channel, v, fade );
 }
 
-void Controller::setChannelRelative ( uint channel, int value, uint fade ) {
-    if ( channel>= ( unsigned int ) m_leds.size() ) return;
+void Controller::setChannelRelative ( const QString& channel, int value, uint fade ) {
+    if (! m_leds.contains(channel) ) return;
     value += m_leds[channel].value;
     const unsigned int v = ( unsigned int ) qMin ( 0, value );
     setChannel ( channel, v, fade );
@@ -235,7 +235,7 @@ int Controller::countChannels() {
     return m_channels;
 }
 
-QString Controller::getChannelName ( uint channel ) {
+QString Controller::getChannelName ( const QString& channel ) {
     return m_leds.value ( channel ).name;
 }
 
@@ -288,7 +288,7 @@ void Controller::connectToLeds ( const QString& device ) {
 }
 
 void Controller::moodlightTimeout() {
-	QMap<int,ledchannel>::iterator i = m_leds.begin();
+	QMap<QString,ledchannel>::iterator i = m_leds.begin();
 	int c = 0;
 	for (;i != m_leds.end();++i) {
 		if (!i.value().moodlight) continue;

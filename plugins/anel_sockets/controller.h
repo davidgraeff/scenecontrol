@@ -39,8 +39,12 @@ public:
     int countPins();
     void connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd);
 
-    QMap<QString, unsigned char> m_values;
-    QMap<QString, QString> m_names;
+	struct iochannel {
+		int value;
+		QString name;
+		iochannel() { value = 300; }
+	};
+    QMap<QString,iochannel> m_ios;
 private:
     AbstractPlugin* m_plugin;
     QMap< QString, QPair<QHostAddress,uint> > m_mapPinToHost;
@@ -55,7 +59,6 @@ private slots:
     void readyRead();
     void cacheToDevice();
 Q_SIGNALS:
-	void valueChanged(const QString& id, int value);
-	void nameChanged(const QString& id, const QString& name);
+	void dataChanged(const QString& id, const QString& name, int value);
     void dataLoadingComplete();
 };

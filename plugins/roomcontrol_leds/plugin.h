@@ -48,7 +48,9 @@ private:
     Controller* m_controller;
 private Q_SLOTS:
     void curtainChanged ( int current, int max );
-    void ledvalueChanged ( int channel, int value );
-    void lednameChanged ( int channel, const QString& name );
+	/**
+	 * Updated led state. 
+	 */
+    void ledChanged ( QString,QString = QString::null,int = -1);
     void ledsCleared();
 };

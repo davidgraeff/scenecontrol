@@ -1,78 +1,95 @@
-function RoomPlugin(pluginid, sectionname, $section) {
+function RoomcontrolPlugin(pluginid, sectionname) {
 	var that = this;
-	this.$rootelement = $('<ul class="anelsockets"></ul>');
-	this.datamodel;
-	this.namemodel;
-	this.listview;
+	var store;
 	
-	this.load = function() {
-		if (!that.$rootelement) return;
-		$section.append(that.$rootelement);
-		$.getCss(pluginid+"/"+sectionname+".css");
-		that.listview = new AbstractView(that.$rootelement, that.itemChangeFunction, that.itemCreationFunction);
-		$(modelstorage.checkExisting(that.modelAvailable)).bind('modelAvailable', that.modelAvailable);
+	this.asciiOnly = function(str)
+	{
+			var nonASCII=/([^\x00-\x7F])/;
+	
+			while( str.match(nonASCII) )
+			{
+					str = str.replace( new RegExp( String(RegExp.$1),"g"),"");
+			}
+	return str;
+	}
+	
+	this.card = new Ext.form.FormPanel({
+		submitOnAction: false,
+		defaults: {
+			labelWidth: '50%'
+		}
+	});
+	
+	this.add = function(store, records, index) {
+		for (i=0, l=records.length; i<l; ++i) {
+			var data = records[i].data;
+			var id = 'anel_sockets_'+this.asciiOnly(data.channel);
+			var slider = this.card.getComponent(id);
+			if (slider) {
+				if (data.value)
+					slider.setValue(data.value);
+				if (data.name)
+					Ext.fly(id).dom.children[0].children[0].textContent = data.name;
+					
+			} else {
+				var name = (data.channel.length?data.name:'Noname '+index);
+				var element = new Ext.form.Toggle({
+					label: name,
+					id: id,
+					value: data.value,
+					isInit: true,
+					minValue: 0,
+					maxValue: 1,
+					listeners: {
+						change: function( slider, thumb, newValue, oldValue ) {
+							if (slider.isInit) {
+								slider.isInit = false;
+								return true;
+							}
+							if (newValue != oldValue) {
+								roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"iovalue_absolut","channel":data.channel,"value":(newValue?true:false)});
+							}
+						},
+						el: {
+							tap: function(item){
+								Ext.Msg.prompt('New name', '', function(buttonid, value) {
+									value = escapeInputForJson(value);
+									if (buttonid == 'ok' && value.length && name != value) {
+										item.target.childNodes[0].textContent = value + '*';
+										//console.log("HBAKBF", item.target.childNodes[0].textContent);
+										roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"ioname","channel":data.channel,"name":value});
+									}
+								}, null, false, name, {focus: true});
+							},
+							delegate: '.x-form-label'
+						}
+					}
+				});
+				
+				this.card.insert(index, element);
+			}
+		}
+		this.card.doLayout();
+	}
+
+	this.remove = function(store, record, index) {
+		this.card.remove('anel_sockets_'+index, true);
+		this.card.doLayout();
+	}
+
+	this.init = function() {
+		this.card.items.clear();
+		this.store = Ext.StoreMgr.lookup("anel.io");
+		this.store.on('add', this.add, this);
+		this.store.on('remove', this.remove, this);
 	}
 	
 	this.clear = function() {
-		that.$rootelement.remove();
-		$(that).unbind();
-		delete that.listview;
-		delete that.datamodel;
-		delete that.namemodel;
-	}
-	
-	this.getName = function(key) {
-		var count = that.namemodel.count();
-		for(i=0;i<count;++i) {
-			var item = that.namemodel.getItem(i);
-			if (item.channel == key) return item.name;
+		if (this.store) {
+			this.store.un('add', this.add);
+			this.store.un('remove', this.remove);
 		}
-		return key;
+		this.store = undefined;
+		this.card.removeAll(true);
 	}
-	
-	this.itemChangeFunction = function($domitem, modelitem) {
-		if (modelitem.value)
-			$domitem.removeClass("anelsockets_deactivated").addClass("anelsockets_activated");
-		else
-			$domitem.removeClass("anelsockets_activated").addClass("anelsockets_deactivated");
-		return $domitem.text(that.getName(modelitem.channel));
-	}
-	
-	this.itemCreationFunction = function(modelitem) {
-		var $item = $('<li class="anelsockets" contentEditable="true"></li>').attr("channel", modelitem.channel);
-		$item.click( function(event) {if(event.shiftKey) {return;} that.tooglevalue($(this).attr("channel")); });
-		$item.keydown (filterNamesFunction);
-		$item.keyup (function() {
-			var newname = $(this).text();
-			if (newname.length && newname != that.getName(modelitem.channel)) {
-				sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"ioname","channel":modelitem.channel,"name":newname});
-			}
-		});
-		return $item;
-	}
-
-	this.removeDataModel = function() {
-		that.datamodel = 0;
-	}
-	this.removeNameModel = function() {
-		that.namemodel = 0;
-	}
-	
-	this.modelAvailable = function(event, modelid, modeldata) {
-		if (that.datamodel && that.namemodel) return;
-		if (modelid == "anel.io.value") {
-			that.datamodel = modeldata;
-			$(that.datamodel).bind('modelremove', that.removeDataModel);
-		}
-		else if (modelid == "anel.io.name") {
-			that.namemodel = modeldata;
-			$(that.namemodel).bind('modelremove', that.removeNameModel);
-		}
-		if (!that.datamodel || !that.namemodel) return;
-		that.listview.setModel(that.datamodel);
-	}
-
-	this.tooglevalue = function(key) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"iovalue_toogle","channel":key});
-	}	
 }

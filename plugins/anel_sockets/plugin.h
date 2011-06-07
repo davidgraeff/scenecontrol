@@ -47,6 +47,8 @@ public:
 private:
     Controller* m_controller;
 private Q_SLOTS:
-    void nameChanged ( QString,QString );
-    void valueChanged ( QString,int );
+	/**
+	 * Updated anel io switch state. 
+	 */
+    void dataChanged ( QString,QString = QString::null,int = -1);
 };

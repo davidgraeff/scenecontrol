@@ -1,78 +1,95 @@
-function RoomPlugin(pluginid, sectionname, $section) {
+function RoomcontrolPlugin(pluginid, sectionname) {
 	var that = this;
-	this.$rootelement = $('<div class="roomcontrolleds"></div>');
-	this.datamodel;
-	this.namemodel;
-	this.listview;
+	var store;
 	
-	this.load = function() {
-		if (!that.$rootelement) return;
-		$section.append(that.$rootelement);
-		$.getCss(pluginid+"/"+sectionname+".css");
-		that.listview = new AbstractView(that.$rootelement, that.itemChangeFunction, that.itemCreationFunction);
-		// models
-		$(modelstorage.checkExisting(that.modelAvailable)).bind('modelAvailable', that.modelAvailable);
+	this.asciiOnly = function(str)
+	{
+			var nonASCII=/([^\x00-\x7F])/;
+	
+			while( str.match(nonASCII) )
+			{
+					str = str.replace( new RegExp( String(RegExp.$1),"g"),"");
+			}
+	return str;
+	}
+	
+	this.card = new Ext.form.FormPanel({
+		submitOnAction: false,
+		defaults: {
+			labelWidth: '50%'
+		}
+	});
+	
+	this.add = function(store, records, index) {
+		for (i=0, l=records.length; i<l; ++i) {
+			var data = records[i].data;
+			var id = 'roomcontrolleds_'+this.asciiOnly(data.channel);
+			var slider = this.card.getComponent(id);
+			if (slider) {
+				if (data.value)
+					slider.setValue(data.value);
+				if (data.name)
+					Ext.fly(id).dom.children[0].children[0].textContent = data.name;
+					
+			} else {
+				var name = (data.channel.length?data.name:'Noname '+index);
+				var element = new Ext.form.Slider({
+					label: name,
+					id: id,
+					value: data.value,
+					isInit: true,
+					minValue: 0,
+					maxValue: 255,
+					listeners: {
+						change: function( slider, thumb, newValue, oldValue ) {
+							if (slider.isInit) {
+								slider.isInit = false;
+								return true;
+							}
+							if (newValue != oldValue) {
+								roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"ledvalue_absolut","channel":data.channel,"value":(newValue?true:false)});
+							}
+						},
+						el: {
+							tap: function(item){
+								Ext.Msg.prompt('New name', '', function(buttonid, value) {
+									value = escapeInputForJson(value);
+									if (buttonid == 'ok' && value.length && name != value) {
+										item.target.childNodes[0].textContent = value + '*';
+										//console.log("HBAKBF", item.target.childNodes[0].textContent);
+										roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"ledname","channel":data.channel,"name":value});
+									}
+								}, null, false, name, {focus: true});
+							},
+							delegate: '.x-form-label'
+						}
+					}
+				});
+				
+				this.card.insert(index, element);
+			}
+		}
+		this.card.doLayout();
+	}
+
+	this.remove = function(store, record, index) {
+		this.card.remove('roomcontrolleds_'+index, true);
+		this.card.doLayout();
+	}
+
+	this.init = function() {
+		this.card.items.clear();
+		this.store = Ext.StoreMgr.lookup("roomcontrol.leds");
+		this.store.on('add', this.add, this);
+		this.store.on('remove', this.remove, this);
 	}
 	
 	this.clear = function() {
-		if (!that.$rootelement) return;
-		that.$rootelement.remove();
-		delete that.$rootelement;
-		delete that.listview;
-	}
-	
-	this.getName = function(key) {
-		var count = that.namemodel.count();
-		for(i=0;i<count;++i) {
-			var item = that.namemodel.getItem(i);
-			if (item.channel == key) return item.name;
+		if (this.store) {
+			this.store.un('add', this.add);
+			this.store.un('remove', this.remove);
 		}
-		return key;
-	}
-	
-	this.itemChangeFunction = function($domitem, modelitem) {
-		var itemText = $domitem.data("itemText");
-		var itemSlider = $domitem.data("itemSlider");
-		itemText.text(that.getName(modelitem.channel));
-		itemSlider.slider("value", modelitem.value);
-		return $domitem;
-	}
-	
-	this.itemCreationFunction = function(modelitem) {
-		var $item = $('<div class="led"></div>');
-		var itemText = $('<div class="ledtext" contentEditable="true" />');
-		var itemSlider = $('<div class="ledslider" />');
-		$item.append(itemSlider).data("itemSlider", itemSlider);
-		$item.append(itemText).data("itemText", itemText);
-		
-		itemText.keydown (filterNamesFunction);
-		itemText.keyup (function() {
-			var newname = $(this).text();
-			if (newname.length && newname != that.getName(modelitem.channel)) {
-				sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"ledname","channel":modelitem.channel,"name":newname});
-			}
-		});
-		
-		itemSlider.slider({min: 0, max: 255, value: 0, orientation: 'horizontal'}).attr("channel", modelitem.channel);
-		itemSlider.bind( "slide", function(event, ui) {that.changeled($(this).attr("channel"), ui.value);});
-		return $item;
-	}
-
-	this.modelAvailable = function(event, modelid, modeldata) {
-		if (that.datamodel && that.namemodel) return;
-		if (modelid == "led.value") that.datamodel = modeldata;
-		else if (modelid == "led.name") that.namemodel = modeldata;
-		if (!that.datamodel || !that.namemodel) return;
-		that.listview.setModel(that.datamodel);
-		
-// 		console.log("add fake data", modelid);
-// 		that.namemodel.reset("channel");
-// 		that.namemodel.change({"channel":"led1","name":"Led 1","id":"led.name"});
-// 		that.datamodel.reset("channel");
-// 		that.datamodel.change({"channel":"led1","value":120,"id":"led.value"});
-	}
-
-	this.changeled = function(channel, value) {
-		sessionmanager.socket_write({"__type":"execute","__plugin":pluginid,"id":"ledvalue_absolut","channel":channel,"value":value});
+		this.store = undefined;
+		this.card.removeAll(true);
 	}
 }
