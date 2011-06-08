@@ -4,13 +4,13 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	
 	this.asciiOnly = function(str)
 	{
-			var nonASCII=/([^\x00-\x7F])/;
-	
-			while( str.match(nonASCII) )
-			{
-					str = str.replace( new RegExp( String(RegExp.$1),"g"),"");
-			}
-	return str;
+		var nonASCII=/([^\x00-\x7F])/;
+
+		while( str.match(nonASCII) )
+		{
+				str = str.replace( new RegExp( String(RegExp.$1),"g"),"");
+		}
+		return str;
 	}
 	
 	this.card = new Ext.form.FormPanel({
@@ -73,7 +73,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	}
 
 	this.remove = function(store, record, index) {
-		this.card.remove('anel_sockets_'+index, true);
+		this.card.remove('anel_sockets_'+record.getId(), true);
 		this.card.doLayout();
 	}
 

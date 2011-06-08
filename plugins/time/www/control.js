@@ -27,7 +27,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	this.add = function(store, records, index) {
 		for (i=0, l=records.length; i<l; ++i) {
 			var data = records[i].data;
-			var id = 'pulseaudio_'+this.asciiOnly(data.sinkid);
+			var id = 'timeevent_'+this.asciiOnly(data.sinkid);
 			var slider = this.card.getComponent(id);
 			if (slider) {
 				slider.mute = data.mute;
@@ -72,13 +72,13 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	}
 
 	this.remove = function(store, record, index) {
-		this.card.remove('pulseaudio_'+record.getId(), true);
+		this.card.remove('timeevent_'+record.getId(), true);
 		this.card.doLayout();
 	}
 
 	this.init = function() {
 		this.card.items.clear();
-		this.store = Ext.StoreMgr.lookup("pulse.channels");
+		this.store = Ext.StoreMgr.lookup("time.alarms");
 		this.store.on('add', this.add, this);
 		this.store.on('remove', this.remove, this);
 	}

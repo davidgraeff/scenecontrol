@@ -1,0 +1,27 @@
+
+ul.pulseaudiochannels
+{
+	list-style-type:none;
+	display: inline-block;
+	-webkit-margin-before: 0;
+	padding-top: 0;
+	padding-left: 80px;
+	padding-right: 60px;
+	margin: 0;
+}
+
+ul.pulseaudiochannels > li
+{
+	width:450px;
+}
+
+ul.pulseaudiochannels > li > .channelname {
+}
+
+ul.pulseaudiochannels > li > .channelvalue {
+	margin: 10px 20px;
+}
+
+ul.pulseaudiochannels > li > .channelmute {
+	margin-right: 10px;
+}

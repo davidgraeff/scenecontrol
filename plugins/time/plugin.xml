@@ -25,4 +25,6 @@
 	<model id="time.alarms" model_key="uid">
 		<string id="uid"></string>
 	</model>
+	
+	<section>control</section>
 </plugin>

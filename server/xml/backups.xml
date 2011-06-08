@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="backups" version="1.0">
- <!-- backups -->
-  <action id="backup_create">
-    <string id="name" />
-  </action>
-  <action id="backup_restore">
-    <string id="backupid" model="backup" model_key="backupid" model_show="name" />
-  </action>
-  <action id="backup_remove">
-    <string id="backupid" model="backup" model_key="backupid" model_show="name" />
-  </action>
-  <model id="backup" model_key="backupid">
-    <string id="backupid"></string>
-    <string id="name"></string>
-  </model>
-  
-  <section>control</section>
+	<action id="backup_create">
+		<string id="name" />
+	</action>
+	<action id="backup_restore">
+		<string id="backupid" model="backup" model_key="backupid" model_show="name" />
+	</action>
+	<action id="backup_remove">
+		<string id="backupid" model="backup" model_key="backupid" model_show="name" />
+	</action>
+	<execute id="backup_rename">
+		<string id="backupid"  />
+		<string id="name" />
+	</execute>
+	
+	<model id="backup" model_key="backupid">
+		<string id="backupid"></string>
+		<string id="name"></string>
+		<string id="date"></string>
+		<int id="files">0</int>
+	</model>
+	
+	<section>control</section>
 </plugin>

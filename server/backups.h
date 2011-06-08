@@ -44,9 +44,17 @@ public:
 	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
     virtual void execute(const QVariantMap& data, const QString& sessionid);
     virtual QList<QVariantMap> properties(const QString& sessionid);
-	
+private:
 	void create(const QString& name);
 	void rename(const QString& id, const QString& name);
 	void restore ( const QString& id );
 	void remove ( const QString& id );
+	struct Backup {
+		QString id;
+		QString name;
+		QString date;
+		int files;
+	};
+	QVariantMap changeNotify( const Backups::Backup& b, bool write = false);
+	QMap<QString, Backup> m_backups;
 };
