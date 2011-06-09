@@ -27,15 +27,15 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	this.add = function(store, records, index) {
 		for (i=0, l=records.length; i<l; ++i) {
 			var data = records[i].data;
-			var id = 'pulseaudio_'+this.asciiOnly(data.sinkid);
-			var slider = this.card.getComponent(id);
-			if (slider) {
-				slider.mute = data.mute;
-				slider.isInit = true;
-				slider.setValue(data.volume*100);
+			var id = 'pulseaudio_'+this.asciiOnly(records[i].getId());
+			var element = this.card.getComponent(id);
+			if (element) {
+				element.mute = data.mute;
+				element.isInit = true;
+				element.setValue(data.volume*100);
 				Ext.fly(id).dom.children[0].children[0].textContent = that.labelname(data.sinkid, data.mute, false);
 			} else {
-				var element = new Ext.form.Slider({
+				element = new Ext.form.Slider({
 					label: that.labelname(data.sinkid, data.mute, false),
 					sinkid: data.sinkid,
 					mute: false,
@@ -72,7 +72,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	}
 
 	this.remove = function(store, record, index) {
-		this.card.remove('pulseaudio_'+record.getId(), true);
+		this.card.remove('pulseaudio_'+this.asciiOnly(record.getId()), true);
 		this.card.doLayout();
 	}
 

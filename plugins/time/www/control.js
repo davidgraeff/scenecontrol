@@ -13,74 +13,152 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 		return str;
 	}
 	
-	this.card = new Ext.form.FormPanel({
-		submitOnAction: false,
-		defaults: {
-			labelWidth: '50%'
-		}
+	this.card = new Ext.Panel({
 	});
 	
-	this.labelname = function(sinkid, mute, changed) {
-		return sinkid + ' (' + (mute ? "Muted" : "Unmuted") + (changed?"*":'') + ')';
+	this.elemSetChanged = function(element, changed) {
+		var c = element.getComponent(3);
+		if (c)
+			element.remove(c);
+		
+		if (changed && !element.isChanged) {
+			element.insert(3, {
+				xtype: 'button',
+				ui  : 'confirm',
+				text: 'Apply',
+				handler: function() {
+					that.elemSetChanged(element, false);
+				}
+			});
+			element.doLayout();
+		}
+		element.isChanged = changed;
 	}
 	
 	this.add = function(store, records, index) {
 		for (i=0, l=records.length; i<l; ++i) {
 			var data = records[i].data;
-			var id = 'timeevent_'+this.asciiOnly(data.sinkid);
-			var slider = this.card.getComponent(id);
-			if (slider) {
-				slider.mute = data.mute;
-				slider.isInit = true;
-				slider.setValue(data.volume*100);
-				Ext.fly(id).dom.children[0].children[0].textContent = that.labelname(data.sinkid, data.mute, false);
-			} else {
-				var element = new Ext.form.Slider({
-					label: that.labelname(data.sinkid, data.mute, false),
-					sinkid: data.sinkid,
-					mute: false,
+			var id = 'timeevent_'+this.asciiOnly(records[i].getId());
+			var element = this.card.getComponent(id);
+			
+			var event = roomcontrol.SessionController.services[data.uid];
+			if (!event)
+				continue;
+			var collectionNames = roomcontrol.SessionController.getCollectionsWithChildByUid(data.uid);
+			
+			if (!element) {
+				element = new Ext.form.FormPanel({
 					id: id,
-					value: data.volume*100,
-					isInit: true,
-					minValue: 0,
-					maxValue: 100,
-					listeners: {
-						change: function( slider, thumb, newValue, oldValue ) {
-							if (slider.isInit) {
-								slider.isInit = false;
-								return true;
-							}
-							if (newValue != oldValue) {
-								roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"pulsechannelvolume","volume":newValue/100,"sinkid":slider.sinkid});
-							}
-						},
-						el: {
-							tap: function(item){
-								element.mute = !element.mute;
-								item.target.childNodes[0].textContent = that.labelname(element.sinkid, element.mute, true);
-								roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"pulsechannelmute","mute":element.mute,"sinkid":element.sinkid});
-							},
-							delegate: '.x-form-label'
-						}
+					isChanged: false,
+					submitOnAction: false,
+					defaults: {
+						labelWidth: '50%'
 					}
 				});
-				
 				this.card.insert(index, element);
 			}
+			
+			element.removeAll();
+			element.add([
+				{xtype:'selectfield',label:'Profile', options: collectionNames},
+				{xtype:'field', inputType:'time',label:'Zeit', value: event.time, init: true,
+					listeners: {
+						change: function(t, newV, oldV) {
+							console.log("CH", t.init);
+							if (t.init) {delete t.init; return; }
+							event.time = newV;
+							that.elemSetChanged(element, true);
+						}
+					}
+				}
+			]);
+			if (event.id == 'timedate')
+				element.add([{xtype:'datepickerfield', label:'Datum', value: event.date, init: true,
+					listeners: {
+						change: function(t, newV, oldV) {
+							if (t.init) {delete t.init; return; }
+							event.date = newV;
+							that.elemSetChanged(element, true);
+						}
+					}
+				}
+			]);
+			else if (event.id == 'timeperiodic')
+				var weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+				var tage = '';
+				for (var wd=0;wd<weekdays.length;++wd) {
+					if (event.days.indexOf(wd+"") != -1)
+						tage += weekdays[wd] + " ";
+				}
+				element.add([{xtype:'button', text: 'Tage: ' + tage
+					handler: function() {
+						var actiondialog;
+						var actionsBase = {
+							model: true,
+							floating: true,
+							centered: true,
+							width: 300,
+							height: 280,
+							scroll: 'vertical',
+							dockedItems: [{dock: 'top', xtype: 'toolbar', title:'Wochentage'}],
+							defaults: {
+								xtype: 'checkboxfield',
+								margin: 10
+							},
+							items: [{label: "Montag"}, {label: "Dienstag"}, {label: "Mittwoch"}, {label: "Donnerstag"}, {label: "Freitag"}, {label: "Samstag"}, {label: "Sonntag"},{
+								text : 'Ok',
+								xtype: 'button',
+								ui  : 'confirm',
+								scope : this,
+								handler : function(){
+									// weekday dialog: apply clicked: save days
+									event.days = [];
+									tage = '';
+									for (var wd=0;wd<weekdays.length;++wd) {
+										if (actiondialog.getComponent(wd).isChecked()) {
+											tage += weekdays[wd] + " ";
+											event.days.push(wd);
+										}
+									}
+									that.elemSetChanged(element, true);
+									this.setText('Tage: ' + tage);
+									actiondialog.hide();
+								}
+							}]
+						};
+						if (Ext.is.Phone) {
+							actionsBase.fullscreen = true;
+							actionsBase.hideOnMaskTap = false;
+						}
+						
+						actiondialog = new Ext.Panel(actionsBase);
+						for (var wd=0;wd<weekdays.length;++wd) {
+							if (event.days.indexOf(wd+"") != -1)
+								actiondialog.getComponent(wd).setChecked(true);
+						}
+						actiondialog.show();
+					}
+				}]);
 		}
+		element.add({xtype:'panel',html:''});
+		element.doLayout();
 		this.card.doLayout();
 	}
 
 	this.remove = function(store, record, index) {
-		this.card.remove('timeevent_'+record.getId(), true);
+		this.card.remove('timeevent_'+this.asciiOnly(record.getId()), true);
 		this.card.doLayout();
 	}
 
 	this.init = function() {
-		this.card.items.clear();
+	}
+	
+	this.initAfterServiceLoad = function() {
+		this.clear();
 		this.store = Ext.StoreMgr.lookup("time.alarms");
 		this.store.on('add', this.add, this);
 		this.store.on('remove', this.remove, this);
+		this.add(this.store, this.store.data.items, 0);
 	}
 	
 	this.clear = function() {

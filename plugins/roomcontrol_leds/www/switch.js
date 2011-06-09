@@ -23,7 +23,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	this.add = function(store, records, index) {
 		for (i=0, l=records.length; i<l; ++i) {
 			var data = records[i].data;
-			var id = 'roomcontrolleds_'+this.asciiOnly(data.channel);
+			var id = 'roomcontrolleds_'+this.asciiOnly(records[i].getId());
 			var slider = this.card.getComponent(id);
 			if (slider) {
 				if (data.value)
@@ -73,7 +73,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	}
 
 	this.remove = function(store, record, index) {
-		this.card.remove('roomcontrolleds_'+index, true);
+		this.card.remove('roomcontrolleds_'+this.asciiOnly(record.getId()), true);
 		this.card.doLayout();
 	}
 
