@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="roomcontrol_udpled.s" version="1.0">
+	<action id="udpled.value_relative">
+		<string id="channel" model="udpled.names" model_key="channel" model_show="name" />
+		<int id="value" min="-255" max="255" />
+		<enum id="fade" n="3" />
+	</action>
+	<action id="udpled.value_absolut">
+		<string id="channel" model="udpled.names" model_key="channel" model_show="name" />
+		<int id="value" min="0" max="255" />
+		<enum id="fade" n="3" />
+	</action>
+	<action id="udpled.value_invers">
+		<string id="channel" model="udpled.names" model_key="channel" model_show="name" />
+		<enum id="fade" n="3" />
+	</action>
+	<action id="udpled.moodlight">
+		<string id="channel" model="udpled.names" model_key="channel" model_show="name" />
+		<bool id="moodlight" />
+	</action>
+	<condition id="udpled.condition">
+		<string id="channel" model="udpled.names" model_key="channel" model_show="name" />
+		<int id="lower" min="0" max="255" />
+		<int id="upper" min="0" max="255" />
+	</condition>
+	<action id="udpled.name">
+		<string id="channel" model="udpled.names" model_key="channel" model_show="name" />
+		<string id="name" />
+	</action>
+	
+	<model id="udpled.names" model_key="channel">
+		<string id="channel" />
+		<int id="value">0</int>
+		<string id="name">...</string>
+	</model>
+
+	<section>switch</section>
+</plugin>

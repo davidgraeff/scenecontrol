@@ -1,0 +1,23 @@
+.roomcontrolleds {
+	margin:0 0 0 90px;
+}
+
+.roomcontrolleds > div.led
+{
+	width: 180px;
+	display: inline-block;
+	background-color:#98bf21;
+}
+
+.roomcontrolleds > div.led > .ledslider
+{
+	margin: 10px;
+}
+
+.roomcontrolleds > div.led > .ledtext {
+	text-align: center;
+	-moz-user-select: text;
+	-khtml-user-select: text;
+	-webkit-user-select: text;
+	user-select: text;
+}

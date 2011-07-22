@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="roomcontrol_udpwatchio" version="1.0">
+	<event id="udpwatchio.value">
+		<int id="pin" min="0" max="8" />
+		<bool id="value">0</bool>
+	</event>
+	
+	<property id="udpwatchio.sensor">
+		<int id="sensorpin">0</int>
+		<bool id="value">0</bool>
+	</property>
+	
+	<section>watch</section>
+</plugin>

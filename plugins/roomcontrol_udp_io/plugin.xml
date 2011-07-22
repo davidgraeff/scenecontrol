@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="roomcontrol_udpio.s" version="1.0">
+	<action id="udpio.value_absolut">
+		<string id="channel" model="udpio.names" model_key="channel" model_show="name" />
+		<bool id="value"/>
+	</action>
+	<action id="udpio.value_toggle">
+		<string id="channel" model="udpio.names" model_key="channel" model_show="name" />
+	</action>
+	<condition id="udpio.condition">
+		<string id="channel" model="udpio.names" model_key="channel" model_show="name" />
+		<bool id="value"/>
+	</condition>
+	<action id="udpio.name">
+		<string id="channel" model="udpio.names" model_key="channel" model_show="name" />
+		<string id="name" />
+	</action>
+	
+	<model id="udpio.names" model_key="channel">
+		<string id="channel" />
+		<bool id="value">0</bool>
+		<string id="name">...</string>
+	</model>
+
+	<section>switch</section>
+</plugin>
