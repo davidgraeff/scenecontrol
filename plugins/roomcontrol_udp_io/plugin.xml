@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<plugin id="roomcontrol_udpio.s" version="1.0">
+<plugin id="roomcontrol_udp_io" version="1.0">
 	<action id="udpio.value_absolut">
 		<string id="channel" model="udpio.names" model_key="channel" model_show="name" />
 		<bool id="value"/>

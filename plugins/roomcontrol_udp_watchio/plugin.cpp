@@ -25,6 +25,7 @@
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() : m_events(QLatin1String("pin")) {
+	m_socket = 0;
     _config ( this );
 }
 

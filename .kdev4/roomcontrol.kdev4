@@ -12,7 +12,7 @@ Extra Arguments=
 ProjectRootRelative=./
 
 [Launch]
-Launch Configurations=Launch Configuration 0
+Launch Configurations=Launch Configuration 0,Launch Configuration 1
 
 [Launch][Launch Configuration 0]
 Configured Launch Modes=execute
@@ -30,6 +30,18 @@ External Terminal=konsole --noclose --workdir %workdir -e %exe
 Project Target=roomcontrol,server,roomcontrolserver
 Use External Terminal=false
 Working Directory=
+isExecutable=false
+
+[Launch][Launch Configuration 1]
+Configured Launch Modes=debug
+Configured Launchers=gdb
+Name=roomcontrolserver
+Type=Native Application
+
+[Launch][Launch Configuration 1][Data]
+Configured from ProjectItem=roomcontrol,server,roomcontrolserver
+Project Target=roomcontrol,server,roomcontrolserver
+Working Directory=file:///home/david/Entwicklung/build/roomcontrol/server/
 isExecutable=false
 
 [MakeBuilder]

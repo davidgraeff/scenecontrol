@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<plugin id="roomcontrol_udpled.s" version="1.0">
+<plugin id="roomcontrol_udp_leds" version="1.0">
 	<action id="udpled.value_relative">
 		<string id="channel" model="udpled.names" model_key="channel" model_show="name" />
 		<int id="value" min="-255" max="255" />

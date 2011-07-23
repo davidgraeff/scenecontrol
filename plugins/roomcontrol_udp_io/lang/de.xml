@@ -1,72 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin>
-	<titel>RoomControl Leds</titel>
-	<description>Kontrolliert die Leuchtdioden und Rollos des RoomControl Systems</description>
+	<titel>RoomControl IO (udp)</titel>
+	<description>Kontrolliert Pins eines Ethersex per UDP</description>
 	<sections>
 		<switch>
-			<titel>Leuchtdioden</titel>
-			<description>Kontrolliert die Leuchtdioden und Rollos des RoomControl Systems</description>
+			<titel>IO Steuern</titel>
+			<description>Ermöglicht ein/ausschalten von IO Pins</description>
 		</switch>
 	</sections>
-	<ledvalue_relative>
-		<titel>LED Wert Relativ</titel>
-		<description>Setzt LED Wert</description>
-		<channel><titel>Leuchtkanal</titel></channel>
+	<udpio.value_absolut>
+		<titel>IO Wert Absolut</titel>
+		<description>Setzt IO Wert</description>
+		<channel><titel>Pin</titel></channel>
 		<value><titel>Wert</titel></value>
-		<fade><titel>Farbübernahme</titel>
-		<entry>Sofort</entry><entry>Überblenden</entry><entry>Überblenden (Flashy)</entry>
-		</fade>
-	</ledvalue_relative>
-	<ledvalue_absolut>
-		<titel>LED Wert Absolut</titel>
-		<description>Setzt LED Wert</description>
-		<channel><titel>Leuchtkanal</titel></channel>
-		<value><titel>Wert</titel></value>
-		<fade><titel>Farbübernahme</titel>
-		<entry>Sofort</entry><entry>Überblenden</entry><entry>Überblenden (Flashy)</entry>
-		</fade>
-	</ledvalue_absolut>
-	<ledvalue_invers>
-		<titel>LED Wert Invertieren</titel>
-		<description>Setzt LED Wert</description>
-		<channel><titel>Leuchtkanal</titel></channel>
-		<fade><titel>Farbübernahme</titel>
-		<entry>Sofort</entry><entry>Überblenden</entry><entry>Überblenden (Flashy)</entry>
-		</fade>
-	</ledvalue_invers>
-	<ledmoodlight>
-		<titel>LED Moodlight</titel>
-		<description>Setzt LED Wert</description>
-		<channel><titel>Leuchtkanal</titel></channel>
-		<moodlight><titel>Moodlight</titel></moodlight>
-	</ledmoodlight>
-	<ledvalue>
-		<titel>LED Wert Änderung</titel>
-		<description>LED Wert hat sich verändert</description>
-		<channel><titel>Leuchtkanal</titel></channel>
-		<value><titel>Wert</titel></value>
-	</ledvalue>
-	<ledcondition>
-		<titel>LED Wert Bedingung</titel>
+	</udpio.value_absolut>
+	<udpio.value_toggle>
+		<titel>IO Wert Invertieren</titel>
+		<description>Setzt IO Wert</description>
+		<channel><titel>Pin</titel></channel>
+	</udpio.value_toggle>
+	<udpio.condition>
+		<titel>IO Wert Bedingung</titel>
 		<description>Led Wert muss zwischen Unter und Obergrenze liegen</description>
-		<channel><titel>Leuchtkanal</titel></channel>
-		<lower><titel>Untere Grenze</titel></lower>
-		<upper><titel>Obere Grenze</titel></upper>
-	</ledcondition>
-	<ledname>
-		<titel>LED Namen</titel>
-		<description>LED Namen</description>
-		<channel><titel>Leuchtkanal</titel></channel>
+		<channel><titel>Pin</titel></channel>
+		<value><titel>Wert</titel></value>
+	</udpio.condition>
+	<udpio.name>
+		<titel>IO Namen</titel>
+		<description>IO Namen</description>
+		<channel><titel>Pin</titel></channel>
 		<name><titel>Name</titel></name>
-	</ledname>
-	<curtain>
-		<titel>Rollo</titel>
-		<description>Rollo Kommando</description>
-		<value><titel>Wert</titel></value>
-	</curtain>
-	<curtain_condition>
-		<titel>Rollobedingung</titel>
-		<description>Rollobedingung</description>
-		<value><titel>Wert</titel></value>
-	</curtain_condition>
+	</udpio.name>
 </plugin>
