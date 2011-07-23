@@ -48,7 +48,10 @@ public:
 private:
     EventMap<int> m_events; //mode->set of uids
     QUdpSocket *m_socket;
+	QHostAddress m_serverhost;
+	int m_port;
 	QVector<bool> m_sensors;
+	bool m_read;
 private Q_SLOTS:
     // LIGHTS //
     void readyRead();

@@ -64,8 +64,8 @@ public:
 		QString name;
 		bool moodlight;
         uint8_t channel;
-		ledchannel(uint8_t channel, uint8_t value, const QString& name) { this->channel = channel; this->value = value; moodlight = false; this->name = name; }
-		ledchannel() {value = 300; moodlight = false;}
+		ledchannel(uint8_t channel, int value, const QString& name) { this->channel = channel; this->value = value; moodlight = false; this->name = name; }
+		ledchannel() {value = -1; moodlight = false;}
 	};
     QMap<QString,ledchannel> m_leds;
 private:

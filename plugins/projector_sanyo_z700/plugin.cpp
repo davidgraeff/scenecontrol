@@ -52,32 +52,35 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
         delete m_socket;
         m_socket = new QUdpSocket(this);
         connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
-        m_socket->bind(QHostAddress(server.mid(0,v)),server.mid(v+1).toInt());
+        m_socket->connectToHost(QHostAddress(server.mid(0,v)),server.mid(v+1).toInt());
     }
 }
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     Q_UNUSED(sessionid);
     if ( !m_socket ) return;
-    static char b[] = {'C', 0, 0, '\r'};
+    static char b[] = {'S', 'A', 0, 0};
 
     if ( ServiceID::isId(data, "projector_sanyo_power" ) ) {
-        if ( BOOLDATA ( "power" ) )
-            strncpy ( b, "C00", 3 );
-        else
-            strncpy ( b, "C01", 3 );
+        if ( BOOLDATA ( "power" ) ){
+			b[2]='0'; b[3]='0';
+		} else {
+			b[2]='0'; b[3]='1';
+		}
         m_socket->write(b, sizeof(b));
     } else if ( ServiceID::isId(data, "projector_sanyo_video" ) ) {
-        if ( BOOLDATA ( "mute" ) )
-            strncpy ( b, "C0D", 3 );
-        else
-            strncpy ( b, "C0E", 3 );
+        if ( BOOLDATA ( "mute" ) ){
+			b[2]='0'; b[3]='D';
+		} else {
+			b[2]='0'; b[3]='E';
+		}
         m_socket->write(b, sizeof(b));
     } else if ( ServiceID::isId(data, "projector_sanyo_lamp" ) ) {
-        if ( BOOLDATA ( "eco" ) )
-            strncpy ( b, "C75", 3 );
-        else
-            strncpy ( b, "C74", 3 );
+        if ( BOOLDATA ( "eco" ) ){
+			b[2]='7'; b[3]='5';
+		} else {
+			b[2]='7'; b[3]='4';
+		}
         m_socket->write(b, sizeof(b));
     }
 }

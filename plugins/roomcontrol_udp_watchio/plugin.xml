@@ -4,11 +4,11 @@
 		<int id="pin" min="0" max="8" />
 		<bool id="value">0</bool>
 	</event>
-	
-	<property id="udpwatchio.sensor">
-		<int id="sensorpin">0</int>
-		<bool id="value">0</bool>
-	</property>
+
+	<model id="udpwatchio.sensor" model_key="sensorid">
+		<int id="sensorid"></int>
+		<bool id="value"></bool>
+	</model>
 	
 	<section>watch</section>
 </plugin>

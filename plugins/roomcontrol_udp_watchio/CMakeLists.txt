@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
 
-SET(CONFIG_${PROJECT_NAME}_LISTENPORT "192.168.1.18:2710" CACHE STRING "UDP Broadcast Port for Ethersex WatchIO Modul")
-SET(CONFIG_LISTENPORT ${CONFIG_${PROJECT_NAME}_LISTENPORT})
+SET(CONFIG_${PROJECT_NAME}_SERVER "192.168.1.18:3103" CACHE STRING "UDP Broadcast Server and Port for Ethersex WatchIO Modul")
+SET(CONFIG_SERVER ${CONFIG_${PROJECT_NAME}_SERVER})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
 SET(DEBFOUND TRUE)

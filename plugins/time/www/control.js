@@ -72,7 +72,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 					}
 				}
 			]);
-			if (event.id == 'timedate')
+			if (event.id == 'timedate') {
 				element.add([{xtype:'datepickerfield', label:'Datum', value: event.date, init: true,
 					listeners: {
 						change: function(t, newV, oldV) {
@@ -81,16 +81,16 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 							that.elemSetChanged(element, true);
 						}
 					}
-				}
-			]);
-			else if (event.id == 'timeperiodic')
+				}]);
+			}
+			else if (event.id == 'timeperiodic') {
 				var weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 				var tage = '';
 				for (var wd=0;wd<weekdays.length;++wd) {
 					if (event.days.indexOf(wd+"") != -1)
 						tage += weekdays[wd] + " ";
 				}
-				element.add([{xtype:'button', text: 'Tage: ' + tage
+				element.add([{xtype:'button', text: 'Tage: ' + tage,
 					handler: function() {
 						var actiondialog;
 						var actionsBase = {
@@ -139,6 +139,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 						actiondialog.show();
 					}
 				}]);
+			}
 		}
 		element.add({xtype:'panel',html:''});
 		element.doLayout();

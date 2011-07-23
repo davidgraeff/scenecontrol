@@ -153,12 +153,12 @@ void Controller::readyRead() {
         m_socket->readDatagram ( bytes.data(), bytes.size() );
 
         while ( bytes.size() >= 7 ) {
-            if (bytes.startsWith("Stella") && bytes.size() >= 7+bytes[6])  {
+            if (bytes.startsWith("stella") && bytes.size() >= 7+bytes[6])  {
                 m_channels = bytes[6];
                 m_leds.clear();
                 emit ledsCleared();
                 for (uint8_t c=0;c<m_channels;++c) {
-					const int value = bytes[7+c];
+					const int value = (uint8_t)bytes[7+c];
 					const QString name = settings.value(QLatin1String ( "channel_name" ) + QString::number(c),tr("Channel %1").arg(c)).toString();
                     m_leds[QString::number(c)] = ledchannel(c, value, name);
 					emit ledChanged(QString::number(c), name, value);
@@ -182,7 +182,7 @@ void Controller::connectToLeds ( const QString& server ) {
     delete m_socket;
     m_socket = new QUdpSocket(this);
     connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
-    m_socket->bind(QHostAddress(server.mid(0,v)),m_sendPort);
+    m_socket->connectToHost(QHostAddress(server.mid(0,v)),m_sendPort);
 	
     // request all channel values
     char b[] = {255,0,0};

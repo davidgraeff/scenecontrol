@@ -4,13 +4,13 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	
 	this.asciiOnly = function(str)
 	{
-			var nonASCII=/([^\x00-\x7F])/;
-	
-			while( str.match(nonASCII) )
-			{
-					str = str.replace( new RegExp( String(RegExp.$1),"g"),"");
-			}
-	return str;
+		var nonASCII=/([^\x00-\x7F])/;
+
+		while( str.match(nonASCII) )
+		{
+				str = str.replace( new RegExp( String(RegExp.$1),"g"),"");
+		}
+		return str;
 	}
 	
 	this.card = new Ext.form.FormPanel({
@@ -23,7 +23,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	this.add = function(store, records, index) {
 		for (i=0, l=records.length; i<l; ++i) {
 			var data = records[i].data;
-			var id = 'roomcontrolleds_'+this.asciiOnly(records[i].getId());
+			var id = pluginid+this.asciiOnly(records[i].getId());
 			var slider = this.card.getComponent(id);
 			if (slider) {
 				if (data.value)
@@ -33,13 +33,13 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 					
 			} else {
 				var name = (data.channel.length?data.name:'Noname '+index);
-				var element = new Ext.form.Slider({
+				var element = new Ext.form.Toggle({
 					label: name,
 					id: id,
 					value: data.value,
 					isInit: true,
 					minValue: 0,
-					maxValue: 255,
+					maxValue: 1,
 					listeners: {
 						change: function( slider, thumb, newValue, oldValue ) {
 							if (slider.isInit) {
@@ -47,7 +47,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 								return true;
 							}
 							if (newValue != oldValue) {
-								roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"ledvalue_absolut","channel":data.channel,"value":(newValue?true:false)});
+								roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"udpio.value_absolut","channel":data.channel,"value":(newValue?true:false)});
 							}
 						},
 						el: {
@@ -57,7 +57,7 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 									if (buttonid == 'ok' && value.length && name != value) {
 										item.target.childNodes[0].textContent = value + '*';
 										//console.log("HBAKBF", item.target.childNodes[0].textContent);
-										roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"ledname","channel":data.channel,"name":value});
+										roomcontrol.SessionController.writeToServer({"__type":"execute","__plugin":pluginid,"id":"udpio.name","channel":data.channel,"name":value});
 									}
 								}, null, false, name, {focus: true});
 							},
@@ -73,13 +73,13 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 	}
 
 	this.remove = function(store, record, index) {
-		this.card.remove('roomcontrolleds_'+this.asciiOnly(record.getId()), true);
+		this.card.remove(pluginid+this.asciiOnly(record.getId()), true);
 		this.card.doLayout();
 	}
 
 	this.init = function() {
 		this.card.items.clear();
-		this.store = Ext.StoreMgr.lookup("roomcontrol.leds");
+		this.store = Ext.StoreMgr.lookup("udpio.names");
 		this.store.on('add', this.add, this);
 		this.store.on('remove', this.remove, this);
 	}

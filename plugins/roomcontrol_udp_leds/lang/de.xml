@@ -4,8 +4,8 @@
 	<description>Kontrolliert die Leuchtdioden des RoomControl Systems</description>
 	<sections>
 		<switch>
-			<titel>Leuchtdioden</titel>
-			<description>Kontrolliert die Leuchtdioden und Rollos des RoomControl Systems</description>
+			<titel>Leuchtdioden (UDP)</titel>
+			<description>Kontrolliert die Leuchtdioden des RoomControl Systems</description>
 		</switch>
 	</sections>
 	<udpled.value_relative>

@@ -79,7 +79,7 @@ void Controller::setChannel ( const Controller::ledid& channel, bool value ) {
            means pin 0 of the port selected above.
            if nstate is 0: (disable)
              Disables all pins, where the corresponding bit of "pins"
-             is set to 0.
+             is set to 1.
            if nstate is 1: (enable)
              Enables all pins, where the corresponding bit of "pins"
              is set to 1.
@@ -97,7 +97,7 @@ void Controller::setChannel ( const Controller::ledid& channel, bool value ) {
         data.pins = (1 << channel.pin);
     } else {
         data.nstate = 0;
-        data.pins = ~(1 << channel.pin);
+        data.pins = (1 << channel.pin);
     }
 
     m_socket->write ( (char*)&data, sizeof ( data ) );
@@ -146,8 +146,8 @@ void Controller::connectToLeds ( const QString& server ) {
     delete m_socket;
     m_socket = new QUdpSocket(this);
     connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
-    m_socket->bind(QHostAddress(server.mid(0,v)),m_sendPort);
-
+    m_socket->connectToHost(QHostAddress(server.mid(0,v)),m_sendPort);
+	
     // request all pin values
     char b[] = {255,0,0};
     m_socket->write ( b, sizeof ( b ) );
