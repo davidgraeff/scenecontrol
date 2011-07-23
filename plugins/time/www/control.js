@@ -140,9 +140,9 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 					}
 				}]);
 			}
+			element.add({xtype:'panel',html:''});
+			element.doLayout();
 		}
-		element.add({xtype:'panel',html:''});
-		element.doLayout();
 		this.card.doLayout();
 	}
 
