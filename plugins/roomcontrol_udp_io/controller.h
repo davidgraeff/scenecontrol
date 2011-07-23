@@ -32,28 +32,35 @@ class Controller : public QObject
 {
     Q_OBJECT
 public:
-    /**
-    Daten von ethersex abrufen
-    */
+	struct ledchannel {
+		bool value;
+		QString name;
+        int port;
+		int pin;
+		ledchannel(int port, int pin, bool value, const QString& name) { this->port = port; this->pin = pin; this->value = value; this->name = name; }
+		ledchannel() {value = false; }
+	};
+	struct ledid {
+		int port;
+		uint8_t pin;
+		ledid(int port, uint8_t pin) { this->port = port; this->pin = pin; }
+		bool operator<(ledid& vgl) {return (port<vgl.port || (port==vgl.port && pin < vgl.pin));}
+	};
+	
     Controller(AbstractPlugin* plugin);
     ~Controller();
     void connectToLeds(const QString& url);
 
     int countChannels();
-    QString getChannelName ( const QString& channel );
-    void setChannel ( const QString& channel, bool value);
-    void setChannelName ( const QString& channel, const QString& name );
-    void toogleChannel(const QString& channel);
-    unsigned int getChannel(const QString& channel) const;
-	
-	struct ledchannel {
-		bool value;
-		QString name;
-        uint8_t channel;
-		ledchannel(uint8_t channel, uint8_t value) { this->channel = channel; this->value = value; }
-		ledchannel() {value = false; }
-	};
-    QMap<QString,ledchannel> m_leds;
+    QString getChannelName ( const Controller::ledid& channel );
+    void setChannel ( const Controller::ledid& channel, bool value);
+    void setChannelName ( const Controller::ledid& channel, const QString& name );
+    void toogleChannel(const Controller::ledid& channel);
+    bool getChannel(const Controller::ledid& channel) const;
+	Controller::ledid getPortPinFromString(const QString& channel) const;
+	QString getStringFromPortPin(const Controller::ledid& channel) const;
+
+    QMap<ledid,ledchannel> m_leds;
 private:
     AbstractPlugin* m_plugin;
 

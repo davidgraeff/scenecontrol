@@ -28,6 +28,8 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 plugin::plugin() {
     m_controller = new Controller ( this );
     connect(m_controller,SIGNAL(ledChanged(QString,QString,int)),SLOT(ledChanged(QString,QString,int)));
+	connect(m_controller,SIGNAL(ledsCleared()),SLOT(ledsCleared()));
+	
     _config ( this );
 }
 
@@ -87,7 +89,8 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
 
-	ledsCleared();
+	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "udpled.names", "channel").getData());
+	
     QMap<QString, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
     for (;i!=m_controller->m_leds.end();++i) {
         {

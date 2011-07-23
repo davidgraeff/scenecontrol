@@ -28,6 +28,8 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 plugin::plugin() {
     m_controller = new Controller ( this );
     connect(m_controller,SIGNAL(ledChanged(QString,QString,int)),SLOT(ledChanged(QString,QString,int)));
+    connect(m_controller,SIGNAL(ledsCleared()),SLOT(ledsCleared()));
+
     _config ( this );
 }
 
@@ -48,20 +50,27 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
+	Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
+	if (lid.port == -1) return;
+	 
     if ( ServiceID::isId(data, "udpio.value_absolut" ) ) {
-        m_controller->setChannel ( DATA("channel"),BOOLDATA("value") );
+        m_controller->setChannel ( lid,BOOLDATA("value") );
     } else if ( ServiceID::isId(data, "udpio.value_toggle" ) ) {
-        m_controller->toogleChannel ( DATA("channel") );
+        m_controller->toogleChannel ( lid );
     } else if ( ServiceID::isId(data, "udpio.name" ) ) {
-        m_controller->setChannelName ( DATA("channel"), DATA("name") );
+        m_controller->setChannelName ( lid, DATA("name") );
     }
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
+	Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
+	if (lid.port == -1)
+		return false;
+	
     if ( ServiceID::isId(data, "udpio.condition" ) ) {
-        const int v = m_controller->getChannel ( DATA("channel") );
+        const bool v = m_controller->getChannel ( lid );
         if ( v != BOOLDATA("value") ) return false;
         return true;
     }
@@ -70,25 +79,26 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED ( data );
-	Q_UNUSED ( collectionuid );
+    Q_UNUSED ( collectionuid );
 }
 
 void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
+    Q_UNUSED(data);
+    Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
 
-	ledsCleared();
-    QMap<QString, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
+    l.append(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
+	
+    QMap<Controller::ledid, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
     for (;i!=m_controller->m_leds.end();++i) {
         {
             ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "udpio.names");
-            sc.setData("channel", i.key());
-            sc.setData("value", i.value().value?true:false);
+            sc.setData("channel", m_controller->getStringFromPortPin(i.key()));
+            sc.setData("value", i.value().value);
             sc.setData("name", i.value().name);
             l.append(sc.getData());
         }
@@ -97,7 +107,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 }
 
 void plugin::ledsCleared() {
-	m_server->property_changed(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
+    m_server->property_changed(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {

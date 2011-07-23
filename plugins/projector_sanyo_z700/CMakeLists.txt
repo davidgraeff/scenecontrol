@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
-set(USE_SERIALPORT TRUE)
 find_package(RoomPlugins REQUIRED)
 
-SET(CONFIG_${PROJECT_NAME}_SERIALPORT "/dev/ttyS1" CACHE STRING "Serialport")
-SET(CONFIG_SERIALPORT ${CONFIG_${PROJECT_NAME}_SERIALPORT})
+SET(CONFIG_${PROJECT_NAME}_SERVER "192.168.1.18:2710" CACHE STRING "Ethersex Server and Port for SanyoZ700 Modul")
+SET(CONFIG_SERVER ${CONFIG_${PROJECT_NAME}_SERVER})
 configure_file(configplugin.h.in configplugin.h @ONLY)
 
 SET(DEBFOUND TRUE)

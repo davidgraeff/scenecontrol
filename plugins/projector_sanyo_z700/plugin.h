@@ -25,6 +25,7 @@
 #include "shared/pluginsettingshelper.h" 
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
+#include <QUdpSocket>
 
 class QextSerialPort;
 class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
@@ -45,9 +46,7 @@ public:
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
 	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
 private:
-    QextSerialPort* m_serial;
-	char m_buffer[4];
-	void writeToDevice();
+	    QUdpSocket *m_socket;
 public slots:
     void readyRead();
 };

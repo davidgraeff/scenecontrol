@@ -27,102 +27,86 @@
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
-    m_serial = 0;
-    m_buffer[3] = '\r';
+    m_socket = 0;
     _config ( this );
 }
 
 plugin::~plugin() {
-    delete m_serial;
+    delete m_socket;
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
-    
+void plugin::initialize() {
+
 }
 
 void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
     PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "serialport" ) ) {
-        delete m_serial;
-        const QString device = value.toString();
-        if ( !QFile::exists ( device ) ) {
-            qWarning() << pluginid() << "device not found" << device;
+    if ( name == QLatin1String ( "server" ) ) {
+        const QString server = value.toString();
+        const int v = server.indexOf(QLatin1Char(':'));
+        if (v==-1) {
+            qWarning() << pluginid() << "Configuration wrong (server:port)" << server;
             return;
         }
-        m_serial = new QextSerialPort ( device,QextSerialPort::EventDriven );
-        m_serial->setBaudRate ( BAUD19200 );
-        m_serial->setFlowControl ( FLOW_OFF );
-        m_serial->setParity ( PAR_NONE );
-        m_serial->setDataBits ( DATA_8 );
-        m_serial->setStopBits ( STOP_1 );
-        connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
-        if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
-            qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
-        } else {
-			qDebug() << "sanyo connected to"<<device;
-		}
-    }
-}
-
-void plugin::writeToDevice() {
-    if ( !m_serial->write ( m_buffer,4 ) ) {
-        qWarning() << pluginid() << "send failed\n";
-        return;
+        delete m_socket;
+        m_socket = new QUdpSocket(this);
+        connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
+        m_socket->bind(QHostAddress(server.mid(0,v)),server.mid(v+1).toInt());
     }
 }
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
-	Q_UNUSED(sessionid);
-    if ( !m_serial ) return;
+    Q_UNUSED(sessionid);
+    if ( !m_socket ) return;
+    static char b[] = {'C', 0, 0, '\r'};
+
     if ( ServiceID::isId(data, "projector_sanyo_power" ) ) {
         if ( BOOLDATA ( "power" ) )
-            strncpy ( m_buffer, "C00", 3 );
+            strncpy ( b, "C00", 3 );
         else
-            strncpy ( m_buffer, "C01", 3 );
-		writeToDevice();
+            strncpy ( b, "C01", 3 );
+        m_socket->write(b, sizeof(b));
     } else if ( ServiceID::isId(data, "projector_sanyo_video" ) ) {
         if ( BOOLDATA ( "mute" ) )
-            strncpy ( m_buffer, "C0D", 3 );
+            strncpy ( b, "C0D", 3 );
         else
-            strncpy ( m_buffer, "C0E", 3 );
-		writeToDevice();
+            strncpy ( b, "C0E", 3 );
+        m_socket->write(b, sizeof(b));
     } else if ( ServiceID::isId(data, "projector_sanyo_lamp" ) ) {
         if ( BOOLDATA ( "eco" ) )
-            strncpy ( m_buffer, "C75", 3 );
+            strncpy ( b, "C75", 3 );
         else
-            strncpy ( m_buffer, "C74", 3 );
-		writeToDevice();
-    } else if ( ServiceID::isId(data, "projector_sanyo_focus" ) ) {
-        //TODO
+            strncpy ( b, "C74", 3 );
+        m_socket->write(b, sizeof(b));
     }
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     Q_UNUSED ( data );
-	Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     return false;
 }
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED ( data );
-	Q_UNUSED(collectionuid);
+    Q_UNUSED(collectionuid);
 }
 
 void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
+    Q_UNUSED(data);
+    Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(const QString& sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     return l;
 }
 
 void plugin::readyRead() {
     QByteArray bytes;
-    int a = m_serial->bytesAvailable();
+    int a = m_socket->bytesAvailable();
     bytes.resize ( a );
-    m_serial->read ( bytes.data(), bytes.size() );
+    m_socket->read ( bytes.data(), bytes.size() );
 }
