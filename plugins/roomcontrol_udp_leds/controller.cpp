@@ -158,7 +158,7 @@ void Controller::readyRead() {
                 m_leds.clear();
                 emit ledsCleared();
                 for (uint8_t c=0;c<m_channels;++c) {
-					const int value = (uint8_t)bytes[7+c];
+					const unsigned int value = (uint8_t)bytes[7+c];
 					const QString name = settings.value(QLatin1String ( "channel_name" ) + QString::number(c),tr("Channel %1").arg(c)).toString();
                     m_leds[QString::number(c)] = ledchannel(c, value, name);
 					emit ledChanged(QString::number(c), name, value);

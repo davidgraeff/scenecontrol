@@ -17,7 +17,8 @@ function RoomcontrolPlugin(pluginid, sectionname) {
 		submitOnAction: false,
 		defaults: {
 			labelWidth: '50%'
-		}
+		},
+		fullscreen: true
 	});
 	
 	this.add = function(store, records, index) {
