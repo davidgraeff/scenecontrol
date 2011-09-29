@@ -165,7 +165,7 @@ void Controller::readyRead() {
                 }
                 bytes = bytes.mid(7+m_channels);
             } else {
-                qWarning() << m_plugin->pluginid() << "Failed to parse" << bytes;
+                qWarning() << m_plugin->pluginid() << "Failed to parse" << bytes << bytes.size() << 7+bytes[6];
                 break;
             }
         } //while

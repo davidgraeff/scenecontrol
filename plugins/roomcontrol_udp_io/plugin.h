@@ -26,6 +26,8 @@
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 
+#include <QVector>
+
 class Controller;
 class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
 {
@@ -46,10 +48,14 @@ public:
 	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
 private:
     Controller* m_controller;
+    EventMap<int> m_events; //mode->set of uids
+    QVector<bool> m_sensors;
+    bool m_read;
 private Q_SLOTS:
 	/**
 	 * Updated led state. 
 	 */
     void ledChanged ( QString,QString = QString::null,int = -1);
+    void watchpinChanged(const unsigned char port, const unsigned char pinmask);
     void ledsCleared();
 };

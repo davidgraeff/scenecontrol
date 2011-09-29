@@ -68,36 +68,26 @@ void Controller::setChannel ( const Controller::ledid& channel, bool value ) {
 	
     emit ledChanged ( getStringFromPortPin(channel), QString::null, value );
 
-    struct
-    {
-        /* Port, where 0=PORTA, ..., 3=PORTD
-           255=get all pins of all ports
-        */
-        uint8_t port;
-        /* Pins: Function depends on "nstate". Every bit
-           corresponds to one pin, where the most significant bit
-           means pin 0 of the port selected above.
-           if nstate is 0: (disable)
-             Disables all pins, where the corresponding bit of "pins"
-             is set to 1.
-           if nstate is 1: (enable)
-             Enables all pins, where the corresponding bit of "pins"
-             is set to 1.
-           if nstate is 2: (set)
-             Set the port to the value of "pins".
-        */
-        uint8_t pins;
-        uint8_t nstate;
-    } data;
+	struct udpio_packet
+	{
+		/* Port: 0=PORTA, ..., 3=PORTD, ...
+		*/
+		uint8_t port;
+		/* Pins: Every bit corresponds to one pin, where the least significant (right) bit
+		means pin 0.
+		*/
+		uint8_t pinmask;
+		uint8_t mode;
+	} data;
 
 	data.port = channel.port;
 	
     if (value) {
-        data.nstate = 1;
-        data.pins = (1 << channel.pin);
+        data.mode = 1;
+        data.pinmask = (1 << channel.pin);
     } else {
-        data.nstate = 0;
-        data.pins = (1 << channel.pin);
+        data.mode = 0;
+        data.pinmask = (1 << channel.pin);
     }
 
     m_socket->write ( (char*)&data, sizeof ( data ) );
@@ -128,6 +118,8 @@ void Controller::readyRead() {
                     }
                 }
                 bytes = bytes.mid(8);
+            } else if (bytes.startsWith("pinc") && bytes.size() >= 6) {
+		emit watchpinChanged(bytes[4], bytes[5]);
             } else {
                 qWarning() << m_plugin->pluginid() << "Failed to parse" << bytes;
                 break;
@@ -149,7 +141,14 @@ void Controller::connectToLeds ( const QString& server ) {
     m_socket->connectToHost(QHostAddress(server.mid(0,v)),m_sendPort);
 	
     // request all pin values
-    char b[] = {255,0,0};
+    char b[] = {0,0,3};
+    m_socket->write ( b, sizeof ( b ) );
+    m_socket->flush();
+}
+
+void Controller::registerPortObserver(unsigned char ioport, unsigned char pinmask) const {
+    // request all pin values
+    char b[] = {ioport,pinmask,4};
     m_socket->write ( b, sizeof ( b ) );
     m_socket->flush();
 }

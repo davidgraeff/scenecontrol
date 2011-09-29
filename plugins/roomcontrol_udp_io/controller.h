@@ -57,6 +57,7 @@ public:
     void setChannelName ( const Controller::ledid& channel, const QString& name );
     void toogleChannel(const Controller::ledid& channel);
     bool getChannel(const Controller::ledid& channel) const;
+    void registerPortObserver(unsigned char ioport, unsigned char pinmask) const;
 	Controller::ledid getPortPinFromString(const QString& channel) const;
 	QString getStringFromPortPin(const Controller::ledid& channel) const;
 
@@ -73,6 +74,7 @@ private Q_SLOTS:
     void readyRead();
 Q_SIGNALS:
 	void ledChanged(const QString& id, const QString& name, int value);
+	void watchpinChanged(const unsigned char port, const unsigned char pinmask);
     void dataLoadingComplete();
     void ledsCleared();
 };
