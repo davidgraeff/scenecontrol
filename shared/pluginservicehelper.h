@@ -31,84 +31,6 @@
 #define BOOLDATA(ITEMID) data[QLatin1String(ITEMID)].toBool()
 #define DOUBLEDATA(ITEMID) data[QLatin1String(ITEMID)].toDouble()
 
-class ServiceType {
-public:
-    static QString type(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString();
-    }
-
-    static QString uniqueID(const QVariantMap& data) {
-        return data[QLatin1String("__uid")].toString();
-    }
-
-	static void setUniqueID(QVariantMap& data, const QString& uid) {
-        data[QLatin1String("__uid")] = uid;
-    }
-    
-    /**
-	 * Read toCollection property, remove it from data and return it
-	 */
-    static QString takeToCollection(QVariantMap& data) {
-        return data.take(QLatin1String("__toCollection")).toString();
-    }
-    
-    /**
-	 * Write toCollection property
-	 */
-    static void setToCollection(QVariantMap& data, const QString& collectionuid) {
-        data[QLatin1String("__toCollection")] = collectionuid;
-    }
-    
-    /**
-	 * For eventMap
-	 */
-    static QVariantMap newDataWithCollectionUid(const QVariantMap& data, const QString& collectionuid) {
-		QVariantMap modifieddata = data;
-		modifieddata[QLatin1String("__collectionuid")] = collectionuid;
-        return modifieddata;
-    }
-    
-    /**
-	 * For eventMap
-	 */
-    static QString getCollectionUid(const QVariantMap& data) {
-        return data.value(QLatin1String("__collectionuid")).toString();
-    }
-    
-    static bool isAction(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("action");
-    }
-    static bool isCondition(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("condition");
-    }
-    static bool isEvent(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("event");
-    }
-    static bool isCollection(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("collection");
-    }
-    static bool isExecutable(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("execute");
-    }
-    static bool isRemoveCmd(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("remove");
-    }
-    static bool isNotification(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("notification");
-    }
-    static bool isModelItem(const QVariantMap& data) {
-        return data[QLatin1String("__type")].toString() == QLatin1String("model");
-    }
-    static bool isNegatedCondition(const QVariantMap& data){
-		return data.value(QLatin1String("__negate")).toBool();
-	}
-    static QString conditionGroup(const QVariantMap& data){
-		QString cg = data.value(QLatin1String("__conditionGroup")).toString();
-		if (cg.isEmpty()) cg = QLatin1String("all");
-		return cg;
-	}
-};
-
 class ServiceCreation {
 private:
     QVariantMap m_map;
@@ -164,6 +86,7 @@ public:
 	#define PLUGIN_ID "fake_from_pluginservicehelper.cpp"
 #endif
 #include "abstractserver.h"
+#include "abstractplugin.h"
 /**
  * Example:
  * plugin.h: EventMap<int> m_events;
@@ -192,7 +115,7 @@ template <class T>
 void EventMap<T>::add ( const QVariantMap& data, const QString& collectionuid ) {
     T key = data.value ( m_fieldname ).value<T>();
     QMap<QString, QVariantMap > datas = QMap<T, QMap<QString, QVariantMap > >::take ( key );
-    datas.insert ( ServiceType::uniqueID ( data ), ServiceType::newDataWithCollectionUid ( data, collectionuid ) );
+    datas.insert ( ServiceID::id ( data ), ServiceID::newDataWithCollectionUid ( data, collectionuid ) );
     QMap<T, QMap<QString, QVariantMap > >::insert ( key, datas );
 }
 
@@ -201,7 +124,7 @@ void EventMap<T>::remove ( const QVariantMap& data, const QString& collectionuid
 	Q_UNUSED(collectionuid);
     T key = data.value ( m_fieldname ).value<T>();
     QMap<QString, QVariantMap > datas = QMap<T, QMap<QString, QVariantMap > >::take ( key );
-    datas.remove ( ServiceType::uniqueID ( data ) );
+    datas.remove ( ServiceID::id ( data ) );
     if ( datas.size() )
         QMap<T, QMap<QString, QVariantMap > >::insert ( key, datas );
 }
@@ -216,6 +139,6 @@ void EventMap<T>::triggerEvent ( T key, AbstractServer* server ) {
     QMap<QString, QVariantMap > datasMaps = QMap<T, QMap<QString, QVariantMap > >::value ( key );
     QList<QVariantMap> datas = datasMaps.values();
     foreach ( QVariantMap data, datas ) {
-		server->event_triggered(ServiceType::uniqueID(data), ServiceType::getCollectionUid ( data ));
+		server->event_triggered(ServiceID::id(data), ServiceID::collectionid ( data ));
     }
 }

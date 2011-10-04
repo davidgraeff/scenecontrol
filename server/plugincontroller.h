@@ -24,8 +24,6 @@
 #include <QVariantMap>
 #include <QTimer>
 #include <QDir>
-#include <QtXml/QDomDocument>
-#include <QFileSystemWatcher>
 #include <shared/abstractplugin.h>
 #include <shared/abstractplugin_services.h>
 #include <shared/abstractplugin_otherproperties.h>
@@ -54,21 +52,8 @@ public:
     virtual ~PluginController();
     void initializePlugins();
     int knownServices();
-    /**
-     * For objects to register their interface. E.g. the backup object to
-     * execute backup actions and send changed properties to \link ServiceController.
-     * The handling is the same like a plugin from file: Validation and service description
-     * is made via an xml file in xml/[object-class-name].xml.
-     */
-    void registerPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller);
-    /**
-     * Deregister an object (e.g. before deleting them). Otherwise ServiceController
-     * might try to acces them after deletion.
-     */
-    void deregisterPluginFromObject(AbstractPlugin* object, ServiceController* servicecontroller);
 
     AbstractPlugin* getPlugin(const QString& pluginid);
-    QDomNode* getPluginDom(const QString& service_gid);
 
     QMap<QString,PluginInfo*>::iterator getPluginIterator();
     AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);
@@ -78,13 +63,5 @@ public:
 
 private:
     QMap<QString,PluginInfo*> m_plugins;
-    QMap<QString, QDomNode*> m_id_to_xml;
-
-    /**
-     * Load plugins and their corresponding xml description file and
-     * registers all provided properties and services
-     */
-    void loadXML(const QString& filename);
-
     int m_index;
 };

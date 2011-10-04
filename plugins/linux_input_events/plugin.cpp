@@ -91,14 +91,14 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
     if ( ServiceID::isId ( data, "inputevent" ) ) {
         m_events.add ( data, collectionuid );
         InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
-        if ( inputdevice ) inputdevice->registerKey ( ServiceType::uniqueID ( data ), collectionuid, DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
+        if ( inputdevice ) inputdevice->registerKey ( ServiceID::id ( data ), collectionuid, DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
     }
 }
 
 void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
     m_events.remove ( data, collectionuid );
     InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
-    if ( inputdevice ) inputdevice->unregisterKey ( ServiceType::uniqueID ( data ));
+    if ( inputdevice ) inputdevice->unregisterKey ( ServiceID::id ( data ));
 }
 
 void plugin::session_change ( const QString& id, bool running ) {
@@ -129,7 +129,7 @@ void plugin::deviceAdded ( ManagedDevice* device ) {
     inputdevice->setDevice ( device );
     const QList<QVariantMap> datas = m_events.data(device->udid);
     foreach(QVariantMap data, datas) {
-        inputdevice->registerKey ( ServiceType::uniqueID ( data ), ServiceType::getCollectionUid(data), DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
+        inputdevice->registerKey ( ServiceID::id ( data ), ServiceID::collectionid(data), DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
     }
 }
 

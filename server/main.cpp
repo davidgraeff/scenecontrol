@@ -21,15 +21,13 @@
 #include <QCoreApplication>
 #include <QProcess>
 #include "servicecontroller.h"
-#include "externalcontrol/httpserver.h"
 #include <QSettings>
 #include "config.h"
 #include <qtextcodec.h>
 #include "logging.h"
-#include "backups.h"
 #include <stdio.h>
-#include "sessioncontroller.h"
 #include "plugincontroller.h"
+#include <QDebug>
 
 bool exitByConsoleCommand = false;
 
@@ -51,8 +49,8 @@ int main(int argc, char *argv[])
     // help text
     if (cmdargs.contains("--help")) {
         printf("%s - %s\n%s [--no-restart] [--no-event-loop] [--no-network] [--observe-service-dir] [--ignore-lock] [--help] [--version]\nLockfile: %s\n"
-               "--no-restart: Do not restart after exit\n--no-event-loop: Shutdown after initialisation\n--no-network: Do not load network objects\n"
-			   "--observe-service-dir: Reload changed files in the service directory\n--ignore-lock: Try to remove lock and acquire lock file\n"
+               "--no-restart: Do not restart after exit\n--no-event-loop: Shutdown after initialisation\n"
+			   "--ignore-lock: Try to remove lock and acquire lock file\n"
 			   "--help: This help text\n--version: Version information, parseable for scripts\n",
                ROOM_SERVICENAME, ABOUT_VERSION, argv[0],
                QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath()).toUtf8().constData());
@@ -94,50 +92,15 @@ int main(int argc, char *argv[])
     // service controller (implements AbstractServer)
     ServiceController* services = new ServiceController();
     PluginController* plugins = new PluginController(services);
-	plugins->registerPluginFromObject(services, services);
-
-
-    // backups
-    Backups* backups = new Backups();
-    plugins->registerPluginFromObject(backups, services);
-
-	SessionController* sessions = SessionController::instance(true);
-	plugins->registerPluginFromObject(sessions, services);
-	services->connect(sessions,SIGNAL(sessionBegin(QString)),services,SLOT(sessionBegin(QString)));
-	services->connect(sessions,SIGNAL(sessionFinished(QString,bool)),services,SLOT(sessionFinished(QString,bool)));
 
 	plugins->initializePlugins();
-    services->load(cmdargs.contains("--observe-service-dir"));
-
-    // network
-#ifdef WITH_EXTERNAL
-    HttpServer* httpserver = 0;
-    if (!cmdargs.contains("--no-network")) {
-        httpserver = new HttpServer();
-		httpserver->connect(services,SIGNAL(dataSync(QVariantMap,QString)), httpserver, SLOT(dataSync(QVariantMap,QString)));
-		httpserver->connect(sessions,SIGNAL(sessionBegin(QString)),httpserver,SLOT(sessionBegin(QString)));
-		httpserver->connect(sessions,SIGNAL(sessionFinished(QString,bool)),httpserver,SLOT(sessionFinished(QString,bool)));
-		httpserver->connect(httpserver,SIGNAL(dataReceived(QVariantMap,QString)),services,SLOT(changeService(QVariantMap,QString)));
-        httpserver->start();
-    }
-#endif
+    services->startWatchingCouchDB();
 
     int exitcode = 0;
     if (!cmdargs.contains("--no-event-loop"))
         exitcode = qapp.exec();
 
-#ifdef WITH_EXTERNAL
-    qDebug() << "Shutdown: Network server";
-    delete httpserver;
-    httpserver = 0;
-#endif
-
     qDebug() << "Shutdown: Service Controller";
-	plugins->deregisterPluginFromObject(services, services);
-	plugins->deregisterPluginFromObject(sessions, services);
-    plugins->deregisterPluginFromObject(backups, services);
-	delete sessions;
-    delete backups;
     delete services;
 	delete plugins;
     services = 0;

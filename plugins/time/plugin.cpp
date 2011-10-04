@@ -71,20 +71,20 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
     Q_UNUSED ( collectionuid );
-    const QString uid = ServiceType::uniqueID(data);
+    const QString uid = ServiceID::id(data);
     // remove from next events
     m_timeout_events.remove ( SC_Uid(uid, collectionuid) );
     // recalculate next event
-    m_remaining_events[uid] = ServiceType::newDataWithCollectionUid(data, collectionuid);
+    m_remaining_events[uid] = ServiceID::newDataWithCollectionUid(data, collectionuid);
     ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "time.alarms");
-    sc.setData("uid", ServiceType::uniqueID(data));
+    sc.setData("uid", ServiceID::id(data));
     m_server->property_changed(sc.getData());
 	
     calculate_next_events();
 }
 
 void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
-    const QString uid = ServiceType::uniqueID(data);
+    const QString uid = ServiceID::id(data);
     // remove from next events
     m_timeout_events.remove ( SC_Uid(uid, collectionuid) );
 
@@ -115,7 +115,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 
     foreach ( QVariantMap data, m_remaining_events ) {
         ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "time.alarms");
-        sc.setData("uid", ServiceType::uniqueID(data));
+        sc.setData("uid", ServiceID::id(data));
         l.append(sc.getData());
     }
 
@@ -125,7 +125,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 void plugin::timeout() {
     // events triggered, propagate to server
     foreach ( QVariantMap data, m_timeout_events ) {
-        m_server->event_triggered ( ServiceType::uniqueID(data), ServiceType::getCollectionUid(data) );
+        m_server->event_triggered ( ServiceID::id(data), ServiceID::collectionid(data) );
     }
     m_timeout_events.clear();
     // calculate next events
@@ -147,11 +147,11 @@ void plugin::calculate_next_events() {
             } else if ( sec > 10 ) {
                 qDebug() << "One-time alarm: Armed" << sec;
                 m_nextAlarm = datetime;
-                min_next_time[sec].insert ( SC_Uid(ServiceType::uniqueID(data), ServiceType::getCollectionUid(data)), data );
-                remove.insert ( ServiceType::uniqueID(data) );
+                min_next_time[sec].insert ( SC_Uid(ServiceID::id(data), ServiceID::collectionid(data)), data );
+                remove.insert ( ServiceID::id(data) );
             } else if ( sec > -10 && sec < 10 ) {
-                m_server->event_triggered ( ServiceType::uniqueID(data), ServiceType::getCollectionUid(data) );
-                remove.insert ( ServiceType::uniqueID(data) );
+                m_server->event_triggered ( ServiceID::id(data), ServiceID::collectionid(data) );
+                remove.insert ( ServiceID::id(data) );
             }
         } else if ( ServiceID::isId(data, "timeperiodic" ) ) {
             QTime m_time = QDateTime::fromString ( DATA ( "time" ),QLatin1String("h:m") ).time();
@@ -184,7 +184,7 @@ void plugin::calculate_next_events() {
                 datetime = datetime.addDays ( offsetdays );
                 m_nextAlarm = datetime;
                 const int sec = QDateTime::currentDateTime().secsTo ( datetime ) + 1;
-                min_next_time[sec].insert ( SC_Uid(ServiceType::uniqueID(data), ServiceType::getCollectionUid(data)), data );
+                min_next_time[sec].insert ( SC_Uid(ServiceID::id(data), ServiceID::collectionid(data)), data );
             }
         }
     }

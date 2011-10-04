@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
-find_package(Qt4 4.7.0 COMPONENTS QtCore Phonon REQUIRED)
+find_package(Qt4 COMPONENTS QtCore Phonon QUIET)
 
 PROJECT(remotesystemclient)
 
