@@ -57,6 +57,8 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
         m_controller->setChannel ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
     } else if ( ServiceID::isMethod(data, "udpled.value_invers" ) ) {
         m_controller->inverseChannel ( DATA("channel"),INTDATA("fade") );
+    } else if ( ServiceID::isMethod(data, "udpled.value_exp" ) ) {
+        m_controller->setChannelExponential ( DATA("channel"),INTDATA("multiplicator") ,INTDATA("fade") );
     } else if ( ServiceID::isMethod(data, "udpled.moodlight" ) ) {
         m_controller->moodlight ( DATA("channel"),BOOLDATA("moodlight") );
     } else if ( ServiceID::isMethod(data, "udpled.name" ) ) {
