@@ -78,12 +78,12 @@ void Controller::setChannelExponential ( const QString& channel, int multiplikat
         else if ( v==1 )
             v=2;
         else
-            v = ( v * multiplikator ) /100;
+            v = ( v * multiplikator ) /100+1;
     } else {
-        if ( v==0 || v==1 )
+        if ( v<2 )
             v = 0;
         else
-            v = ( v * multiplikator ) /100;
+            v = ( v * multiplikator ) /100-1;
     }
 
     setChannel ( channel, v, fade );
@@ -123,7 +123,6 @@ void Controller::setChannel ( const QString& channel, int value, uint fade ) {
     ledchannel* l = &(m_leds[channel]);
 
     value = qBound ( 0, value, 255 );
-	qDebug() << "setChannel" << channel << value;
     l->value = value;
     emit ledChanged ( channel, QString::null, value );
 
@@ -137,7 +136,6 @@ void Controller::setChannel ( const QString& channel, int value, uint fade ) {
     data.type = fade;
     data.channel = l->channel;
     data.value = value;
-	qDebug() << "setChannel 2" << channel << data.value ;
 
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
