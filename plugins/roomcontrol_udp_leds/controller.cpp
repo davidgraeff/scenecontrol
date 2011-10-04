@@ -95,7 +95,7 @@ void Controller::setChannelRelative ( const QString& channel, int value, uint fa
     value += m_leds[channel].value;
 	qDebug() << "channel relative 2" << channel << value;
     const unsigned int v = ( unsigned int ) qMin ( 0, value );
-	qDebug() << "channel relative 3" << channel << value;
+	qDebug() << "channel relative 3" << channel << v;
     setChannel ( channel, v, fade );
 }
 
@@ -128,6 +128,7 @@ void Controller::setChannel ( const QString& channel, uint value, uint fade ) {
     ledchannel* l = &(m_leds[channel]);
 
     value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
+	qDebug() << "setChannel" << channel << value;
     l->value = value;
     emit ledChanged ( channel, QString::null, value );
 
@@ -141,6 +142,7 @@ void Controller::setChannel ( const QString& channel, uint value, uint fade ) {
     data.type = fade;
     data.channel = l->channel;
     data.value = value;
+	qDebug() << "setChannel 2" << channel << data.value ;
 
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
