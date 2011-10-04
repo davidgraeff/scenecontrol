@@ -58,7 +58,7 @@ private:
 	QSet<QNetworkReply*> m_eventreplies;
 	QSet<QNetworkReply*> m_executecollection;
 	QSet<QNetworkReply*> m_actionreplies;
-    QMap<QString, AbstractPlugin_services*> m_registeredevents;
+    QMap<QString, QPair<QVariantMap,AbstractPlugin_services*> > m_registeredevents;
 
     // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;

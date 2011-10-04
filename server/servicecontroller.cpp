@@ -68,7 +68,7 @@ void ServiceController::networkReply(QNetworkReply* r)
 			qDebug() << "register event:" << data;
 			executeplugin->unregister_event(data, ServiceID::collectionid(data));
 			executeplugin->register_event(data, ServiceID::collectionid(data));
-			m_registeredevents.insert(ServiceID::id(data),executeplugin);
+			m_registeredevents.insert(ServiceID::id(data),QPair<QVariantMap,AbstractPlugin_services*>(data, executeplugin));
 		}
 	} else if(m_executecollection.remove(r)) {
 		bool ok;
@@ -101,9 +101,10 @@ void ServiceController::replyEventsChange()
 				m_last_changes_seq_nr = seq;
 			if (data.contains(QLatin1String("deleted"))) {
 				qDebug() << "deleted";
-				AbstractPlugin_services* executeplugin = m_registeredevents.value(ServiceID::id(data));
+				QPair<QVariantMap,AbstractPlugin_services*> d = m_registeredevents.value(ServiceID::id(data));
+				AbstractPlugin_services* executeplugin = d.second;
 				if (executeplugin)
-					executeplugin->unregister_event(data, ServiceID::collectionid(data));
+					executeplugin->unregister_event(data, ServiceID::collectionid(d.first));
 			} else {
 				QNetworkRequest request(QUrl(QString(QLatin1String("http://localhost:5984/roomcontrol/%1")).arg(data[QLatin1String("id")].toString())));
 				m_eventreplies.insert(m_manager->get(request));
