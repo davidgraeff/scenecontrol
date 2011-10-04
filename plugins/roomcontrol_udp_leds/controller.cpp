@@ -91,12 +91,7 @@ void Controller::setChannelExponential ( const QString& channel, int multiplikat
 
 void Controller::setChannelRelative ( const QString& channel, int value, uint fade ) {
     if (! m_leds.contains(channel) ) return;
-	qDebug() << "channel relative" << channel << value;
-    value += m_leds[channel].value;
-	qDebug() << "channel relative 2" << channel << value;
-    const unsigned int v = ( unsigned int ) qMin ( 0, value );
-	qDebug() << "channel relative 3" << channel << v;
-    setChannel ( channel, v, fade );
+    setChannel ( channel,  value + m_leds[channel].value, fade );
 }
 
 
@@ -122,12 +117,12 @@ void Controller::moodlightTimeout() {
 
 
 
-void Controller::setChannel ( const QString& channel, uint value, uint fade ) {
+void Controller::setChannel ( const QString& channel, int value, uint fade ) {
     if ( !m_socket ) return;
     if ( !m_leds.contains(channel) ) return;
     ledchannel* l = &(m_leds[channel]);
 
-    value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
+    value = qBound ( 0, value, 255 );
 	qDebug() << "setChannel" << channel << value;
     l->value = value;
     emit ledChanged ( channel, QString::null, value );

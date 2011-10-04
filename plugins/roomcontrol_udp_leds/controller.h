@@ -51,7 +51,7 @@ public:
 
     int countChannels();
     QString getChannelName ( const QString& channel );
-    void setChannel ( const QString& channel, uint value, uint fade );
+    void setChannel ( const QString& channel, int value, uint fade );
     void setChannelName ( const QString& channel, const QString& name );
     void inverseChannel(const QString& channel, uint fade);
     void setChannelExponential ( const QString& channel, int multiplikator, uint fade );
