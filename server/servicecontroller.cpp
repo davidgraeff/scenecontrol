@@ -77,7 +77,6 @@ void ServiceController::networkReply(QNetworkReply* r)
 			QVariantList list = data.value(QLatin1String("rows")).toList();
 			for (int i=0;i<list.size();++i) {
 				data = list[i].toMap().value(QLatin1String("value")).toMap();
-				qDebug() << "execute action" << data;
 				execute_action(data);
 			}
 		}
@@ -138,7 +137,7 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
 
 void ServiceController::execute_action ( const QVariantMap& data, const char* pluginid ) {
 	Q_UNUSED(pluginid);
-    if ( !ServiceID::isExecutable ( data ) || !ServiceID::isAction(data)) return;
+    if ( !ServiceID::isExecutable ( data ) && !ServiceID::isAction(data)) return;
     AbstractPlugin* plugin = m_plugincontroller->getPlugin ( ServiceID::pluginid ( data ) );
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*> ( plugin );
     if ( !executeplugin ) {
