@@ -66,9 +66,12 @@ void ServiceController::networkReply(QNetworkReply* r)
 				return;
 			}
 			qDebug() << "register event:" << ServiceID::id(data) << ServiceID::pluginid(data) << ServiceID::pluginmember(data);
-			executeplugin->unregister_event(data, ServiceID::collectionid(data));
-			executeplugin->register_event(data, ServiceID::collectionid(data));
-			m_registeredevents.insert(ServiceID::id(data),QPair<QVariantMap,AbstractPlugin_services*>(data, executeplugin));
+			QString destination_collectionuid = ServiceID::collectionid(data);
+			if (destination_collectionuid.size()) {
+				executeplugin->unregister_event(data, destination_collectionuid);
+				executeplugin->register_event(data, destination_collectionuid);
+				m_registeredevents.insert(ServiceID::id(data),QPair<QVariantMap,AbstractPlugin_services*>(data, executeplugin));
+			}
 		}
 	} else if(m_executecollection.remove(r)) {
 		bool ok;
@@ -144,6 +147,8 @@ void ServiceController::execute_action ( const QVariantMap& data, const char* pl
         qWarning() <<"Cannot execute service. No plugin found:"<<data;
         return;
     }
+    
+    qDebug() << "execute" << data;
     executeplugin->execute ( data, QString() );
 }
 
