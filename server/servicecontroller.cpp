@@ -65,7 +65,7 @@ void ServiceController::networkReply(QNetworkReply* r)
 				qWarning() <<"Cannot register event. No plugin found:"<<ServiceID::pluginid ( data ) << ServiceID::id(data);
 				return;
 			}
-			qDebug() << "register event:" << data;
+			qDebug() << "register event:" << ServiceID::id(data) << ServiceID::pluginid(data) << ServiceID::pluginmember(data);
 			executeplugin->unregister_event(data, ServiceID::collectionid(data));
 			executeplugin->register_event(data, ServiceID::collectionid(data));
 			m_registeredevents.insert(ServiceID::id(data),QPair<QVariantMap,AbstractPlugin_services*>(data, executeplugin));
@@ -150,6 +150,7 @@ void ServiceController::execute_action ( const QVariantMap& data, const char* pl
 
 void ServiceController::property_changed ( const QVariantMap& data, const QString& sessionid, const char* pluginid ) {
     Q_UNUSED ( pluginid );
+	qDebug() << "property changed" << data;
     //emit dataSync ( data, sessionid );
     QList<QString> plugins = m_propertyid_to_plugins.value ( ServiceID::id ( data ) ).toList();
     for ( int i=0;i<plugins.size();++i ) {
