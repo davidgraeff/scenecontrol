@@ -43,7 +43,7 @@ bool ServiceController::startWatchingCouchDB()
 
 void ServiceController::networkReply(QNetworkReply* r)
 {
-	if (r->error() != QNetworkReply::NoError || !r->isRunning()) {
+	if (r->error() != QNetworkReply::NoError) {
 		qDebug() << "Response error:" << r->url();
 		r->deleteLater();
 		return;
