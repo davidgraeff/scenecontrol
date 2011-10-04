@@ -126,7 +126,7 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
     Q_UNUSED ( event_id );
     
 	// request actions
-	QNetworkRequest request(QUrl(QString(QLatin1String("http://localhost:5984/roomcontrol/_design/app/_view/actions?key=%22%1%22")).arg(destination_collectionuid)));
+	QNetworkRequest request(QUrl(QString(QLatin1String("http://localhost:5984/roomcontrol/_design/app/_view/actions?key=\"%1\"")).arg(destination_collectionuid)));
 	
 	QNetworkReply* r = m_manager->get(request);
 	m_executecollection.insert(r);
