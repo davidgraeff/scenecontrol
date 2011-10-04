@@ -43,6 +43,12 @@ bool ServiceController::startWatchingCouchDB()
 
 void ServiceController::networkReply(QNetworkReply* r)
 {
+	if (r->error() != QNetworkReply::NoError || !r->isRunning()) {
+		r->deleteLater();
+		qDebug() << "Response error";
+		return;
+	}
+	
 	if (m_eventreplies.remove(r)) {
 		QByteArray line = r->readLine();
 		if (line.isEmpty()) return;
@@ -76,7 +82,9 @@ void ServiceController::networkReply(QNetworkReply* r)
 			}
 		}
 	} else
-	qDebug() << "received" << m_last_changes_seq_nr << r->url();
+		qDebug() << "received" << m_last_changes_seq_nr << r->url();
+	
+	r->deleteLater();
 }
 
 void ServiceController::replyEventsChange()
@@ -117,10 +125,14 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
     Q_UNUSED ( pluginid );
     Q_UNUSED ( event_id );
     
-	qDebug() << "event triggered" << event_id;
 	// request actions
 	QNetworkRequest request(QUrl(QString(QLatin1String("http://localhost:5984/roomcontrol/_design/app/_view/actions?key=%22%1%22")).arg(destination_collectionuid)));
-	m_executecollection.insert(m_manager->get(request));
+	
+	QNetworkReply* r = m_manager->get(request);
+	m_executecollection.insert(r);
+
+	qDebug() << "event triggered" << event_id << r->url();
+
 }
 
 void ServiceController::execute_action ( const QVariantMap& data, const char* pluginid ) {
