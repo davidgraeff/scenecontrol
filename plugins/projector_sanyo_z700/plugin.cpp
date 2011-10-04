@@ -61,21 +61,21 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     if ( !m_socket ) return;
     static char b[] = {'S', 'A', 0, 0};
 
-    if ( ServiceID::isId(data, "projector_sanyo_power" ) ) {
+    if ( ServiceID::isMethod(data, "projector_sanyo_power" ) ) {
         if ( BOOLDATA ( "power" ) ){
 			b[2]='0'; b[3]='0';
 		} else {
 			b[2]='0'; b[3]='1';
 		}
         m_socket->write(b, sizeof(b));
-    } else if ( ServiceID::isId(data, "projector_sanyo_video" ) ) {
+    } else if ( ServiceID::isMethod(data, "projector_sanyo_video" ) ) {
         if ( BOOLDATA ( "mute" ) ){
 			b[2]='0'; b[3]='D';
 		} else {
 			b[2]='0'; b[3]='E';
 		}
         m_socket->write(b, sizeof(b));
-    } else if ( ServiceID::isId(data, "projector_sanyo_lamp" ) ) {
+    } else if ( ServiceID::isMethod(data, "projector_sanyo_lamp" ) ) {
         if ( BOOLDATA ( "eco" ) ){
 			b[2]='7'; b[3]='5';
 		} else {

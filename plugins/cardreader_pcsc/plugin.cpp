@@ -58,7 +58,7 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 }
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
-    if (ServiceID::isId(data,"cardevent")) {
+    if (ServiceID::isMethod(data,"cardevent")) {
 		m_card_events.add(data, collectionuid);
     }
 }

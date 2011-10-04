@@ -70,7 +70,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
-    if ( ServiceID::isId ( data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
+    if ( ServiceID::isMethod ( data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
         QMap<QString, InputDevice*>::iterator it = m_devices.begin();
         for ( ;it != m_devices.end();++it ) {
             ( *it )->disconnectSession ( sessionid );
@@ -88,7 +88,7 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 }
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
-    if ( ServiceID::isId ( data, "inputevent" ) ) {
+    if ( ServiceID::isMethod ( data, "inputevent" ) ) {
         m_events.add ( data, collectionuid );
         InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
         if ( inputdevice ) inputdevice->registerKey ( ServiceID::id ( data ), collectionuid, DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );

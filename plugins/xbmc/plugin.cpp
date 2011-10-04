@@ -28,15 +28,15 @@ void plugin::initialize() {
 void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(sessionid);
 	if (!m_xbmcClient) return;
-	if (ServiceID::isId(data,"xbmcfocus")) {
+	if (ServiceID::isMethod(data,"xbmcfocus")) {
 		setSetting(QLatin1String("server"), data["server"].toString());
-	} else if (ServiceID::isId(data,"xbmcvolume")) {
+	} else if (ServiceID::isMethod(data,"xbmcvolume")) {
 		//todo
-	} else if (ServiceID::isId(data,"xbmcposition")) {
+	} else if (ServiceID::isMethod(data,"xbmcposition")) {
 		//todo
-	} else if (ServiceID::isId(data,"xbmcmedia")) {
+	} else if (ServiceID::isMethod(data,"xbmcmedia")) {
 		//todo
-	} else if (ServiceID::isId(data,"xbmccmd")) {
+	} else if (ServiceID::isMethod(data,"xbmccmd")) {
 		setCommand(data["state"].toInt());
 	}
 }

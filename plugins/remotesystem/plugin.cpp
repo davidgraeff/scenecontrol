@@ -59,21 +59,21 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 	Q_UNUSED(sessionid);
-    if ( ServiceID::isId(data, "remotefocus" ) ) {
+    if ( ServiceID::isMethod(data, "remotefocus" ) ) {
         m_selectedclients = specificClients ( DATA ( "servers" ).split ( QLatin1Char ( ';' ) ) );
-    } else if ( ServiceID::isId(data, "remotevolume" ) ) {
+    } else if ( ServiceID::isMethod(data, "remotevolume" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->setSystemVolume ( DOUBLEDATA ( "volume" ),BOOLDATA ( "relative" ) );
         }
-    } else if ( ServiceID::isId(data, "remotenotification" ) ) {
+    } else if ( ServiceID::isMethod(data, "remotenotification" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->showMessage ( INTDATA ( "duration" ), DATA ( "title" ), DATA ( "audio" ) );
         }
-    } else if ( ServiceID::isId(data, "remotevideo" ) ) {
+    } else if ( ServiceID::isMethod(data, "remotevideo" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->showVideo ( DATA ( "video" ), INTDATA ( "display" ) );
         }
-    } else if ( ServiceID::isId(data, "remotedisplay" ) ) {
+    } else if ( ServiceID::isMethod(data, "remotedisplay" ) ) {
         foreach ( ExternalClient* client, m_selectedclients ) {
             client->setDisplayState ( INTDATA ( "state" ), INTDATA ( "display" ) );
         }

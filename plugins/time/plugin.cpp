@@ -52,14 +52,14 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isId(data, "datespan" ) ) {
+    if ( ServiceID::isMethod(data, "datespan" ) ) {
         QDate m_lower = QDate::fromString ( DATA ( "lower" ),Qt::ISODate );
         QDate m_upper = QDate::fromString ( DATA ( "upper" ),Qt::ISODate );
         if ( QDate::currentDate() < m_lower ) return false;
         if ( QDate::currentDate() > m_upper ) return false;
         return true;
     } else
-        if ( ServiceID::isId(data, "timespan" ) ) {
+        if ( ServiceID::isMethod(data, "timespan" ) ) {
             QTime m_lower = QTime::fromString ( DATA ( "lower" ),Qt::ISODate );
             QTime m_upper = QTime::fromString ( DATA ( "upper" ),Qt::ISODate );
             if ( QTime::currentTime() < m_lower ) return false;
@@ -137,7 +137,7 @@ void plugin::calculate_next_events() {
     QSet<QString> remove;
 
     foreach ( QVariantMap data, m_remaining_events ) {
-        if ( ServiceID::isId(data, "timedate" ) ) {
+        if ( ServiceID::isMethod(data, "timedate" ) ) {
             const QTime time = QTime::fromString ( DATA ( "time" ),QLatin1String("h:m") );
             const QDate date = QDate::fromString ( DATA ( "date" ),QLatin1String("dd.MM.yyyy"));
             const QDateTime datetime(date, time);
@@ -153,7 +153,7 @@ void plugin::calculate_next_events() {
                 m_server->event_triggered ( ServiceID::id(data), ServiceID::collectionid(data) );
                 remove.insert ( ServiceID::id(data) );
             }
-        } else if ( ServiceID::isId(data, "timeperiodic" ) ) {
+        } else if ( ServiceID::isMethod(data, "timeperiodic" ) ) {
             QTime m_time = QDateTime::fromString ( DATA ( "time" ),QLatin1String("h:m") ).time();
             QDateTime datetime = QDateTime::currentDateTime();
             datetime.setTime ( m_time );

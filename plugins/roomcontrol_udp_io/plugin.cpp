@@ -56,11 +56,11 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 	Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
 	if (lid.port == -1) return;
 	 
-    if ( ServiceID::isId(data, "udpio.value_absolut" ) ) {
+    if ( ServiceID::isMethod(data, "udpio.value_absolut" ) ) {
         m_controller->setChannel ( lid,BOOLDATA("value") );
-    } else if ( ServiceID::isId(data, "udpio.value_toggle" ) ) {
+    } else if ( ServiceID::isMethod(data, "udpio.value_toggle" ) ) {
         m_controller->toogleChannel ( lid );
-    } else if ( ServiceID::isId(data, "udpio.name" ) ) {
+    } else if ( ServiceID::isMethod(data, "udpio.name" ) ) {
         m_controller->setChannelName ( lid, DATA("name") );
     }
 }
@@ -71,7 +71,7 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 	if (lid.port == -1)
 		return false;
 	
-    if ( ServiceID::isId(data, "udpio.condition" ) ) {
+    if ( ServiceID::isMethod(data, "udpio.condition" ) ) {
         const bool v = m_controller->getChannel ( lid );
         if ( v != BOOLDATA("value") ) return false;
         return true;
@@ -80,7 +80,7 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 }
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
-    if (ServiceID::isId(data,"udpio.watchvalue")) {
+    if (ServiceID::isMethod(data,"udpio.watchvalue")) {
         m_events.add(data, collectionuid);
     }
 }

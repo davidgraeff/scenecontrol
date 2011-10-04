@@ -51,20 +51,20 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 	Q_UNUSED ( sessionid );
-    if ( ServiceID::isId(data, "iovalue_absolut" ) ) {
+    if ( ServiceID::isMethod(data, "iovalue_absolut" ) ) {
         m_controller->setPin ( DATA("channel"),BOOLDATA("value") );
-    } else if ( ServiceID::isId(data, "iovalue_toogle" ) ) {
+    } else if ( ServiceID::isMethod(data, "iovalue_toogle" ) ) {
         m_controller->togglePin ( DATA("channel") );
-    } else if ( ServiceID::isId(data, "ioname" ) ) {
+    } else if ( ServiceID::isMethod(data, "ioname" ) ) {
         m_controller->setPinName ( DATA("channel"),DATA("name") );
-    } else if ( ServiceID::isId(data, "reload" ) ) {
+    } else if ( ServiceID::isMethod(data, "reload" ) ) {
         m_controller->reinitialize();
     }
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 	Q_UNUSED ( sessionid );
-    if ( ServiceID::isId(data, "iocondition" ) ) {
+    if ( ServiceID::isMethod(data, "iocondition" ) ) {
         return ( m_controller->getPin ( DATA("channel") ) == BOOLDATA("value") );
     }
     return false;

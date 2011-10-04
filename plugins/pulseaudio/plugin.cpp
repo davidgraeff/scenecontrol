@@ -44,9 +44,9 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 	Q_UNUSED(sessionid);
-    if ( ServiceID::isId(data, "pulsechannelmute" ) ) {
+    if ( ServiceID::isMethod(data, "pulsechannelmute" ) ) {
         set_sink_muted(DATA("sinkid").toUtf8().constData(), INTDATA ( "mute" ) );
-    } else if ( ServiceID::isId(data, "pulsechannelvolume" ) ) {
+    } else if ( ServiceID::isMethod(data, "pulsechannelvolume" ) ) {
         if (BOOLDATA ( "relative" )) {
             set_sink_volume_relative(DATA("sinkid").toUtf8(), DOUBLEDATA ( "volume" ));
         } else {

@@ -40,7 +40,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 
 void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(sessionid);
-    if (ServiceID::isId(data,"changemode")) {
+    if (ServiceID::isMethod(data,"changemode")) {
         m_mode = DATA("mode");
         modeChanged(m_mode);
     }
@@ -48,7 +48,7 @@ void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 
 bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
 	Q_UNUSED(sessionid);
-    if (ServiceID::isId(data,"modecondition")) {
+    if (ServiceID::isMethod(data,"modecondition")) {
         return (m_mode == DATA("mode"));
     }
     return false;
@@ -56,7 +56,7 @@ bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
 	Q_UNUSED(collectionuid);
-    if (ServiceID::isId(data,"modeevent")) {
+    if (ServiceID::isMethod(data,"modeevent")) {
         m_mode_events.add(data, collectionuid);
     }
 }

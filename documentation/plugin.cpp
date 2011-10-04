@@ -43,7 +43,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
 
 void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 	Q_UNUSED(sessionid);
-	if (ServiceID::isId(data,"bla")) {
+	if (ServiceID::isMethod(data,"bla")) {
 	}
 }
 

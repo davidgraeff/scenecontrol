@@ -50,29 +50,29 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 	Q_UNUSED ( sessionid );
-    if ( ServiceID::isId(data, "ledvalue_relative" ) ) {
+    if ( ServiceID::isMethod(data, "ledvalue_relative" ) ) {
         m_controller->setChannelRelative ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isId(data, "ledvalue_absolut" ) ) {
+    } else if ( ServiceID::isMethod(data, "ledvalue_absolut" ) ) {
         m_controller->setChannel ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isId(data, "ledvalue_invers" ) ) {
+    } else if ( ServiceID::isMethod(data, "ledvalue_invers" ) ) {
         m_controller->inverseChannel ( DATA("channel"),INTDATA("fade") );
-    } else if ( ServiceID::isId(data, "ledmoodlight" ) ) {
+    } else if ( ServiceID::isMethod(data, "ledmoodlight" ) ) {
         m_controller->moodlight ( DATA("channel"),BOOLDATA("moodlight") );
-    } else if ( ServiceID::isId(data, "ledname" ) ) {
+    } else if ( ServiceID::isMethod(data, "ledname" ) ) {
         m_controller->setChannelName ( DATA("channel"), DATA("name") );
-    } else if ( ServiceID::isId(data, "curtain" ) ) {
+    } else if ( ServiceID::isMethod(data, "curtain" ) ) {
         m_controller->setCurtain ( INTDATA("value") );
     }
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 	Q_UNUSED ( sessionid );
-    if ( ServiceID::isId(data, "ledcondition" ) ) {
+    if ( ServiceID::isMethod(data, "ledcondition" ) ) {
         const int v = m_controller->getChannel ( DATA("channel") );
         if ( v>INTDATA("upper") ) return false;
         if ( v<INTDATA("lower") ) return false;
         return true;
-    } else if ( ServiceID::isId(data, "curtain_condition" ) ) {
+    } else if ( ServiceID::isMethod(data, "curtain_condition" ) ) {
         return ( INTDATA("value") == m_controller->getCurtain() );
     }
     return false;

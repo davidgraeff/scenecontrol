@@ -37,12 +37,10 @@ public:
     static QString pluginid(const QVariantMap& data) {
         return data[QLatin1String("plugin_")].toString();
     }
-    static void setId(QVariantMap& data, const QString& id) {
-        data[QLatin1String("_id")] = id;
-    }
-    static bool isId(const QVariantMap& data, const char* id) {
-		return data[QLatin1String("_id")].toString() == QLatin1String(id);
-	}
+//     static void setId(QVariantMap& data, const QString& id) {
+//         data[QLatin1String("_id")] = id;
+//     }
+
     static QString collectionid(const QVariantMap& data) {
         return data.value(QLatin1String("collection_")).toString();
     }
@@ -84,6 +82,9 @@ public:
         return data[QLatin1String("type_")].toString();
     }
 
+    static bool isMethod(const QVariantMap& data, const char* id) {
+		return data[QLatin1String("member_")].toString() == QLatin1String(id);
+	}
     static QString pluginmember(const QVariantMap& data) {
         return data[QLatin1String("member_")].toString();
     }

@@ -52,9 +52,9 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 	Q_UNUSED(sessionid);
-    if ( ServiceID::isId(data, "mpdvolume" ) ) {
+    if ( ServiceID::isMethod(data, "mpdvolume" ) ) {
         m_mediacontroller->setVolume ( DOUBLEDATA ( "volume" ), BOOLDATA ( "relative" ) );
-    } else if ( ServiceID::isId(data, "mpdcmd" ) ) {
+    } else if ( ServiceID::isMethod(data, "mpdcmd" ) ) {
         switch ( INTDATA ( "state" ) ) {
         case 0:
             m_mediacontroller->play();
@@ -83,7 +83,7 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
         default:
             break;
         }
-    } else if ( ServiceID::isId(data, "mpdchangeplaylist" ) ) {
+    } else if ( ServiceID::isMethod(data, "mpdchangeplaylist" ) ) {
         // set playlist
         const QString playlistid = DATA ( "playlistid" );
         const int track = INTDATA ( "track" );
@@ -95,14 +95,14 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
             m_mediacontroller->setCurrentTrack ( track );
         }
 
-    } else if ( ServiceID::isId(data, "mpdposition" ) ) {
+    } else if ( ServiceID::isMethod(data, "mpdposition" ) ) {
         m_mediacontroller->setTrackPosition ( INTDATA ( "position_in_ms" ), BOOLDATA ( "relative" ) );
     }
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 	Q_UNUSED(sessionid);
-    if ( ServiceID::isId(data, "bla" ) ) {
+    if ( ServiceID::isMethod(data, "bla" ) ) {
         return ( INTDATA ( "mpdstatecondition" ) == m_mediacontroller->state() );
     }
     return false;

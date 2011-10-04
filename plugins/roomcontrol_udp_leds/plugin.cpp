@@ -51,22 +51,22 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
 	Q_UNUSED ( sessionid );
-    if ( ServiceID::isId(data, "udpled.value_relative" ) ) {
+    if ( ServiceID::isMethod(data, "udpled.value_relative" ) ) {
         m_controller->setChannelRelative ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isId(data, "udpled.value_absolut" ) ) {
+    } else if ( ServiceID::isMethod(data, "udpled.value_absolut" ) ) {
         m_controller->setChannel ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isId(data, "udpled.value_invers" ) ) {
+    } else if ( ServiceID::isMethod(data, "udpled.value_invers" ) ) {
         m_controller->inverseChannel ( DATA("channel"),INTDATA("fade") );
-    } else if ( ServiceID::isId(data, "udpled.moodlight" ) ) {
+    } else if ( ServiceID::isMethod(data, "udpled.moodlight" ) ) {
         m_controller->moodlight ( DATA("channel"),BOOLDATA("moodlight") );
-    } else if ( ServiceID::isId(data, "udpled.name" ) ) {
+    } else if ( ServiceID::isMethod(data, "udpled.name" ) ) {
         m_controller->setChannelName ( DATA("channel"), DATA("name") );
     }
 }
 
 bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
 	Q_UNUSED ( sessionid );
-    if ( ServiceID::isId(data, "udpled.condition" ) ) {
+    if ( ServiceID::isMethod(data, "udpled.condition" ) ) {
         const int v = m_controller->getChannel ( DATA("channel") );
         if ( v>INTDATA("upper") ) return false;
         if ( v<INTDATA("lower") ) return false;
