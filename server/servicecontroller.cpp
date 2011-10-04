@@ -134,7 +134,7 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
 	QNetworkReply* r = m_manager->get(request);
 	m_executecollection.insert(r);
 
-	qDebug() << "event triggered" << event_id << r->url();
+// 	qDebug() << "event triggered" << event_id << r->url();
 
 }
 
@@ -148,7 +148,6 @@ void ServiceController::execute_action ( const QVariantMap& data, const char* pl
         return;
     }
     
-    qDebug() << "execute" << data;
     executeplugin->execute ( data, QString() );
 }
 
