@@ -60,8 +60,20 @@ void ServiceController::networkReply(QNetworkReply* r)
 				return;
 			}
 			qDebug() << "register event:" << data;
+			executeplugin->unregister_event(data, ServiceID::collectionid(data));
 			executeplugin->register_event(data, ServiceID::collectionid(data));
 			m_registeredevents.insert(ServiceID::id(data),executeplugin);
+		}
+	} else if(m_executecollection.remove(r)) {
+		bool ok;
+		QVariantMap data = QJson::Parser().parse(r->readAll(), &ok).toMap();
+		if (data.contains(QLatin1String("rows"))) {
+			QVariantList list = data.value(QLatin1String("rows")).toList();
+			for (int i=0;i<list.size();++i) {
+				data = list[i].toMap().value(QLatin1String("value")).toMap();
+				qDebug() << "execute action" << data;
+				execute_action(data);
+			}
 		}
 	} else
 	qDebug() << "received" << m_last_changes_seq_nr << r->url();
@@ -97,16 +109,6 @@ void ServiceController::replyEventsChange()
 	}
 }
 
-void ServiceController::checkConditions(const QString& collectionid)
-{
-
-}
-
-void ServiceController::executeActions(const QString& collectionid)
-{
-
-}
-
 void ServiceController::setPluginController ( PluginController* pc ) {
     m_plugincontroller=pc;
 }
@@ -115,14 +117,15 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
     Q_UNUSED ( pluginid );
     Q_UNUSED ( event_id );
     
-	QNetworkRequest request(QUrl(QString(QLatin1String("http://localhost:5984/roomcontrol/%1")).arg(data[QLatin1String("id")].toString())));
-	m_eventreplies.insert(m_manager->get(request));
-    
-    Q_UNUSED ( destination_collectionuid );
+	qDebug() << "event triggered" << event_id;
+	// request actions
+	QNetworkRequest request(QUrl(QString(QLatin1String("http://localhost:5984/roomcontrol/_design/app/_view/actions?key=%22%1%22")).arg(destination_collectionuid)));
+	m_executecollection.insert(m_manager->get(request));
 }
 
 void ServiceController::execute_action ( const QVariantMap& data, const char* pluginid ) {
-    if ( !ServiceID::isExecutable ( data ) ) return;
+	Q_UNUSED(pluginid);
+    if ( !ServiceID::isExecutable ( data ) || !ServiceID::isAction(data)) return;
     AbstractPlugin* plugin = m_plugincontroller->getPlugin ( ServiceID::pluginid ( data ) );
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*> ( plugin );
     if ( !executeplugin ) {

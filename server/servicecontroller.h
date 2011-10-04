@@ -56,11 +56,9 @@ private:
     int m_last_changes_seq_nr;
 	QNetworkAccessManager *m_manager;
 	QSet<QNetworkReply*> m_eventreplies;
+	QSet<QNetworkReply*> m_executecollection;
+	QSet<QNetworkReply*> m_actionreplies;
     QMap<QString, AbstractPlugin_services*> m_registeredevents;
-
-    void checkConditions(const QString& collectionid);
-    
-    void executeActions(const QString& collectionid);
 
     // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;
