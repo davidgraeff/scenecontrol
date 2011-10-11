@@ -97,12 +97,13 @@ void ServiceController::replyEventsChange() {
             if ( seq > m_last_changes_seq_nr )
                 m_last_changes_seq_nr = seq;
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
-                QPair<QVariantMap,AbstractPlugin_services*> d = m_registeredevents.value ( ServiceID::id ( data ) );
+				QString id = ServiceID::idChangeSeq ( data );
+                QPair<QVariantMap,AbstractPlugin_services*> d = m_registeredevents.value ( id );
                 AbstractPlugin_services* executeplugin = d.second;
-                qDebug() << "deleted" << ServiceID::id ( data ) << d << executeplugin << data;
+                qDebug() << "deleted" << id << executeplugin;
                 if ( executeplugin )
-                    executeplugin->unregister_event ( data, ServiceID::collectionid ( d.first ) );
-				m_registeredevents.remove(ServiceID::id ( data ));
+                    executeplugin->unregister_event ( d.first, ServiceID::collectionid ( d.first ) );
+				m_registeredevents.remove(id);
             } else {
                 QNetworkRequest request ( QUrl ( QString ( QLatin1String ( "http://localhost:5984/roomcontrol/%1" ) ).arg ( data[QLatin1String ( "id" ) ].toString() ) ) );
                 m_eventreplies.insert ( m_manager->get ( request ) );

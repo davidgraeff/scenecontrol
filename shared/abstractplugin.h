@@ -34,6 +34,9 @@ public:
     static QString id(const QVariantMap& data) {
         return data[QLatin1String("_id")].toString();
     }
+	static QString idChangeSeq(const QVariantMap& data) {
+        return data[QLatin1String("id")].toString();
+    }
     static QString pluginid(const QVariantMap& data) {
         return data[QLatin1String("plugin_")].toString();
     }
