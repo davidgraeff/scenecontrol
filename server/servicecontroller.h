@@ -60,6 +60,10 @@ private:
 	QSet<QNetworkReply*> m_actionreplies;
     QMap<QString, QPair<QVariantMap,AbstractPlugin_services*> > m_registeredevents;
 
+	void requestDatabaseInfo();
+	void requestEvents();
+	void startChangeLister();
+	void registerEvent(const QVariantMap& data);
     // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;
 
