@@ -96,6 +96,7 @@ void ServiceController::replyEventsChange() {
             int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
             if ( seq > m_last_changes_seq_nr )
                 m_last_changes_seq_nr = seq;
+			qDebug() << "changed" << data;
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
                 QPair<QVariantMap,AbstractPlugin_services*> d = m_registeredevents.value ( ServiceID::id ( data ) );
                 AbstractPlugin_services* executeplugin = d.second;
@@ -179,7 +180,7 @@ void ServiceController::unregister_listener ( const QString& unqiue_property_id,
         m_propertyid_to_plugins.remove ( unqiue_property_id );
 }
 void ServiceController::requestEvents() {
-    QNetworkRequest request ( QUrl ( QString ( QLatin1String ( "http://localhost:5984/roomcontrol/_design/app/_view/events#events" ) ).arg ( m_last_changes_seq_nr ) ) );
+    QNetworkRequest request ( QUrl ( QLatin1String ( "http://localhost:5984/roomcontrol/_design/app/_view/events#events" ) ) );
     m_manager->get ( request );
 }
 
