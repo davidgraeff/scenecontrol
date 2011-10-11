@@ -92,11 +92,11 @@ void ServiceController::replyEventsChange() {
         if ( line.isEmpty() ) continue;
         bool ok;
         QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
+			qDebug() << "changed" << ok << data;
         if ( ok && data.contains ( QLatin1String ( "seq" ) ) ) {
             int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
             if ( seq > m_last_changes_seq_nr )
                 m_last_changes_seq_nr = seq;
-			qDebug() << "changed" << data;
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
                 QPair<QVariantMap,AbstractPlugin_services*> d = m_registeredevents.value ( ServiceID::id ( data ) );
                 AbstractPlugin_services* executeplugin = d.second;
