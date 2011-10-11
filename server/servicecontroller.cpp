@@ -92,7 +92,7 @@ void ServiceController::replyEventsChange() {
         if ( line.isEmpty() ) continue;
         bool ok;
         QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
-			qDebug() << "changed" << ok << data;
+			qDebug() << "changed" << ok << line.size()<< line << data;
         if ( ok && data.contains ( QLatin1String ( "seq" ) ) ) {
             int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
             if ( seq > m_last_changes_seq_nr )
