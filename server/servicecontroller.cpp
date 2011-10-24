@@ -262,12 +262,14 @@ void ServiceController::property_changed ( const QVariantMap& data, const QStrin
     }
     
     //emit dataSync ( data, sessionid );
-    // send data over websocket. First convert to json string then copy to a c buffer and send to all connected websocket clients with the right protocol
-    QByteArray jsondata = QJson::Serializer().serialize(data);
-    const int len = jsondata.size();
-    unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + len];
-    memcpy(buf + LWS_SEND_BUFFER_PRE_PADDING,jsondata.constData(),len);
-    libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
+    if (m_websocket_context) {
+      // send data over websocket. First convert to json string then copy to a c buffer and send to all connected websocket clients with the right protocol
+      QByteArray jsondata = QJson::Serializer().serialize(data);
+      const int len = jsondata.size();
+      unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + len];
+      memcpy(buf + LWS_SEND_BUFFER_PRE_PADDING,jsondata.constData(),len);
+      libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
+    }
 }
 
 void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
@@ -279,12 +281,14 @@ void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
 	jsondata += QJson::Serializer().serialize(properties[i]) + "\n";
     }
     
-    unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + jsondata.size()];
-    unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
-    memcpy(p,jsondata.constData(),jsondata.size());
-    int n = libwebsocket_write(wsi, p, jsondata.size(), LWS_WRITE_TEXT);
-    if (n < 0) {
-	    qWarning() << "ERROR writing to socket: websocketClientRequestAllProperties";
+    if (m_websocket_context) {
+      unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + jsondata.size()];
+      unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
+      memcpy(p,jsondata.constData(),jsondata.size());
+      int n = libwebsocket_write(wsi, p, jsondata.size(), LWS_WRITE_TEXT);
+      if (n < 0) {
+	      qWarning() << "ERROR writing to socket: websocketClientRequestAllProperties";
+      }
     }
 }
 
