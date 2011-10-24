@@ -606,7 +606,7 @@ libwebsocket_read(struct libwebsocket_context *context, struct libwebsocket *wsi
 
 		debug("seem to be serving, mode is %d\n", wsi->mode);
 
-		fdebug("libwebsocket_parse sees parsing complete\n");
+		debug("libwebsocket_parse sees parsing complete\n");
 
 		/* is this websocket protocol or normal http 1.0? */
 
