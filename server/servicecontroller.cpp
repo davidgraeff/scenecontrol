@@ -58,7 +58,7 @@ static int callback_roomcontrol_protocol(struct libwebsocket_context * context,
   int n;
 	switch (reason) {
 	case LWS_CALLBACK_BROADCAST:
-		n = libwebsocket_write(wsi, (unsigned char*)user, len, LWS_WRITE_TEXT);
+		n = libwebsocket_write(wsi, (unsigned char*)user[LWS_SEND_BUFFER_PRE_PADDING], len, LWS_WRITE_TEXT);
 		qWarning()<<"callback_roomcontrol_protocol1";
 		free(user);
 		qWarning()<<"callback_roomcontrol_protocol2";
@@ -268,10 +268,10 @@ void ServiceController::property_changed ( const QVariantMap& data, const QStrin
     //emit dataSync ( data, sessionid );
     // send data over websocket. First convert to json string then copy to a c buffer and send to all connected websocket clients with the right protocol
     QByteArray jsondata = QJson::Serializer().serialize(data);
-    unsigned char* buf = (unsigned char*)malloc(LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + jsondata.size());
-    unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
-    memcpy(p,jsondata.constData(),jsondata.size());
-    libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], p, jsondata.size());
+    const int len = jsondata.size();
+    unsigned char* buf = (unsigned char*)malloc(LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + len);
+    memcpy(buf[LWS_SEND_BUFFER_PRE_PADDING],jsondata.constData(),len);
+    libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
 }
 
 void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
