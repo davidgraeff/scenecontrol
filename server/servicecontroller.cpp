@@ -111,20 +111,7 @@ static struct libwebsocket_protocols protocols[] = {
 //////////////////// ServiceController ///////////////////////
 
 ServiceController::ServiceController () : m_plugincontroller ( 0 ), m_last_changes_seq_nr ( 0 ), m_websocket_context( 0 ) {
-}
-
-ServiceController::~ServiceController() {
-    delete m_manager;
-}
-
-bool ServiceController::startWatchingCouchDB() {
     servicecontroller = this; // remember this servicecontroller object in a global variable
-    
-    m_manager = new QNetworkAccessManager ( this );
-    connect ( m_manager, SIGNAL ( finished ( QNetworkReply* ) ),
-              this, SLOT ( networkReply ( QNetworkReply* ) ) );
-    requestDatabaseInfo();
-    
     m_websocket_context = libwebsocket_create_context(ROOM_LISTENPORT, 0, protocols,
 				libwebsocket_internal_extensions,
 				certificateFile("server.crt").toLatin1().constData(), certificateFile("server.key").toLatin1().constData(), -1, -1, 0);
@@ -137,7 +124,19 @@ bool ServiceController::startWatchingCouchDB() {
     if (n < 0) {
 	    fprintf(stderr, "Unable to fork service loop %d\n", n);
     }
-    
+
+}
+
+ServiceController::~ServiceController() {
+    delete m_manager;
+}
+
+bool ServiceController::startWatchingCouchDB() {
+    m_manager = new QNetworkAccessManager ( this );
+    connect ( m_manager, SIGNAL ( finished ( QNetworkReply* ) ),
+              this, SLOT ( networkReply ( QNetworkReply* ) ) );
+    requestDatabaseInfo();
+        
     return true;
 }
 
