@@ -268,7 +268,7 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
     Q_UNUSED ( event_id );
 
     // request actions
-    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_design/app/_view/actions?key=\"%1\"" ).arg ( destination_collectionuid ) );
+    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_design/roomcontrol/_view/actions?key=\"%1\"" ).arg ( destination_collectionuid ) );
 
     QNetworkReply* r = m_manager->get ( request );
     m_executecollection.insert ( r );
@@ -349,7 +349,7 @@ void ServiceController::unregister_listener ( const QString& unqiue_property_id,
         m_propertyid_to_plugins.remove ( unqiue_property_id );
 }
 void ServiceController::requestEvents() {
-    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_design/app/_view/events#events" ) );
+    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_design/roomcontrol/_view/events#events" ) );
     m_manager->get ( request );
 }
 
