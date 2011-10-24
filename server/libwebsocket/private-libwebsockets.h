@@ -68,11 +68,7 @@
 
 #include "libwebsockets.h"
 
-#if 0
-#define DEBUG
-#endif
-
-#ifdef DEBUG
+#ifdef DEBUGWEBSOCKET
 #ifdef WIN32
 static
 #else

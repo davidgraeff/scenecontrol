@@ -252,7 +252,7 @@ libwebsocket_close_and_free_session(struct libwebsocket_context *context,
 	if (old_state == WSI_STATE_ESTABLISHED &&
 					  reason != LWS_CLOSE_STATUS_NOSTATUS) {
 
-		fprintf(stderr, "sending close indication...\n");
+		debug("sending close indication...\n");
 
 		n = libwebsocket_write(wsi, &buf[LWS_SEND_BUFFER_PRE_PADDING],
 							    0, LWS_WRITE_CLOSE);
@@ -269,7 +269,7 @@ libwebsocket_close_and_free_session(struct libwebsocket_context *context,
 			libwebsocket_set_timeout(wsi,
 						  PENDING_TIMEOUT_CLOSE_ACK, 5);
 
-			fprintf(stderr, "sent close indication, awaiting ack\n");
+			debug("sent close indication, awaiting ack\n");
 
 			return;
 		}
@@ -279,7 +279,7 @@ libwebsocket_close_and_free_session(struct libwebsocket_context *context,
 
 just_kill_connection:
 
-	fprintf(stderr, "libwebsocket_close_and_free_session: just_kill_connection\n");
+	debug("libwebsocket_close_and_free_session: just_kill_connection\n");
 
 	/*
 	 * we won't be servicing or receiving anything further from this guy
@@ -316,11 +316,11 @@ just_kill_connection:
 				((old_state == WSI_STATE_ESTABLISHED) ||
 				 (old_state == WSI_STATE_RETURNED_CLOSE_ALREADY) ||
 				 (old_state == WSI_STATE_AWAITING_CLOSE_ACK))) {
-		fprintf(stderr, "calling back CLOSED\n");
+		debug("calling back CLOSED\n");
 		wsi->protocol->callback(context, wsi, LWS_CALLBACK_CLOSED,
 						      wsi->user_space, NULL, 0);
 	} else {
-		fprintf(stderr, "not calling back closed due to old_state=%d\n", old_state);
+		debug("not calling back closed due to old_state=%d\n", old_state);
 	}
 
 	/* deallocate any active extension contexts */
@@ -2601,19 +2601,19 @@ libwebsocket_create_context(int port, const char *interf,
 		context->use_ssl = ssl_cert_filepath != NULL &&
 					       ssl_private_key_filepath != NULL;
 		if (context->use_ssl)
-			fprintf(stderr, " Compiled with SSL support, "
+			debug(" Compiled with SSL support, "
 								  "using it\n");
 		else
-			fprintf(stderr, " Compiled with SSL support, "
+			debug(" Compiled with SSL support, "
 							      "not using it\n");
 
 #else
 		if (ssl_cert_filepath != NULL &&
 					     ssl_private_key_filepath != NULL) {
-			fprintf(stderr, " Not compiled for OpenSSl support!\n");
+			debug(" Not compiled for OpenSSl support!\n");
 			return NULL;
 		}
-		fprintf(stderr, " Compiled without SSL support, "
+		debug(" Compiled without SSL support, "
 						       "serving unencrypted\n");
 #endif
 	}
@@ -2796,7 +2796,7 @@ libwebsocket_create_context(int port, const char *interf,
 		insert_wsi(context, wsi);
 
 		listen(sockfd, 5);
-		fprintf(stderr, " Listening on port %d\n", port);
+		debug(" Listening on port %d\n", port);
 
 		/* list in the internal poll array */
 		
@@ -2827,7 +2827,7 @@ libwebsocket_create_context(int port, const char *interf,
 			protocols[context->count_protocols].callback;
 						   context->count_protocols++) {
 
-		fprintf(stderr, "  Protocol: %s\n", protocols[context->count_protocols].name);
+		debug("  Protocol: %s\n", protocols[context->count_protocols].name);
 
 		protocols[context->count_protocols].owning_server = context;
 		protocols[context->count_protocols].protocol_index =
@@ -2902,7 +2902,7 @@ libwebsocket_create_context(int port, const char *interf,
 	if (port)
 		m = LWS_EXT_CALLBACK_SERVER_CONTEXT_CONSTRUCT;
 	while (extensions->callback) {
-		fprintf(stderr, "  Extension: %s\n", extensions->name);
+		debug("  Extension: %s\n", extensions->name);
 		extensions->callback(context, extensions,
 							NULL, m, NULL, NULL, 0);
 		extensions++;

@@ -30,6 +30,7 @@
 
 #include <shared/abstractserver.h>
 #include <QSet>
+#include <QSocketNotifier>
 
 class libwebsocket;
 class libwebsocket_context;
@@ -54,10 +55,13 @@ public:
     void setPluginController ( PluginController* pc );
     bool startWatchingCouchDB();
     void websocketClientRequestAllProperties(struct libwebsocket *wsi);
+    void addWebsocketFD(int fd, short int direction);
+    void removeWebsocketFD(int fd);
 private:
     PluginController* m_plugincontroller;
     int m_last_changes_seq_nr;
     struct libwebsocket_context* m_websocket_context;
+    QMap<int, QSocketNotifier*> m_websocket_fds;
 	QNetworkAccessManager *m_manager;
 	QSet<QNetworkReply*> m_eventreplies;
 	QSet<QNetworkReply*> m_executecollection;
@@ -82,4 +86,5 @@ private:
 public slots:
     void replyEventsChange();
     void networkReply(QNetworkReply*);
+    void websocketactivity(int);
 };

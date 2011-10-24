@@ -20,6 +20,8 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QUrl>
+#include <QSocketNotifier>
+#include "libwebsocket/private-libwebsockets.h"
 
 #define __FUNCTION__ __FUNCTION__
 
@@ -46,6 +48,43 @@ static int callback_http(struct libwebsocket_context * context, struct libwebsoc
   Q_UNUSED(user);
   Q_UNUSED(in);
   Q_UNUSED(len);
+  
+	switch (reason) {
+	case LWS_CALLBACK_ADD_POLL_FD:
+// 		pollfds[count_pollfds].fd = (int)(long)user;
+// 		pollfds[count_pollfds].events = (int)len;
+// 		pollfds[count_pollfds++].revents = 0;
+		servicecontroller->addWebsocketFD((int)(long)user, (int)len);
+		break;
+
+	case LWS_CALLBACK_DEL_POLL_FD:
+	  servicecontroller->removeWebsocketFD((int)(long)user);
+// 		for (n = 0; n < count_pollfds; n++)
+// 			if (pollfds[n].fd == (int)(long)user)
+// 				while (n < count_pollfds) {
+// 					pollfds[n] = pollfds[n + 1];
+// 					n++;
+// 				}
+// 		count_pollfds--;
+
+		break;
+
+	case LWS_CALLBACK_SET_MODE_POLL_FD:
+// 		for (n = 0; n < count_pollfds; n++)
+// 			if (pollfds[n].fd == (int)(long)user)
+// 				pollfds[n].events |= (int)(long)len;
+		break;
+
+	case LWS_CALLBACK_CLEAR_MODE_POLL_FD:
+// 		for (n = 0; n < count_pollfds; n++)
+// 			if (pollfds[n].fd == (int)(long)user)
+// 				pollfds[n].events &= ~(int)(long)len;
+		break;
+
+	default:
+		break;
+	}
+
 	return 0;
 }
 
@@ -71,7 +110,6 @@ static int callback_roomcontrol_protocol(struct libwebsocket_context * context,
 // 		}
 		break;
 	case LWS_CALLBACK_RECEIVE:
-		qDebug() << "websocket rx" << len;
 		if (len < 3)
 			break;
 		if (strcmp((char*)in, "all\n") == 0)
@@ -115,17 +153,18 @@ ServiceController::ServiceController () : m_plugincontroller ( 0 ), m_last_chang
     
     if (m_websocket_context == 0) {
 	    qWarning() << "libwebsocket init failed";
+    } else {
+      for (int i=0; i< m_websocket_context->fds_count; ++i) {
+	    addWebsocketFD(m_websocket_context->fds[i].fd, m_websocket_context->fds[i].events);
+      }
+      qDebug() << "SSL Websocket ready on port" << ROOM_LISTENPORT;
     }
-    
-    int n = libwebsockets_fork_service_loop(m_websocket_context);
-    if (n < 0) {
-	    fprintf(stderr, "Unable to fork service loop %d\n", n);
-    }
-
 }
 
 ServiceController::~ServiceController() {
     delete m_manager;
+    libwebsocket_context_destroy(m_websocket_context);
+    qDeleteAll(m_websocket_fds);
 }
 
 bool ServiceController::startWatchingCouchDB() {
@@ -139,7 +178,7 @@ bool ServiceController::startWatchingCouchDB() {
 
 void ServiceController::networkReply ( QNetworkReply* r ) {
     if ( r->error() != QNetworkReply::NoError ) {
-        qDebug() << "Response error:" << r->url();
+        qWarning() << "Response error:" << r->url();
         r->deleteLater();
         return;
     }
@@ -216,7 +255,7 @@ void ServiceController::replyEventsChange() {
     }
     if ( r->error() != QNetworkReply::NoError) {
         r->deleteLater();
-        qDebug() << "Notification connection lost!";
+        qWarning() << "Notification connection lost!";
     }
 }
 
@@ -233,9 +272,6 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
 
     QNetworkReply* r = m_manager->get ( request );
     m_executecollection.insert ( r );
-
-// 	qDebug() << "event triggered" << event_id << r->url();
-
 }
 
 void ServiceController::execute_action ( const QVariantMap& data, const char* pluginid ) {
@@ -253,7 +289,6 @@ void ServiceController::execute_action ( const QVariantMap& data, const char* pl
 
 void ServiceController::property_changed ( const QVariantMap& data, const QString& sessionid, const char* pluginid ) {
     Q_UNUSED ( pluginid );
-    qDebug() << "property changed" << data;
 
     QList<QString> plugins = m_propertyid_to_plugins.value ( ServiceID::id ( data ) ).toList();
     for ( int i=0;i<plugins.size();++i ) {
@@ -286,9 +321,7 @@ void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
       unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + jsondata.size()];
       unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
       memcpy(p,jsondata.constData(),jsondata.size());
-      qDebug() << "memcpy succ" << p << jsondata.size();
       int n = libwebsocket_write(wsi, p, jsondata.size(), LWS_WRITE_TEXT);
-      qDebug() << "libwebsocket_write succ" << p << jsondata.size();
       if (n < 0) {
 	      qWarning() << "ERROR writing to socket: websocketClientRequestAllProperties";
       }
@@ -351,4 +384,21 @@ void ServiceController::registerEvent ( const QVariantMap& data ) {
             m_registeredevents.insert ( ServiceID::id ( data ),QPair<QVariantMap,AbstractPlugin_services*> ( data, executeplugin ) );
         }
     }
+}
+
+void ServiceController::websocketactivity(int) {
+  libwebsocket_service(m_websocket_context,0);
+}
+void ServiceController::addWebsocketFD(int fd, short int direction) {
+      if (m_websocket_fds.contains(fd))
+	return;
+      QSocketNotifier::Type _direction = ((direction == POLLOUT) ? QSocketNotifier::Write : QSocketNotifier::Read);
+      QSocketNotifier* sn = new QSocketNotifier(fd, _direction, this);
+      connect(sn, SIGNAL(activated(int)), SLOT(websocketactivity(int)));
+      sn->setEnabled(true);
+      m_websocket_fds.insert(fd, sn);
+}
+
+void ServiceController::removeWebsocketFD(int fd) {
+  delete m_websocket_fds.take(fd);
 }
