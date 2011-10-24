@@ -273,6 +273,7 @@ void ServiceController::property_changed ( const QVariantMap& data, const QStrin
 }
 
 void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
+  Q_ASSERT(m_plugincontroller);
     QByteArray jsondata;
     QMap<QString,PluginInfo*>::iterator i = m_plugincontroller->getPluginIterator();
     while (AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin(i)) {
