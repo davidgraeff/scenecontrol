@@ -43,7 +43,7 @@ public:
     }
     ~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
 };
-
+#undef PLUGIN_ID
 #define PLUGIN_ID "PluginController"
 class PluginController: public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
@@ -76,3 +76,4 @@ private:
     QMap<QString,PluginInfo*> m_plugins;
     int m_index;
 };
+#undef PLUGIN_ID

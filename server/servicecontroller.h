@@ -29,6 +29,8 @@
 #endif
 
 #include <shared/abstractserver.h>
+
+#undef PLUGIN_ID
 #include <QSet>
 #include <QSocketNotifier>
 
