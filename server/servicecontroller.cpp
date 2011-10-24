@@ -354,7 +354,7 @@ void ServiceController::requestEvents() {
 }
 
 void ServiceController::startChangeLister() {
-    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_changes?feed=continuous&since=%1&filter=app/events&heartbeat=5000#changes" ).arg ( m_last_changes_seq_nr ) );
+    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_changes?feed=continuous&since=%1&filter=roomcontrol/events&heartbeat=5000#changes" ).arg ( m_last_changes_seq_nr ) );
     request.setRawHeader ( "Connection","keep-alive" );
     QNetworkReply *r = m_manager->get ( request );
     connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange() ) );
