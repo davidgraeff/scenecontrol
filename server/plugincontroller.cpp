@@ -9,11 +9,18 @@
 #include <qjson/parser.h>
 #include "paths.h"
 #include "servicecontroller.h"
+#include <shared/pluginservicehelper.h>
 
 #define __FUNCTION__ __FUNCTION__
 
 PluginController::PluginController (ServiceController* servicecontroller) {
     servicecontroller->setPluginController(this);
+
+    // add this class to plugins
+    {
+        PluginInfo* plugininfo = new PluginInfo(this);
+        m_plugins.insert(pluginid(), plugininfo);
+    }
 
     const QDir plugindir = pluginDir();
 
@@ -37,9 +44,9 @@ PluginController::PluginController (ServiceController* servicecontroller) {
             continue;
         }
 
-        const QString pluginid = plugin->pluginid();
+        const QString plugin_id = plugin->pluginid();
         PluginInfo* plugininfo = new PluginInfo(plugin);
-        m_plugins.insert ( pluginid, plugininfo );
+        m_plugins.insert ( plugin_id, plugininfo );
 
         plugin->connectToServer(servicecontroller);
     }
@@ -74,7 +81,7 @@ AbstractPlugin_settings* PluginController::nextSettingsPlugin(QMap<QString,Plugi
         AbstractPlugin_settings* s = dynamic_cast<AbstractPlugin_settings*>((*(index++))->plugin);
         if (s) return s;
     }
-    return 0;	
+    return 0;
 }
 
 AbstractPlugin_services* PluginController::nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index) {
@@ -97,4 +104,18 @@ AbstractPlugin* PluginController::getPlugin(const QString& pluginid) {
     PluginInfo* pinfo = m_plugins.value(pluginid);
     if (!pinfo) return 0;
     return pinfo->plugin;
+}
+
+QList< QVariantMap > PluginController::properties(const QString& sessionid) {
+    Q_UNUSED(sessionid);
+    QList<QVariantMap> l;
+    QStringList pluginlist;
+    QMap<QString,PluginInfo*>::iterator i = m_plugins.begin();
+    for (;i!=m_plugins.end();++i) {
+        pluginlist += (*i)->plugin->pluginid();
+    }
+    ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "plugins");
+    s.setData("plugins", pluginlist);
+    l.append(s.getData());
+    return l;
 }

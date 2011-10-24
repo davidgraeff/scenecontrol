@@ -44,9 +44,11 @@ public:
     ~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
 };
 
-class PluginController: public QObject
+#define PLUGIN_ID "PluginController"
+class PluginController: public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
+    PLUGIN_MACRO
 public:
     PluginController (ServiceController* servicecontroller);
     virtual ~PluginController();
@@ -61,6 +63,15 @@ public:
     AbstractPlugin_services* nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index);
 	AbstractPlugin_sessions* nextSessionPlugin(QMap<QString,PluginInfo*>::iterator& index);
 
+    // satisfy interfaces
+    virtual void clear(){}
+    virtual void initialize(){}
+    virtual bool condition(const QVariantMap&, const QString&){return false;}
+    virtual void execute(const QVariantMap&, const QString&){}
+    virtual void register_event(const QVariantMap&, const QString&){}
+    virtual void unregister_event(const QVariantMap&, const QString&){}
+    // Properties
+    virtual QList< QVariantMap > properties(const QString& sessionid);
 private:
     QMap<QString,PluginInfo*> m_plugins;
     int m_index;
