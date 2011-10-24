@@ -60,9 +60,6 @@ static int callback_roomcontrol_protocol(struct libwebsocket_context * context,
 	switch (reason) {
 	case LWS_CALLBACK_BROADCAST:
 		n = libwebsocket_write(wsi, &((unsigned char*)in)[LWS_SEND_BUFFER_PRE_PADDING], len, LWS_WRITE_TEXT);
-		qWarning()<<"callback_roomcontrol_protocol1";
-		free(in);
-		qWarning()<<"callback_roomcontrol_protocol2";
 		if (n < 0) {
 			fprintf(stderr, "ERROR writing to socket");
 			return 1;
@@ -269,11 +266,8 @@ void ServiceController::property_changed ( const QVariantMap& data, const QStrin
     QByteArray jsondata = QJson::Serializer().serialize(data);
     const int len = jsondata.size();
     unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + len];
-    qDebug() << "property_changed malloc ok" << len << buf;
     memcpy(buf + LWS_SEND_BUFFER_PRE_PADDING,jsondata.constData(),len);
-    qDebug() << "property_changed memcpy ok" << len << buf << protocols[PROTOCOL_ROOMCONTROL].owning_server << protocols[PROTOCOL_ROOMCONTROL].per_session_data_size;
     libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
-    qDebug() << "property_changed br ok" << len << buf;
 }
 
 void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
