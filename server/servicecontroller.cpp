@@ -12,7 +12,9 @@
 #include <QDebug>
 #include <qjson/serializer.h>
 #include <qjson/parser.h>
+#include "libwebsocket/libwebsockets.h"
 #include "paths.h"
+#include "config.h"
 #include "plugincontroller.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -21,7 +23,90 @@
 
 #define __FUNCTION__ __FUNCTION__
 
-ServiceController::ServiceController () : m_plugincontroller ( 0 ), m_last_changes_seq_nr ( 0 ) {
+//////////////////// libwebsocket ///////////////////////
+
+static ServiceController* servicecontroller;
+
+enum libwebsocket_protocols_enum {
+	/* always first */
+	PROTOCOL_HTTP = 0,
+
+	PROTOCOL_ROOMCONTROL,
+
+	/* always last */
+	PROTOCOL_COUNT
+};
+
+
+static int callback_http(struct libwebsocket_context * context, struct libwebsocket *wsi, enum libwebsocket_callback_reasons reason, void *user, void *in, size_t len)
+{
+  Q_UNUSED(context);
+  Q_UNUSED(wsi);
+  Q_UNUSED(reason);
+  Q_UNUSED(user);
+  Q_UNUSED(in);
+  Q_UNUSED(len);
+	return 0;
+}
+
+
+static int callback_roomcontrol_protocol(struct libwebsocket_context * context,
+			struct libwebsocket *wsi, enum libwebsocket_callback_reasons reason, void *user, void *in, size_t len)
+{
+  Q_UNUSED(context);
+  Q_UNUSED(wsi);
+  int n;
+	switch (reason) {
+	case LWS_CALLBACK_BROADCAST:
+		n = libwebsocket_write(wsi, (unsigned char*)user, len, LWS_WRITE_TEXT);
+		if (n < 0) {
+			fprintf(stderr, "ERROR writing to socket");
+			return 1;
+		}
+// 		if (close_testing && pss->number == 50) {
+// 			fprintf(stderr, "close tesing limit, closing\n");
+// 			libwebsocket_close_and_free_session(context, wsi,
+// 						       LWS_CLOSE_STATUS_NORMAL);
+// 		}
+		break;
+	case LWS_CALLBACK_RECEIVE:
+		qDebug() << "websocket rx" << len;
+		if (len < 3)
+			break;
+		if (strcmp((char*)in, "all\n") == 0)
+			servicecontroller->websocketClientRequestAllProperties(wsi);
+		break;
+	default:
+		break;
+	}
+	
+	return 0;
+}
+
+static struct libwebsocket_protocols protocols[] = {
+	/* first protocol must always be HTTP handler */
+
+	{
+		"http-only",		/* name */
+		callback_http,		/* callback */
+		0,			/* per_session_data_size */
+		0,0,0,0
+	},
+	{
+		"roomcontrol-protocol",
+		callback_roomcontrol_protocol,
+		0, //aditional data: pointer to ServiceController
+		0,0,0,0
+	},
+	{
+		NULL, NULL, 0,		/* End of list */
+		0,0,0,0
+	}
+};
+
+//////////////////// ServiceController ///////////////////////
+
+ServiceController::ServiceController () : m_plugincontroller ( 0 ), m_last_changes_seq_nr ( 0 ), m_websocket_context( 0 ) {
 }
 
 ServiceController::~ServiceController() {
@@ -33,6 +118,23 @@ bool ServiceController::startWatchingCouchDB() {
     connect ( m_manager, SIGNAL ( finished ( QNetworkReply* ) ),
               this, SLOT ( networkReply ( QNetworkReply* ) ) );
     requestDatabaseInfo();
+    
+    servicecontroller = this; // remember this servicecontroller object in a global variable
+    
+    m_websocket_context = libwebsocket_create_context(ROOM_LISTENPORT, 0, protocols,
+				libwebsocket_internal_extensions,
+				certificateFile("server.crt").toLatin1().constData(), certificateFile("server.key").toLatin1().constData(), -1, -1, 0);
+    
+    if (m_websocket_context == 0) {
+	    qWarning() << "libwebsocket init failed";
+    }
+    
+    int n = libwebsockets_fork_service_loop(m_websocket_context);
+    if (n < 0) {
+	    fprintf(stderr, "Unable to fork service loop %d\n", n);
+	    return 1;
+    }
+    
     return true;
 }
 
@@ -48,7 +150,7 @@ void ServiceController::networkReply ( QNetworkReply* r ) {
         if ( line.isEmpty() ) return;
         bool ok;
         QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
-        if (ok) registerEvent ( data );
+        if ( ok ) registerEvent ( data );
     } else if ( m_executecollection.remove ( r ) ) {
         bool ok;
         QVariantMap data = QJson::Parser().parse ( r->readAll(), &ok ).toMap();
@@ -79,6 +181,8 @@ void ServiceController::networkReply ( QNetworkReply* r ) {
             }
         }
         startChangeLister();
+    } else if ( r->url().fragment() ==QLatin1String ( "changes" ) ) {
+        startChangeLister();
     } else
         qDebug() << "received" << m_last_changes_seq_nr << r->url();
 
@@ -97,21 +201,21 @@ void ServiceController::replyEventsChange() {
             if ( seq > m_last_changes_seq_nr )
                 m_last_changes_seq_nr = seq;
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
-				QString id = ServiceID::idChangeSeq ( data );
+                QString id = ServiceID::idChangeSeq ( data );
                 QPair<QVariantMap,AbstractPlugin_services*> d = m_registeredevents.value ( id );
                 AbstractPlugin_services* executeplugin = d.second;
-                qDebug() << "deleted" << id << executeplugin;
+                qDebug() << "unregister event" << id << executeplugin;
                 if ( executeplugin )
                     executeplugin->unregister_event ( d.first, ServiceID::collectionid ( d.first ) );
-				m_registeredevents.remove(id);
+                m_registeredevents.remove ( id );
             } else {
-                QNetworkRequest request ( QUrl ( QString ( QLatin1String ( "http://localhost:5984/roomcontrol/%1" ) ).arg ( data[QLatin1String ( "id" ) ].toString() ) ) );
+                QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/%1" ).arg ( data[QLatin1String ( "id" ) ].toString() ) );
                 m_eventreplies.insert ( m_manager->get ( request ) );
             }
         }
 
     }
-    if ( r->error() != QNetworkReply::NoError || !r->isRunning() ) {
+    if ( r->error() != QNetworkReply::NoError) {
         r->deleteLater();
         qDebug() << "Notification connection lost!";
     }
@@ -126,7 +230,7 @@ void ServiceController::event_triggered ( const QString& event_id, const QString
     Q_UNUSED ( event_id );
 
     // request actions
-    QNetworkRequest request ( QUrl ( QString ( QLatin1String ( "http://localhost:5984/roomcontrol/_design/app/_view/actions?key=\"%1\"" ) ).arg ( destination_collectionuid ) ) );
+    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_design/app/_view/actions?key=\"%1\"" ).arg ( destination_collectionuid ) );
 
     QNetworkReply* r = m_manager->get ( request );
     m_executecollection.insert ( r );
@@ -151,11 +255,37 @@ void ServiceController::execute_action ( const QVariantMap& data, const char* pl
 void ServiceController::property_changed ( const QVariantMap& data, const QString& sessionid, const char* pluginid ) {
     Q_UNUSED ( pluginid );
     qDebug() << "property changed" << data;
-    //emit dataSync ( data, sessionid );
+
     QList<QString> plugins = m_propertyid_to_plugins.value ( ServiceID::id ( data ) ).toList();
     for ( int i=0;i<plugins.size();++i ) {
         AbstractPlugin_otherproperties* plugin = dynamic_cast<AbstractPlugin_otherproperties*> ( m_plugincontroller->getPlugin ( plugins[i] ) );
         if ( plugin ) plugin->otherPropertyChanged ( data, sessionid );
+    }
+    
+    //emit dataSync ( data, sessionid );
+    // send data over websocket. First convert to json string then copy to a c buffer and send to all connected websocket clients with the right protocol
+    QByteArray jsondata = QJson::Serializer().serialize(data);
+    unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + jsondata.size()];
+    unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
+    memcpy(p,jsondata.constData(),jsondata.size());
+    libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], p, jsondata.size());
+}
+
+void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
+    QByteArray jsondata;
+    QMap<QString,PluginInfo*>::iterator i = m_plugincontroller->getPluginIterator();
+    while (AbstractPlugin_services* plugin = m_plugincontroller->nextServicePlugin(i)) {
+       QList<QVariantMap> properties = plugin->properties ( QString() );
+       for (int i=0;i<properties.size();++i)
+	jsondata += QJson::Serializer().serialize(properties[i]) + "\n";
+    }
+    
+    unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + jsondata.size()];
+    unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
+    memcpy(p,jsondata.constData(),jsondata.size());
+    int n = libwebsocket_write(wsi, p, jsondata.size(), LWS_WRITE_TEXT);
+    if (n < 0) {
+	    qWarning() << "ERROR writing to socket: websocketClientRequestAllProperties";
     }
 }
 
@@ -180,19 +310,19 @@ void ServiceController::unregister_listener ( const QString& unqiue_property_id,
         m_propertyid_to_plugins.remove ( unqiue_property_id );
 }
 void ServiceController::requestEvents() {
-    QNetworkRequest request ( QUrl ( QLatin1String ( "http://localhost:5984/roomcontrol/_design/app/_view/events#events" ) ) );
+    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_design/app/_view/events#events" ) );
     m_manager->get ( request );
 }
 
 void ServiceController::startChangeLister() {
-    QNetworkRequest request ( QUrl ( QString ( QLatin1String ( "http://localhost:5984/roomcontrol/_changes?feed=continuous&since=%1&filter=app/events&heartbeat=5000" ) ).arg ( m_last_changes_seq_nr ) ) );
+    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol/_changes?feed=continuous&since=%1&filter=app/events&heartbeat=5000#changes" ).arg ( m_last_changes_seq_nr ) );
     request.setRawHeader ( "Connection","keep-alive" );
     QNetworkReply *r = m_manager->get ( request );
     connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange() ) );
 }
 
 void ServiceController::requestDatabaseInfo() {
-    QNetworkRequest request ( QUrl ( QLatin1String ( "http://localhost:5984/roomcontrol#databaseinfo" ) ) );
+    QNetworkRequest request ( couchdbAbsoluteUrl("roomcontrol#databaseinfo" ) );
     m_manager->get ( request );
 }
 void ServiceController::registerEvent ( const QVariantMap& data ) {

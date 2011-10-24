@@ -45,6 +45,7 @@ Working Directory=file:///home/david/Entwicklung/build/roomcontrol/server/
 isExecutable=false
 
 [MakeBuilder]
+Default Make Environment Profile=0
 Install As Root=true
 Number Of Jobs=4
 Su Command=1

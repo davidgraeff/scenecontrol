@@ -4,10 +4,10 @@
 
 // Filepaths
 QString certificateFile(const QString& file);
+QString certificateFile(const char* file);
 QString wwwFile(const QString& file);
 QString xmlFile(const QString& pluginid);
 
 // Dirs
 QDir pluginDir();
-QDir serviceDir();
-QDir serviceBackupDir();
+QString couchdbAbsoluteUrl(const char* relativeUrl);

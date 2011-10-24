@@ -31,6 +31,8 @@
 #include <shared/abstractserver.h>
 #include <QSet>
 
+class libwebsocket;
+class libwebsocket_context;
 class AbstractPlugin_services;
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -51,9 +53,11 @@ public:
     virtual ~ServiceController();
     void setPluginController ( PluginController* pc );
     bool startWatchingCouchDB();
+    void websocketClientRequestAllProperties(struct libwebsocket *wsi);
 private:
     PluginController* m_plugincontroller;
     int m_last_changes_seq_nr;
+    struct libwebsocket_context* m_websocket_context;
 	QNetworkAccessManager *m_manager;
 	QSet<QNetworkReply*> m_eventreplies;
 	QSet<QNetworkReply*> m_executecollection;

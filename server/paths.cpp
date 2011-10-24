@@ -23,6 +23,10 @@ QString certificateFile(const QString& file) {
 	return dir.absoluteFilePath ( file );
 }
 
+QString certificateFile(const char* file) {
+  return certificateFile(QString::fromUtf8(file));
+}
+
 QString wwwFile(const QString& file) {
 	QSettings s(QLatin1String(ABOUT_ORGANIZATIONID), QLatin1String("main"));
 	QDir dir(s.value(QLatin1String("path"), defaultpath).toString());
@@ -38,20 +42,7 @@ QString xmlFile(const QString& pluginid) {
 	return dir.absoluteFilePath ( QLatin1String("plugin.xml") );
 }
 
-QDir serviceDir() {
-    QDir dir = QDir::home();
-	dir.mkdir(QLatin1String("roomcontrol"));
-    dir.cd(QLatin1String("roomcontrol"));
-	dir.mkdir(QLatin1String("services"));
-    dir.cd(QLatin1String("services"));
-    return dir;
+QString couchdbAbsoluteUrl(const char* relativeUrl) {
+    return QLatin1String(ROOM_COUCHDB) + QString::fromUtf8 ( relativeUrl );
 }
 
-QDir serviceBackupDir() {
-    QDir dir = QDir::home();
-	dir.mkdir(QLatin1String("roomcontrol"));
-    dir.cd(QLatin1String("roomcontrol"));
-	dir.mkdir(QLatin1String("backups"));
-    dir.cd(QLatin1String("backups"));
-    return dir;
-}
