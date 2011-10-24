@@ -55,12 +55,13 @@ static int callback_roomcontrol_protocol(struct libwebsocket_context * context,
 {
   Q_UNUSED(context);
   Q_UNUSED(wsi);
+  Q_UNUSED(user);
   int n;
 	switch (reason) {
 	case LWS_CALLBACK_BROADCAST:
-		n = libwebsocket_write(wsi, &((unsigned char*)user)[LWS_SEND_BUFFER_PRE_PADDING], len, LWS_WRITE_TEXT);
+		n = libwebsocket_write(wsi, &((unsigned char*)in)[LWS_SEND_BUFFER_PRE_PADDING], len, LWS_WRITE_TEXT);
 		qWarning()<<"callback_roomcontrol_protocol1";
-		free(user);
+		free(in);
 		qWarning()<<"callback_roomcontrol_protocol2";
 		if (n < 0) {
 			fprintf(stderr, "ERROR writing to socket");
@@ -98,7 +99,7 @@ static struct libwebsocket_protocols protocols[] = {
 	{
 		"roomcontrol-protocol",
 		callback_roomcontrol_protocol,
-		0, //aditional data: pointer to ServiceController
+		sizeof(void*), //aditional data: pointer to ServiceController
 		0,0,0,0
 	},
 	{
@@ -117,12 +118,12 @@ ServiceController::~ServiceController() {
 }
 
 bool ServiceController::startWatchingCouchDB() {
+    servicecontroller = this; // remember this servicecontroller object in a global variable
+    
     m_manager = new QNetworkAccessManager ( this );
     connect ( m_manager, SIGNAL ( finished ( QNetworkReply* ) ),
               this, SLOT ( networkReply ( QNetworkReply* ) ) );
     requestDatabaseInfo();
-    
-    servicecontroller = this; // remember this servicecontroller object in a global variable
     
     m_websocket_context = libwebsocket_create_context(ROOM_LISTENPORT, 0, protocols,
 				libwebsocket_internal_extensions,
@@ -135,7 +136,6 @@ bool ServiceController::startWatchingCouchDB() {
     int n = libwebsockets_fork_service_loop(m_websocket_context);
     if (n < 0) {
 	    fprintf(stderr, "Unable to fork service loop %d\n", n);
-	    return 1;
     }
     
     return true;
@@ -269,10 +269,10 @@ void ServiceController::property_changed ( const QVariantMap& data, const QStrin
     // send data over websocket. First convert to json string then copy to a c buffer and send to all connected websocket clients with the right protocol
     QByteArray jsondata = QJson::Serializer().serialize(data);
     const int len = jsondata.size();
-    unsigned char* buf = (unsigned char*)malloc(LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + len);
+    unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + len];
     qDebug() << "property_changed malloc ok" << len << buf;
     memcpy(buf + LWS_SEND_BUFFER_PRE_PADDING,jsondata.constData(),len);
-    qDebug() << "property_changed memcpy ok" << len << buf;
+    qDebug() << "property_changed memcpy ok" << len << buf << protocols[PROTOCOL_ROOMCONTROL].owning_server << protocols[PROTOCOL_ROOMCONTROL].per_session_data_size;
     libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
     qDebug() << "property_changed br ok" << len << buf;
 }
