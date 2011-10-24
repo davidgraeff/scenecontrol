@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
     // service controller (implements AbstractServer)
     ServiceController* services = new ServiceController();
     PluginController* plugins = new PluginController(services);
-
-	plugins->initializePlugins();
+    services->setPluginController(plugins);
+    plugins->initializePlugins();
     services->startWatchingCouchDB();
 
     int exitcode = 0;

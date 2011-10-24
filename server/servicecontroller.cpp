@@ -285,7 +285,9 @@ void ServiceController::websocketClientRequestAllProperties(libwebsocket* wsi) {
       unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + jsondata.size()];
       unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
       memcpy(p,jsondata.constData(),jsondata.size());
+      qDebug() << "memcpy succ" << p << jsondata.size();
       int n = libwebsocket_write(wsi, p, jsondata.size(), LWS_WRITE_TEXT);
+      qDebug() << "libwebsocket_write succ" << p << jsondata.size();
       if (n < 0) {
 	      qWarning() << "ERROR writing to socket: websocketClientRequestAllProperties";
       }
