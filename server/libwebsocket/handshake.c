@@ -604,9 +604,9 @@ libwebsocket_read(struct libwebsocket_context *context, struct libwebsocket *wsi
 		if (wsi->parser_state != WSI_PARSING_COMPLETE)
 			break;
 
-		fprintf(stderr, "seem to be serving, mode is %d\n", wsi->mode);
+		debug("seem to be serving, mode is %d\n", wsi->mode);
 
-		fprintf(stderr, "libwebsocket_parse sees parsing complete\n");
+		fdebug("libwebsocket_parse sees parsing complete\n");
 
 		/* is this websocket protocol or normal http 1.0? */
 
@@ -713,7 +713,7 @@ libwebsocket_read(struct libwebsocket_context *context, struct libwebsocket *wsi
 			goto bail;
 		}
 
-		fprintf(stderr, "accepted v%02d connection\n",
+		debug("accepted v%02d connection\n",
 						       wsi->ietf_spec_revision);
 
 		break;
