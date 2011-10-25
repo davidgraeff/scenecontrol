@@ -567,7 +567,7 @@ libwebsocket_create_context(int port, const char * interf,
 		  struct libwebsocket_extension *extensions,
 		  const char *ssl_cert_filepath,
 		  const char *ssl_private_key_filepath, int gid, int uid,
-		  unsigned int options);
+		  unsigned int options, void* cpp_class);
 
 LWS_EXTERN void
 libwebsocket_context_destroy(struct libwebsocket_context *context);
@@ -697,6 +697,8 @@ lws_b64_decode_string(const char *in, char *out, int out_size);
 
 LWS_EXTERN struct libwebsocket_extension libwebsocket_internal_extensions[];
 
+struct libwebsocket *
+wsi_from_fd(struct libwebsocket_context *context, int fd);
 #ifdef __cplusplus
 }
 #endif

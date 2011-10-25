@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+	<head><title>Eigenschaftsmonitor</title>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
+		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<script src="/_utils/script/jquery.couch.js"></script>
+		<script src="/roomcontrol/html_server/websocket.js"></script>
+	</head>
+	<body>
+
+		<div data-role="page">
+
+			<div data-role="header">
+				<a href="index.html" data-role="button" data-iconpos="notext" data-direction="reverse" data-theme="a" data-icon="arrow-l" >Zurück</a><h1>Eigenschaftsmonitor</h1>
+			</div>
+			<div data-role="content">
+				<table>
+					<tr>
+						<td align="center"><input type="button" value="Request all properties" onclick="requestall();" /></td>
+						<td align="center"><input type="button" value="Reconnect" onclick="reconnect();" /></td>
+						<td align="center"><div id="status">Not initialized</div></td>
+					</tr>
+				</table>
+
+				<h2>Eigenschaften (live)</h2>
+				<ul id="properties" data-role="listview" ></ul>
+				<script>
+				$(function() {
+					$(propertiesWebsocketInstance).bind('onopen', function() {
+						isOpen();
+					});
+					$(propertiesWebsocketInstance).bind('onproperty', function(event, data) {
+						var newdiv = document.createElement('li');
+						newdiv.innerHTML = data;
+						var someParentObject = document.getElementById("properties");
+						someParentObject.insertBefore(newdiv,someParentObject.firstChild);
+						$(someParentObject).listview('refresh');
+					});
+					$(propertiesWebsocketInstance).bind('onclose', function() {
+						document.getElementById("status").style.backgroundColor = "#ff4040";
+						document.getElementById("status").textContent = " websocket connection CLOSED ";
+					});
+					
+					function isOpen() {
+						document.getElementById("status").style.backgroundColor = "#40ff40";
+						document.getElementById("status").textContent = " websocket connection opened " + propertiesWebsocketInstance.url;
+						requestall();
+					}
+					if (propertiesWebsocketInstance.connected)
+						isOpen();
+				});
+				function requestall() {
+					document.getElementById("properties").textContent = "";
+					propertiesWebsocketInstance.requestall();
+				}
+
+				function reconnect() {
+					if (window.location.hostname == "") {
+					document.getElementById("status").textContent = "No hostname detected!";
+					return;
+					}
+					propertiesWebsocketInstance.reconnect();
+				}
+				</script>
+			</div>
+		</div>
+		
+	</body>
+</html>
+

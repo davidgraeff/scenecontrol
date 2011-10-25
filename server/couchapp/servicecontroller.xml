@@ -13,12 +13,6 @@
 		<enum id="state" n="3" /><!-- resync client, restart, stop server -->
 	</execute>
 	
-	<!-- Generate and send unique id for new services. Security restrictions may forbid generating new ids for a client -->
-	<execute id="generateUniqueID" />
-	<property id="generatedUniqueID">
-		<string id="uid" />
-	</property>
-	
 	<execute id="requestPluginInfos" />
 	<execute id="requestServices" />
 	<execute id="requestProperties" />

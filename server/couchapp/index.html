@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head><title>Roomcontrol</title>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
+		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<script src="/_utils/script/jquery.couch.js"></script>
+		<script src="/roomcontrol/html_server/websocket.js"></script>
+	</head>
+	<body>
+
+		<div data-role="page">
+
+			<div data-role="header">
+				<h1>Roomcontrol</h1>
+			</div>
+
+			<div data-role="content">	
+			<ul id="databases" data-role="listview" ></ul>
+				<script>
+					var ajaxUrl = '/roomcontrol/_design/roomcontrol/_view/html';
+					$.getJSON(ajaxUrl, null, function(data) {
+						if (!data.rows) {
+							return;
+						}
+						var data = data.rows;
+						for (index in data) {
+							if (data[index].value === null)
+								continue;
+							$("#databases").append('<li><a href="/roomcontrol/'+data[index].key+'">'+data[index].value+'</a></li>');
+						}
+						$('#databases').listview('refresh');
+					});
+				</script>
+			</div>
+		</div>
+		
+	</body>
+</html>

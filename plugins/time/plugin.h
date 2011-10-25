@@ -40,12 +40,12 @@ public:
 
     virtual void initialize();
 	virtual void clear();
-    virtual QList<QVariantMap> properties(const QString& sessionid);
+    virtual QList<QVariantMap> properties(int sessionid);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
-    virtual void execute(const QVariantMap& data, const QString& sessionid);
-    virtual bool condition(const QVariantMap& data, const QString& sessionid) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
-	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
+    virtual void execute(const QVariantMap& data, int sessionid);
+    virtual bool condition(const QVariantMap& data, int sessionid) ;
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
 private:
 	void calculate_next_events();
 	typedef QPair<QString, QString> SC_Uid;

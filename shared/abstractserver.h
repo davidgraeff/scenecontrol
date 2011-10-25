@@ -31,30 +31,30 @@ public:
     /**
      * Plugin event triggered
      * \param event_id unqiue id (guid) of the triggered event
-	 * \param destination_collectionuid only send this event trigger to the collection with this uid. Event trigger will be discarded if empty!
+     * \param destination_collectionuid only send this event trigger to the collection with this uid. Event trigger will be discarded if empty!
      */
-    virtual void event_triggered(const QString& event_id, const QString& destination_collectionuid, const char* pluginid = PLUGIN_ID) = 0;
+    virtual void pluginEventTriggered(const QString& event_id, const QString& destination_collectionuid, const char* pluginid = PLUGIN_ID) = 0;
     /**
      * A plugin state/property has changed
      * \param data values of the property with special entry id (unqiue identifier within current plugin properties)
-	 * \param sessionid if not empty, the server will propagate this property change only to the client with this sessionid
+     * \param sessionid if not empty, the server will propagate this property change only to the client with this sessionid
      */
-    virtual void property_changed(const QVariantMap& data, const QString& sessionid = QString(), const char* pluginid = PLUGIN_ID) = 0;
+    virtual void pluginPropertyChanged(const QVariantMap& data, int sessionid = -1, const char* pluginid = PLUGIN_ID) = 0;
     /**
      * Register a listener for a property. The server will send all changes of thsi property back to the plugin via otherPropertyChanged
      */
-    virtual void register_listener(const QString& unqiue_property_id, const char* pluginid = PLUGIN_ID) = 0;
+    virtual void pluginRegisterPropertyChangeListener(const QString& unqiue_property_id, const char* pluginid = PLUGIN_ID) = 0;
     /**
-     * Unregister a listener. No more changes are propagated for this specific property. 
+     * Unregister a listener. No more changes are propagated for this specific property.
      */
-    virtual void unregister_listener(const QString& unqiue_property_id, const char* pluginid = PLUGIN_ID) = 0;
+    virtual void pluginUnregisterPropertyChangeListener(const QString& unqiue_property_id, const char* pluginid = PLUGIN_ID) = 0;
     /**
      * Unregister all listeners. otherPropertyChanged will not be called by the server anymore.
      */
-    virtual void unregister_all_listeners(const char* pluginid = PLUGIN_ID) = 0;
+    virtual void pluginUnregisterAllPropertyChangeListeners(const char* pluginid = PLUGIN_ID) = 0;
     /**
      * Ask the server to execute the action described by the VariantMap. The fields "plugin_id" and "name" are mandatory.
      */
-    virtual void execute_action(const QVariantMap& data, const char* pluginid = PLUGIN_ID) = 0;
+    virtual void pluginRequestExecution(const QVariantMap& data, const char* pluginid = PLUGIN_ID) = 0;
 
 };

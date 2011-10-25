@@ -51,7 +51,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     m_read = false;
 }
 
-void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+void plugin::execute ( const QVariantMap& data, int sessionid ) {
     Q_UNUSED ( sessionid );
 	Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
 	if (lid.port == -1) return;
@@ -65,7 +65,7 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     Q_UNUSED ( sessionid );
 	Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
 	if (lid.port == -1)
@@ -79,17 +79,19 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
     if (ServiceID::isMethod(data,"udpio.watchvalue")) {
         m_events.add(data, collectionuid);
     }
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
     m_events.remove(data, collectionuid);
 }
 
-QList<QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
 
@@ -119,7 +121,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 }
 
 void plugin::ledsCleared() {
-    m_server->property_changed(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
+    m_server->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {
@@ -127,7 +129,7 @@ void plugin::ledChanged(QString channel, QString name, int value) {
     sc.setData("channel", channel);
     if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value?true:false);
-    m_server->property_changed(sc.getData());
+    m_server->pluginPropertyChanged(sc.getData());
 }
 
 void plugin::watchpinChanged(const unsigned char port, const unsigned char pinmask) {
@@ -139,7 +141,7 @@ void plugin::watchpinChanged(const unsigned char port, const unsigned char pinma
                 m_sensors[i] = newvalue;
                 sc.setData("sensorid", i);
                 sc.setData("value", m_sensors[i]);
-                m_server->property_changed(sc.getData());
+                m_server->pluginPropertyChanged(sc.getData());
                 m_events.triggerEvent(i, m_server);
             }
         }

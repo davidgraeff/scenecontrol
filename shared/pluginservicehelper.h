@@ -139,6 +139,6 @@ void EventMap<T>::triggerEvent ( T key, AbstractServer* server ) {
     QMap<QString, QVariantMap > datasMaps = QMap<T, QMap<QString, QVariantMap > >::value ( key );
     QList<QVariantMap> datas = datasMaps.values();
     foreach ( QVariantMap data, datas ) {
-		server->event_triggered(ServiceID::id(data), ServiceID::collectionid ( data ));
+		server->pluginEventTriggered(ServiceID::id(data), ServiceID::collectionid ( data ));
     }
 }

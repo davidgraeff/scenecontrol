@@ -57,7 +57,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     }
 }
 
-void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+void plugin::execute ( const QVariantMap& data, int sessionid ) {
 	Q_UNUSED(sessionid);
     if ( ServiceID::isMethod(data, "remotefocus" ) ) {
         m_selectedclients = specificClients ( DATA ( "servers" ).split ( QLatin1Char ( ';' ) ) );
@@ -80,23 +80,25 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     Q_UNUSED ( data );
 	Q_UNUSED(sessionid);
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
     Q_UNUSED ( data );
 	Q_UNUSED(collectionuid);
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	Q_UNUSED(collectionuid);
 }
 
-QList<QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
 	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "remote.connection.state", "server").getData());
@@ -121,6 +123,6 @@ QVariantMap plugin::stateChanged(ExternalClient* client, bool propagate) {
 	const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
     sc.setData("server",server);
     sc.setData("state", (int)client->isConnected());
-    if (propagate) m_server->property_changed(sc.getData());
+    if (propagate) m_server->pluginPropertyChanged(sc.getData());
     return sc.getData();
 }

@@ -42,7 +42,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     PluginSettingsHelper::setSetting ( name, value, init );
 }
 
-void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+void plugin::execute ( const QVariantMap& data, int sessionid ) {
 	Q_UNUSED(sessionid);
     if ( ServiceID::isMethod(data, "pulsechannelmute" ) ) {
         set_sink_muted(DATA("sinkid").toUtf8().constData(), INTDATA ( "mute" ) );
@@ -55,23 +55,25 @@ void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     Q_UNUSED ( data );
 	Q_UNUSED(sessionid);
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
     Q_UNUSED ( data );
 	Q_UNUSED(collectionuid);
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	Q_UNUSED(collectionuid);
 }
 
-QList<QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
@@ -100,12 +102,12 @@ void plugin::pulseSinkChanged ( const PulseChannel& channel ) {
     sc.setData("sinkid", channel.sinkid);
     sc.setData("mute", channel.mute);
     sc.setData("volume", channel.volume);
-    m_server->property_changed ( sc.getData() );
+    m_server->pluginPropertyChanged ( sc.getData() );
 }
 
 void plugin::pulseVersion(int protocol, int server) {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulse.version" );
     sc.setData("protocol", protocol);
     sc.setData("server", server);
-    m_server->property_changed ( sc.getData() );
+    m_server->pluginPropertyChanged ( sc.getData() );
 }

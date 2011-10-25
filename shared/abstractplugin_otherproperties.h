@@ -31,6 +31,6 @@ public:
      * \param data the property data with special entry id (unqiue identifier within current plugin properties)
 	 * \param sessionid If sessionid is not null this property is a session propery and received from a client and only valid for the referred session
      */
-    virtual void otherPropertyChanged(const QVariantMap& data, const QString& sessionid) = 0;
+    virtual void otherPropertyChanged(const QVariantMap& data, int sessionid) = 0;
 };
 Q_DECLARE_INTERFACE(AbstractPlugin_otherproperties, "com.roomcontrol.PluginOtherProperties/2.0")

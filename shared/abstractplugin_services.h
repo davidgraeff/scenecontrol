@@ -36,26 +36,26 @@ public:
      * should not block the server noticable!
      * \param sessionid id of the client session that requests properties of this plugin
      */
-    virtual QList<QVariantMap> properties(const QString& sessionid) = 0;
+    virtual QList<QVariantMap> properties(int sessionid) = 0;
     /**
      * Implement execution routines for all provided actions
      */
-    virtual void execute(const QVariantMap& data, const QString& sessionid) = 0;
+    virtual void execute(const QVariantMap& data, int sessionid) = 0;
 
     /**
     * Implement check routines for all provided conditions
     */
-    virtual bool condition(const QVariantMap& data, const QString& sessionid) = 0;
+    virtual bool condition(const QVariantMap& data, int sessionid) = 0;
 
     /**
     * Collections may register events here. Events are triggered by plugins with event_trigger.
     */
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid ) = 0;
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) = 0;
 	
     /**
     * When collections get removed they unregister their events with this method. If collections are changed
 	* they will call unregister_event and register_event in sequence.
     */
-	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid ) = 0;
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) = 0;
 };
 Q_DECLARE_INTERFACE(AbstractPlugin_services, "com.roomcontrol.PluginServices/2.0")

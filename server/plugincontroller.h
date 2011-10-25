@@ -30,6 +30,8 @@
 #include <shared/abstractplugin_settings.h>
 #include <shared/abstractplugin_sessions.h>
 
+#undef PLUGIN_ID
+#define PLUGIN_ID "PluginController"
 class ServiceController;
 class PluginInfo {
 public:
@@ -43,8 +45,7 @@ public:
     }
     ~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
 };
-#undef PLUGIN_ID
-#define PLUGIN_ID "PluginController"
+
 class PluginController: public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
@@ -66,13 +67,15 @@ public:
     // satisfy interfaces
     virtual void clear(){}
     virtual void initialize(){}
-    virtual bool condition(const QVariantMap&, const QString&){return false;}
-    virtual void execute(const QVariantMap&, const QString&){}
-    virtual void register_event(const QVariantMap&, const QString&){}
-    virtual void unregister_event(const QVariantMap&, const QString&){}
+    virtual bool condition(const QVariantMap&, int){return false;}
+    virtual void execute(const QVariantMap&, int);
+    virtual void register_event(const QVariantMap&, const QString&, int){}
+    virtual void unregister_event(const QVariantMap&, const QString&, int){}
+
     // Properties
-    virtual QList< QVariantMap > properties(const QString& sessionid);
+    virtual QList< QVariantMap > properties(int sessionid);
 private:
+    ServiceController* m_servicecontroller;
     QMap<QString,PluginInfo*> m_plugins;
     int m_index;
 };

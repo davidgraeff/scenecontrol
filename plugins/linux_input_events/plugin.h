@@ -48,7 +48,7 @@ private:
 	QSocketNotifier* m_socketnotifier;
     int fd;
     ManagedDevice* m_device;
-    QSet<QString> m_sessionids;
+    QSet<int> m_sessionids;
     QMap<QString, EventKey*> m_keyToUids;
     QTimer m_repeattimer;
     QString m_lastkey;
@@ -56,8 +56,8 @@ public:
     InputDevice(plugin* plugin) ;
     ~InputDevice();
     bool isClosable();
-    void connectSession(const QString& sessionid);
-    void disconnectSession(const QString& sessionid);
+    void connectSession(int sessionid);
+    void disconnectSession(int sessionid);
     void setDevice(ManagedDevice* device);
 	void connectDevice();
 	void disconnectDevice();
@@ -81,13 +81,13 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual QList<QVariantMap> properties(const QString& sessionid);
-    virtual void session_change(const QString& id, bool running);
+    virtual QList<QVariantMap> properties(int sessionid);
+    virtual void session_change(int sessionid, bool running);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
-    virtual void execute(const QVariantMap& data, const QString& sessionid);
-    virtual bool condition(const QVariantMap& data, const QString& sessionid) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid );
-	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid );
+    virtual void execute(const QVariantMap& data, int sessionid);
+    virtual bool condition(const QVariantMap& data, int sessionid) ;
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
+	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
 private:
     ManagedDeviceList* m_devicelist;
     QMap<QString, InputDevice*> m_devices;

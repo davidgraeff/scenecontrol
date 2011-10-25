@@ -29,8 +29,8 @@
 class PluginSessionsHelper : public AbstractPlugin_sessions
 {
 public:
-    virtual void session_change(const QString& id, bool running);
+    virtual void session_change(int id, bool running);
 
 protected:
-    QSet<QString> m_sessions;
+    QSet<int> m_sessions;
 };

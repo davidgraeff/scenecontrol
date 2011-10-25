@@ -38,34 +38,36 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
     PluginSettingsHelper::setSetting(name, value, init);
 }
 
-void plugin::execute(const QVariantMap& data, const QString& sessionid) {
-	Q_UNUSED(sessionid);
+void plugin::execute(const QVariantMap& data, int sessionid) {
+    Q_UNUSED(sessionid);
     if (ServiceID::isMethod(data,"changemode")) {
         m_mode = DATA("mode");
         modeChanged(m_mode);
     }
 }
 
-bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
-	Q_UNUSED(sessionid);
+bool plugin::condition(const QVariantMap& data, int sessionid)  {
+    Q_UNUSED(sessionid);
     if (ServiceID::isMethod(data,"modecondition")) {
         return (m_mode == DATA("mode"));
     }
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
-	Q_UNUSED(collectionuid);
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+    Q_UNUSED(sessionid);
+    Q_UNUSED(collectionuid);
     if (ServiceID::isMethod(data,"modeevent")) {
         m_mode_events.add(data, collectionuid);
     }
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
-	m_mode_events.remove(data, collectionuid);
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+    Q_UNUSED(sessionid);
+    m_mode_events.remove(data, collectionuid);
 }
 
-QList<QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
@@ -79,7 +81,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 void plugin::modeChanged(const QString& mode) {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mode");
     sc.setData("mode", mode);
-    m_server->property_changed(sc.getData());
+    m_server->pluginPropertyChanged(sc.getData());
 
-	m_mode_events.triggerEvent(mode, m_server);
+    m_mode_events.triggerEvent(mode, m_server);
 }

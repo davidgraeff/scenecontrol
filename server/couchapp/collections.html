@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+	<head><title>Profile</title>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
+		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<script src="/_utils/script/jquery.couch.js"></script>
+		<script src="/roomcontrol/html_server/websocket.js"></script>
+	</head>
+	<body>
+		<div data-role="page" id="collectionpage">
+
+			<div data-role="header">
+				<a href="index.html" data-role="button" data-iconpos="notext" data-direction="reverse" data-icon="arrow-l" >Zurück</a>
+				<h1>Profile</h1>
+				<a href="#collectionpage_newdialog" data-rel="dialog" data-transition="flip" data-role="button" data-icon="plus" >Neu</a>
+			</div>
+			<div data-role="content">	
+				<ul id="collections" data-role="listview" data-filter="true" data-split-icon="gear" data-split-theme="d"></ul>
+				<script>
+				$(function() {
+					var ajaxUrl = '/roomcontrol/_design/roomcontrol/_view/collections';
+					$.getJSON(ajaxUrl, null, function(data) {
+						if (!data.rows) {
+							return;
+						}
+						var data = data.rows;
+						for (index in data) {
+							if (data[index].value === null)
+								continue;
+							// href="/roomcontrol/'+data[index].key+'"
+							$("#collections").append('<li data-icon="info"><a href="#collectionpage_services" onclick="setcollection(\''+data[index].key+'\');">'+data[index].value.name+
+							'</a><a href="#collectionpage_actions" data-rel="dialog" data-transition="pop">Collection actions</a></li>');
+						}
+						$('#collections').listview('refresh');
+					});
+					function addcollection() {
+						
+					}
+					function rmcollection() {
+						
+					}
+					function renamecollection() {
+						
+					}
+				});
+				</script>
+			</div>
+		</div>
+		
+		<div data-role="page" id="collectionpage_services">
+			<div data-role="header">
+				<h1>Services</h1>
+			</div>
+			<div data-role="content">
+				<div name="collectionname" data-theme="a">Test Profil</div>
+				<ul id="services" data-role="listview" data-filter="true" data-split-icon="gear" data-split-theme="d"></ul>
+			</div>
+		</div>
+		
+		<div data-role="page" id="collectionpage_actions">
+			<div data-role="header">
+				<h1>Profilaktionen</h1>
+			</div>
+			<div data-role="content">
+				<div name="collectionname" data-theme="a">Test Profil</div>
+				<a href="#" onclick="rmcollection" data-role="button" data-icon="delete">Delete</a>
+				<a href="#" onclick="execcollection" data-role="button" data-icon="gear">Execute</a>
+				<a href="#collectionpage_editdialog" data-role="button" data-rel="dialog" data-icon="refresh">Rename</a>
+			</div>
+		</div>
+		
+		<div data-role="page" id="collectionpage_newdialog">
+			<div data-role="header">
+				<h1>Neues Profil</h1>
+				<a href="#" onclick="addcollection()" data-rel="dialog" data-role="button" data-theme="a" data-icon="save" >Speichern</a>
+			</div>
+			<div data-role="content">
+				<div data-role="fieldcontain">
+				<label for="name">Profilname:</label>
+				<input type="text" name="collection_add_name" id="collection_add_name" placeholder="Profilname" value="" />
+				</div>
+			</div>
+		</div>
+
+		<div data-role="page" id="collectionpage_editdialog">
+			<div data-role="header">
+				<h1>Profilnamen ändern</h1>
+				<a href="#" onclick="addcollection()" data-rel="dialog" data-role="button" data-theme="a" data-icon="save" >Speichern</a>
+			</div>
+			<div data-role="content">
+				<div data-role="fieldcontain">
+				<label for="name">Profilname:</label>
+				<input type="text" name="collectionname" id="collection_edit_name" placeholder="Profilname" value="" />
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+

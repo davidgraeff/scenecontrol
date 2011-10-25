@@ -2476,7 +2476,7 @@ libwebsocket_create_context(int port, const char *interf,
 			       struct libwebsocket_extension *extensions,
 			       const char *ssl_cert_filepath,
 			       const char *ssl_private_key_filepath,
-			       int gid, int uid, unsigned int options)
+			       int gid, int uid, unsigned int options, void* cpp_class)
 {
 	int n;
 	int m;
@@ -2541,7 +2541,7 @@ libwebsocket_create_context(int port, const char *interf,
 	context->options = options;
 	context->fds_count = 0;
 	context->extensions = extensions;
-
+	context->cpp_class = cpp_class;
 #ifdef WIN32
 	context->fd_random = 0;
 #else

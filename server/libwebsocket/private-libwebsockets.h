@@ -86,8 +86,7 @@ static
 static inline
 #endif
 void debug(const char *format, ...)
-{
-}
+{}
 #endif
 
 
@@ -241,6 +240,8 @@ struct libwebsocket_context {
 	struct libwebsocket_protocols *protocols;
 	int count_protocols;
 	struct libwebsocket_extension *extensions;
+	
+	void* cpp_class;
 };
 
 

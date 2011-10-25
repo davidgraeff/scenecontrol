@@ -30,6 +30,6 @@ public:
 	 * \param id Unique session id
 	 * \param running Session is started or has finished
 	 */
-	virtual void session_change(const QString& id, bool running) = 0;
+	virtual void session_change(int id, bool running) = 0;
 };
 Q_DECLARE_INTERFACE(AbstractPlugin_sessions, "com.roomcontrol.PluginSession/2.0")

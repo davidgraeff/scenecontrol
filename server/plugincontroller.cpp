@@ -10,16 +10,17 @@
 #include "paths.h"
 #include "servicecontroller.h"
 #include <shared/pluginservicehelper.h>
+#include "websocket.h"
 
 #define __FUNCTION__ __FUNCTION__
 
-PluginController::PluginController (ServiceController* servicecontroller) {
+PluginController::PluginController (ServiceController* servicecontroller) : m_servicecontroller(servicecontroller) {
     servicecontroller->setPluginController(this);
 
     // add this class to plugins
     {
         PluginInfo* plugininfo = new PluginInfo(this);
-        m_plugins.insert(pluginid(), plugininfo);
+        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
     }
 
     const QDir plugindir = pluginDir();
@@ -106,7 +107,7 @@ AbstractPlugin* PluginController::getPlugin(const QString& pluginid) {
     return pinfo->plugin;
 }
 
-QList< QVariantMap > PluginController::properties(const QString& sessionid) {
+QList< QVariantMap > PluginController::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     QStringList pluginlist;
@@ -118,4 +119,13 @@ QList< QVariantMap > PluginController::properties(const QString& sessionid) {
     s.setData("plugins", pluginlist);
     l.append(s.getData());
     return l;
+}
+
+
+void PluginController::execute(const QVariantMap& data, int sessionid) {
+	Q_UNUSED ( sessionid );
+    if ( ServiceID::isMethod(data, "requestProperties" ) ) {
+        m_servicecontroller->m_websocket->sendToClient(m_servicecontroller->allProperties(sessionid),
+						       m_servicecontroller->m_websocket->wsiFromSockFD(sessionid));
+    }
 }

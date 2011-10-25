@@ -45,12 +45,12 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
     PluginSettingsHelper::setSetting ( name, value, init );
 }
 
-void plugin::execute ( const QVariantMap& data, const QString& sessionid ) {
+void plugin::execute ( const QVariantMap& data, int sessionid ) {
     Q_UNUSED ( data );
     Q_UNUSED ( sessionid );
 }
 
-bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
+bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "datespan" ) ) {
         QDate m_lower = QDate::fromString ( DATA ( "lower" ),Qt::ISODate );
@@ -69,7 +69,8 @@ bool plugin::condition ( const QVariantMap& data, const QString& sessionid )  {
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
     Q_UNUSED ( collectionuid );
     const QString uid = ServiceID::id(data);
     // remove from next events
@@ -78,12 +79,13 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
     m_remaining_events[uid] = ServiceID::newDataWithCollectionUid(data, collectionuid);
     ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "time.alarms");
     sc.setData("uid", ServiceID::id(data));
-    m_server->property_changed(sc.getData());
+    m_server->pluginPropertyChanged(sc.getData());
 	
     calculate_next_events();
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
     const QString uid = ServiceID::id(data);
     // remove from next events
     m_timeout_events.remove ( SC_Uid(uid, collectionuid) );
@@ -92,13 +94,13 @@ void plugin::unregister_event ( const QVariantMap& data, const QString& collecti
     m_remaining_events.remove(uid);
     ServiceCreation s = ServiceCreation::createModelRemoveItem(PLUGIN_ID, "time.alarms");
     s.setData("uid", uid);
-    m_server->property_changed(s.getData());
+    m_server->pluginPropertyChanged(s.getData());
 
     // recalculate next event
     calculate_next_events();
 }
 
-QList<QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     if (!m_nextAlarm.isNull()) {
@@ -125,7 +127,7 @@ QList<QVariantMap> plugin::properties(const QString& sessionid) {
 void plugin::timeout() {
     // events triggered, propagate to server
     foreach ( QVariantMap data, m_timeout_events ) {
-        m_server->event_triggered ( ServiceID::id(data), ServiceID::collectionid(data) );
+        m_server->pluginEventTriggered ( ServiceID::id(data), ServiceID::collectionid(data) );
     }
     m_timeout_events.clear();
     // calculate next events
@@ -150,7 +152,7 @@ void plugin::calculate_next_events() {
                 min_next_time[sec].insert ( SC_Uid(ServiceID::id(data), ServiceID::collectionid(data)), data );
                 remove.insert ( ServiceID::id(data) );
             } else if ( sec > -10 && sec < 10 ) {
-                m_server->event_triggered ( ServiceID::id(data), ServiceID::collectionid(data) );
+                m_server->pluginEventTriggered ( ServiceID::id(data), ServiceID::collectionid(data) );
                 remove.insert ( ServiceID::id(data) );
             }
         } else if ( ServiceID::isMethod(data, "timeperiodic" ) ) {
@@ -194,17 +196,17 @@ void plugin::calculate_next_events() {
         m_remaining_events.remove ( uid );
         ServiceCreation s = ServiceCreation::createModelRemoveItem(PLUGIN_ID, "time.alarms");
         s.setData("uid", uid);
-        m_server->property_changed(s.getData());
+        m_server->pluginPropertyChanged(s.getData());
     }
 
     if (!m_nextAlarm.isNull()) {
         ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "nextalarm");
         s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
-        m_server->property_changed(s.getData());
+        m_server->pluginPropertyChanged(s.getData());
     } else {
         ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "nextalarm");
-        m_server->property_changed(s.getData());
+        m_server->pluginPropertyChanged(s.getData());
     }
 
     if ( min_next_time.size() > 0 ) {

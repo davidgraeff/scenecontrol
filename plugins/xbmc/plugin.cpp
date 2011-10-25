@@ -25,7 +25,7 @@ void plugin::initialize() {
 }
 
 
-void plugin::execute(const QVariantMap& data, const QString& sessionid) {
+void plugin::execute(const QVariantMap& data, int sessionid) {
 	Q_UNUSED(sessionid);
 	if (!m_xbmcClient) return;
 	if (ServiceID::isMethod(data,"xbmcfocus")) {
@@ -41,18 +41,20 @@ void plugin::execute(const QVariantMap& data, const QString& sessionid) {
 	}
 }
 
-bool plugin::condition(const QVariantMap& data, const QString& sessionid)  {
+bool plugin::condition(const QVariantMap& data, int sessionid)  {
 	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
 	Q_UNUSED(collectionuid);
 	Q_UNUSED(data);  
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid ) {
+void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	Q_UNUSED(collectionuid);
 }
@@ -68,7 +70,7 @@ void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
     }
 }
 
-QList<QVariantMap> plugin::properties(const QString& sessionid) {
+QList<QVariantMap> plugin::properties(int sessionid) {
 Q_UNUSED(sessionid);
 	QList<QVariantMap> l;
 	return l;
