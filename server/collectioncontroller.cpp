@@ -118,9 +118,12 @@ void CollectionController::actionsOfCollection(const QVariantList& actions, cons
 void CollectionController::updateListOfRunningCollections()
 {
     ServiceCreation data = ServiceCreation::createNotification(PLUGIN_ID, "collection.running");
-    const QStringList list(m_runningCollections.keys());
+    QVariantList list;
+    QList<QString> orig = m_runningCollections.keys();
+    for (int i=0;i<orig.size(); ++i) {
+      list.append(orig[i]);
+    }
     data.setData("running",list);
-    qDebug() << __FUNCTION__ << data.getData();
     m_serverPropertyController->pluginPropertyChanged(data.getData(), -1, PLUGIN_ID);
 }
 
