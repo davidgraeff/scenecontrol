@@ -174,6 +174,8 @@ void CouchDB::replyEventsChange() {
 
 void CouchDB::requestActionsOfCollection(const QString& collecion_id)
 {
+  if (collecion_id.isEmpty())
+    return;
     QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/roomcontrol/_view/actions?key=\"%1\"#%1" ).arg ( collecion_id ) );
 
     QNetworkReply* r = get ( request );

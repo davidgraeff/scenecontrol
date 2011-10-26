@@ -38,7 +38,7 @@ function propertiesWebsocket() {
 			} 
 			
 			socket_di.onclose = function(){
-				that.connected = true;
+				that.connected = false;
 				$(that).trigger('onclose');
 			}
 		} catch(exception) {
