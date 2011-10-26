@@ -97,10 +97,10 @@ void CollectionController::runningCollectionAction(const QVariantMap& actiondata
 
 void CollectionController::runningCollectionFinished(const QString& collectionid)
 {
-    delete m_runningCollections.take(collectionid);
+    RunningCollection* run = m_runningCollections.take(collectionid);
+    if (run)
+      run->deleteLater();
     updateListOfRunningCollections();
-        qDebug() << __FUNCTION__ << collectionid;
-
 }
 
 void CollectionController::actionsOfCollection(const QVariantList& actions, const QString& collectionid)
@@ -111,7 +111,6 @@ void CollectionController::actionsOfCollection(const QVariantList& actions, cons
     connect(run, SIGNAL(runningCollectionFinished(QString)), SLOT(runningCollectionFinished(QString)));
     m_runningCollections.insert(collectionid, run);
     updateListOfRunningCollections();
-        qDebug() << __FUNCTION__ << collectionid << actions;
 
     run->start();
 }
@@ -142,7 +141,6 @@ void CollectionController::pluginRequestExecution ( const QVariantMap& data, con
 void CollectionController::execute(const QVariantMap& data, int sessionid) {
     Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "collection.execute" ) ) {
-      qWarning() << "HÄ" << data;
         CouchDB::instance()->requestActionsOfCollection(data.value(QLatin1String("collectionid")).toString());
     } else if ( ServiceID::isMethod(data, "collection.stop" ) ) {
         runningCollectionFinished(data.value(QLatin1String("collectionid")).toString());
