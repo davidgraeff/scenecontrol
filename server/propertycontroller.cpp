@@ -74,9 +74,7 @@ void PropertyController::pluginUnregisterPropertyChangeListener ( const QString&
 
 void PropertyController::execute(const QVariantMap& data, int sessionid) {
     Q_UNUSED ( sessionid );
-    qDebug() << "a";
     if ( ServiceID::isMethod(data, "requestProperties" ) ) {
-    qDebug() << "b" << sessionid;
         WebSocket::instance()->sendToClient(allProperties(sessionid), sessionid);
     }
 }
