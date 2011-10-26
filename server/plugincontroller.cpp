@@ -20,14 +20,17 @@ PluginController::PluginController (PropertyController* propertycontroller, Coll
     {
         PluginInfo* plugininfo = new PluginInfo(this);
         m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+	this->connectToServer(collectioncontroller, propertycontroller);
     }
     {
         PluginInfo* plugininfo = new PluginInfo(propertycontroller);
         m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+	propertycontroller->connectToServer(collectioncontroller, propertycontroller);
     }
     {
         PluginInfo* plugininfo = new PluginInfo(collectioncontroller);
         m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+	collectioncontroller->connectToServer(collectioncontroller, propertycontroller);
     }
 
     const QDir plugindir = setup::pluginDir();
