@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <plugin id="servicecontroller" version="1.0">
-	<!-- Propagates server condition -->
-	<property id="serverstate">
-		<enum id="state" n="2" /><!-- ready, going offline -->
-	</property>
-	<property id="plugininfo">
-		<string id="plugins" separator=";" /><!-- plugin names -->
-	</property>
-
 	<!-- Server command -->
 	<execute id="servercmd" group_restriction="adm, roomcontrol_admin">
 		<enum id="state" n="3" /><!-- resync client, restart, stop server -->
@@ -19,14 +11,13 @@
 		<enum id="state" n="2" /><!-- ready, going offline -->
 	</event>
 	
-	<action id="executecollection">
+	<action id="collection.execute">
 		<string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
 	</action>
-	<action id="stopcollection">
+	<action id="collection.stop">
 		<string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
 	</action>
-	
-	<execute id="clone">
-		<string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
-	</execute>
+	<property id="collection.running">
+		<stringlist id="running" />
+	</property>
 </plugin>

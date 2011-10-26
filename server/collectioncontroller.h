@@ -31,6 +31,23 @@
 
 class PluginController;
 
+class RunningCollection: public QObject {
+    Q_OBJECT
+public:
+    RunningCollection(const QVariantList& actions, const QString& collectionid);
+    void start();
+private:
+    QString m_collectionid;
+    QTimer m_timer;
+    int m_lasttime;
+    QMultiMap<int, QVariantMap> m_timetable;
+private Q_SLOTS:
+  void timeout();
+Q_SIGNALS:
+    void runningCollectionAction ( const QVariantMap& actiondata );
+    void runningCollectionFinished (const QString& collectionid);
+};
+
 class CollectionController: public QObject, public AbstractServerCollectionController, public AbstractPlugin, public AbstractPlugin_services {
     Q_OBJECT
     PLUGIN_MACRO
@@ -40,6 +57,8 @@ public:
     void setPluginController ( PluginController* pc );
 private:
     PluginController* m_plugincontroller;
+    QMap<QString, RunningCollection*> m_runningCollections;
+    void updateListOfRunningCollections();
 
     /////////////// server interface ///////////////
     virtual void pluginEventTriggered ( const QString& event_id, const QString& destination_collectionuid, const char* pluginid = "" );
@@ -59,5 +78,7 @@ private:
     }
 public Q_SLOTS:
     void requestExecution ( const QVariantMap& data, int sessionid);
+    void runningCollectionAction ( const QVariantMap& actiondata );
     void actionsOfCollection ( const QVariantList& actions, const QString& collectionid);
+    void runningCollectionFinished (const QString& collectionid);
 };

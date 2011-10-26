@@ -13,6 +13,45 @@
 
 #include "collectioncontroller.h"
 #include "couchdb.h"
+#include <shared/abstractserver_propertycontroller.h>
+
+RunningCollection::RunningCollection(const QVariantList& actions, const QString& collectionid): QObject(), m_collectionid(collectionid), m_lasttime(0)
+{
+    for ( int i=0;i<actions.size();++i ) {
+        QVariantMap actiondata = actions.value(i).toMap().value ( QLatin1String ( "value" ) ).toMap();
+        m_timetable.insert (actiondata.value(QLatin1String("delay_"), 0).toInt(), actiondata);
+    }
+    connect(&m_timer, SIGNAL(timeout()), SLOT(timeout()));
+}
+
+void RunningCollection::start()
+{
+    timeout();
+}
+
+void RunningCollection::timeout()
+{
+    QMap<int, QVariantMap>::const_iterator lowerBound = m_timetable.lowerBound(m_lasttime);
+    if (lowerBound == m_timetable.constEnd()) {
+        emit runningCollectionFinished(m_collectionid);
+        return;
+    }
+    QMap<int, QVariantMap>::const_iterator upperBound = m_timetable.upperBound(m_lasttime);
+
+    while (lowerBound != upperBound) {
+        emit runningCollectionAction(lowerBound.value());
+        ++lowerBound;
+    }
+
+    m_timetable.remove(lowerBound.key());
+    m_lasttime = lowerBound.key();
+    lowerBound = m_timetable.lowerBound(m_lasttime);
+    if (lowerBound == m_timetable.constEnd()) {
+        emit runningCollectionFinished(m_collectionid);
+        return;
+    }
+    m_timer.start(lowerBound.key() - m_lasttime);
+}
 
 CollectionController::CollectionController () : m_plugincontroller ( 0 ) {}
 
@@ -40,20 +79,39 @@ void CollectionController::requestExecution(const QVariantMap& data, int session
     executeplugin->execute ( data, sessionid );
 }
 
+void CollectionController::runningCollectionAction(const QVariantMap& actiondata)
+{
+    AbstractPlugin* plugin = m_plugincontroller->getPlugin ( ServiceID::pluginid ( actiondata ) );
+    AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*> ( plugin );
+    if ( !executeplugin ) {
+        qWarning() <<"Cannot execute service. No plugin found:"<<actiondata;
+        return;
+    }
+
+    executeplugin->execute ( actiondata, -1 );
+}
+
+void CollectionController::runningCollectionFinished(const QString& collectionid)
+{
+    delete m_runningCollections.take(collectionid);
+    updateListOfRunningCollections();
+}
+
 void CollectionController::actionsOfCollection(const QVariantList& actions, const QString& collectionid)
 {
-    Q_UNUSED(collectionid);
-    for ( int i=0;i<actions.size();++i ) {
-        QVariantMap actiondata = actions.value(i).toMap().value ( QLatin1String ( "value" ) ).toMap();
-        AbstractPlugin* plugin = m_plugincontroller->getPlugin ( ServiceID::pluginid ( actiondata ) );
-        AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*> ( plugin );
-        if ( !executeplugin ) {
-            qWarning() <<"Cannot execute service. No plugin found:"<<actiondata;
-            return;
-        }
+    delete m_runningCollections.take(collectionid);
+    RunningCollection* run = new RunningCollection(actions, collectionid);
+    m_runningCollections.insert(collectionid, run);
+    updateListOfRunningCollections();
+    run->start();
+}
 
-        executeplugin->execute ( actiondata, -1 );
-    }
+void CollectionController::updateListOfRunningCollections()
+{
+    ServiceCreation data = ServiceCreation::createNotification(PLUGIN_ID, "collection.running");
+    QStringList list(m_runningCollections.keys());
+    data.setData("running",list);
+    m_serverPropertyController->pluginPropertyChanged(data.getData(), -1, PLUGIN_ID);
 }
 
 void CollectionController::pluginRequestExecution ( const QVariantMap& data, const char* pluginid ) {
@@ -72,7 +130,9 @@ void CollectionController::pluginRequestExecution ( const QVariantMap& data, con
 
 void CollectionController::execute(const QVariantMap& data, int sessionid) {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "executecollection" ) ) {
+    if ( ServiceID::isMethod(data, "collection.execute" ) ) {
         CouchDB::instance()->requestActionsOfCollection(data.value(QLatin1String("collectionid")).toString());
+    } else if ( ServiceID::isMethod(data, "collection.stop" ) ) {
+        runningCollectionFinished(data.value(QLatin1String("collectionid")).toString());
     }
 }
