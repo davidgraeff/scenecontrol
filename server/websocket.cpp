@@ -189,8 +189,10 @@ void WebSocket::sendToClient(const QByteArray& rawdata, int sessionid) {
     if (!m_websocket_context)
         return;
     libwebsocket* wsi = wsi_from_fd(m_websocket_context, sessionid);
-    if (!wsi)
+    if (!wsi) {
+      qWarning() << "Websocket: sessionid not found!" << sessionid << wsi;
         return;
+    }
     unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + rawdata.size()];
     unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
     memcpy(p,rawdata.constData(),rawdata.size());

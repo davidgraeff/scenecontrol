@@ -36,7 +36,7 @@ void CollectionController::requestExecution(const QVariantMap& data, int session
         qWarning() <<"Cannot execute service. No plugin found:"<<data;
         return;
     }
-
+qDebug() << "Execute" << data;
     executeplugin->execute ( data, sessionid );
 }
 
