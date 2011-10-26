@@ -62,25 +62,31 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
     static char b[] = {'S', 'A', 0, 0};
 
     if ( ServiceID::isMethod(data, "projector_sanyo_power" ) ) {
-        if ( BOOLDATA ( "power" ) ){
-			b[2]='0'; b[3]='0';
-		} else {
-			b[2]='0'; b[3]='1';
-		}
+        if ( BOOLDATA ( "power" ) ) {
+            b[2]='0';
+            b[3]='0';
+        } else {
+            b[2]='0';
+            b[3]='1';
+        }
         m_socket->write(b, sizeof(b));
     } else if ( ServiceID::isMethod(data, "projector_sanyo_video" ) ) {
-        if ( BOOLDATA ( "mute" ) ){
-			b[2]='0'; b[3]='D';
-		} else {
-			b[2]='0'; b[3]='E';
-		}
+        if ( BOOLDATA ( "mute" ) ) {
+            b[2]='0';
+            b[3]='D';
+        } else {
+            b[2]='0';
+            b[3]='E';
+        }
         m_socket->write(b, sizeof(b));
     } else if ( ServiceID::isMethod(data, "projector_sanyo_lamp" ) ) {
-        if ( BOOLDATA ( "eco" ) ){
-			b[2]='7'; b[3]='5';
-		} else {
-			b[2]='7'; b[3]='4';
-		}
+        if ( BOOLDATA ( "eco" ) ) {
+            b[2]='7';
+            b[3]='5';
+        } else {
+            b[2]='7';
+            b[3]='4';
+        }
         m_socket->write(b, sizeof(b));
     }
 }
@@ -91,16 +97,15 @@ bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+    Q_UNUSED(sessionid);
     Q_UNUSED ( data );
     Q_UNUSED(collectionuid);
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
-    Q_UNUSED(data);
-    Q_UNUSED(collectionuid);
+void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+    Q_UNUSED(sessionid);
+    Q_UNUSED(eventid);
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {

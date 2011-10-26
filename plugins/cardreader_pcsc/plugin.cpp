@@ -64,9 +64,9 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
     }
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
 	Q_UNUSED(sessionid);
-	m_card_events.remove(data, collectionuid);
+	m_card_events.remove( eventid );
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
@@ -86,7 +86,7 @@ void plugin::slotcardDetected ( const QString& atr, int state ) {
     ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "card.atr");
     sc.setData("cardid", atr);
     sc.setData("state", state);
-    m_server->pluginPropertyChanged(sc.getData());
+    m_serverPropertyController->pluginPropertyChanged(sc.getData());
 
 	m_card_events.triggerEvent(atr, m_server);
 }

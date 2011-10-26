@@ -20,36 +20,33 @@
 
 #pragma once
 #include <QObject>
-#include <QMap>
-#include <QVariantMap>
+#include <QNetworkAccessManager>
 #include <QSet>
-#include <QSocketNotifier>
+#include <QVariantMap>
+#include <QNetworkReply>
 
-class libwebsocket;
-class libwebsocket_context;
-class ServiceController;
-
-class WebSocket: public QObject {
+class CouchDB: public QNetworkAccessManager {
     Q_OBJECT
 public:
-    static WebSocket* instance();
-    virtual ~WebSocket();
-    void addWebsocketFD(int fd, short int direction);
-    void removeWebsocketFD(int fd);
-    /**
-     * Received text (rawdata) from websocket (wsi)
-     */
-    void websocketReceive(const QByteArray& rawdata, libwebsocket* wsi);
-
-    void sendToAllClients(const QByteArray& rawdata);
-    void sendToClient(const QByteArray& rawdata, int sessionid);
+    static CouchDB* instance();
+    virtual ~CouchDB();
+    void start();
+    void requestActionsOfCollection(const QString& collecion_id);
 private:
-    WebSocket ();
-    ServiceController* m_servicecontroller;
-    struct libwebsocket_context* m_websocket_context;
-    QMap<int, QSocketNotifier*> m_websocket_fds;
-public slots:
-    void websocketactivity(int);
+    CouchDB ();
+    int m_last_changes_seq_nr;
+    bool checkFailure(QNetworkReply*);
+private Q_SLOTS:
+    void replyEventsChange();
+    void replyActionOfCollection();
+    void replyEvent();
+    void replyEvents();
+    void replyDatabaseInfo();
+    void error(QNetworkReply::NetworkError);
 Q_SIGNALS:
-    void requestExecution ( const QVariantMap& data, int sessionid);
+    void couchDB_failed(const QString& url);
+    void couchDB_ready();
+    void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
+    void couchDB_Event_remove(const QString& id);
+    void couchDB_actionsOfCollection(const QVariantList& actions, const QString& collectionid);
 };

@@ -114,10 +114,9 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
 	Q_UNUSED(collectionuid);
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
 	Q_UNUSED(sessionid);
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
+	Q_UNUSED(eventid);
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
@@ -148,14 +147,14 @@ QList<QVariantMap> plugin::properties(int sessionid) {
 void plugin::playlistChanged ( QString p ) {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "playlist.current" );
     sc.setData("playlistid", p);
-    m_server->pluginPropertyChanged ( sc.getData() );
+    m_serverPropertyController->pluginPropertyChanged ( sc.getData() );
 }
 
 void plugin::playlistsChanged ( QString p, int pos) {
     ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID,  "playlists" );
     sc.setData("playlistid", p);
     sc.setData("position", pos);
-    m_server->pluginPropertyChanged ( sc.getData() );
+    m_serverPropertyController->pluginPropertyChanged ( sc.getData() );
 }
 
 void plugin::trackChanged ( const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
@@ -166,13 +165,13 @@ void plugin::trackChanged ( const QString& filename, const QString& trackname, i
     sc.setData("position_in_ms", position_in_ms);
     sc.setData("total_in_ms", total_in_ms);
     sc.setData("state", state);
-    m_server->pluginPropertyChanged ( sc.getData() );
+    m_serverPropertyController->pluginPropertyChanged ( sc.getData() );
 }
 
 void plugin::volumeChanged ( double volume ) {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "volume.changed" );
     sc.setData("volume", volume);
-    m_server->pluginPropertyChanged ( sc.getData() );
+    m_serverPropertyController->pluginPropertyChanged ( sc.getData() );
 }
 
 QVariantMap plugin::stateChanged(MediaController* client, bool propagate) {
@@ -180,6 +179,6 @@ QVariantMap plugin::stateChanged(MediaController* client, bool propagate) {
     const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
     sc.setData("server",server);
     sc.setData("state", (int)client->isConnected());
-    if (propagate) m_server->pluginPropertyChanged(sc.getData());
+    if (propagate) m_serverPropertyController->pluginPropertyChanged(sc.getData());
     return sc.getData();
 }

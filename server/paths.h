@@ -2,6 +2,9 @@
 #include <QStringList>
 #include <QDir>
 
+namespace setup {
+void writeLastStarttime();
+
 // Filepaths
 QString certificateFile(const QString& file);
 QString certificateFile(const char* file);
@@ -11,3 +14,5 @@ QString xmlFile(const QString& pluginid);
 // Dirs
 QDir pluginDir();
 QString couchdbAbsoluteUrl(const char* relativeUrl);
+
+};

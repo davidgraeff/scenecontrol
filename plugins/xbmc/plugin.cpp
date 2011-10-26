@@ -53,7 +53,7 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
 	Q_UNUSED(data);  
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
 	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	Q_UNUSED(collectionuid);

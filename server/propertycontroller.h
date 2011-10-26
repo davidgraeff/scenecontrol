@@ -25,11 +25,11 @@
 #include <QTimer>
 
 #undef PLUGIN_ID
-#define PLUGIN_ID ""
-#include <shared/abstractserver.h>
+#define PLUGIN_ID "PropertyController"
+#include "shared/abstractserver_propertycontroller.h"
 #include <shared/abstractplugin_services.h>
+#include <shared/abstractplugin.h>
 #include <QSet>
-#undef PLUGIN_ID
 
 class WebSocket;
 class AbstractPlugin_services;
@@ -39,47 +39,30 @@ class CollectionInstance;
 class Collections;
 class PluginController;
 
-struct TriggerChange {
-    bool deleted;
-    QString id;
-    QString collectionid;
-};
-
-class ServiceController: public QObject, public AbstractServer {
+class PropertyController: public QObject, public AbstractServerPropertyController, public AbstractPlugin, public AbstractPlugin_services {
     Q_OBJECT
-    friend class PluginController;
+    PLUGIN_MACRO
 public:
-    ServiceController ();
-    virtual ~ServiceController();
+    PropertyController ();
+    virtual ~PropertyController();
     void setPluginController ( PluginController* pc );
-    bool startWatchingCouchDB();
     QByteArray allProperties(int sessionid);
 private:
-    WebSocket* m_websocket;
     PluginController* m_plugincontroller;
-    int m_last_changes_seq_nr;
-    QNetworkAccessManager *m_manager;
-    QSet<QNetworkReply*> m_eventreplies;
-    QSet<QNetworkReply*> m_executecollection;
-    QSet<QNetworkReply*> m_actionreplies;
-    QMap<QString, QPair<QVariantMap,AbstractPlugin_services*> > m_registeredevents;
-
-    void requestDatabaseInfo();
-    void requestEvents();
-    void startChangeLister();
-    void registerEvent(const QVariantMap& data);
-    // routing
     QMap<QString, QSet<QString> > m_propertyid_to_plugins;
 
     /////////////// server interface ///////////////
-    virtual void pluginEventTriggered ( const QString& event_id, const QString& destination_collectionuid, const char* pluginid = "" );
-    virtual void pluginRequestExecution ( const QVariantMap& data, const char* pluginid = "" );
     virtual void pluginPropertyChanged ( const QVariantMap& data, int sessionid = -1, const char* pluginid = "" );
     virtual void pluginRegisterPropertyChangeListener ( const QString& unqiue_property_id, const char* pluginid = "" );
     virtual void pluginUnregisterAllPropertyChangeListeners ( const char* pluginid = "" );
     virtual void pluginUnregisterPropertyChangeListener ( const QString& unqiue_property_id, const char* pluginid = "" );
-public slots:
-    void replyEventsChange();
-    void networkReply(QNetworkReply*);
-    void requestExecution ( const QVariantMap& data, int sessionid);
+    
+    // satisfy interfaces
+    virtual void clear(){}
+    virtual void initialize(){}
+    virtual bool condition(const QVariantMap&, int){return false;}
+    virtual void execute(const QVariantMap&, int); // implement execute of interface AbstractPlugin_services
+    virtual void register_event(const QVariantMap&, const QString&, int){}
+    virtual void unregister_event(const QString&, int){}
+    virtual QList< QVariantMap > properties(int){return QList< QVariantMap >();}
 };

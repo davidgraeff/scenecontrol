@@ -32,7 +32,10 @@
 
 #undef PLUGIN_ID
 #define PLUGIN_ID "PluginController"
-class ServiceController;
+
+class CollectionController;
+class PropertyController;
+
 class PluginInfo {
 public:
     AbstractPlugin* plugin;
@@ -51,7 +54,7 @@ class PluginController: public QObject, public AbstractPlugin, public AbstractPl
     Q_OBJECT
     PLUGIN_MACRO
 public:
-    PluginController (ServiceController* servicecontroller);
+    PluginController (PropertyController* propertycontroller, CollectionController* collectioncontroller);
     virtual ~PluginController();
     void initializePlugins();
     int knownServices();
@@ -68,15 +71,18 @@ public:
     virtual void clear(){}
     virtual void initialize(){}
     virtual bool condition(const QVariantMap&, int){return false;}
-    virtual void execute(const QVariantMap&, int);
+    virtual void execute(const QVariantMap&, int) {}
     virtual void register_event(const QVariantMap&, const QString&, int){}
-    virtual void unregister_event(const QVariantMap&, const QString&, int){}
+    virtual void unregister_event(const QString&, int){}
 
     // Properties
     virtual QList< QVariantMap > properties(int sessionid);
 private:
-    ServiceController* m_servicecontroller;
     QMap<QString,PluginInfo*> m_plugins;
     int m_index;
+    QMap<QString, AbstractPlugin_services*> m_registeredevents;
+public Q_SLOTS:
+    void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
+    void couchDB_Event_remove(const QString& id);
 };
 #undef PLUGIN_ID

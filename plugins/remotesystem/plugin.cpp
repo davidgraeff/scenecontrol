@@ -92,7 +92,7 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
 	Q_UNUSED(collectionuid);
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
 	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	Q_UNUSED(collectionuid);
@@ -123,6 +123,6 @@ QVariantMap plugin::stateChanged(ExternalClient* client, bool propagate) {
 	const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
     sc.setData("server",server);
     sc.setData("state", (int)client->isConnected());
-    if (propagate) m_server->pluginPropertyChanged(sc.getData());
+    if (propagate) m_serverPropertyController->pluginPropertyChanged(sc.getData());
     return sc.getData();
 }

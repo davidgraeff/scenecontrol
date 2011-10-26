@@ -84,7 +84,7 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
 	Q_UNUSED ( collectionuid );
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
 	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	Q_UNUSED(collectionuid);
@@ -118,11 +118,11 @@ void plugin::curtainChanged(int current, int max) {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "curtain.state");
     sc.setData("value", current);
     sc.setData("max", max);
-    m_server->pluginPropertyChanged(sc.getData());
+    m_serverPropertyController->pluginPropertyChanged(sc.getData());
 }
 
 void plugin::ledsCleared() {
-	m_server->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.leds", "channel").getData());
+	m_serverPropertyController->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.leds", "channel").getData());
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {
@@ -130,5 +130,5 @@ void plugin::ledChanged(QString channel, QString name, int value) {
     sc.setData("channel", channel);
     if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value);
-    m_server->pluginPropertyChanged(sc.getData());
+    m_serverPropertyController->pluginPropertyChanged(sc.getData());
 }

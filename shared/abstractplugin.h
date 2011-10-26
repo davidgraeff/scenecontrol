@@ -22,19 +22,30 @@
 #include <QString>
 #include <QSet>
 
+class AbstractServerCollectionController;
+class AbstractServerPropertyController;
+
 #define PLUGIN_MACRO \
 protected: \
 	virtual QString pluginid() { return QLatin1String(PLUGIN_ID); } \
-	AbstractServer* m_server; \
+	AbstractServerCollectionController* m_serverCollectionController; \
+	AbstractServerPropertyController* m_serverPropertyController; \
 public: \
-	virtual void connectToServer(AbstractServer* server) {m_server=server; } \
-
+	virtual void connectToServer(AbstractServerCollectionController* serverCollectionController, \
+				    AbstractServerPropertyController* serverPropertyController) {\
+				    this->m_serverCollectionController = serverCollectionController; \
+				    this->m_serverPropertyController = serverPropertyController; \
+				    } \
+ 
 class ServiceID {
 public:
     static QString id(const QVariantMap& data) {
         return data[QLatin1String("_id")].toString();
     }
-	static QString idChangeSeq(const QVariantMap& data) {
+    static QString string(const QVariantMap& data, const char* key) {
+        return data[QString::fromAscii(key)].toString();
+    }
+    static QString idChangeSeq(const QVariantMap& data) {
         return data[QLatin1String("id")].toString();
     }
     static QString pluginid(const QVariantMap& data) {
@@ -47,7 +58,7 @@ public:
     static QString collectionid(const QVariantMap& data) {
         return data.value(QLatin1String("collection_")).toString();
     }
-    
+
     static bool isAction(const QVariantMap& data) {
         return data[QLatin1String("type_")].toString() == QLatin1String("action");
     }
@@ -72,72 +83,72 @@ public:
     static bool isModelItem(const QVariantMap& data) {
         return data[QLatin1String("type_")].toString() == QLatin1String("model");
     }
-    static bool isNegatedCondition(const QVariantMap& data){
-		return data.value(QLatin1String("conditionnegate_")).toBool();
-	}
-    static QString conditionGroup(const QVariantMap& data){
-		QString cg = data.value(QLatin1String("conditiongroup_")).toString();
-		if (cg.isEmpty()) cg = QLatin1String("all");
-		return cg;
-	}
-	
-	static QString type(const QVariantMap& data) {
+    static bool isNegatedCondition(const QVariantMap& data) {
+        return data.value(QLatin1String("conditionnegate_")).toBool();
+    }
+    static QString conditionGroup(const QVariantMap& data) {
+        QString cg = data.value(QLatin1String("conditiongroup_")).toString();
+        if (cg.isEmpty()) cg = QLatin1String("all");
+        return cg;
+    }
+
+    static QString type(const QVariantMap& data) {
         return data[QLatin1String("type_")].toString();
     }
 
     static bool isMethod(const QVariantMap& data, const char* id) {
-		return data[QLatin1String("member_")].toString() == QLatin1String(id);
-	}
+        return data[QLatin1String("member_")].toString() == QLatin1String(id);
+    }
     static QString pluginmember(const QVariantMap& data) {
         return data[QLatin1String("member_")].toString();
     }
 
-	static void setPluginmember(QVariantMap& data, const QString& uid) {
+    static void setPluginmember(QVariantMap& data, const QString& uid) {
         data[QLatin1String("member_")] = uid;
     }
-    
+
     /**
-	 * Write toCollection property
-	 */
+     * Write toCollection property
+     */
 //     static void setToCollection(QVariantMap& data, const QString& collectionuid) {
 //         data[QLatin1String("__toCollection")] = collectionuid;
 //     }
-//     
+//
     /**
-	 * For eventMap
-	 */
+     * For eventMap
+     */
     static QVariantMap newDataWithCollectionUid(const QVariantMap& data, const QString& collectionuid) {
-		QVariantMap modifieddata = data;
-		modifieddata[QLatin1String("collection_")] = collectionuid;
+        QVariantMap modifieddata = data;
+        modifieddata[QLatin1String("collection_")] = collectionuid;
         return modifieddata;
     }
 };
 
-class AbstractServer;
 class AbstractPlugin
 {
 public:
     /**
      * Hint: Do not reimplement this method (It is implemented within the PLUGIN_MACRO macro).
      */
-	virtual QString pluginid() = 0;
-	
+    virtual QString pluginid() = 0;
+
     /**
-	 * Hint: Do not reimplement this method (It is implemented within the PLUGIN_MACRO macro).
+     * Hint: Do not reimplement this method (It is implemented within the PLUGIN_MACRO macro).
      */
-    virtual void connectToServer(AbstractServer* server) = 0;
+    virtual void connectToServer(AbstractServerCollectionController* m_serverCollectionController,
+                                 AbstractServerPropertyController* m_serverPropertyController) = 0;
 
     /**
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the
      * network is initiated or by request from a client with sufficient access rights.
      */
-	virtual void initialize() = 0;
-	
+    virtual void initialize() = 0;
+
     /**
      * Called by server process before it releases all ressources and finish.
      * Tidy up here.
      */
     virtual void clear() = 0;
-	
+
 };
 Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/2.0")

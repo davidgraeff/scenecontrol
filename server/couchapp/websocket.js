@@ -5,7 +5,13 @@ function propertiesWebsocket() {
 	that.url = "wss://" + window.location.hostname +":3101";
 	
 	this.requestall = function() {
-		socket_di.send('{"plugin_":"PluginController", "type_":"execute", "member_":"requestProperties"}\n');
+		this.write({"plugin_":"PluginController", "type_":"execute", "member_":"requestProperties"});
+	}
+	
+	this.write = function(data) {
+		if (typeof data == "object")
+			data = JSON.stringify(data);
+		socket_di.send(data);
 	}
 	
 	this.reconnect = function() {

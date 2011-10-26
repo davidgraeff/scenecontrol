@@ -4,7 +4,6 @@
 #include "paths.h"
 #include "config.h"
 #include <QDebug>
-#include "servicecontroller.h"
 #include <parser.h>
 #include "libwebsocket/private-libwebsockets.h"
 
@@ -131,7 +130,7 @@ WebSocket::~WebSocket()
 WebSocket::WebSocket() : m_websocket_context( 0 ) {
     m_websocket_context = libwebsocket_create_context(ROOM_LISTENPORT, 0, protocols,
                           libwebsocket_internal_extensions,
-                          certificateFile("server.crt").toLatin1().constData(), certificateFile("server.key").toLatin1().constData(), -1, -1, 0, this);
+                          setup::certificateFile("server.crt").toLatin1().constData(), setup::certificateFile("server.key").toLatin1().constData(), -1, -1, 0, this);
     if (m_websocket_context == 0) {
         qWarning() << "libwebsocket init failed";
     } else {
@@ -141,7 +140,13 @@ WebSocket::WebSocket() : m_websocket_context( 0 ) {
         qDebug() << "SSL Websocket ready on port" << ROOM_LISTENPORT;
     }
 }
-
+static WebSocket* websocket_instance = 0;
+WebSocket* WebSocket::instance()
+{
+    if (!websocket_instance)
+        websocket_instance = new WebSocket();
+    return websocket_instance;
+}
 
 void WebSocket::websocketactivity(int) {
     libwebsocket_service(m_websocket_context,0);
@@ -180,8 +185,11 @@ void WebSocket::sendToAllClients(const QByteArray& rawdata) {
     libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
 }
 
-void WebSocket::sendToClient(const QByteArray& rawdata, libwebsocket* wsi) {
+void WebSocket::sendToClient(const QByteArray& rawdata, int sessionid) {
     if (!m_websocket_context)
+        return;
+    libwebsocket* wsi = wsi_from_fd(m_websocket_context, sessionid);
+    if (!wsi)
         return;
     unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + rawdata.size()];
     unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
@@ -190,8 +198,4 @@ void WebSocket::sendToClient(const QByteArray& rawdata, libwebsocket* wsi) {
     if (n < 0) {
         qWarning() << "ERROR writing to socket: websocketClientRequestAllProperties";
     }
-}
-
-libwebsocket* WebSocket::wsiFromSockFD(int socket) {
-    return wsi_from_fd(m_websocket_context, socket);
 }

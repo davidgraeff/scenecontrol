@@ -23,8 +23,10 @@
 #include <QTimer>
 #include <QSet>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver.h"
-#include "shared/pluginsettingshelper.h" 
+#include "shared/abstractserver_collectioncontroller.h"
+
+#include "shared/abstractserver_propertycontroller.h"
+#include "shared/pluginsettingshelper.h"
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 #include <QDateTime>
@@ -39,21 +41,21 @@ public:
     virtual ~plugin();
 
     virtual void initialize();
-	virtual void clear();
+    virtual void clear();
     virtual QList<QVariantMap> properties(int sessionid);
     virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
     virtual void execute(const QVariantMap& data, int sessionid);
     virtual bool condition(const QVariantMap& data, int sessionid) ;
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
+    virtual void unregister_event ( const QString& eventid, int sessionid );
 private:
-	void calculate_next_events();
-	typedef QPair<QString, QString> SC_Uid;
-	typedef QMap<SC_Uid, QVariantMap> DataBySC_Uid;
-	QMap<QString, QVariantMap> m_remaining_events;
-	DataBySC_Uid m_timeout_events;
-	QTimer m_timer;
-	QDateTime m_nextAlarm;
+    void calculate_next_events();
+    typedef QPair<QString, QVariantMap> EventWithCollection;
+    typedef QMap<QString, EventWithCollection> EventsWithCollectionMap;
+    QMap<QString, EventWithCollection> m_remaining_events;
+    EventsWithCollectionMap m_timeout_events;
+    QTimer m_timer;
+    QDateTime m_nextAlarm;
 private Q_SLOTS:
-	void timeout();
+    void timeout();
 };

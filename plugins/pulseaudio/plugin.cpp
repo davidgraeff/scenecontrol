@@ -67,7 +67,7 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
 	Q_UNUSED(collectionuid);
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
 	Q_UNUSED(sessionid);
 	Q_UNUSED(data);
 	Q_UNUSED(collectionuid);
@@ -102,12 +102,12 @@ void plugin::pulseSinkChanged ( const PulseChannel& channel ) {
     sc.setData("sinkid", channel.sinkid);
     sc.setData("mute", channel.mute);
     sc.setData("volume", channel.volume);
-    m_server->pluginPropertyChanged ( sc.getData() );
+    m_serverPropertyController->pluginPropertyChanged ( sc.getData() );
 }
 
 void plugin::pulseVersion(int protocol, int server) {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID,  "pulse.version" );
     sc.setData("protocol", protocol);
     sc.setData("server", server);
-    m_server->pluginPropertyChanged ( sc.getData() );
+    m_serverPropertyController->pluginPropertyChanged ( sc.getData() );
 }

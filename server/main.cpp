@@ -20,7 +20,6 @@
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <QCoreApplication>
 #include <QProcess>
-#include "servicecontroller.h"
 #include <QSettings>
 #include "config.h"
 #include <qtextcodec.h>
@@ -28,6 +27,11 @@
 #include <stdio.h>
 #include "plugincontroller.h"
 #include <QDebug>
+#include "websocket.h"
+#include "propertycontroller.h"
+#include "collectioncontroller.h"
+#include "couchdb.h"
+#include "paths.h"
 
 bool exitByConsoleCommand = false;
 
@@ -36,7 +40,7 @@ static void catch_int(int )
     signal(SIGINT, 0);
     signal(SIGTERM, 0);
     exitByConsoleCommand = true;
-	printf("\n");
+    printf("\n");
     QCoreApplication::exit(0);
 }
 
@@ -50,8 +54,8 @@ int main(int argc, char *argv[])
     if (cmdargs.contains("--help")) {
         printf("%s - %s\n%s [--no-restart] [--no-event-loop] [--no-network] [--observe-service-dir] [--ignore-lock] [--help] [--version]\nLockfile: %s\n"
                "--no-restart: Do not restart after exit\n--no-event-loop: Shutdown after initialisation\n"
-			   "--ignore-lock: Try to remove lock and acquire lock file\n"
-			   "--help: This help text\n--version: Version information, parseable for scripts\n",
+               "--ignore-lock: Try to remove lock and acquire lock file\n"
+               "--help: This help text\n--version: Version information, parseable for scripts\n",
                ROOM_SERVICENAME, ABOUT_VERSION, argv[0],
                QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath()).toUtf8().constData());
         return 0;
@@ -89,20 +93,36 @@ int main(int argc, char *argv[])
     lockfile.open(QIODevice::ReadWrite|QIODevice::Append);
     lockfile.write(QByteArray::number(QCoreApplication::applicationPid()));
 
-    // service controller (implements AbstractServer)
-    ServiceController* services = new ServiceController();
-    PluginController* plugins = new PluginController(services);
+    setup::writeLastStarttime();
+
+    // create objects
+    WebSocket* websocket = WebSocket::instance();
+    CouchDB* couchdb = CouchDB::instance();
+    PropertyController* propertycontroller = new PropertyController();
+    CollectionController* collectioncontroller = new CollectionController();
+    PluginController* plugins = new PluginController(propertycontroller, collectioncontroller);
+
+    // connect objects
+    propertycontroller->setPluginController(plugins);
+    collectioncontroller->setPluginController(plugins);
+    plugins->connect(couchdb, SIGNAL(couchDB_Event_add(QString,QVariantMap)), plugins,  SLOT(couchDB_Event_add(QString,QVariantMap)));
+    plugins->connect(couchdb, SIGNAL(couchDB_Event_remove(QString)), plugins, SLOT(couchDB_Event_remove(QString)));
+    collectioncontroller->connect(websocket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
+    
+    // init
     plugins->initializePlugins();
-    services->startWatchingCouchDB();
+    couchdb->start();
 
     int exitcode = 0;
     if (!cmdargs.contains("--no-event-loop"))
         exitcode = qapp.exec();
 
     qDebug() << "Shutdown: Service Controller";
-    delete services;
-	delete plugins;
-    services = 0;
+    delete websocket;
+    delete propertycontroller;
+    delete collectioncontroller;
+    delete plugins;
+    delete couchdb;
 
     // remove lockfile
     lockfile.remove();
@@ -113,17 +133,17 @@ int main(int argc, char *argv[])
     // restart program
     if (ROOM_RESTART_ON_CLOSE) {
         if (exitByConsoleCommand) {
-			qDebug() << "Shutdown: Console shutdown. No restart allowed!";
-		} else if (cmdargs.contains("--no-restart")) {
+            qDebug() << "Shutdown: Console shutdown. No restart allowed!";
+        } else if (cmdargs.contains("--no-restart")) {
             qDebug() << "Shutdown: Start another instance not allowed!";
         } else if (exitcode == 0) {
             qDebug() << "Shutdown: Start another instance";
-			int rtry = 0;
-			for (int i=0;i<argc;++i) {
-				QString arg = QString::fromAscii(argv[i]);
-				if (arg.startsWith(QLatin1String("--restart-try="))) rtry = arg.mid(strlen("--restart-try=")).toInt();
-			}
-			QString cmd = QString::fromAscii(argv[0]) + QLatin1String(" --restart-try=") + QString::number(rtry);
+            int rtry = 0;
+            for (int i=0;i<argc;++i) {
+                QString arg = QString::fromAscii(argv[i]);
+                if (arg.startsWith(QLatin1String("--restart-try="))) rtry = arg.mid(strlen("--restart-try=")).toInt();
+            }
+            QString cmd = QString::fromAscii(argv[0]) + QLatin1String(" --restart-try=") + QString::number(rtry);
             QProcess::startDetached(cmd);
         }
     }

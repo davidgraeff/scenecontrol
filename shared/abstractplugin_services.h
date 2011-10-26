@@ -51,11 +51,11 @@ public:
     * Collections may register events here. Events are triggered by plugins with event_trigger.
     */
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) = 0;
-	
+
     /**
     * When collections get removed they unregister their events with this method. If collections are changed
-	* they will call unregister_event and register_event in sequence.
+    * they will call unregister_event and register_event in sequence.
     */
-	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) = 0;
+    virtual void unregister_event ( const QString& eventid, int sessionid ) = 0;
 };
 Q_DECLARE_INTERFACE(AbstractPlugin_services, "com.roomcontrol.PluginServices/2.0")

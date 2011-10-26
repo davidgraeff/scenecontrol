@@ -53,9 +53,9 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
     Q_UNUSED ( sessionid );
-	Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
-	if (lid.port == -1) return;
-	 
+    Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
+    if (lid.port == -1) return;
+
     if ( ServiceID::isMethod(data, "udpio.value_absolut" ) ) {
         m_controller->setChannel ( lid,BOOLDATA("value") );
     } else if ( ServiceID::isMethod(data, "udpio.value_toggle" ) ) {
@@ -67,10 +67,10 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
 
 bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     Q_UNUSED ( sessionid );
-	Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
-	if (lid.port == -1)
-		return false;
-	
+    Controller::ledid lid =  m_controller->getPortPinFromString( DATA("channel") );
+    if (lid.port == -1)
+        return false;
+
     if ( ServiceID::isMethod(data, "udpio.condition" ) ) {
         const bool v = m_controller->getChannel ( lid );
         if ( v != BOOLDATA("value") ) return false;
@@ -79,16 +79,16 @@ bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+    Q_UNUSED(sessionid);
     if (ServiceID::isMethod(data,"udpio.watchvalue")) {
         m_events.add(data, collectionuid);
     }
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
-    m_events.remove(data, collectionuid);
+void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+    Q_UNUSED(sessionid);
+    m_events.remove( eventid );
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
@@ -96,7 +96,7 @@ QList<QVariantMap> plugin::properties(int sessionid) {
     QList<QVariantMap> l;
 
     l.append(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
-	
+
     QMap<Controller::ledid, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
     for (;i!=m_controller->m_leds.end();++i) {
         {
@@ -109,19 +109,19 @@ QList<QVariantMap> plugin::properties(int sessionid) {
     }
 
     l.append(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.sensor", "sensorid").getData());
-	if (m_read) {
-		ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "udpio.sensor");
-		for (int id=0;id<m_sensors.size();++id) {
-			sc.setData("sensorid", id);
-			sc.setData("value", m_sensors[id]);
-			l.append(sc.getData());
-		}
-	}
+    if (m_read) {
+        ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "udpio.sensor");
+        for (int id=0;id<m_sensors.size();++id) {
+            sc.setData("sensorid", id);
+            sc.setData("value", m_sensors[id]);
+            l.append(sc.getData());
+        }
+    }
     return l;
 }
 
 void plugin::ledsCleared() {
-    m_server->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
+    m_serverPropertyController->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "udpio.names", "channel").getData());
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {
@@ -129,21 +129,21 @@ void plugin::ledChanged(QString channel, QString name, int value) {
     sc.setData("channel", channel);
     if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value?true:false);
-    m_server->pluginPropertyChanged(sc.getData());
+    m_serverPropertyController->pluginPropertyChanged(sc.getData());
 }
 
 void plugin::watchpinChanged(const unsigned char port, const unsigned char pinmask) {
-	qDebug() << "WATCH PIN CHANGED" << port << pinmask;
-        ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "udpio.sensor");
-        for (int i=0;i<8;++i) {
-            bool newvalue = (1 << i) & pinmask;
-            if (!m_read || m_sensors[i] != newvalue) {
-                m_sensors[i] = newvalue;
-                sc.setData("sensorid", i);
-                sc.setData("value", m_sensors[i]);
-                m_server->pluginPropertyChanged(sc.getData());
-                m_events.triggerEvent(i, m_server);
-            }
+    qDebug() << "WATCH PIN CHANGED" << port << pinmask;
+    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "udpio.sensor");
+    for (int i=0;i<8;++i) {
+        bool newvalue = (1 << i) & pinmask;
+        if (!m_read || m_sensors[i] != newvalue) {
+            m_sensors[i] = newvalue;
+            sc.setData("sensorid", i);
+            sc.setData("value", m_sensors[i]);
+            m_serverPropertyController->pluginPropertyChanged(sc.getData());
+            m_events.triggerEvent(i, m_serverCollectionController);
         }
-	m_read = true;
+    }
+    m_read = true;
 }

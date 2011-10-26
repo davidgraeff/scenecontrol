@@ -13,13 +13,7 @@
 		<enum id="state" n="3" /><!-- resync client, restart, stop server -->
 	</execute>
 	
-	<execute id="requestPluginInfos" />
-	<execute id="requestServices" />
 	<execute id="requestProperties" />
-	<execute id="requestSettings" />
-	<property id="transfer.service.complete" />
-	<property id="transfer.properties.complete" />
-	<property id="transfer.settings.complete" />
 	
 	<event id="serverevent">
 		<enum id="state" n="2" /><!-- ready, going offline -->
@@ -35,27 +29,4 @@
 	<execute id="clone">
 		<string id="collectionid" model="collections" model_key="collectionid" model_show="name" />
 	</execute>
-	
-	<collection>
-		<string id="name" />
-		<stringlist id="services" />
-		<stringlist id="categories" />
-		<bool id="enabled" />
-	</collection>
-	
-	<model id="collections" model_key="uid">
-		<string id="uid"></string>
-		<string id="name"></string>
-	</model>
-
-	<model id="plugins" model_key="pluginid">
-		<string id="pluginid"></string>
-		<string id="pluginname"></string>
-	</model>
-
-	<model id="functions" model_key="functionid">
-		<string id="functionid"></string>
-		<string id="pluginid"></string>
-		<string id="sectionname"></string>
-	</model>
 </plugin>

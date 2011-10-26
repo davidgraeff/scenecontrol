@@ -25,15 +25,9 @@
 #error Define PLUGIN_ID before including this header!
 #endif
 
-class AbstractServer
+class AbstractServerPropertyController
 {
 public:
-    /**
-     * Plugin event triggered
-     * \param event_id unqiue id (guid) of the triggered event
-     * \param destination_collectionuid only send this event trigger to the collection with this uid. Event trigger will be discarded if empty!
-     */
-    virtual void pluginEventTriggered(const QString& event_id, const QString& destination_collectionuid, const char* pluginid = PLUGIN_ID) = 0;
     /**
      * A plugin state/property has changed
      * \param data values of the property with special entry id (unqiue identifier within current plugin properties)
@@ -52,9 +46,4 @@ public:
      * Unregister all listeners. otherPropertyChanged will not be called by the server anymore.
      */
     virtual void pluginUnregisterAllPropertyChangeListeners(const char* pluginid = PLUGIN_ID) = 0;
-    /**
-     * Ask the server to execute the action described by the VariantMap. The fields "plugin_id" and "name" are mandatory.
-     */
-    virtual void pluginRequestExecution(const QVariantMap& data, const char* pluginid = PLUGIN_ID) = 0;
-
 };

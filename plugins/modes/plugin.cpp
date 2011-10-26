@@ -62,9 +62,9 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
     }
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+void plugin::unregister_event ( const QString& eventid, int sessionid ) {
     Q_UNUSED(sessionid);
-    m_mode_events.remove(data, collectionuid);
+    m_mode_events.remove( eventid );
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
@@ -81,7 +81,7 @@ QList<QVariantMap> plugin::properties(int sessionid) {
 void plugin::modeChanged(const QString& mode) {
     ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mode");
     sc.setData("mode", mode);
-    m_server->pluginPropertyChanged(sc.getData());
+    m_serverPropertyController->pluginPropertyChanged(sc.getData());
 
-    m_mode_events.triggerEvent(mode, m_server);
+    m_mode_events.triggerEvent(mode, m_serverCollectionController);
 }

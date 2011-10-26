@@ -21,7 +21,9 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver.h"
+#include "shared/abstractserver_collectioncontroller.h"
+
+#include "shared/abstractserver_propertycontroller.h"
 #include "shared/pluginsettingshelper.h" 
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
@@ -43,6 +45,6 @@ public:
     virtual void execute(const QVariantMap& data, int sessionid);
     virtual bool condition(const QVariantMap& data, int sessionid) ;
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-	virtual void unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
+	virtual void unregister_event ( const QString& eventid, int sessionid );
 private:
 };

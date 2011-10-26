@@ -50,7 +50,7 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "iovalue_absolut" ) ) {
         m_controller->setPin ( DATA("channel"),BOOLDATA("value") );
     } else if ( ServiceID::isMethod(data, "iovalue_toogle" ) ) {
@@ -63,33 +63,32 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
 }
 
 bool plugin::condition ( const QVariantMap& data, int sessionid )  {
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "iocondition" ) ) {
         return ( m_controller->getPin ( DATA("channel") ) == BOOLDATA("value") );
     }
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED ( collectionuid );
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+    Q_UNUSED(sessionid);
+    Q_UNUSED ( collectionuid );
     Q_UNUSED ( data );
 }
 
-void plugin::unregister_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
+void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+    Q_UNUSED(sessionid);
+    Q_UNUSED(eventid);
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     {
-		l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io", "channel").getData());
+        l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io", "channel").getData());
         QMap<QString, Controller::iochannel>::iterator i = m_controller->m_ios.begin();
         for (;i!=m_controller->m_ios.end();++i) {
-			const Controller::iochannel str = i.value();
+            const Controller::iochannel str = i.value();
             ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io");
             sc.setData("channel", i.key());
             sc.setData("value", str.value);
@@ -106,5 +105,5 @@ void plugin::dataChanged(QString channel, QString name, int value) {
     if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value);
 
-    m_server->pluginPropertyChanged(sc.getData());
+    m_serverPropertyController->pluginPropertyChanged(sc.getData());
 }

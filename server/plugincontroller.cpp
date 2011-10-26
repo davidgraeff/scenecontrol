@@ -1,4 +1,3 @@
-#include "plugincontroller.h"
 #include <QCoreApplication>
 #include <QSettings>
 #include <QDateTime>
@@ -8,22 +7,30 @@
 #include <qjson/serializer.h>
 #include <qjson/parser.h>
 #include "paths.h"
-#include "servicecontroller.h"
 #include <shared/pluginservicehelper.h>
-#include "websocket.h"
+#include "propertycontroller.h"
+#include "collectioncontroller.h"
+
+#include "plugincontroller.h"
 
 #define __FUNCTION__ __FUNCTION__
 
-PluginController::PluginController (ServiceController* servicecontroller) : m_servicecontroller(servicecontroller) {
-    servicecontroller->setPluginController(this);
-
+PluginController::PluginController (PropertyController* propertycontroller, CollectionController* collectioncontroller) {
     // add this class to plugins
     {
         PluginInfo* plugininfo = new PluginInfo(this);
         m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
     }
+    {
+        PluginInfo* plugininfo = new PluginInfo(propertycontroller);
+        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+    }
+    {
+        PluginInfo* plugininfo = new PluginInfo(collectioncontroller);
+        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+    }
 
-    const QDir plugindir = pluginDir();
+    const QDir plugindir = setup::pluginDir();
 
     AbstractPlugin *plugin;
 
@@ -49,7 +56,7 @@ PluginController::PluginController (ServiceController* servicecontroller) : m_se
         PluginInfo* plugininfo = new PluginInfo(plugin);
         m_plugins.insert ( plugin_id, plugininfo );
 
-        plugin->connectToServer(servicecontroller);
+        plugin->connectToServer(collectioncontroller, propertycontroller);
     }
 
     if (pluginfiles.empty())
@@ -115,17 +122,37 @@ QList< QVariantMap > PluginController::properties(int sessionid) {
     for (;i!=m_plugins.end();++i) {
         pluginlist += (*i)->plugin->pluginid();
     }
-    ServiceCreation s = ServiceCreation::createNotification(PLUGIN_ID, "plugins");
+    ServiceCreation s = ServiceCreation::createNotification("PluginController", "plugins");
     s.setData("plugins", pluginlist);
     l.append(s.getData());
     return l;
 }
 
+void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& event_data) {
+    QString destination_collectionuid = ServiceID::collectionid ( event_data );
+    if ( destination_collectionuid.isEmpty() ) {
+        qWarning() <<"Cannot register event. No collection set:"<<ServiceID::pluginid ( event_data ) << id;
+        return;
+    }
 
-void PluginController::execute(const QVariantMap& data, int sessionid) {
-	Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "requestProperties" ) ) {
-        m_servicecontroller->m_websocket->sendToClient(m_servicecontroller->allProperties(sessionid),
-						       m_servicecontroller->m_websocket->wsiFromSockFD(sessionid));
+    AbstractPlugin* plugin = getPlugin ( ServiceID::pluginid ( event_data ) );
+    AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*> ( plugin );
+    if ( !executeplugin ) {
+        qWarning() <<"Cannot register event. No plugin found:"<<ServiceID::pluginid ( event_data ) << id;
+        return;
+    }
+
+    qDebug() << "register event:" << id << ServiceID::pluginid ( event_data ) << ServiceID::pluginmember ( event_data );
+    executeplugin->unregister_event ( id, -1 );
+    executeplugin->register_event ( event_data, destination_collectionuid, -1 );
+    m_registeredevents.insert(id, executeplugin);
+}
+
+void PluginController::couchDB_Event_remove(const QString& id) {
+    AbstractPlugin_services* executeplugin = m_registeredevents.take ( id );
+    if ( executeplugin ) {
+        qDebug() << "unregister event" << id << executeplugin;
+        executeplugin->unregister_event ( id, -1 );
     }
 }
+
