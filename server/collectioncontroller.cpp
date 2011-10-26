@@ -43,8 +43,11 @@ void RunningCollection::timeout()
         ++lowerBound;
     }
 
-    m_timetable.remove(lowerBound.key());
+    // remove all entries belonging to this time slot
     m_lasttime = lowerBound.key();
+    m_timetable.remove(lowerBound.key());
+
+    // restart timer for next time slot
     lowerBound = m_timetable.lowerBound(m_lasttime);
     if (lowerBound == m_timetable.constEnd()) {
         emit runningCollectionFinished(m_collectionid);
@@ -101,6 +104,8 @@ void CollectionController::actionsOfCollection(const QVariantList& actions, cons
 {
     delete m_runningCollections.take(collectionid);
     RunningCollection* run = new RunningCollection(actions, collectionid);
+    connect(run, SIGNAL(runningCollectionAction(QVariantMap)), SLOT(runningCollectionAction(QVariantMap)));
+    connect(run, SIGNAL(runningCollectionFinished(QString)), SLOT(runningCollectionFinished(QString)));
     m_runningCollections.insert(collectionid, run);
     updateListOfRunningCollections();
     run->start();
