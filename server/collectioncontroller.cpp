@@ -22,6 +22,7 @@ RunningCollection::RunningCollection(const QVariantList& actions, const QString&
         m_timetable.insert (actiondata.value(QLatin1String("delay_"), 0).toInt(), actiondata);
     }
     connect(&m_timer, SIGNAL(timeout()), SLOT(timeout()));
+    m_timer.setSingleShot(true);
 }
 
 void RunningCollection::start()
@@ -114,7 +115,7 @@ void CollectionController::actionsOfCollection(const QVariantList& actions, cons
 void CollectionController::updateListOfRunningCollections()
 {
     ServiceCreation data = ServiceCreation::createNotification(PLUGIN_ID, "collection.running");
-    QStringList list(m_runningCollections.keys());
+    const QStringList list(m_runningCollections.keys());
     data.setData("running",list);
     m_serverPropertyController->pluginPropertyChanged(data.getData(), -1, PLUGIN_ID);
 }

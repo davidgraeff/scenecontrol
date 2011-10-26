@@ -35,8 +35,12 @@ void PropertyController::pluginPropertyChanged ( const QVariantMap& data, int se
 
     //emit dataSync ( data, sessionid );
     QByteArray jsondata = QJson::Serializer().serialize(data);
-    if (!jsondata.isEmpty())
+    if (!jsondata.isEmpty()) {
+      if (sessionid == -1)
         WebSocket::instance()->sendToAllClients(jsondata);
+      else
+	WebSocket::instance()->sendToClient(jsondata, sessionid);
+    }
 }
 
 QByteArray PropertyController::allProperties(int sessionid) {
