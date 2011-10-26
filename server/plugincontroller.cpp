@@ -156,3 +156,13 @@ void PluginController::couchDB_Event_remove(const QString& id) {
     }
 }
 
+void PluginController::couchDB_failed(const QString& url) {
+    Q_UNUSED(url);
+    QMap<QString, AbstractPlugin_services*>::iterator i = m_registeredevents.begin();
+    for (;i!=m_registeredevents.end();++i) {
+        AbstractPlugin_services* executeplugin = i.value();
+        qDebug() << "unregister event" << i.key() << executeplugin;
+        executeplugin->unregister_event ( i.key(), -1 );
+    }
+}
+

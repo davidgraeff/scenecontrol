@@ -107,8 +107,9 @@ int main(int argc, char *argv[])
     collectioncontroller->setPluginController(plugins);
     plugins->connect(couchdb, SIGNAL(couchDB_Event_add(QString,QVariantMap)), plugins,  SLOT(couchDB_Event_add(QString,QVariantMap)));
     plugins->connect(couchdb, SIGNAL(couchDB_Event_remove(QString)), plugins, SLOT(couchDB_Event_remove(QString)));
+    plugins->connect(couchdb, SIGNAL(couchDB_failed(QString)), plugins, SLOT(couchDB_failed(QString)));
     collectioncontroller->connect(websocket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
-    
+    collectioncontroller->connect(couchdb, SIGNAL(couchDB_actionsOfCollection(QVariantList,QString)), collectioncontroller, SLOT(actionsOfCollection(QVariantList,QString)));
     // init
     plugins->initializePlugins();
     couchdb->start();

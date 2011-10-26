@@ -84,5 +84,6 @@ private:
 public Q_SLOTS:
     void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
     void couchDB_Event_remove(const QString& id);
+    void couchDB_failed(const QString& url);
 };
 #undef PLUGIN_ID
