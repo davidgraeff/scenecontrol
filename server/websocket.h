@@ -24,12 +24,14 @@
 #include <QVariantMap>
 #include <QSet>
 #include <QSocketNotifier>
+#include <QSslSocket>
+#include <QTcpServer>
 
 class libwebsocket;
 class libwebsocket_context;
 class ServiceController;
 
-class WebSocket: public QObject {
+class WebSocket: public QTcpServer {
     Q_OBJECT
 public:
     static WebSocket* instance();
@@ -48,6 +50,11 @@ private:
     ServiceController* m_servicecontroller;
     struct libwebsocket_context* m_websocket_context;
     QMap<int, QSocketNotifier*> m_websocket_fds;
+    QMap<int, QSslSocket*> m_sockets;
+    virtual void	incomingConnection ( int socketDescriptor );
+private Q_SLOTS:
+    void readyRead();
+    void socketDisconnected();
 public slots:
     void websocketactivity(int);
 Q_SIGNALS:

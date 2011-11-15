@@ -139,6 +139,8 @@ WebSocket::WebSocket() : m_websocket_context( 0 ) {
         }
         qDebug() << "SSL Websocket ready on port" << ROOM_LISTENPORT;
     }
+
+    listen(QHostAddress::Any, ROOM_LISTENPORT+1);
 }
 static WebSocket* websocket_instance = 0;
 WebSocket* WebSocket::instance()
@@ -147,6 +149,19 @@ WebSocket* WebSocket::instance()
         websocket_instance = new WebSocket();
     return websocket_instance;
 }
+
+void WebSocket::incomingConnection(int socketDescriptor)
+ {
+     QSslSocket *socket = new QSslSocket;
+     if (socket->setSocketDescriptor(socketDescriptor)) {
+         m_sockets.insert(socketDescriptor, socket);
+         connect(socket, SIGNAL(encrypted()), this, SLOT(readyRead()));
+         connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+         socket->startServerEncryption();
+     } else {
+         delete socket;
+     }
+ }
 
 void WebSocket::websocketactivity(int) {
     libwebsocket_service(m_websocket_context,0);
@@ -163,6 +178,22 @@ void WebSocket::addWebsocketFD(int fd, short int direction) {
 
 void WebSocket::removeWebsocketFD(int fd) {
     delete m_websocket_fds.take(fd);
+}
+
+void WebSocket::readyRead() {
+    QSslSocket *serverSocket = (QSslSocket *)sender();
+    bool ok;
+    while (serverSocket->readLine()) {
+        QVariant v = QJson::Parser().parse(rawdata, &ok);
+        if (ok)
+            emit requestExecution(v.toMap(), serverSocket->socketDescriptor());
+    }
+}
+
+void WebSocket::socketDisconnected() {
+    QSslSocket *socket = (QSslSocket *)sender();
+    m_sockets.remove(socket->socketDescriptor());
+    socket->deleteLater();
 }
 
 void WebSocket::websocketReceive(const QByteArray& rawdata, libwebsocket* wsi) {
@@ -183,11 +214,25 @@ void WebSocket::sendToAllClients(const QByteArray& rawdata) {
     unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + len];
     memcpy(buf + LWS_SEND_BUFFER_PRE_PADDING,rawdata.constData(),len);
     libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
+    // send data over sockets
+    QMap<int, QSslSocket*>::const_iterator it = m_sockets.constBegin();
+    while(it != m_sockets.constEnd()) {
+        it.value()->write(rawdata);
+    }
 }
 
 void WebSocket::sendToClient(const QByteArray& rawdata, int sessionid) {
+    // try to find a socket connection with corresponding sessionid
+    QSslSocket *socket = m_sockets.value(sessionid);
+    if (socket) {
+        socket->write(rawdata);
+        return;
+    }
+
+    // try to find a websocket connection with corresponding sessionid
     if (!m_websocket_context)
         return;
+
     libwebsocket* wsi = wsi_from_fd(m_websocket_context, sessionid);
     if (!wsi) {
       qWarning() << "Websocket: sessionid not found!" << sessionid << wsi;
