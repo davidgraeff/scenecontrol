@@ -165,7 +165,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
         connect(socket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
         socket->ignoreSslErrors();
         socket->startServerEncryption();
-        qDebug() << "new socket" << socketDescriptor << "enc";
+        qDebug() << "new socket" << socketDescriptor << "enc" << socket->sslErrors() << socket->peerAddress() << socket->state();
     } else {
         delete socket;
     }
