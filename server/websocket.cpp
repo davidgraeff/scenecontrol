@@ -183,7 +183,9 @@ void WebSocket::removeWebsocketFD(int fd) {
 void WebSocket::readyRead() {
     QSslSocket *serverSocket = (QSslSocket *)sender();
     bool ok;
-    while (serverSocket->readLine()) {
+    while (serverSocket->canReadLine()) {
+        const QByteArray rawdata = serverSocket->readLine();
+        qDebug() << "socket read" << serverSocket->socketDescriptor() << rawdata;
         QVariant v = QJson::Parser().parse(rawdata, &ok);
         if (ok)
             emit requestExecution(v.toMap(), serverSocket->socketDescriptor());
