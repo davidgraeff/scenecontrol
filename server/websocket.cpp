@@ -137,10 +137,14 @@ WebSocket::WebSocket() : m_websocket_context( 0 ) {
         for (int i=0; i< m_websocket_context->fds_count; ++i) {
             addWebsocketFD(m_websocket_context->fds[i].fd, m_websocket_context->fds[i].events);
         }
-        qDebug() << "SSL Websocket ready on port" << ROOM_LISTENPORT;
+        qDebug() << "SSL Websocket Server ready on port" << ROOM_LISTENPORT;
     }
 
-    listen(QHostAddress::Any, ROOM_LISTENPORT+1);
+    if (listen(QHostAddress::Any, ROOM_LISTENPORT+1)) {
+        qDebug() << "SSL TCPSocket Server ready on port" << ROOM_LISTENPORT+1;
+    } else {
+        qWarning() << "TCPSocket Server init failed";
+    }
 }
 static WebSocket* websocket_instance = 0;
 WebSocket* WebSocket::instance()
@@ -151,17 +155,18 @@ WebSocket* WebSocket::instance()
 }
 
 void WebSocket::incomingConnection(int socketDescriptor)
- {
-     QSslSocket *socket = new QSslSocket;
-     if (socket->setSocketDescriptor(socketDescriptor)) {
-         m_sockets.insert(socketDescriptor, socket);
-         connect(socket, SIGNAL(encrypted()), this, SLOT(readyRead()));
-         connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
-         socket->startServerEncryption();
-     } else {
-         delete socket;
-     }
- }
+{
+    QSslSocket *socket = new QSslSocket;
+    socket->ignoreSslErrors();
+    if (socket->setSocketDescriptor(socketDescriptor)) {
+        m_sockets.insert(socketDescriptor, socket);
+        connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
+        connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+        socket->startServerEncryption();
+    } else {
+        delete socket;
+    }
+}
 
 void WebSocket::websocketactivity(int) {
     libwebsocket_service(m_websocket_context,0);
