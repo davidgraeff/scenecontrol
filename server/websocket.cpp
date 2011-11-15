@@ -197,7 +197,7 @@ void WebSocket::readyRead() {
     bool ok;
     while (serverSocket->canReadLine()) {
         const QByteArray rawdata = serverSocket->readLine();
-        qDebug() << "socket read" << serverSocket->socketDescriptor() << rawdata << rawdata.length();
+        qDebug() << "socket read" << serverSocket->socketDescriptor() << rawdata.length() << rawdata.toBase64();
         if (!rawdata.length())
             continue;
         QVariant v = QJson::Parser().parse(rawdata, &ok);
