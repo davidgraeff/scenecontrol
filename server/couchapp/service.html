@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head><title>Services</title>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
+		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<script src="/_utils/script/jquery.couch.js"></script>
+		<script src="/roomcontrol/html_server/websocket.js"></script>
+		<script src="/roomcontrol/html_server/handlebars.1.0.0.beta.3.js"></script>
+		<script src="/roomcontrol/html_server/collections.js"></script>
+	</head>
+	<body>
+		<div data-role="page" id="servicepage">
+			<div data-role="header">
+				<a href="collections.html#collectionpage_services" data-role="button" data-iconpos="notext" data-direction="reverse" data-icon="arrow-l" >Zurück</a>
+				<h1 id="servicepagetitle">Service</h1>
+			</div>
+
+			<div data-role="content">
+			inhalt
+			</div>
+			
+			<div data-role="footer">
+				<a href="#" onclick="" data-role="button" data-icon="plus" id="service_save">Speichern</a>
+				<a href="#" onclick="" data-role="button" data-icon="delete" id="service_remove">Löschen</a>
+			</div>
+			
+			<script>
+			$( '#servicepage' ).live( 'pageinit',function(event){
+				var c = collections.currentcollection;
+				if (!c) {
+						window.location.href="collections.html";
+						return;
+				}
+				
+				if (collections.currentservice) {
+					$( '#servicepagetitle' ).text(c.name + " Service editieren");
+					$( '#service_remove' ).show();
+					$( '#service_save' ).text("Speichern");
+				} else {
+					$( '#servicepagetitle' ).text(c.name + " Service erstellen");
+					$( '#service_remove' ).hide();
+					$( '#service_save' ).text("Erstellen");
+				}
+			});
+			</script>
+		</div>
+	</body>
+</html>

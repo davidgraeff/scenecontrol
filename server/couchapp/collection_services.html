@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+	<head><title>Services</title>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
+		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<script src="/_utils/script/jquery.couch.js"></script>
+		<script src="/roomcontrol/html_server/websocket.js"></script>
+		<script src="/roomcontrol/html_server/handlebars.1.0.0.beta.3.js"></script>
+		<script src="/roomcontrol/html_server/collections.js"></script>
+	</head>
+	<body>
+		<div data-role="page" id="collectionpage_services">
+			<div data-role="header">
+				<a href="collections.html" data-role="button" data-iconpos="notext" data-direction="reverse" data-icon="arrow-l" >Zurück</a>
+				<h1><span class="collectionname">Test Profil</span>: Services</h1>
+				<a href="service.html?collectionid=invalid" data-role="button" data-icon="plus" id="service_new_link">Neu</a>
+			</div>
+			<div data-role="content">
+				<ul data-inset="true" id="services_events" data-role="listview"></ul>
+				<ul data-inset="true" id="services_conditions" data-role="listview"></ul>
+				<ul data-inset="true" id="services_actions" data-role="listview"></ul>
+				<script id="services-entry-template" type="text/x-handlebars-template">
+					<li data-icon="info">
+						<a id="li_{{serviceid}}" href="service.html?collectionid={{collectionid}}&amp;serviceid={{serviceid}}">
+							<h3>{{name}}</h3><div class="ui-li-desc">{{sub}}</div>
+						</a>
+					</li>
+				</script>
+			</div>
+			<script>
+				function init() {
+					var c = collections.currentcollection();
+					if (!c)
+						return;
+						//window.location.href="collections.html";
+
+					$(".collectionname").text(c.name);
+					$("#service_new_link").attr("href", "service.html?collectionid="+c._id);
+					
+					$(collections).bind('servicesReady', function(event) {
+						var template_service_entry = Handlebars.compile($("#services-entry-template").html());
+
+						var services_events = $("#services_events");
+						var services_conditions = $("#services_conditions");
+						var services_actions = $("#services_actions");
+						services_events.empty();
+						services_conditions.empty();
+						services_actions.empty();
+						services_events.append('<li data-role="list-divider">Ereignisse</li>');
+						services_conditions.append('<li data-role="list-divider">Bedingungen</li>');
+						services_actions.append('<li data-role="list-divider">Aktionen</li>');
+						for (var serviceid in collections.services) {
+							var original_service = collections.services[serviceid];
+							// create deep copy of service object but filter out some keys
+							var service = {};
+							for (var key in original_service) {
+								if (["_id", "_rev", "plugin_", "member_", "type_"].indexOf(key) == -1)
+									service[key] = original_service[key];
+							}
+							// create json text out of it
+							var serviceText = JSON.stringify(service);
+							var entry = {"serviceid":original_service._id, "collectionid":c._id, "name":original_service.plugin_+"."+original_service.member_,"sub": serviceText};
+							if (original_service.type_ == "event")
+								services_events.append(template_service_entry(entry));
+							if (original_service.type_ == "condition")
+								services_conditions.append(template_service_entry(entry));
+							if (original_service.type_ == "action")
+								services_actions.append(template_service_entry(entry));					
+						}  
+						services_events.listview('refresh');
+						services_conditions.listview('refresh');
+						services_actions.listview('refresh');
+					});
+					collections.refreshServices();
+				}
+				$( '#collectionpage_services' ).live( 'pageinit',function(event){
+					if (collections.collections)
+						init();
+					else {
+						$(collections).one("collectionsReady", init);
+						collections.refreshCollections();
+					}
+				});
+			</script>
+		</div>
+	</body>
+</html>

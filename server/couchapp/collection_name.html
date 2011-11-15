@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head><title>Profil umbennenen</title>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
+		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<script src="/_utils/script/jquery.couch.js"></script>
+		<script src="/roomcontrol/html_server/websocket.js"></script>
+		<script src="/roomcontrol/html_server/handlebars.1.0.0.beta.3.js"></script>
+		<script src="/roomcontrol/html_server/collections.js"></script>
+	</head>
+	<body>
+
+		<div data-role="page" id="collection_name_page">
+			<div data-role="header">
+				<h1>Neues Profil</h1>
+				<a id="link_collection_name" href="#" data-rel="dialog" data-role="button" data-theme="a" data-icon="save" >Speichern</a>
+			</div>
+			<div data-role="content">
+				<div data-role="fieldcontain">
+				<label for="name">Profilname:</label>
+				<input type="text" id="collection_name" placeholder="Profilname" value="" />
+				</div>
+			</div>
+			<script>
+				$( '#collection_name_page' ).live( 'pageinit',function(event){
+					var c = collections.currentcollection();
+					if (c)
+						$("#collection_name").val(c.name);
+					else
+						$("#collection_name").val('');
+					
+					$("#link_collection_name").click(function() {
+						var newtext = escapeInputForJson( $("#collection_add_name").val() );
+						if (newtext == null || newtext.length < 2) {
+							$("#collection_name").effect("highlight", {}, 3000);
+							return false;
+						}
+						
+						$("#collection_name").val(newtext+"*");
+
+						var c = collections.currentcollection();
+						if (c) {
+							c.name = newtext;
+							collections.editcollection(c).one("edit_result", function(event, result) {
+								if (result) $("#collection_name_page").dialog('close');
+							});
+						} else
+							collections.addcollection(newtext).one("add_result", function(event, result) {
+								if (result) $("#collection_name_page").dialog('close');
+							});
+					});
+					
+					setTimeout(function(){
+						$("#collection_name").focus();
+					},0);
+					
+				});
+			</script>
+		</div>
+	</body>
+</html>
