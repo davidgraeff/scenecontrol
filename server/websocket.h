@@ -55,6 +55,7 @@ private:
 private Q_SLOTS:
     void readyRead();
     void socketDisconnected();
+    void sslErrors ( const QList<QSslError> & errors );
 public slots:
     void websocketactivity(int);
 Q_SIGNALS:

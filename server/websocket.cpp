@@ -162,12 +162,17 @@ void WebSocket::incomingConnection(int socketDescriptor)
         m_sockets.insert(socketDescriptor, socket);
         connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
         connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+        connect(socket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
         socket->ignoreSslErrors();
         socket->startServerEncryption();
         qDebug() << "new socket" << socketDescriptor << "enc";
     } else {
         delete socket;
     }
+}
+
+void WebSocket::sslErrors ( const QList<QSslError> & errors ) {
+    qDebug() << errors;
 }
 
 void WebSocket::websocketactivity(int) {
