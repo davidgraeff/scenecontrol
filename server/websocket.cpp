@@ -156,13 +156,15 @@ WebSocket* WebSocket::instance()
 
 void WebSocket::incomingConnection(int socketDescriptor)
 {
+    qDebug() << "new socket" << socketDescriptor;
     QSslSocket *socket = new QSslSocket;
-    socket->ignoreSslErrors();
     if (socket->setSocketDescriptor(socketDescriptor)) {
         m_sockets.insert(socketDescriptor, socket);
         connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
         connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+        socket->ignoreSslErrors();
         socket->startServerEncryption();
+        qDebug() << "new socket" << socketDescriptor << "enc";
     } else {
         delete socket;
     }
