@@ -235,16 +235,15 @@ void WebSocket::removeWebsocketFD(int fd) {
 void WebSocket::readyRead() {
     QSslSocket *serverSocket = (QSslSocket *)sender();
     bool ok;
-    qDebug() << "socket read" << serverSocket->canReadLine();
     while (serverSocket->canReadLine()) {
         const QByteArray rawdata = serverSocket->readLine();
-        qDebug() << "socket read" << serverSocket->socketDescriptor() << rawdata.length() << rawdata.toBase64();
         if (!rawdata.length())
             continue;
         QVariant v = QJson::Parser().parse(rawdata, &ok);
         if (ok)
             emit requestExecution(v.toMap(), serverSocket->socketDescriptor());
     }
+    qDebug() << "socket read ok";
 }
 
 void WebSocket::socketDisconnected() {
@@ -275,7 +274,9 @@ void WebSocket::sendToAllClients(const QByteArray& rawdata) {
     // send data over sockets
     QMap<int, QSslSocket*>::const_iterator it = m_sockets.constBegin();
     while(it != m_sockets.constEnd()) {
+        qDebug() << "send" << rawdata;
         it.value()->write(rawdata);
+        ++it;
     }
 }
 
