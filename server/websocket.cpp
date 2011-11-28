@@ -164,6 +164,45 @@ void WebSocket::incomingConnection(int socketDescriptor)
         connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
         connect(socket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
         socket->ignoreSslErrors();
+        serverSocket->setProtocol(QSsl::SslV3);
+
+        QByteArray key;
+        QByteArray cert;
+
+        QFile fileKey(certificateFile("server.key"));
+        if(fileKey.open(QIODevice::ReadOnly))
+        {
+            key = fileKey.readAll();
+            fileKey.close();
+        }
+        else
+        {
+            qWarning() << fileKey.errorString();
+        }
+
+        QFile fileCert(certificateFile("server.crt"));
+        if(fileCert.open(QIODevice::ReadOnly))
+        {
+            cert = fileCert.readAll();
+            fileCert.close();
+        }
+        else
+        {
+            qWarning() << fileCert.errorString();
+        }
+
+        QSslKey sslKey(key, QSsl::Rsa);
+        if (key.isNull()) {
+            qWarning() << "key invalid";
+        }
+
+        QSslCertificate sslCert(cert);
+        if (sslCert.isNull()) {
+            qWarning() << "sslCert invalid";
+        }
+
+        serverSocket->setPrivateKey(sslKey);
+        serverSocket->setLocalCertificate(sslCert);
         socket->startServerEncryption();
         qDebug() << "new socket" << socketDescriptor << "enc" << socket->sslErrors() << socket->peerAddress() << socket->state();
     } else {
