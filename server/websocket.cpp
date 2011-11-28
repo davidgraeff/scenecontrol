@@ -164,7 +164,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
         connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
         connect(socket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
         socket->ignoreSslErrors();
-        serverSocket->setProtocol(QSsl::SslV3);
+        socket->setProtocol(QSsl::SslV3);
 
         QByteArray key;
         QByteArray cert;
@@ -201,8 +201,8 @@ void WebSocket::incomingConnection(int socketDescriptor)
             qWarning() << "sslCert invalid";
         }
 
-        serverSocket->setPrivateKey(sslKey);
-        serverSocket->setLocalCertificate(sslCert);
+        socket->setPrivateKey(sslKey);
+        socket->setLocalCertificate(sslCert);
         socket->startServerEncryption();
         qDebug() << "new socket" << socketDescriptor << "enc" << socket->sslErrors() << socket->peerAddress() << socket->state();
     } else {
