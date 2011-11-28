@@ -158,7 +158,6 @@ WebSocket* WebSocket::instance()
 
 void WebSocket::incomingConnection(int socketDescriptor)
 {
-    qDebug() << "new socket" << socketDescriptor;
     QSslSocket *socket = new QSslSocket;
     if (socket->setSocketDescriptor(socketDescriptor)) {
         m_sockets.insert(socketDescriptor, socket);
@@ -205,7 +204,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
         socket->setPrivateKey(sslKey);
         socket->setLocalCertificate(sslCert);
         socket->startServerEncryption();
-        qDebug() << "new socket" << socketDescriptor << "enc" << socket->sslErrors() << socket->peerAddress() << socket->state();
+        qDebug() << "new socket" << socketDescriptor << socket->state() << socket->peerAddress() << socket->sslErrors();
     } else {
         delete socket;
     }
@@ -243,7 +242,6 @@ void WebSocket::readyRead() {
         if (ok)
             emit requestExecution(v.toMap(), serverSocket->socketDescriptor());
     }
-    qDebug() << "socket read ok";
 }
 
 void WebSocket::socketDisconnected() {
@@ -274,7 +272,6 @@ void WebSocket::sendToAllClients(const QByteArray& rawdata) {
     // send data over sockets
     QMap<int, QSslSocket*>::const_iterator it = m_sockets.constBegin();
     for(;it != m_sockets.constEnd();++it) {
-        qDebug() << "send" << it.value()->socketDescriptor() << rawdata;
         it.value()->write(rawdata);
     }
 }
