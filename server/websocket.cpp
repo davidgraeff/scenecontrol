@@ -169,7 +169,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
         QByteArray key;
         QByteArray cert;
 
-        QFile fileKey(certificateFile("server.key"));
+        QFile fileKey(setup::certificateFile("server.key"));
         if(fileKey.open(QIODevice::ReadOnly))
         {
             key = fileKey.readAll();
@@ -180,7 +180,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
             qWarning() << fileKey.errorString();
         }
 
-        QFile fileCert(certificateFile("server.crt"));
+        QFile fileCert(setup::certificateFile("server.crt"));
         if(fileCert.open(QIODevice::ReadOnly))
         {
             cert = fileCert.readAll();
