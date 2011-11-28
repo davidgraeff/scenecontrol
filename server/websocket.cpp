@@ -273,10 +273,9 @@ void WebSocket::sendToAllClients(const QByteArray& rawdata) {
     libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
     // send data over sockets
     QMap<int, QSslSocket*>::const_iterator it = m_sockets.constBegin();
-    while(it != m_sockets.constEnd()) {
-        qDebug() << "send" << rawdata;
+    for(;it == m_sockets.constEnd();++it) {
+        qDebug() << "send" << it.value()->socketDescriptor() << rawdata;
         it.value()->write(rawdata);
-        ++it;
     }
 }
 
