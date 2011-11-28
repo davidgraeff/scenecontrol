@@ -1,9 +1,9 @@
 #include "websocket.h"
 #include "libwebsocket/libwebsockets.h"
-//#include "libwebsocket/private-libwebsockets.h"
 #include "paths.h"
 #include "config.h"
 #include <QDebug>
+#include <QSslKey>
 #include <parser.h>
 #include "libwebsocket/private-libwebsockets.h"
 
