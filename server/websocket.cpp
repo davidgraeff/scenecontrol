@@ -210,6 +210,7 @@ void WebSocket::socketDisconnected() {
     QSslSocket *socket = (QSslSocket *)sender();
     m_sockets.remove(socket->socketDescriptor());
     socket->deleteLater();
+    qDebug() << "socket closed" << socket->socketDescriptor() << socket->errorString() << socket->error();
 }
 
 void WebSocket::websocketReceive(const QByteArray& rawdata, libwebsocket* wsi) {
