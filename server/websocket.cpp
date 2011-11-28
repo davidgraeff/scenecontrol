@@ -7,6 +7,8 @@
 #include <parser.h>
 #include "libwebsocket/private-libwebsockets.h"
 
+//openssl req -x509 -new -out server.crt -keyout server.key -days 365
+
 #define __FUNCTION__ __FUNCTION__
 
 enum libwebsocket_protocols_enum {
@@ -191,7 +193,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
             qWarning() << fileCert.errorString();
         }
 
-        QSslKey sslKey(key, QSsl::Rsa);
+        QSslKey sslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
         if (key.isNull()) {
             qWarning() << "key invalid";
         }
@@ -200,7 +202,6 @@ void WebSocket::incomingConnection(int socketDescriptor)
         if (sslCert.isNull()) {
             qWarning() << "sslCert invalid";
         }
-
         socket->setPrivateKey(sslKey);
         socket->setLocalCertificate(sslCert);
         socket->startServerEncryption();
@@ -234,6 +235,7 @@ void WebSocket::removeWebsocketFD(int fd) {
 void WebSocket::readyRead() {
     QSslSocket *serverSocket = (QSslSocket *)sender();
     bool ok;
+    qDebug() << "socket read" << serverSocket->canReadLine();
     while (serverSocket->canReadLine()) {
         const QByteArray rawdata = serverSocket->readLine();
         qDebug() << "socket read" << serverSocket->socketDescriptor() << rawdata.length() << rawdata.toBase64();
