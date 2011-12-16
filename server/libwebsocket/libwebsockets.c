@@ -2676,12 +2676,12 @@ libwebsocket_create_context(int port, const char *interf,
 
 		if (!SSL_CTX_load_verify_locations(
 					context->ssl_client_ctx, NULL,
-						      LWS_OPENSSL_CLIENT_CERTS))
+						      (char*)LWS_OPENSSL_CLIENT_CERTS))
 			fprintf(stderr,
 			    "Unable to load SSL Client certs from %s "
 			    "(set by --with-client-cert-dir= in configure) -- "
 				" client ssl isn't going to work",
-						      LWS_OPENSSL_CLIENT_CERTS);
+						      (char*)LWS_OPENSSL_CLIENT_CERTS);
 
 		/*
 		 * callback allowing user code to load extra verification certs
@@ -2725,6 +2725,8 @@ libwebsocket_create_context(int port, const char *interf,
 				ERR_error_string(ERR_get_error(), ssl_err_buf));
 			return NULL;
 		}
+		/* set password */
+		SSL_CTX_set_default_passwd_cb_userdata (context->ssl_ctx, "1234");
 		/* set the private key from KeyFile */
 		if (SSL_CTX_use_PrivateKey_file(context->ssl_ctx,
 			     ssl_private_key_filepath, SSL_FILETYPE_PEM) != 1) {
