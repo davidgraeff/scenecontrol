@@ -15,57 +15,8 @@
 
 #define __FUNCTION__ __FUNCTION__
 
-PluginController::PluginController (PropertyController* propertycontroller, CollectionController* collectioncontroller) {
-    // add this class to plugins
-    {
-        PluginInfo* plugininfo = new PluginInfo(this);
-        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-        this->connectToServer(collectioncontroller, propertycontroller);
-    }
-    {
-        PluginInfo* plugininfo = new PluginInfo(propertycontroller);
-        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-        propertycontroller->connectToServer(collectioncontroller, propertycontroller);
-    }
-    {
-        PluginInfo* plugininfo = new PluginInfo(collectioncontroller);
-        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-        collectioncontroller->connectToServer(collectioncontroller, propertycontroller);
-    }
-
-    AbstractPlugin *plugin;
-
-    const QDir plugindir = setup::pluginDir();
-    QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
-    if (pluginfiles.empty())
-        qWarning() << "No plugins found in" << plugindir;
-
-    for (int i=0;i<pluginfiles.size();++i) {
-        const QString filename = plugindir.absoluteFilePath ( pluginfiles[i] );
-        QPluginLoader* loader = new QPluginLoader ( filename, this );
-        loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
-        if (!loader->load()) {
-            qWarning() << "Failed loading Plugin" << pluginfiles[i] << loader->errorString();
-            delete loader;
-            continue;
-        }
-
-        plugin = dynamic_cast<AbstractPlugin*> ( loader->instance() );
-        if (!plugin) {
-            qWarning() << "Failed to get instance" << filename;
-            delete loader;
-            continue;
-        }
-
-        const QString plugin_id = plugin->pluginid();
-        PluginInfo* plugininfo = new PluginInfo(plugin);
-        m_plugins.insert ( plugin_id, plugininfo );
-
-        plugin->connectToServer(collectioncontroller, propertycontroller);
-        CouchDB::instance()->requestPluginSettings(plugin_id);
-    }
-
-}
+PluginController::PluginController (PropertyController* propertycontroller, CollectionController* collectioncontroller)
+        :m_propertycontroller(propertycontroller), m_collectioncontroller(collectioncontroller) {}
 
 PluginController::~PluginController()
 {
@@ -179,8 +130,59 @@ void PluginController::couchDB_settings(const QString& pluginid, const QVariantM
     AbstractPlugin* p = getPlugin(pluginid);
     if (!p) {
         qWarning() << "Configuration for unknown plugin received" << pluginid;
-	return;
+        return;
     }
     p->settingsChanged(data);
+}
+
+void PluginController::couchDB_ready() {
+    // add this class to plugins
+    {
+        PluginInfo* plugininfo = new PluginInfo(this);
+        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+        this->connectToServer(m_collectioncontroller, m_propertycontroller);
+    }
+    {
+        PluginInfo* plugininfo = new PluginInfo(m_propertycontroller);
+        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+        m_propertycontroller->connectToServer(m_collectioncontroller, m_propertycontroller);
+    }
+    {
+        PluginInfo* plugininfo = new PluginInfo(m_collectioncontroller);
+        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
+        m_collectioncontroller->connectToServer(m_collectioncontroller, m_propertycontroller);
+    }
+
+    AbstractPlugin *plugin;
+
+    const QDir plugindir = setup::pluginDir();
+    QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
+    if (pluginfiles.empty())
+        qWarning() << "No plugins found in" << plugindir;
+
+    for (int i=0;i<pluginfiles.size();++i) {
+        const QString filename = plugindir.absoluteFilePath ( pluginfiles[i] );
+        QPluginLoader* loader = new QPluginLoader ( filename, this );
+        loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
+        if (!loader->load()) {
+            qWarning() << "Failed loading Plugin" << pluginfiles[i] << loader->errorString();
+            delete loader;
+            continue;
+        }
+
+        plugin = dynamic_cast<AbstractPlugin*> ( loader->instance() );
+        if (!plugin) {
+            qWarning() << "Failed to get instance" << filename;
+            delete loader;
+            continue;
+        }
+
+        const QString plugin_id = plugin->pluginid();
+        PluginInfo* plugininfo = new PluginInfo(plugin);
+        m_plugins.insert ( plugin_id, plugininfo );
+
+        plugin->connectToServer(m_collectioncontroller, m_propertycontroller);
+        CouchDB::instance()->requestPluginSettings(plugin_id);
+    }
 }
 

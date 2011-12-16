@@ -124,7 +124,8 @@ static struct libwebsocket_protocols protocols[] = {
 
 WebSocket::~WebSocket()
 {
-    libwebsocket_context_destroy(m_websocket_context);
+    if (m_websocket_context)
+        libwebsocket_context_destroy(m_websocket_context);
     m_websocket_context = 0;
     qDeleteAll(m_websocket_fds);
 }
@@ -171,7 +172,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
         QByteArray cert;
 
         QFile fileKey(setup::certificateFile("server.key"));
-        if(fileKey.open(QIODevice::ReadOnly))
+        if (fileKey.open(QIODevice::ReadOnly))
         {
             key = fileKey.readAll();
             fileKey.close();
@@ -182,7 +183,7 @@ void WebSocket::incomingConnection(int socketDescriptor)
         }
 
         QFile fileCert(setup::certificateFile("server.crt"));
-        if(fileCert.open(QIODevice::ReadOnly))
+        if (fileCert.open(QIODevice::ReadOnly))
         {
             cert = fileCert.readAll();
             fileCert.close();
@@ -271,7 +272,7 @@ void WebSocket::sendToAllClients(const QByteArray& rawdata) {
     libwebsockets_broadcast(&protocols[PROTOCOL_ROOMCONTROL], buf, len);
     // send data over sockets
     QMap<int, QSslSocket*>::const_iterator it = m_sockets.constBegin();
-    for(;it != m_sockets.constEnd();++it) {
+    for (;it != m_sockets.constEnd();++it) {
         it.value()->write(rawdata);
     }
 }
@@ -290,7 +291,7 @@ void WebSocket::sendToClient(const QByteArray& rawdata, int sessionid) {
 
     libwebsocket* wsi = wsi_from_fd(m_websocket_context, sessionid);
     if (!wsi) {
-      qWarning() << "Websocket: sessionid not found!" << sessionid << wsi;
+        qWarning() << "Websocket: sessionid not found!" << sessionid << wsi;
         return;
     }
     unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + LWS_SEND_BUFFER_POST_PADDING + rawdata.size()];

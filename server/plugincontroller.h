@@ -36,6 +36,7 @@
 class CollectionController;
 class PropertyController;
 
+
 class PluginInfo {
 public:
     AbstractPlugin* plugin;
@@ -82,10 +83,14 @@ private:
     QMap<QString,PluginInfo*> m_plugins;
     int m_index;
     QMap<QString, AbstractPlugin_services*> m_registeredevents;
+    
+    PropertyController* m_propertycontroller;
+    CollectionController* m_collectioncontroller;
 public Q_SLOTS:
     void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
     void couchDB_Event_remove(const QString& id);
     void couchDB_failed(const QString& url);
+    void couchDB_ready();
     void couchDB_no_settings_found(const QString& pluginid);
     void couchDB_settings(const QString& pluginid, const QVariantMap& data);
 };

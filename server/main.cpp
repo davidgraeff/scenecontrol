@@ -108,8 +108,9 @@ int main(int argc, char *argv[])
     plugins->connect(couchdb, SIGNAL(couchDB_Event_add(QString,QVariantMap)), plugins,  SLOT(couchDB_Event_add(QString,QVariantMap)));
     plugins->connect(couchdb, SIGNAL(couchDB_Event_remove(QString)), plugins, SLOT(couchDB_Event_remove(QString)));
     plugins->connect(couchdb, SIGNAL(couchDB_failed(QString)), plugins, SLOT(couchDB_failed(QString)));
-    plugins->connect(couchdb, SIGNAL(couchDB_no_settings_found(QString)), SLOT(couchDB_no_settings_found(QString)));
-    plugins->connect(couchdb, SIGNAL(couchDB_settings(QString,QVariantMap)), SLOT(couchDB_settings(QString,QVariantMap)));
+    plugins->connect(couchdb, SIGNAL(couchDB_ready()), plugins, SLOT(couchDB_ready()));
+    plugins->connect(couchdb, SIGNAL(couchDB_no_settings_found(QString)), plugins, SLOT(couchDB_no_settings_found(QString)));
+    plugins->connect(couchdb, SIGNAL(couchDB_settings(QString,QVariantMap)), plugins, SLOT(couchDB_settings(QString,QVariantMap)));
     collectioncontroller->connect(websocket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
     collectioncontroller->connect(couchdb, SIGNAL(couchDB_actionsOfCollection(QVariantList,QString)), collectioncontroller, SLOT(actionsOfCollection(QVariantList,QString)));
     
