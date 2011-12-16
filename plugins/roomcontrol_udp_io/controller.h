@@ -49,7 +49,7 @@ public:
 	
     Controller(AbstractPlugin* plugin);
     ~Controller();
-    void connectToLeds(const QString& url);
+    void connectToLeds(const QString& host, int port);
 
     int countChannels();
     QString getChannelName ( const Controller::ledid& channel );

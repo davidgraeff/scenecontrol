@@ -20,7 +20,6 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-#include "configplugin.h"
 #include <qfile.h>
 #include <shared/qextserialport/qextserialport.h>
 
@@ -28,7 +27,6 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
     m_socket = 0;
-    _config ( this );
 }
 
 plugin::~plugin() {
@@ -40,19 +38,13 @@ void plugin::initialize() {
 
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "server" ) ) {
-        const QString server = value.toString();
-        const int v = server.indexOf(QLatin1Char(':'));
-        if (v==-1) {
-            qWarning() << pluginid() << "Configuration wrong (server:port)" << server;
-            return;
-        }
+void plugin::settingsChanged(const QVariantMap& data) {
+    if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port"))) {
         delete m_socket;
         m_socket = new QUdpSocket(this);
         connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
-        m_socket->connectToHost(QHostAddress(server.mid(0,v)),server.mid(v+1).toInt());
+        m_socket->connectToHost(QHostAddress(data[QLatin1String("server")].toString()),
+				data[QLatin1String("port")].toInt());
     }
 }
 

@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
 
-SET(CONFIG_${PROJECT_NAME}_AUTOCONFIG "1075:1077:netz:netz" CACHE STRING "Autoconfiguation NET-PwrCtrl (send port:listen port:user:pwd")
-SET(CONFIG_AUTOCONFIG ${CONFIG_${PROJECT_NAME}_AUTOCONFIG})
-configure_file(configplugin.h.in configplugin.h @ONLY)
-
 SET(DEBFOUND TRUE)
 IF (DEBFOUND)
 	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)

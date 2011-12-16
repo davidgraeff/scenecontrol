@@ -84,7 +84,7 @@ public:
     int volume() const;
 
     void dumpMediaInfo();
-    void connectToMpd(const QString& hostport);
+    void connectToMpd(const QString& host, int port);
 private:
     AbstractPlugin* m_plugin;
     QString m_host;

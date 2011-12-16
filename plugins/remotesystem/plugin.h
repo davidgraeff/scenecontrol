@@ -20,20 +20,28 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
+#include <QHostAddress>
 #include "shared/abstractplugin.h"
 #include "shared/abstractserver_collectioncontroller.h"
 
 #include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginsettingshelper.h"
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
+#include <QUdpSocket>
+#include <QTimer>
 
-class ExternalClient;
-class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
+class ExternalClient {
+public:
+    QHostAddress host;
+    quint16 port;
+    bool noResponse;
+};
+
+class plugin : public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services)
+    Q_INTERFACES(AbstractPlugin AbstractPlugin_services)
 public:
     plugin();
     virtual ~plugin();
@@ -41,15 +49,18 @@ public:
     virtual void initialize();
     virtual void clear();
     virtual QList<QVariantMap> properties(int sessionid);
-    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void settingsChanged(const QVariantMap& data);
     virtual void execute(const QVariantMap& data, int sessionid);
     virtual bool condition(const QVariantMap& data, int sessionid) ;
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-	virtual void unregister_event ( const QString& eventid, int sessionid );
+    virtual void unregister_event ( const QString& eventid, int sessionid );
 private:
-    QList<ExternalClient*> specificClients(const QStringList& hosts);
-    QList<ExternalClient*> m_clients;
-    QList<ExternalClient*> m_selectedclients;
+    QMap<QString, ExternalClient> m_clients;
+    QUdpSocket m_listenSocket;
+    QTimer m_checkClientTimer;
+    QStringList m_allowedmembers;
+    QVariantMap stateChanged(const ExternalClient* client, bool propagate);
 private Q_SLOTS:
-    QVariantMap stateChanged(ExternalClient* client, bool propagate = true);
+    void checkClientAlive();
+    void readyRead();
 };

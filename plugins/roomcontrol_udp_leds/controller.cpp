@@ -144,7 +144,7 @@ void Controller::readyRead() {
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
     settings.beginGroup ( QLatin1String ( "channels" ) );
-	
+
     while (m_socket->hasPendingDatagrams()) {
         QByteArray bytes;
         bytes.resize ( m_socket->pendingDatagramSize() );
@@ -156,10 +156,10 @@ void Controller::readyRead() {
                 m_leds.clear();
                 emit ledsCleared();
                 for (uint8_t c=0;c<m_channels;++c) {
-					const unsigned int value = (uint8_t)bytes[7+c];
-					const QString name = settings.value(QLatin1String ( "channel_name" ) + QString::number(c),tr("Channel %1").arg(c)).toString();
+                    const unsigned int value = (uint8_t)bytes[7+c];
+                    const QString name = settings.value(QLatin1String ( "channel_name" ) + QString::number(c),tr("Channel %1").arg(c)).toString();
                     m_leds[QString::number(c)] = ledchannel(c, value, name);
-					emit ledChanged(QString::number(c), name, value);
+                    emit ledChanged(QString::number(c), name, value);
                 }
                 bytes = bytes.mid(7+m_channels);
             } else {
@@ -170,18 +170,13 @@ void Controller::readyRead() {
     }
 }
 
-void Controller::connectToLeds ( const QString& server ) {
-    const int v = server.indexOf(QLatin1Char(':'));
-    if (v==-1) {
-        qWarning() << m_plugin->pluginid() << "Configuration wrong (server:port)" << server;
-        return;
-    }
-    m_sendPort = server.mid(v+1).toInt();
+void Controller::connectToLeds ( const QString& host, int port ) {
+    m_sendPort = port;
     delete m_socket;
     m_socket = new QUdpSocket(this);
     connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
-    m_socket->connectToHost(QHostAddress(server.mid(0,v)),m_sendPort);
-	
+    m_socket->connectToHost(QHostAddress(host),m_sendPort);
+
     // request all channel values
     char b[] = {255,0,0};
     m_socket->write ( b, sizeof ( b ) );

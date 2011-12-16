@@ -20,7 +20,6 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-#include "configplugin.h"
 #include <qfile.h>
 #include <shared/qextserialport/qextserialport.h>
 
@@ -29,7 +28,6 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 plugin::plugin() {
     m_serial = 0;
     m_buffer[3] = '\r';
-    _config ( this );
 }
 
 plugin::~plugin() {
@@ -37,15 +35,15 @@ plugin::~plugin() {
 }
 
 void plugin::clear() {}
-void plugin::initialize(){
-    
+void plugin::initialize() {
+
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "serialport" ) ) {
+void plugin::settingsChanged(const QVariantMap& data)
+{
+    if (data.contains(QLatin1String("serialport"))) {
         delete m_serial;
-        const QString device = value.toString();
+        const QString device = data[QLatin1String("serialport")].toString();
         if ( !QFile::exists ( device ) ) {
             qWarning() << pluginid() << "device not found" << device;
             return;
@@ -60,8 +58,8 @@ void plugin::setSetting ( const QString& name, const QVariant& value, bool init 
         if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
             qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
         } else {
-			qDebug() << "sanyo connected to"<<device;
-		}
+            qDebug() << "sanyo connected to"<<device;
+        }
     }
 }
 
@@ -73,26 +71,26 @@ void plugin::writeToDevice() {
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
-	Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     if ( !m_serial ) return;
     if ( ServiceID::isMethod(data, "projector_sanyo_power" ) ) {
         if ( BOOLDATA ( "power" ) )
             strncpy ( m_buffer, "C00", 3 );
         else
             strncpy ( m_buffer, "C01", 3 );
-		writeToDevice();
+        writeToDevice();
     } else if ( ServiceID::isMethod(data, "projector_sanyo_video" ) ) {
         if ( BOOLDATA ( "mute" ) )
             strncpy ( m_buffer, "C0D", 3 );
         else
             strncpy ( m_buffer, "C0E", 3 );
-		writeToDevice();
+        writeToDevice();
     } else if ( ServiceID::isMethod(data, "projector_sanyo_lamp" ) ) {
         if ( BOOLDATA ( "eco" ) )
             strncpy ( m_buffer, "C75", 3 );
         else
             strncpy ( m_buffer, "C74", 3 );
-		writeToDevice();
+        writeToDevice();
     } else if ( ServiceID::isMethod(data, "projector_sanyo_focus" ) ) {
         //TODO
     }
@@ -100,23 +98,23 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
 
 bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     Q_UNUSED ( data );
-	Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     return false;
 }
 
 void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
     Q_UNUSED ( data );
-	Q_UNUSED(collectionuid);
-	Q_UNUSED(sessionid);
+    Q_UNUSED(collectionuid);
+    Q_UNUSED(sessionid);
 }
 
 void plugin::unregister_event ( const QString& eventid, int sessionid ) {
-	Q_UNUSED(eventid);
-	Q_UNUSED(sessionid);
+    Q_UNUSED(eventid);
+    Q_UNUSED(sessionid);
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
-Q_UNUSED(sessionid);
+    Q_UNUSED(sessionid);
     QList<QVariantMap> l;
     return l;
 }

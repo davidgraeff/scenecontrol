@@ -74,6 +74,7 @@ public:
     virtual void execute(const QVariantMap&, int) {}
     virtual void register_event(const QVariantMap&, const QString&, int){}
     virtual void unregister_event(const QString&, int){}
+    virtual void settingsChanged(const QVariantMap&) {}
 
     // Properties
     virtual QList< QVariantMap > properties(int sessionid);
@@ -85,5 +86,7 @@ public Q_SLOTS:
     void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
     void couchDB_Event_remove(const QString& id);
     void couchDB_failed(const QString& url);
+    void couchDB_no_settings_found(const QString& pluginid);
+    void couchDB_settings(const QString& pluginid, const QVariantMap& data);
 };
 #undef PLUGIN_ID

@@ -20,7 +20,6 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-#include "configplugin.h"
 #include "controller.h"
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
@@ -28,7 +27,6 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 plugin::plugin() {
     m_controller = new Controller ( this );
     connect ( m_controller,SIGNAL(dataChanged(QString,QString,int)),SLOT(dataChanged(QString,QString,int)));
-    _config ( this );
 }
 
 plugin::~plugin() {
@@ -40,13 +38,11 @@ void plugin::initialize() {
 
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "autoconfig" ) ) {
-        QStringList data = value.toString().split ( QLatin1Char ( ':' ) );
-        if ( data.size() >=4 )
-            m_controller->connectToIOs ( data[0].toInt(), data[1].toInt(), data[2], data[3] );
-    }
+void plugin::settingsChanged(const QVariantMap& data) {
+    if (data.contains(QLatin1String("sendingport")) && data.contains(QLatin1String("listenport")) &&
+            data.contains(QLatin1String("username")) && data.contains(QLatin1String("password")))
+        m_controller->connectToIOs ( data[QLatin1String("sendingport")].toInt(), data[QLatin1String("listenport")].toInt(),
+				     data[QLatin1String("username")].toString(), data[QLatin1String("password")].toString() );
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {

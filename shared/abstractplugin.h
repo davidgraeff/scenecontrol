@@ -149,6 +149,11 @@ public:
      * Tidy up here.
      */
     virtual void clear() = 0;
+    
+    /**
+     * Settings have changed. This method is called at startup for initial settings, too.
+     */
+    virtual void settingsChanged(const QVariantMap& data) = 0;
 
 };
 Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/2.0")

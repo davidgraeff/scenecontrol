@@ -64,5 +64,6 @@ private:
     virtual void execute(const QVariantMap&, int); // implement execute of interface AbstractPlugin_services
     virtual void register_event(const QVariantMap&, const QString&, int){}
     virtual void unregister_event(const QString&, int){}
+    virtual void settingsChanged(const QVariantMap&){}
     virtual QList< QVariantMap > properties(int){return QList< QVariantMap >();}
 };

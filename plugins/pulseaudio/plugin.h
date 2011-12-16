@@ -24,16 +24,15 @@
 #include "shared/abstractserver_collectioncontroller.h"
 
 #include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginsettingshelper.h" 
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 #include "mediacontroller.h"
 
-class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
+class plugin : public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services)
+    Q_INTERFACES(AbstractPlugin AbstractPlugin_services)
 public:
     plugin();
     virtual ~plugin();
@@ -43,7 +42,7 @@ public:
     virtual void initialize();
     virtual void clear();
     virtual QList<QVariantMap> properties(int sessionid);
-    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
+    virtual void settingsChanged(const QVariantMap& data);
     virtual void execute(const QVariantMap& data, int sessionid);
     virtual bool condition(const QVariantMap& data, int sessionid) ;
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );

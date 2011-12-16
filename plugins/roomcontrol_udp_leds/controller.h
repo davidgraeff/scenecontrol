@@ -47,7 +47,7 @@ public:
     */
     Controller(AbstractPlugin* plugin);
     ~Controller();
-    void connectToLeds(const QString& url);
+    void connectToLeds(const QString& host, int port);
 
     int countChannels();
     QString getChannelName ( const QString& channel );
@@ -58,30 +58,38 @@ public:
     void setChannelRelative ( const QString& channel, int value, uint fade );
     unsigned int getChannel(const QString& channel) const;
     void moodlight(const QString& channel, bool moodlight);
-	
-	struct ledchannel {
-		int value;
-		QString name;
-		bool moodlight;
+
+    struct ledchannel {
+        int value;
+        QString name;
+        bool moodlight;
         uint8_t channel;
-		ledchannel(uint8_t channel, int value, const QString& name) { this->channel = channel; this->value = value; moodlight = false; this->name = name; }
-		ledchannel() {value = -1; moodlight = false;}
-	};
+        ledchannel(uint8_t channel, int value, const QString& name) {
+            this->channel = channel;
+            this->value = value;
+            moodlight = false;
+            this->name = name;
+        }
+        ledchannel() {
+            value = -1;
+            moodlight = false;
+        }
+    };
     QMap<QString,ledchannel> m_leds;
 private:
     AbstractPlugin* m_plugin;
 
     int m_channels;
-	QTimer m_moodlightTimer;
-	// udp
+    QTimer m_moodlightTimer;
+    // udp
     int m_sendPort;
     QUdpSocket *m_socket;
 private Q_SLOTS:
     // LIGHTS //
     void readyRead();
-	void moodlightTimeout();
+    void moodlightTimeout();
 Q_SIGNALS:
-	void ledChanged(const QString& id, const QString& name, int value);
+    void ledChanged(const QString& id, const QString& name, int value);
     void dataLoadingComplete();
     void ledsCleared();
 };

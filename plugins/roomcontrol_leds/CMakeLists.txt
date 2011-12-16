@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 2.6)
 set(USE_SERIALPORT TRUE)
 find_package(RoomPlugins REQUIRED)
 
-SET(CONFIG_${PROJECT_NAME}_SERIALPORT "/dev/ttyS0" CACHE STRING "Serialport")
-SET(CONFIG_SERIALPORT ${CONFIG_${PROJECT_NAME}_SERIALPORT})
-configure_file(configplugin.h.in configplugin.h @ONLY)
-
 SET(DEBFOUND TRUE)
 IF (DEBFOUND)
 	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)

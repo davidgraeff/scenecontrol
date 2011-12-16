@@ -20,12 +20,10 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-// #include "configplugin.h"
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
 plugin::plugin() {
-    //     _config(this);
 }
 
 plugin::~plugin() {
@@ -37,10 +35,7 @@ void plugin::initialize() {
     reconnect_to_pulse(this);
 }
 
-
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-}
+void plugin::settingsChanged(const QVariantMap& data) {}
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
 	Q_UNUSED(sessionid);

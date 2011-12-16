@@ -10,7 +10,7 @@
 #include <shared/pluginservicehelper.h>
 #include "propertycontroller.h"
 #include "collectioncontroller.h"
-
+#include "couchdb.h"
 #include "plugincontroller.h"
 
 #define __FUNCTION__ __FUNCTION__
@@ -20,24 +20,26 @@ PluginController::PluginController (PropertyController* propertycontroller, Coll
     {
         PluginInfo* plugininfo = new PluginInfo(this);
         m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-	this->connectToServer(collectioncontroller, propertycontroller);
+        this->connectToServer(collectioncontroller, propertycontroller);
     }
     {
         PluginInfo* plugininfo = new PluginInfo(propertycontroller);
         m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-	propertycontroller->connectToServer(collectioncontroller, propertycontroller);
+        propertycontroller->connectToServer(collectioncontroller, propertycontroller);
     }
     {
         PluginInfo* plugininfo = new PluginInfo(collectioncontroller);
         m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-	collectioncontroller->connectToServer(collectioncontroller, propertycontroller);
+        collectioncontroller->connectToServer(collectioncontroller, propertycontroller);
     }
-
-    const QDir plugindir = setup::pluginDir();
 
     AbstractPlugin *plugin;
 
+    const QDir plugindir = setup::pluginDir();
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
+    if (pluginfiles.empty())
+        qWarning() << "No plugins found in" << plugindir;
+
     for (int i=0;i<pluginfiles.size();++i) {
         const QString filename = plugindir.absoluteFilePath ( pluginfiles[i] );
         QPluginLoader* loader = new QPluginLoader ( filename, this );
@@ -60,14 +62,19 @@ PluginController::PluginController (PropertyController* propertycontroller, Coll
         m_plugins.insert ( plugin_id, plugininfo );
 
         plugin->connectToServer(collectioncontroller, propertycontroller);
+        CouchDB::instance()->requestPluginSettings(plugin_id);
     }
 
-    if (pluginfiles.empty())
-        qWarning() << "No plugins found in" << plugindir;
 }
 
 PluginController::~PluginController()
 {
+    QMap<QString, AbstractPlugin_services*>::iterator i = m_registeredevents.begin();
+    for (;i!=m_registeredevents.end();++i) {
+        AbstractPlugin_services* executeplugin = i.value();
+        qDebug() << "unregister event" << i.key() << executeplugin;
+        executeplugin->unregister_event ( i.key(), -1 );
+    }
     qDeleteAll(m_plugins);
 }
 
@@ -161,11 +168,19 @@ void PluginController::couchDB_Event_remove(const QString& id) {
 
 void PluginController::couchDB_failed(const QString& url) {
     Q_UNUSED(url);
-    QMap<QString, AbstractPlugin_services*>::iterator i = m_registeredevents.begin();
-    for (;i!=m_registeredevents.end();++i) {
-        AbstractPlugin_services* executeplugin = i.value();
-        qDebug() << "unregister event" << i.key() << executeplugin;
-        executeplugin->unregister_event ( i.key(), -1 );
+    QCoreApplication::exit(1);
+}
+
+void PluginController::couchDB_no_settings_found(const QString& pluginid) {
+    qWarning() << "Couldn't load configuration for" << pluginid;
+}
+
+void PluginController::couchDB_settings(const QString& pluginid, const QVariantMap& data) {
+    AbstractPlugin* p = getPlugin(pluginid);
+    if (!p) {
+        qWarning() << "Configuration for unknown plugin received" << pluginid;
+	return;
     }
+    p->settingsChanged(data);
 }
 

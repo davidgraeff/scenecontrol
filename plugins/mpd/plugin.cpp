@@ -20,7 +20,6 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-#include "configplugin.h"
 #include "mediacontroller.h"
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
@@ -32,7 +31,6 @@ plugin::plugin() {
     connect ( m_mediacontroller,SIGNAL ( trackChanged(QString,QString,int,uint,uint,int)), SLOT(trackChanged(QString,QString,int,uint,uint,int)));
     connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
     connect ( m_mediacontroller,SIGNAL ( stateChanged(MediaController*)),SLOT(stateChanged(MediaController*) ) );
-    _config ( this );
 }
 
 plugin::~plugin() {
@@ -43,11 +41,9 @@ void plugin::clear() {}
 void plugin::initialize() {
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "server" ) ) {
-        m_mediacontroller->connectToMpd ( value.toString() );
-    }
+void plugin::settingsChanged(const QVariantMap& data) {
+  if (data.contains(QLatin1String("host")) && data.contains(QLatin1String("port")))
+       m_mediacontroller->connectToMpd ( data[QLatin1String("host")].toString(), data[QLatin1String("port")].toInt());
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {

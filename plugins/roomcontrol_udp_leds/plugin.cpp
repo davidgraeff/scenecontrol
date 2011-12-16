@@ -20,7 +20,6 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-#include "configplugin.h"
 #include "controller.h"
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
@@ -28,9 +27,7 @@ Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 plugin::plugin() {
     m_controller = new Controller ( this );
     connect(m_controller,SIGNAL(ledChanged(QString,QString,int)),SLOT(ledChanged(QString,QString,int)));
-	connect(m_controller,SIGNAL(ledsCleared()),SLOT(ledsCleared()));
-	
-    _config ( this );
+    connect(m_controller,SIGNAL(ledsCleared()),SLOT(ledsCleared()));
 }
 
 plugin::~plugin() {
@@ -41,16 +38,13 @@ void plugin::clear() {}
 void plugin::initialize() {
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "server" ) ) {
-        const QString server = value.toString();
-        m_controller->connectToLeds ( server );
-    }
+void plugin::settingsChanged(const QVariantMap& data) {
+    if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port")))
+       m_controller->connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "udpled.value_relative" ) ) {
         m_controller->setChannelRelative ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
     } else if ( ServiceID::isMethod(data, "udpled.value_absolut" ) ) {
@@ -67,7 +61,7 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
 }
 
 bool plugin::condition ( const QVariantMap& data, int sessionid )  {
-	Q_UNUSED ( sessionid );
+    Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "udpled.condition" ) ) {
         const int v = m_controller->getChannel ( DATA("channel") );
         if ( v>INTDATA("upper") ) return false;
@@ -77,13 +71,13 @@ bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+    Q_UNUSED(sessionid);
     Q_UNUSED ( data );
-	Q_UNUSED ( collectionuid );
+    Q_UNUSED ( collectionuid );
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid, int sessionid ) {
     Q_UNUSED(sessionid);
     Q_UNUSED(eventid);
 }
@@ -92,8 +86,8 @@ QList<QVariantMap> plugin::properties(int sessionid) {
     Q_UNUSED(sessionid);
     QList<QVariantMap> l;
 
-	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "udpled.names", "channel").getData());
-	
+    l.append(ServiceCreation::createModelReset(PLUGIN_ID, "udpled.names", "channel").getData());
+
     QMap<QString, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
     for (;i!=m_controller->m_leds.end();++i) {
         {
@@ -108,7 +102,7 @@ QList<QVariantMap> plugin::properties(int sessionid) {
 }
 
 void plugin::ledsCleared() {
-	m_serverPropertyController->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "udpled.names", "channel").getData());
+    m_serverPropertyController->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "udpled.names", "channel").getData());
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {

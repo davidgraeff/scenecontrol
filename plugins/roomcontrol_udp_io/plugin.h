@@ -24,18 +24,17 @@
 #include "shared/abstractserver_collectioncontroller.h"
 
 #include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginsettingshelper.h" 
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 
 #include <QVector>
 
 class Controller;
-class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
+class plugin : public QObject, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services)
+    Q_INTERFACES(AbstractPlugin AbstractPlugin_services)
 public:
     plugin();
     virtual ~plugin();
@@ -43,20 +42,20 @@ public:
     virtual void initialize();
     virtual void clear();
     virtual QList<QVariantMap> properties(int sessionid);
-    virtual void setSetting ( const QString& name, const QVariant& value, bool init = false );
+    virtual void settingsChanged(const QVariantMap& data);
     virtual void execute ( const QVariantMap& data, int sessionid );
     virtual bool condition ( const QVariantMap& data, int sessionid ) ;
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-	virtual void unregister_event ( const QString& eventid, int sessionid );
+    virtual void unregister_event ( const QString& eventid, int sessionid );
 private:
     Controller* m_controller;
     EventMap<int> m_events; //mode->set of uids
     QVector<bool> m_sensors;
     bool m_read;
 private Q_SLOTS:
-	/**
-	 * Updated led state. 
-	 */
+    /**
+     * Updated led state.
+     */
     void ledChanged ( QString,QString = QString::null,int = -1);
     void watchpinChanged(const unsigned char port, const unsigned char pinmask);
     void ledsCleared();

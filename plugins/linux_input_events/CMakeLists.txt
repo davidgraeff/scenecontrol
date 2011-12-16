@@ -7,12 +7,6 @@ IF (NOT WIN32 AND UDEV_FOUND)
 	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)
 
 	IF (PLUGIN_${PROJECT_NAME})
-		SET(CONFIG_${PROJECT_NAME}_REPEAT_INIT "500" CACHE INT "Repeat initial delay in ms")
-		SET(CONFIG_${PROJECT_NAME}_REPEAT "300" CACHE INT "Repeat tick every x ms")
-		SET(CONFIG_REPEAT_INIT ${CONFIG_${PROJECT_NAME}_REPEAT_INIT})
-		SET(CONFIG_REPEAT ${CONFIG_${PROJECT_NAME}_REPEAT})
-		configure_file(configplugin.h.in configplugin.h @ONLY)
-		
 		build_server_lib()
 		include_directories(${UDEV_INCLUDE_DIR})
 		target_link_libraries(${PROJECT_NAME}_server ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES} ${QT_QTDBUS_LIBRARIES} ${UDEV_LIBRARY})

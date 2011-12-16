@@ -128,17 +128,12 @@ void Controller::readyRead() {
     }
 }
 
-void Controller::connectToLeds ( const QString& server ) {
-    const int v = server.indexOf(QLatin1Char(':'));
-    if (v==-1) {
-        qWarning() << m_plugin->pluginid() << "Configuration wrong (server:port)" << server;
-        return;
-    }
-    m_sendPort = server.mid(v+1).toInt();
+void Controller::connectToLeds ( const QString& host, int port ) {
+    m_sendPort = port;
     delete m_socket;
     m_socket = new QUdpSocket(this);
     connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
-    m_socket->connectToHost(QHostAddress(server.mid(0,v)),m_sendPort);
+    m_socket->connectToHost(QHostAddress(host),m_sendPort);
 	
     // request all pin values
     char b[] = {0,0,3};

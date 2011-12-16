@@ -67,6 +67,7 @@ private:
     // satisfy interfaces
     virtual void clear() {}
     virtual void initialize() {}
+    virtual void settingsChanged(const QVariantMap&){}
     virtual bool condition(const QVariantMap&, int) {
         return false;
     }

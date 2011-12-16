@@ -54,12 +54,10 @@ MediaController::~MediaController()
     m_mpdstatus->disconnectFromHost();
 }
 
-void MediaController::connectToMpd(const QString& hostport)
+void MediaController::connectToMpd(const QString& host, int port)
 {
-    const QStringList data(hostport.split(QLatin1Char(':')));
-    if (data.size()!=2) return;
-    m_host = data[0];
-    m_port = data[1].toInt();
+    m_host = host;
+    m_port = port;
 
     reconnectTimeout();
 }

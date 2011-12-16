@@ -1,3 +1,0 @@
-void _config(AbstractPlugin_settings* plugin) {
-  plugin->registerSetting("autoconfig", QLatin1String("@CONFIG_AUTOCONFIG@"));
-}

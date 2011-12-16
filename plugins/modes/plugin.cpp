@@ -34,9 +34,7 @@ void plugin::clear() {}
 void plugin::initialize() {
 }
 
-void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
-    PluginSettingsHelper::setSetting(name, value, init);
-}
+void plugin::settingsChanged(const QVariantMap& data) {}
 
 void plugin::execute(const QVariantMap& data, int sessionid) {
     Q_UNUSED(sessionid);

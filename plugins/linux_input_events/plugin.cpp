@@ -33,20 +33,17 @@
 #include "parse.h"
 
 #include "plugin.h"
-#include "configplugin.h"
 #include "managed_device_list.h"
 #include <qfileinfo.h>
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
 
-int plugin::m_repeat = 0;
-int plugin::m_repeatInit = 0;
-
 plugin::plugin() : m_events ( QLatin1String ( "inputdevice" ) ) {
+    m_repeat = 0;
+    m_repeatInit = 0;
     m_devicelist = new ManagedDeviceList();
     connect ( m_devicelist,SIGNAL ( deviceAdded ( ManagedDevice* ) ),SLOT ( deviceAdded ( ManagedDevice* ) ) );
     connect ( m_devicelist,SIGNAL ( deviceRemoved ( ManagedDevice* ) ),SLOT ( deviceRemoved ( ManagedDevice* ) ) );
-    _config ( this );
 }
 
 plugin::~plugin() {
@@ -63,10 +60,11 @@ void plugin::initialize() {
     m_devicelist->start();
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "repeat" ) ) m_repeat = value.toInt();
-    else if ( name == QLatin1String ( "repeat_init" ) ) m_repeatInit = value.toInt();
+void plugin::settingsChanged(const QVariantMap& data) {
+  if (data.contains(QLatin1String("repeat")))
+      m_repeat = data[QLatin1String("repeat")].toInt();
+  if (data.contains(QLatin1String("repeat_init")))
+      m_repeatInit = data[QLatin1String("repeat_init")].toInt();
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {

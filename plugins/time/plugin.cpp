@@ -41,9 +41,7 @@ void plugin::clear() {
     m_timer.stop();
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-}
+void plugin::settingsChanged(const QVariantMap& data) {Q_UNUSED ( data );}
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
     Q_UNUSED ( data );

@@ -5,12 +5,10 @@
 #include "xbmcclient.h"
 #include "xbmcactions.h"
 #include "plugin.h"
-#include "configplugin.h"
 
 Q_EXPORT_PLUGIN2(libexecute, plugin)
 
 plugin::plugin() : m_xbmcClient(0) {
-    _config(this);
 }
 
 plugin::~plugin() {
@@ -26,57 +24,58 @@ void plugin::initialize() {
 
 
 void plugin::execute(const QVariantMap& data, int sessionid) {
-	Q_UNUSED(sessionid);
-	if (!m_xbmcClient) return;
-	if (ServiceID::isMethod(data,"xbmcfocus")) {
-		setSetting(QLatin1String("server"), data["server"].toString());
-	} else if (ServiceID::isMethod(data,"xbmcvolume")) {
-		//todo
-	} else if (ServiceID::isMethod(data,"xbmcposition")) {
-		//todo
-	} else if (ServiceID::isMethod(data,"xbmcmedia")) {
-		//todo
-	} else if (ServiceID::isMethod(data,"xbmccmd")) {
-		setCommand(data["state"].toInt());
-	}
+    Q_UNUSED(sessionid);
+    if (ServiceID::isMethod(data,"xbmcfocus")) {
+        delete m_xbmcClient;
+        m_xbmcClient = new CXBMCClient( data[QLatin1String("server")].toString().toAscii(),
+                                        data[QLatin1String("port")].toInt());
+        m_xbmcClient->SendHELO(QCoreApplication::applicationName().toLatin1().constData(), ICON_NONE);
+    } else if (ServiceID::isMethod(data,"xbmcvolume")) {
+        //todo
+    } else if (ServiceID::isMethod(data,"xbmcposition")) {
+        //todo
+    } else if (ServiceID::isMethod(data,"xbmcmedia")) {
+        //todo
+    } else if (ServiceID::isMethod(data,"xbmccmd")) {
+        setCommand(data["state"].toInt());
+    }
 }
 
 bool plugin::condition(const QVariantMap& data, int sessionid)  {
-	Q_UNUSED(sessionid);
-	Q_UNUSED(data);
-	return false;
+    Q_UNUSED(sessionid);
+    Q_UNUSED(data);
+    return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED(collectionuid);
-	Q_UNUSED(data);  
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+    Q_UNUSED(sessionid);
+    Q_UNUSED(collectionuid);
+    Q_UNUSED(data);
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
-	Q_UNUSED(sessionid);
+void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+    Q_UNUSED(eventid);
+    Q_UNUSED(sessionid);
 }
 
-void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
-    PluginSettingsHelper::setSetting(name, value, init);
-    if (name == QLatin1String("server")) {
+void plugin::settingsChanged(const QVariantMap& data) {
+    if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port"))) {
         delete m_xbmcClient;
-        const QStringList data(value.toString().split(QLatin1Char(':')));
-        if (data.size()!=2) return;
-        m_xbmcClient = new CXBMCClient(data[0].toAscii(), data[1].toInt());
+        m_xbmcClient = new CXBMCClient( data[QLatin1String("server")].toString().toAscii(),
+                                        data[QLatin1String("port")].toInt());
         m_xbmcClient->SendHELO(QCoreApplication::applicationName().toLatin1().constData(), ICON_NONE);
     }
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
-Q_UNUSED(sessionid);
-	QList<QVariantMap> l;
-	return l;
+    Q_UNUSED(sessionid);
+    QList<QVariantMap> l;
+    return l;
 }
 
 void plugin::setCommand(int cmd)
 {
-	if (!m_xbmcClient) return;
+    if (!m_xbmcClient) return;
     switch (cmd) {
     case 0:
         m_xbmcClient->SendACTION("play",ACTION_BUTTON);

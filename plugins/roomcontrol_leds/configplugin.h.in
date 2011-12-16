@@ -1,3 +1,0 @@
-void _config(AbstractPlugin_settings* plugin) {
-  plugin->registerSetting("serialport", QLatin1String("@CONFIG_SERIALPORT@"));
-}

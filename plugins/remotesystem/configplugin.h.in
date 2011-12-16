@@ -1,3 +1,0 @@
-void _config(AbstractPlugin_settings* plugin) {
-  plugin->registerSetting("servers", QLatin1String("@CONFIG_SERVERS@"));
-}

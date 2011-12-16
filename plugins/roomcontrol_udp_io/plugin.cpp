@@ -20,7 +20,6 @@
 #include <QtPlugin>
 
 #include "plugin.h"
-#include "configplugin.h"
 #include "controller.h"
 
 Q_EXPORT_PLUGIN2 ( libexecute, plugin )
@@ -30,7 +29,6 @@ plugin::plugin() : m_events(QLatin1String("pin")) {
     connect(m_controller,SIGNAL(ledChanged(QString,QString,int)),SLOT(ledChanged(QString,QString,int)));
     connect(m_controller,SIGNAL(ledsCleared()),SLOT(ledsCleared()));
     connect(m_controller,SIGNAL(watchpinChanged(unsigned char, unsigned char)),SLOT(watchpinChanged(unsigned char, unsigned char)));
-    _config ( this );
 }
 
 plugin::~plugin() {
@@ -41,14 +39,12 @@ void plugin::clear() {}
 void plugin::initialize() {
 }
 
-void plugin::setSetting ( const QString& name, const QVariant& value, bool init ) {
-    PluginSettingsHelper::setSetting ( name, value, init );
-    if ( name == QLatin1String ( "server" ) ) {
-        const QString server = value.toString();
-        m_controller->connectToLeds ( server );
+void plugin::settingsChanged(const QVariantMap& data) {
+    if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port"))) {
+        m_sensors.resize(8);
+        m_read = false;
+        m_controller->connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
     }
-    m_sensors.resize(8);
-    m_read = false;
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {

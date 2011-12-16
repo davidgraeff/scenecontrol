@@ -32,21 +32,39 @@ public:
     virtual ~CouchDB();
     void start();
     void requestActionsOfCollection(const QString& collecion_id);
+    void requestPluginSettings(const QString& prefix, int version = -1);
 private:
     CouchDB ();
     int m_last_changes_seq_nr;
     bool checkFailure(QNetworkReply*);
 private Q_SLOTS:
-    void replyEventsChange();
-    void replyActionOfCollection();
-    void replyEvent();
-    void replyEvents();
+    // Called as a result to the initial database request without arguments ("/").
+    // Extract database version number and update sequence number and requests all events
     void replyDatabaseInfo();
-    void error(QNetworkReply::NetworkError);
+    // Called initially and receive all events from the database and start the event listener
+    void replyEvents();
+    // Called if events on the database changed and fetches those events
+    void replyEventsChange();
+    // Called as result of replyEventsChange
+    void replyEvent();
+    // Receive settings of a plugin. As a respons to the method requestPluginSettings
+    void replyPluginSettings();
+    // Called if plugin settings on the database changed and fetches those settings. Will fire the signal couchDB_settings
+    void replyPluginSettingsChange();
+    // Fetches all conditions and actions of a collection. Will fire the signal couchDB_actionsOfCollection
+    void replyActionOfCollection();
+    void errorWithRecovery(QNetworkReply::NetworkError);
+    void errorFatal(QNetworkReply::NetworkError);
+    void errorNoSettings();
 Q_SIGNALS:
+    // Fail signals
     void couchDB_failed(const QString& url);
-    void couchDB_ready();
+    void couchDB_no_settings_found(const QString& prefix);
+    // Change signals
+    void couchDB_settings(const QString& prefix, const QVariantMap& data);
     void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
     void couchDB_Event_remove(const QString& id);
     void couchDB_actionsOfCollection(const QVariantList& actions, const QString& collectionid);
+    // Ready signals
+    void couchDB_ready();
 };

@@ -1,4 +1,0 @@
-void _config(AbstractPlugin_settings* plugin) {
-  plugin->registerSetting("repeat", QLatin1String("CONFIG_REPEAT"));
-  plugin->registerSetting("repeat_init", QLatin1String("CONFIG_REPEAT_INIT"));
-}

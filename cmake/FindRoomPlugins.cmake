@@ -18,7 +18,7 @@ find_package(Qt4 4.7.0 COMPONENTS QtCore REQUIRED)
 # set(PLUGINDIR "${ROOTDIR}/plugins")
 
 LIST(APPEND Shared_SRCS_H "")
-LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginsettingshelper.cpp" "${SHAREDDIR}/pluginsessionhelper.cpp" "${SHAREDDIR}/pluginservicehelper.cpp")
+LIST(APPEND Shared_SRCS "${SHAREDDIR}/pluginsessionhelper.cpp" "${SHAREDDIR}/pluginservicehelper.cpp")
 
 file(GLOB SRCS_SERVER "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB SRCS_SERVER_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -52,12 +52,6 @@ macro(install_server_lib)
 		LIBRARY DESTINATION ${LIBPATH}
 		COMPONENT ServerPlugins
 		)
-	INSTALL(FILES "plugin.xml" DESTINATION ${LIBPATH}/${PROJECT_NAME} COMPONENT ServerPlugins)
-	IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/lang/)
-		INSTALL(DIRECTORY "lang" DESTINATION ${LIBPATH}/${PROJECT_NAME} COMPONENT ServerPlugins)
-	ENDIF()
-	IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/www/)
-		INSTALL(DIRECTORY "www/" DESTINATION ${ROOM_WWWPATH}/${PROJECT_NAME} COMPONENT ServerPlugins)
-	ENDIF()
+	INSTALL(DIRECTORY "couchdb" DESTINATION ${LIBPATH}/${PROJECT_NAME} COMPONENT ServerPlugins)
 endmacro()
 

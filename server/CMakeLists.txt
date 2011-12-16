@@ -35,14 +35,15 @@ IF (BUILD_SERVER)
 	IF(SERVER_DEBUG_WEBSOCKET)
 	    ADD_DEFINITIONS(-DDEBUGWEBSOCKET)
 	ENDIF()
-	file(GLOB SRCS_H *.h libwebsocket/*.h)
-	file(GLOB SRCS *.cpp libwebsocket/*.c)
-
+	file(GLOB SRCS_H *.h)
+	file(GLOB SRCS *.cpp)
+	file(GLOB SRCS_WEBSOCKETS * libwebsocket/*.c)
+	set_source_files_properties(${SRCS_WEBSOCKETS} PROPERTIES COMPILE_FLAGS "-Wno-type-limits -Wno-format -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers")
 
 	QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${SRCS_H})
 	#QT4_ADD_RESOURCES(RoomControlServer_RC ../res.qrc)
 
-	add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} "${SHAREDDIR}/pluginsettingshelper.cpp" "${SHAREDDIR}/pluginsessionhelper.cpp" "${SHAREDDIR}/pluginservicehelper.cpp")
+	add_executable(${PROJECT_NAME} ${SRCS_WEBSOCKETS} ${SRCS} ${SRCS_MOCS} "${SHAREDDIR}/pluginsessionhelper.cpp" "${SHAREDDIR}/pluginservicehelper.cpp")
 
 	target_link_libraries(${PROJECT_NAME}
 	${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}
