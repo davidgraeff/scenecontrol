@@ -202,11 +202,11 @@ void CouchDB::requestActionsOfCollection(const QString& collecion_id)
     connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-void CouchDB::requestPluginSettings(const QString& prefix, int version)
+void CouchDB::requestPluginSettings(const QString& prefix)
 {
     if (prefix.isEmpty())
         return;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("pluginconfig_%1_%2#%1" ).arg ( prefix ).arg ( version ) );
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("pluginconfig_%1#%1" ).arg ( prefix ) );
 
     QNetworkReply* r = get ( request );
     connect ( r, SIGNAL ( finished() ), SLOT ( replyPluginSettings() ) );

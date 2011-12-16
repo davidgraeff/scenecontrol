@@ -32,7 +32,7 @@ public:
     virtual ~CouchDB();
     void start();
     void requestActionsOfCollection(const QString& collecion_id);
-    void requestPluginSettings(const QString& prefix, int version = -1);
+    void requestPluginSettings(const QString& prefix);
 private:
     CouchDB ();
     int m_last_changes_seq_nr;
