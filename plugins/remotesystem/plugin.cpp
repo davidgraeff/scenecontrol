@@ -94,8 +94,6 @@ void plugin::register_event ( const QVariantMap& data, const QString& collection
 
 void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
 	Q_UNUSED(sessionid);
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
 }
 
 QList<QVariantMap> plugin::properties(int sessionid) {
