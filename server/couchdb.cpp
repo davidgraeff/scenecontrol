@@ -210,14 +210,13 @@ void CouchDB::requestPluginSettings(const QString& prefix)
 
     QNetworkReply* r = get ( request );
     connect ( r, SIGNAL ( finished() ), SLOT ( replyPluginSettings() ) );
-    connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorNoSettings()) );
 }
 
 void CouchDB::replyPluginSettings()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     r->deleteLater();
-    if (checkFailure(r)) {
+    if ( r->error() != QNetworkReply::NoError ) {
 	emit couchDB_no_settings_found(r->url().fragment());
         return;
     }
