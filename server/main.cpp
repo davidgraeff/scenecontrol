@@ -114,13 +114,11 @@ int main(int argc, char *argv[])
     collectioncontroller->connect(websocket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
     collectioncontroller->connect(couchdb, SIGNAL(couchDB_actionsOfCollection(QVariantList,QString)), collectioncontroller, SLOT(actionsOfCollection(QVariantList,QString)));
     
-    
-    // init
-    plugins->initializePlugins();
-    couchdb->start();
-
     int exitcode = 0;
-    if (!cmdargs.contains("--no-event-loop"))
+    plugins->initializePlugins();
+    exitcode |= couchdb->connectToDatabase()?0:-2;
+    
+    if (!exitcode && !cmdargs.contains("--no-event-loop"))
         exitcode = qapp.exec();
 
     qDebug() << "Shutdown: Service Controller";

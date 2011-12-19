@@ -30,19 +30,16 @@ class CouchDB: public QNetworkAccessManager {
 public:
     static CouchDB* instance();
     virtual ~CouchDB();
-    void start();
+    bool connectToDatabase();
     void requestActionsOfCollection(const QString& collecion_id);
-    void requestPluginSettings(const QString& prefix);
+    void requestPluginSettings(const QString& pluginid, bool tryToInstall = true);
 private:
     CouchDB ();
     int m_last_changes_seq_nr;
     bool checkFailure(QNetworkReply*);
+    
+    int installPluginData(const QString& pluginid);
 private Q_SLOTS:
-    // Called as a result to the initial database request without arguments ("/").
-    // Extract database version number and update sequence number and requests all events
-    void replyDatabaseInfo();
-    // Called initially and receive all events from the database and start the event listener
-    void replyEvents();
     // Called if events on the database changed and fetches those events
     void replyEventsChange();
     // Called as result of replyEventsChange

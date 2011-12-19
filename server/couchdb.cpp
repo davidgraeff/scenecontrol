@@ -14,6 +14,7 @@
 #include <QUrl>
 #include <QSocketNotifier>
 #include <shared/abstractplugin.h>
+#include <qeventloop.h>
 #define __FUNCTION__ __FUNCTION__
 
 static CouchDB* couchdbInstance = 0;
@@ -32,12 +33,102 @@ CouchDB* CouchDB::instance()
     return couchdbInstance;
 }
 
-void CouchDB::start() {
-    qDebug() << "CouchDB:" << setup::couchdbAbsoluteUrl("" );
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("" ) );
-    QNetworkReply *r = get ( request );
-    connect ( r, SIGNAL(finished()), SLOT ( replyDatabaseInfo() ) );
-    connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
+bool CouchDB::connectToDatabase() {
+    QEventLoop eventLoop;
+    // Connect to database for basic information
+    {
+        qDebug() << "CouchDB:" << setup::couchdbAbsoluteUrl("" );
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl("" ) );
+        QNetworkReply *r = get ( request );
+        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+        if (r->error() != QNetworkReply::ContentNotFoundError) {
+            r = put(request, "");
+            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            eventLoop.exec();
+            if (r->error() != QNetworkReply::NoError) {
+                // Database could not be created: no error recovery possible
+                return false;
+            }
+            r = get ( request );
+            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            eventLoop.exec();
+            if (r->error() != QNetworkReply::NoError) {
+                // Database created but could not be read: no error recovery possible
+                return false;
+            }
+        } else {
+            // Network error: no error recovery possible
+            return false;
+        }
+
+        bool ok;
+        QByteArray rawdata = r->readAll();
+        QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+        if (!ok) {
+            qWarning() << "Json parser:" << rawdata;
+            // Response is not json: no error recovery possible
+            return false;
+        }
+
+        if ( !data.contains ( QLatin1String ( "db_name" ) ) ) {
+            // Response is not expected without db_name: no error recovery possible
+            return false;
+        }
+
+        int doccount = data.value(QLatin1String("doc_count")).toInt();
+        // Initial data could not be installed
+        if (!doccount && !installPluginData(QLatin1String("_server"))) {
+            return false;
+        }
+        m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
+    }
+
+    { // get events
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/roomcontrol/_view/events" ) );
+        QNetworkReply *r = get ( request );
+        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+        if (r->error() != QNetworkReply::NoError) {
+            // Database events could not be read: no error recovery possible
+            return false;
+        }
+
+        bool ok;
+        QByteArray rawdata = r->readAll();
+        QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+        if (!ok) {
+            // Response is not json: no error recovery possible
+            qWarning() << "Json parser:" << rawdata;
+            return false;
+        }
+        if ( ok && data.contains ( QLatin1String ( "rows" ) ) ) {
+            QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
+            for ( int i=0;i<list.size();++i ) {
+                data = list[i].toMap().value ( QLatin1String ( "value" ) ).toMap();
+                emit couchDB_Event_add ( ServiceID::id(data), data );
+            }
+        }
+    }
+
+    // startChangeLister for settings
+    {
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=roomcontrol/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
+        request.setRawHeader ( "Connection","keep-alive" );
+        QNetworkReply *r = get ( request );
+        connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
+        connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
+    }
+    // startChangeLister for settings
+    {
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=roomcontrol/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
+        request.setRawHeader ( "Connection","keep-alive" );
+        QNetworkReply *r = get ( request );
+        connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
+        connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
+    }
+    emit couchDB_ready();
+    return true;
 }
 
 bool CouchDB::checkFailure(QNetworkReply* r)
@@ -61,42 +152,6 @@ void CouchDB::errorFatal(QNetworkReply::NetworkError e) {
     emit couchDB_failed(r->url().toString());
 }
 
-void CouchDB::replyDatabaseInfo()
-{
-    QNetworkReply *r = ( QNetworkReply* ) sender();
-    r->deleteLater();
-    if (checkFailure(r))
-        return;
-
-    bool ok;
-    QByteArray rawdata = r->readAll();
-    QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
-    if (!ok) {
-        qWarning() << "Json parser:" << rawdata;
-        return;
-    }
-    if ( !data.contains ( QLatin1String ( "db_name" ) ) ) {
-        qWarning() << "Connection to couchdb failed!";
-        emit couchDB_failed(r->url().toString());
-    } else {
-        m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
-        emit couchDB_ready();
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/roomcontrol/_view/events" ) );
-        QNetworkReply *r = get ( request );
-        connect ( r, SIGNAL ( finished() ), SLOT ( replyEvents() ) );
-        connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
-
-        // startChangeLister for settings
-        {
-            QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=roomcontrol/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
-            request.setRawHeader ( "Connection","keep-alive" );
-            QNetworkReply *r = get ( request );
-            connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
-            connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
-        }
-    }
-}
-
 void CouchDB::replyEvent()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
@@ -115,38 +170,6 @@ void CouchDB::replyEvent()
             qWarning() << "Json parser:" << line;
             return;
         }
-    }
-}
-
-void CouchDB::replyEvents()
-{
-    QNetworkReply *r = ( QNetworkReply* ) sender();
-    r->deleteLater();
-    if (checkFailure(r))
-        return;
-
-    bool ok;
-    QByteArray rawdata = r->readAll();
-    QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
-    if (!ok) {
-        qWarning() << "Json parser:" << rawdata;
-        return;
-    }
-    if ( ok && data.contains ( QLatin1String ( "rows" ) ) ) {
-        QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
-        for ( int i=0;i<list.size();++i ) {
-            data = list[i].toMap().value ( QLatin1String ( "value" ) ).toMap();
-            emit couchDB_Event_add ( ServiceID::id(data), data );
-        }
-    }
-
-    // startChangeLister
-    {
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=roomcontrol/events&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
-        request.setRawHeader ( "Connection","keep-alive" );
-        QNetworkReply *r = get ( request );
-        connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange() ) );
-        connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
     }
 }
 
@@ -202,23 +225,34 @@ void CouchDB::requestActionsOfCollection(const QString& collecion_id)
     connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-void CouchDB::requestPluginSettings(const QString& prefix)
+void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
 {
-    if (prefix.isEmpty())
+    if (pluginid.isEmpty())
         return;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("pluginconfig_%1#%1" ).arg ( prefix ) );
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("pluginconfig_%1#%1" ).arg ( pluginid ) );
 
     QNetworkReply* r = get ( request );
+    r->setProperty("tryToInstall", tryToInstall);
+    r->setProperty("pluginid", pluginid);
     connect ( r, SIGNAL ( finished() ), SLOT ( replyPluginSettings() ) );
 }
 
 void CouchDB::replyPluginSettings()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
+    bool tryToInstall = r->property("tryToInstall").toBool();
     r->deleteLater();
+
     if ( r->error() != QNetworkReply::NoError ) {
-	emit couchDB_no_settings_found(r->url().fragment());
-        return;
+        // settings not found, try to install initial plugin values to the couchdb
+        if (tryToInstall) {
+            const QString pluginid = r->property("pluginid").toString();
+            installPluginData(pluginid);
+            requestPluginSettings(pluginid, false);
+        } else {
+            emit couchDB_no_settings_found(r->url().fragment());
+            return;
+        }
     }
 
     while (r->canReadLine()) {
@@ -253,7 +287,7 @@ void CouchDB::replyPluginSettingsChange()
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
                 emit couchDB_no_settings_found(ServiceID::idChangeSeq ( data ));
             } else {
-		requestPluginSettings(ServiceID::idChangeSeq ( data ));
+                requestPluginSettings(ServiceID::idChangeSeq ( data ));
             }
         }
     }
@@ -264,4 +298,103 @@ void CouchDB::errorNoSettings()
     QNetworkReply *r = ( QNetworkReply* ) sender();
     r->deleteLater();
     emit couchDB_no_settings_found(r->url().fragment());
+}
+
+
+int CouchDB::installPluginData(const QString& pluginid) {
+    int count = 0;
+    qDebug() << "Install couchdb data for" << pluginid;
+    const QDir dir = setup::pluginCouchDBDir(pluginid);
+    {
+        QEventLoop eventLoop;
+        const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files|QDir::NoDotAndDotDot);
+        for (int i=0;i<files.size();++i) {
+            QFile file(dir.absoluteFilePath(files[i]));
+            file.open(QIODevice::ReadOnly);
+            if (file.size() > 1024*10) {
+                qWarning() << "\tFile to big!" << files[i] << file.size();
+                continue;
+            }
+            // Document ID: Consist of filename without extension + "{pluginid}". 
+            // "()" are replaced by "/".
+            const QString doc_name = QFileInfo(files[i]).baseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
+            QNetworkRequest request( setup::couchdbAbsoluteUrl( doc_name ) );
+            request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
+            request.setHeader(QNetworkRequest::ContentLengthHeader, file.size());
+            QNetworkReply* rf = put(request, file.readAll());
+            connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            eventLoop.exec();
+            file.close();
+            if (rf->error() == QNetworkReply::NoError) {
+                qDebug() << "\tInstalled" << doc_name << file.size();
+                ++count;
+            } else {
+                qWarning() << "\tInstallation failed:" << doc_name << file.size() << rf->error();
+            }
+            delete rf;
+        }
+    }
+    {
+        QStringList filters;
+        filters << QLatin1String("*.xml") << QLatin1String("*.html") << QLatin1String("*.htm");
+        filters << QLatin1String("*.jpg") << QLatin1String("*.js") << QLatin1String("*.css");
+        QStringList files = dir.entryList(filters, QDir::Files|QDir::NoDotAndDotDot);
+        QString revision;
+        QEventLoop eventLoop;
+	const QString doc_html = QLatin1String("html_")+pluginid;
+        { // Get revision of htmlplugin_{pluginname} document where all additional files should be attached
+            QNetworkRequest request( setup::couchdbAbsoluteUrl(doc_html) );
+            QNetworkReply* rf = head(request);
+            connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            eventLoop.exec();
+            if (rf->error() == QNetworkReply::NoError) {
+                revision = QString::fromAscii(rf->rawHeader("Etag"));
+            } else {
+                qWarning() << "\tAttachment doc not found:" << doc_html << rf->error();
+            }
+            delete rf;
+        }
+        if (!revision.size())
+            return count;
+
+        for (int i=0;i<files.size();++i) {
+            QFile file(dir.absoluteFilePath(files[i]));
+            file.open(QIODevice::ReadOnly);
+            if (file.size() > 1024*10) {
+                qWarning() << "\tFile to big!" << files[i] << file.size();
+                continue;
+            }
+            QNetworkRequest request( setup::couchdbAbsoluteUrl(doc_html+QLatin1String("/attachment?rev=")+revision) );
+            request.setHeader(QNetworkRequest::ContentLengthHeader, file.size());
+            const QByteArray suffix = QFileInfo(files[i]).suffix().toLatin1();
+            if (suffix == "xml") {
+                request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/xml"));
+            } else if (suffix == "jpg") {
+                request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("image/jpeg"));
+            } else if (suffix == "html") {
+                request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("text/html"));
+            } else if (suffix == "htm") {
+                request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("text/html"));
+            } else if (suffix == "js") {
+                request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/x-javascript"));
+            } else if (suffix == "css") {
+                request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("text/css"));
+            } else {
+                qWarning() << "\ttAttachment not recognized:" << files[i] << file.size();
+                continue;
+            }
+            QNetworkReply* rf = put(request, file.readAll());
+            connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            eventLoop.exec();
+            file.close();
+            if (rf->error() == QNetworkReply::NoError) {
+                qDebug() << "\tAttachment installed" << files[i] << file.size();
+                ++count;
+            } else {
+                qWarning() << "\ttAttachment Installation failed:" << files[i] << file.size() << rf->error();
+            }
+            delete rf;
+        }
+    }
+    return count;
 }

@@ -1,0 +1,27 @@
+{
+   "validate_doc_update": "function(newDoc, savedDoc, userCtx) {\n  if (savedDoc && newDoc._deleted) return;\n\n  function require(field, type, message) {\n    message = message || 'Document must have a ' + field;\n    if (newDoc[field] === undefined || newDoc[field] == null) throw({forbidden : message});\n    if (type && typeof newDoc[field] != type)\n        throw({forbidden : message + ' of type ' + type});\n  };\n\n  require(\"type_\");\n\n  if(newDoc.type_ == 'collection') {\n     require(\"name\");\n     require(\"enabled\", \"boolean\");\n     require(\"categories\", \"object\");\n  } else if(newDoc.type_ == 'action' || newDoc.type_ == 'condition' || newDoc.type_ == 'event') {\n     require(\"member_\");\n     require(\"plugin_\");\n     if(newDoc.type_ == 'action')\n         require(\"delay_\");\n  } else if (newDoc.type_ == 'html') {\n  } else {\n     throw({forbidden : 'type_ have to be collection, action, condition or event'});\n  }\n}",
+   "filters": {
+       "events": "function(doc, req) { if(doc._deleted || doc.type_ == 'event') { return true; } else { return false; }}"
+   },
+   "language": "javascript",
+   "views": {
+       "actions": {
+           "map": "function(doc) {\nif (doc.type_==\"action\")\n  emit(doc.collection_, doc);\n}"
+       },
+       "events": {
+           "map": "function(doc) {\nif (doc.type_==\"event\")\n  emit(doc.collection_, doc);\n}"
+       },
+       "conditions": {
+           "map": "function(doc) {\nif (doc.type_==\"condition\")\n  emit(doc.collection_, doc);\n}"
+       },
+       "collections": {
+           "map": "function(doc) {\nif (doc.type_==\"collection\")\n  emit(doc._id, doc);\n}"
+       },
+       "html": {
+           "map": "function(doc) {\nif (doc.type_==\"html\" && doc._attachments)\n\tfor (index in doc._attachments)\n\t\tif (doc._attachments[index].content_type == \"text/html\")\n  \t\temit(doc._id+\"/\"+index, doc[index]);\n}"
+       },
+       "services": {
+           "map": "function(doc) {\nif (doc.type_==\"action\"||doc.type_==\"condition\"||doc.type_==\"event\")\n  emit(doc.collection_, doc);\n}"
+       }
+   }
+}

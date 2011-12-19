@@ -8,11 +8,14 @@ void writeLastStarttime();
 // Filepaths
 QString certificateFile(const QString& file);
 QString certificateFile(const char* file);
-QString wwwFile(const QString& file);
-QString xmlFile(const QString& pluginid);
+
 
 // Dirs
 QDir pluginDir();
+/** Returns json files and other attachment files that have to be installed to the couchDB for the plugin
+  * to work correctly
+  */
+QDir pluginCouchDBDir(const QString& pluginid);
 QString couchdbAbsoluteUrl(const char* relativeUrl);
-
+QString couchdbAbsoluteUrl(const QString& relativeUrl);
 };
