@@ -305,12 +305,17 @@ void CouchDB::replyPluginSettingsChange()
         QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
         if ( ok && data.contains ( QLatin1String ( "seq" ) ) ) {
             const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
+	    QString pluginid = ServiceID::idChangeSeq ( data );
+	    if (!pluginid.startsWith(QLatin1String("configplugin_")))
+	      continue;
+	    pluginid = pluginid.mid(sizeof("configplugin_")-1);
+	    qDebug() << "settings changed" << pluginid;
             if ( seq > m_last_changes_seq_nr )
                 m_last_changes_seq_nr = seq;
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
-                emit couchDB_no_settings_found(ServiceID::idChangeSeq ( data ));
+                emit couchDB_no_settings_found(pluginid);
             } else {
-                requestPluginSettings(ServiceID::idChangeSeq ( data ));
+                requestPluginSettings(pluginid);
             }
         }
     }
