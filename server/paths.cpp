@@ -22,7 +22,9 @@ void writeLastStarttime() {
 
 QDir pluginDir() {
     QDir dir(settings.value(QLatin1String("path"), defaultpath).toString());
-    dir.cd(QLatin1String(ROOM_LIBPATH));
+    if (!dir.cd(QLatin1String(ROOM_LIBPATH))) {
+      qWarning() << "pluginDir path change failed";
+    }
     return dir;
 }
 
@@ -36,9 +38,9 @@ QString certificateFile(const char* file) {
     return certificateFile(QString::fromUtf8(file));
 }
 
-QDir pluginCouchDBDir(const QString& pluginid) {
+QDir pluginCouchDBDir() {
     QDir dir(settings.value(QLatin1String("path"), defaultpath).toString());
-    if (!dir.cd(QLatin1String(ROOM_COUCHDBPATH)) || !dir.cd(pluginid))
+    if (!dir.cd(QLatin1String(ROOM_COUCHDBPATH)))
         qWarning() << "pluginCouchDBDir path change failed";
     return dir;
 }

@@ -85,18 +85,18 @@ QList< QVariantMap > PluginController::properties(int sessionid) {
 void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& event_data) {
     QString destination_collectionuid = ServiceID::collectionid ( event_data );
     if ( destination_collectionuid.isEmpty() ) {
-        qWarning() <<"Cannot register event. No collection set:"<<ServiceID::pluginid ( event_data ) << id;
+        qWarning() <<"Plugins: Cannot register event. No collection set:"<<ServiceID::pluginid ( event_data ) << id;
         return;
     }
 
     AbstractPlugin* plugin = getPlugin ( ServiceID::pluginid ( event_data ) );
     AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*> ( plugin );
     if ( !executeplugin ) {
-        qWarning() <<"Cannot register event. No plugin found:"<<ServiceID::pluginid ( event_data ) << id;
+        qWarning() <<"Plugins: Cannot register event. No plugin found:"<<ServiceID::pluginid ( event_data ) << id;
         return;
     }
 
-    qDebug() << "register event:" << id << ServiceID::pluginid ( event_data ) << ServiceID::pluginmember ( event_data );
+    qDebug() << "Plugins: register event:" << id << ServiceID::pluginid ( event_data ) << ServiceID::pluginmember ( event_data );
     executeplugin->unregister_event ( id, -1 );
     executeplugin->register_event ( event_data, destination_collectionuid, -1 );
     m_registeredevents.insert(id, executeplugin);
@@ -105,7 +105,7 @@ void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& e
 void PluginController::couchDB_Event_remove(const QString& id) {
     AbstractPlugin_services* executeplugin = m_registeredevents.take ( id );
     if ( executeplugin ) {
-        qDebug() << "unregister event" << id << executeplugin;
+        qDebug() << "Plugins: unregister event" << id << executeplugin;
         executeplugin->unregister_event ( id, -1 );
     }
 }
@@ -116,14 +116,16 @@ void PluginController::couchDB_failed(const QString& url) {
 }
 
 void PluginController::couchDB_no_settings_found(const QString& pluginid) {
-    qWarning() << "Couldn't load configuration for" << pluginid;
+    qWarning() << "Plugins: Couldn't load configuration for" << pluginid;
 }
 
 void PluginController::couchDB_settings(const QString& pluginid, const QVariantMap& data) {
     AbstractPlugin* p = getPlugin(pluginid);
     if (!p) {
-        qWarning() << "Configuration for unknown plugin received" << pluginid;
+        qWarning() << "Plugins: Configuration for unknown plugin" << pluginid;
         return;
+    } else {
+      qDebug() << "Plugins:" << data.size() << "Settings for plugin" << pluginid << "loaded";
     }
     p->settingsChanged(data);
 }
@@ -151,21 +153,21 @@ void PluginController::couchDB_ready() {
     const QDir plugindir = setup::pluginDir();
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     if (pluginfiles.empty())
-        qWarning() << "No plugins found in" << plugindir;
+        qWarning() << "Plugins: No plugins found in" << plugindir;
 
     for (int i=0;i<pluginfiles.size();++i) {
         const QString filename = plugindir.absoluteFilePath ( pluginfiles[i] );
         QPluginLoader* loader = new QPluginLoader ( filename, this );
         loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
         if (!loader->load()) {
-            qWarning() << "Failed loading Plugin" << pluginfiles[i] << loader->errorString();
+            qWarning() << "Plugins: Failed loading Plugin" << pluginfiles[i] << loader->errorString();
             delete loader;
             continue;
         }
 
         plugin = dynamic_cast<AbstractPlugin*> ( loader->instance() );
         if (!plugin) {
-            qWarning() << "Failed to get instance" << filename;
+            qWarning() << "Plugins: Failed to get instance" << filename;
             delete loader;
             continue;
         }
@@ -182,5 +184,7 @@ void PluginController::couchDB_ready() {
     for (;i!=m_plugins.end();++i) {
         (*i)->plugin->initialize();
     }
+    
+     CouchDB::instance()->requestEvents();
 }
 

@@ -31,6 +31,7 @@ public:
     static CouchDB* instance();
     virtual ~CouchDB();
     bool connectToDatabase();
+    void requestEvents();
     void requestActionsOfCollection(const QString& collecion_id);
     void requestPluginSettings(const QString& pluginid, bool tryToInstall = true);
 private:

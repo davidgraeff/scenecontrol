@@ -35,88 +35,59 @@ CouchDB* CouchDB::instance()
 
 bool CouchDB::connectToDatabase() {
     QEventLoop eventLoop;
-    // Connect to database for basic information
-    {
-        qDebug() << "CouchDB:" << setup::couchdbAbsoluteUrl("" );
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("" ) );
-        QNetworkReply *r = get ( request );
+
+    qDebug() << "CouchDB:" << setup::couchdbAbsoluteUrl("" );
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("" ) );
+    QNetworkReply *r = get ( request );
+    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    eventLoop.exec();
+    if (r->error() == QNetworkReply::ContentNotFoundError) {
+        r = put(request, "");
         connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
         eventLoop.exec();
-        if (r->error() == QNetworkReply::ContentNotFoundError) {
-            r = put(request, "");
-            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-            eventLoop.exec();
 
-            if (r->error() != QNetworkReply::NoError) {
-                // Database could not be created: no error recovery possible
-                qWarning() << "CouchDB: Database not found and could not be created!";
-                return false;
-            }
-            r = get ( request );
-            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-            eventLoop.exec();
-            if (r->error() != QNetworkReply::NoError) {
-                // Database created but could not be read: no error recovery possible
-                qWarning() << "CouchDB: Successfull created database but can not read it out!";
-                return false;
-            }
-        } else if (r->error() != QNetworkReply::NoError) {
-            // Network error: no error recovery possible
-            qWarning() << "CouchDB: Network error" << r->error();
+        if (r->error() != QNetworkReply::NoError) {
+            // Database could not be created: no error recovery possible
+            qWarning() << "CouchDB: Database not found and could not be created!";
             return false;
         }
-
-        bool ok;
-        QByteArray rawdata = r->readAll();
-        QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
-        if (!ok) {
-            // Response is not json: no error recovery possible
-            qWarning() << "CouchDB: Json parser:" << rawdata;
-            return false;
-        }
-
-        if ( !data.contains ( QLatin1String ( "db_name" ) ) || !data.contains ( QLatin1String ( "doc_count" ) ) ) {
-            // Response is not expected without db_name: no error recovery possible
-            qWarning() << "CouchDB: db_name or doc_count not found";
-            return false;
-        }
-
-        int doccount = data.value(QLatin1String("doc_count")).toInt();
-        if (!doccount && !installPluginData(QLatin1String("_server"))) {
-            // Initial data could not be installed
-            qWarning() << "CouchDB: doc_count = 0";
-            return false;
-        }
-        m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
-    }
-
-    { // get events
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/events" ) );
-        QNetworkReply *r = get ( request );
+        r = get ( request );
         connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
         eventLoop.exec();
         if (r->error() != QNetworkReply::NoError) {
-            // Database events could not be read: no error recovery possible
-            qWarning() << "CouchDB: _design/_server/_view/events";
+            // Database created but could not be read: no error recovery possible
+            qWarning() << "CouchDB: Successfull created database but can not read it out!";
             return false;
         }
-
-        bool ok;
-        QByteArray rawdata = r->readAll();
-        QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
-        if (!ok) {
-            // Response is not json: no error recovery possible
-            qWarning() << "Json parser:" << rawdata;
-            return false;
-        }
-        if ( ok && data.contains ( QLatin1String ( "rows" ) ) ) {
-            QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
-            for ( int i=0;i<list.size();++i ) {
-                data = list[i].toMap().value ( QLatin1String ( "value" ) ).toMap();
-                emit couchDB_Event_add ( ServiceID::id(data), data );
-            }
-        }
+    } else if (r->error() != QNetworkReply::NoError) {
+        // Network error: no error recovery possible
+        qWarning() << "CouchDB: Network error" << r->error();
+        return false;
     }
+
+    bool ok;
+    QByteArray rawdata = r->readAll();
+    QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+    if (!ok) {
+        // Response is not json: no error recovery possible
+        qWarning() << "CouchDB: Json parser:" << rawdata;
+        return false;
+    }
+
+    if ( !data.contains ( QLatin1String ( "db_name" ) ) || !data.contains ( QLatin1String ( "doc_count" ) ) ) {
+        // Response is not expected without db_name: no error recovery possible
+        qWarning() << "CouchDB: db_name or doc_count not found";
+        return false;
+    }
+
+    int doccount = data.value(QLatin1String("doc_count")).toInt();
+    if (!doccount && !installPluginData(QLatin1String("_server"))) {
+        // Initial data could not be installed
+        qWarning() << "CouchDB: doc_count = 0";
+        return false;
+    }
+    m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
+
 
     // startChangeLister for settings
     {
@@ -136,6 +107,36 @@ bool CouchDB::connectToDatabase() {
     }
     emit couchDB_ready();
     return true;
+}
+
+void CouchDB::requestEvents()
+{
+    QEventLoop eventLoop;
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/events" ) );
+    QNetworkReply *r = get ( request );
+    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    eventLoop.exec();
+    if (r->error() != QNetworkReply::NoError) {
+        // Database events could not be read: no error recovery possible
+        qWarning() << "CouchDB: _design/_server/_view/events";
+        return;
+    }
+
+    bool ok;
+    QByteArray rawdata = r->readAll();
+    QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+    if (!ok) {
+        // Response is not json: no error recovery possible
+        qWarning() << "Json parser:" << rawdata;
+        return;
+    }
+    if ( ok && data.contains ( QLatin1String ( "rows" ) ) ) {
+        QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
+        for ( int i=0;i<list.size();++i ) {
+            data = list[i].toMap().value ( QLatin1String ( "value" ) ).toMap();
+            emit couchDB_Event_add ( ServiceID::id(data), data );
+        }
+    }
 }
 
 bool CouchDB::checkFailure(QNetworkReply* r)
@@ -236,7 +237,7 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
 {
     if (pluginid.isEmpty())
         return;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("configplugin_%1" ));
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("configplugin_%1" ).arg(pluginid));
 
     QNetworkReply* r = get ( request );
     QEventLoop eventLoop;
@@ -244,9 +245,17 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
     eventLoop.exec();
 
     if ( r->error() != QNetworkReply::NoError ) {
-        qWarning()<<"CouchDB: Lost connection; Get settings for" << pluginid;
+        // settings not found, try to install initial plugin values to the couchdb
+        installPluginData(pluginid);
         delete r;
-        return;
+        r = get ( request );
+        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+        if ( r->error() != QNetworkReply::NoError ) {
+            qWarning()<<"CouchDB: Get settings failed for" << pluginid;
+            delete r;
+            return;
+        }
     }
 
     while (r->canReadLine()) {
@@ -268,13 +277,13 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
                 r = get ( request );
                 connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
                 eventLoop.exec();
-		continue;
+                continue;
             } else {
                 emit couchDB_no_settings_found(pluginid);
                 continue;
             }
         }
-        emit couchDB_settings ( ServiceID::id(data), data );
+        emit couchDB_settings ( pluginid, data );
 
     }
     delete r;
@@ -314,11 +323,15 @@ void CouchDB::errorNoSettings()
 
 int CouchDB::installPluginData(const QString& pluginid) {
     int count = 0;
-    qDebug() << "Install couchdb data for" << pluginid;
-    const QDir dir = setup::pluginCouchDBDir(pluginid);
+    QDir dir = setup::pluginCouchDBDir();
+    if (!dir.cd(pluginid)) {
+        qWarning()<<"CouchDB: failed to change to " << dir.absolutePath() << pluginid;
+        return 0;
+    }
     {
         QEventLoop eventLoop;
         const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files|QDir::NoDotAndDotDot);
+        qDebug() << "CouchDB: Install" << pluginid << "with" << files.size() << "json files";
         for (int i=0;i<files.size();++i) {
             QFile file(dir.absoluteFilePath(files[i]));
             file.open(QIODevice::ReadOnly);
@@ -337,7 +350,7 @@ int CouchDB::installPluginData(const QString& pluginid) {
             eventLoop.exec();
             file.close();
             if (rf->error() == QNetworkReply::NoError) {
-                qDebug() << "\tInstalled" << doc_name << file.size();
+                qDebug() << "\tInstalled" << doc_name << ", size:" << file.size();
                 ++count;
             } else {
                 qWarning() << "\tInstallation failed:" << doc_name << file.size() << rf->error();

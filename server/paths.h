@@ -15,7 +15,7 @@ QDir pluginDir();
 /** Returns json files and other attachment files that have to be installed to the couchDB for the plugin
   * to work correctly
   */
-QDir pluginCouchDBDir(const QString& pluginid);
+QDir pluginCouchDBDir();
 QString couchdbAbsoluteUrl(const char* relativeUrl);
 QString couchdbAbsoluteUrl(const QString& relativeUrl);
 };
