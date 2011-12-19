@@ -42,12 +42,13 @@ bool CouchDB::connectToDatabase() {
         QNetworkReply *r = get ( request );
         connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
         eventLoop.exec();
-        if (r->error() != QNetworkReply::ContentNotFoundError) {
+        if (r->error() == QNetworkReply::ContentNotFoundError) {
             r = put(request, "");
             connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
             eventLoop.exec();
             if (r->error() != QNetworkReply::NoError) {
                 // Database could not be created: no error recovery possible
+                qWarning() << "CouchDB: Database not found and could not be created!";
                 return false;
             }
             r = get ( request );
@@ -55,10 +56,12 @@ bool CouchDB::connectToDatabase() {
             eventLoop.exec();
             if (r->error() != QNetworkReply::NoError) {
                 // Database created but could not be read: no error recovery possible
+                qWarning() << "CouchDB: Successfull created database but can not read it out!";
                 return false;
             }
-        } else {
+        } else if (r->error() != QNetworkReply::NoError) {
             // Network error: no error recovery possible
+            qWarning() << "CouchDB: Network error" << r->error();
             return false;
         }
 
@@ -66,8 +69,8 @@ bool CouchDB::connectToDatabase() {
         QByteArray rawdata = r->readAll();
         QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
         if (!ok) {
-            qWarning() << "Json parser:" << rawdata;
             // Response is not json: no error recovery possible
+            qWarning() << "CouchDB: Json parser:" << rawdata;
             return false;
         }
 
