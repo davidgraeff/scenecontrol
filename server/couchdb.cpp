@@ -283,6 +283,9 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
                 continue;
             }
         }
+        data.remove(QLatin1String("_id"));
+	data.remove(QLatin1String("_rev"));
+	data.remove(QLatin1String("type_"));
         emit couchDB_settings ( pluginid, data );
 
     }
