@@ -73,24 +73,27 @@ bool CouchDB::connectToDatabase() {
 
         if ( !data.contains ( QLatin1String ( "db_name" ) ) ) {
             // Response is not expected without db_name: no error recovery possible
+            qWarning() << "CouchDB: db_name not found";
             return false;
         }
 
         int doccount = data.value(QLatin1String("doc_count")).toInt();
-        // Initial data could not be installed
         if (!doccount && !installPluginData(QLatin1String("_server"))) {
+            // Initial data could not be installed
+            qWarning() << "CouchDB: doc_count = 0";
             return false;
         }
         m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
     }
 
     { // get events
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/roomcontrol/_view/events" ) );
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/events" ) );
         QNetworkReply *r = get ( request );
         connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
         eventLoop.exec();
         if (r->error() != QNetworkReply::NoError) {
             // Database events could not be read: no error recovery possible
+            qWarning() << "CouchDB: _design/_server/_view/events";
             return false;
         }
 
@@ -113,15 +116,15 @@ bool CouchDB::connectToDatabase() {
 
     // startChangeLister for settings
     {
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=roomcontrol/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/events&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
         request.setRawHeader ( "Connection","keep-alive" );
         QNetworkReply *r = get ( request );
-        connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
+        connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange()) );
         connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
     }
     // startChangeLister for settings
     {
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=roomcontrol/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
         request.setRawHeader ( "Connection","keep-alive" );
         QNetworkReply *r = get ( request );
         connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
@@ -218,7 +221,7 @@ void CouchDB::requestActionsOfCollection(const QString& collecion_id)
 {
     if (collecion_id.isEmpty())
         return;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/roomcontrol/_view/actions?key=\"%1\"#%1" ).arg ( collecion_id ) );
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/actions?key=\"%1\"#%1" ).arg ( collecion_id ) );
 
     QNetworkReply* r = get ( request );
     connect ( r, SIGNAL ( finished() ), SLOT ( replyActionOfCollection() ) );
@@ -315,7 +318,7 @@ int CouchDB::installPluginData(const QString& pluginid) {
                 qWarning() << "\tFile to big!" << files[i] << file.size();
                 continue;
             }
-            // Document ID: Consist of filename without extension + "{pluginid}". 
+            // Document ID: Consist of filename without extension + "{pluginid}".
             // "()" are replaced by "/".
             const QString doc_name = QFileInfo(files[i]).baseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
             QNetworkRequest request( setup::couchdbAbsoluteUrl( doc_name ) );
@@ -341,7 +344,7 @@ int CouchDB::installPluginData(const QString& pluginid) {
         QStringList files = dir.entryList(filters, QDir::Files|QDir::NoDotAndDotDot);
         QString revision;
         QEventLoop eventLoop;
-	const QString doc_html = QLatin1String("html_")+pluginid;
+        const QString doc_html = QLatin1String("html_")+pluginid;
         { // Get revision of htmlplugin_{pluginname} document where all additional files should be attached
             QNetworkRequest request( setup::couchdbAbsoluteUrl(doc_html) );
             QNetworkReply* rf = head(request);
