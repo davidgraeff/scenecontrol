@@ -57,7 +57,6 @@ class PluginController: public QObject, public AbstractPlugin, public AbstractPl
 public:
     PluginController (PropertyController* propertycontroller, CollectionController* collectioncontroller);
     virtual ~PluginController();
-    void initializePlugins();
     int knownServices();
 
     AbstractPlugin* getPlugin(const QString& pluginid);

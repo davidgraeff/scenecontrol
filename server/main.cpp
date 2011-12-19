@@ -115,7 +115,6 @@ int main(int argc, char *argv[])
     collectioncontroller->connect(couchdb, SIGNAL(couchDB_actionsOfCollection(QVariantList,QString)), collectioncontroller, SLOT(actionsOfCollection(QVariantList,QString)));
     
     int exitcode = 0;
-    plugins->initializePlugins();
     exitcode |= couchdb->connectToDatabase()?0:-2;
     
     if (!exitcode && !cmdargs.contains("--no-event-loop"))

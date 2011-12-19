@@ -46,6 +46,7 @@ bool CouchDB::connectToDatabase() {
             r = put(request, "");
             connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
             eventLoop.exec();
+
             if (r->error() != QNetworkReply::NoError) {
                 // Database could not be created: no error recovery possible
                 qWarning() << "CouchDB: Database not found and could not be created!";
@@ -74,9 +75,9 @@ bool CouchDB::connectToDatabase() {
             return false;
         }
 
-        if ( !data.contains ( QLatin1String ( "db_name" ) ) ) {
+        if ( !data.contains ( QLatin1String ( "db_name" ) ) || !data.contains ( QLatin1String ( "doc_count" ) ) ) {
             // Response is not expected without db_name: no error recovery possible
-            qWarning() << "CouchDB: db_name not found";
+            qWarning() << "CouchDB: db_name or doc_count not found";
             return false;
         }
 
@@ -235,30 +236,17 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
 {
     if (pluginid.isEmpty())
         return;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("pluginconfig_%1#%1" ).arg ( pluginid ) );
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("configplugin_%1" ));
 
     QNetworkReply* r = get ( request );
-    r->setProperty("tryToInstall", tryToInstall);
-    r->setProperty("pluginid", pluginid);
-    connect ( r, SIGNAL ( finished() ), SLOT ( replyPluginSettings() ) );
-}
-
-void CouchDB::replyPluginSettings()
-{
-    QNetworkReply *r = ( QNetworkReply* ) sender();
-    bool tryToInstall = r->property("tryToInstall").toBool();
-    r->deleteLater();
+    QEventLoop eventLoop;
+    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    eventLoop.exec();
 
     if ( r->error() != QNetworkReply::NoError ) {
-        // settings not found, try to install initial plugin values to the couchdb
-        if (tryToInstall) {
-            const QString pluginid = r->property("pluginid").toString();
-            installPluginData(pluginid);
-            requestPluginSettings(pluginid, false);
-        } else {
-            emit couchDB_no_settings_found(r->url().fragment());
-            return;
-        }
+        qWarning()<<"CouchDB: Lost connection; Get settings for" << pluginid;
+        delete r;
+        return;
     }
 
     while (r->canReadLine()) {
@@ -266,13 +254,30 @@ void CouchDB::replyPluginSettings()
         if ( line.isEmpty() ) return;
         bool ok;
         QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
-        if ( ok )
-            emit couchDB_settings ( ServiceID::id(data), data );
-        else {
-            qWarning() << "Json parser:" << line;
-            return;
+        if ( !ok ) {
+            qWarning() << "CouchDB: Json parser:" << line;
+            continue;
         }
+
+        if (data.value(QLatin1String("error")) == QLatin1String("not_found")) {
+            if (tryToInstall) {
+                // settings not found, try to install initial plugin values to the couchdb
+                installPluginData(pluginid);
+                tryToInstall = false;
+                delete r;
+                r = get ( request );
+                connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+                eventLoop.exec();
+		continue;
+            } else {
+                emit couchDB_no_settings_found(pluginid);
+                continue;
+            }
+        }
+        emit couchDB_settings ( ServiceID::id(data), data );
+
     }
+    delete r;
 }
 
 void CouchDB::replyPluginSettingsChange()

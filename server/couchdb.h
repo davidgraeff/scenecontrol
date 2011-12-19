@@ -44,8 +44,6 @@ private Q_SLOTS:
     void replyEventsChange();
     // Called as result of replyEventsChange
     void replyEvent();
-    // Receive settings of a plugin. As a respons to the method requestPluginSettings
-    void replyPluginSettings();
     // Called if plugin settings on the database changed and fetches those settings. Will fire the signal couchDB_settings
     void replyPluginSettingsChange();
     // Fetches all conditions and actions of a collection. Will fire the signal couchDB_actionsOfCollection

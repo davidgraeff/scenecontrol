@@ -29,13 +29,6 @@ PluginController::~PluginController()
     qDeleteAll(m_plugins);
 }
 
-void PluginController::initializePlugins() {
-    QMap<QString,PluginInfo*>::iterator i = m_plugins.begin();
-    for (;i!=m_plugins.end();++i) {
-        (*i)->plugin->initialize();
-    }
-}
-
 QMap< QString, PluginInfo* >::iterator PluginController::getPluginIterator() {
     return m_plugins.begin();
 }
@@ -183,6 +176,11 @@ void PluginController::couchDB_ready() {
 
         plugin->connectToServer(m_collectioncontroller, m_propertycontroller);
         CouchDB::instance()->requestPluginSettings(plugin_id);
+    }
+    
+    QMap<QString,PluginInfo*>::iterator i = m_plugins.begin();
+    for (;i!=m_plugins.end();++i) {
+        (*i)->plugin->initialize();
     }
 }
 
