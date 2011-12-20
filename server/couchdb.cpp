@@ -464,6 +464,8 @@ void CouchDB::extractJSONFromCouchDB(const QString& path)
         const QString id = list[i].toMap().value ( QLatin1String ( "id" ) ).toString();
         QNetworkRequest request ( setup::couchdbAbsoluteUrl(id) );
         QNetworkReply *r = get ( request );
+        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
         if (r->error() != QNetworkReply::NoError) {
             qWarning() << "CouchDB: Extraction failed" << id;
             continue;
@@ -479,13 +481,19 @@ void CouchDB::extractJSONFromCouchDB(const QString& path)
         QDir dir(path);
         if (data.contains(QLatin1String("plugin_"))) {
             const QString pluginid = data.value(QLatin1String("plugin_")).toString();
-            if (!dir.mkdir(pluginid) || !dir.cd(pluginid)) {
-                qWarning() << "CouchDB: Failed to create subdir" << dir;
+            if (!dir.cd(pluginid) && (!dir.mkdir(pluginid) || !dir.cd(pluginid))) {
+                qWarning() << "CouchDB: Failed to create subdir" << pluginid << dir;
+                continue;
+            }
+        } else if (data.value(QLatin1String("type_")).toString() == QLatin1String("collection")) {
+            const QString pluginid = QLatin1String("collections");
+            if (!dir.cd(pluginid) && (!dir.mkdir(pluginid) || !dir.cd(pluginid))) {
+                qWarning() << "CouchDB: Failed to create subdir" << pluginid << dir;
                 continue;
             }
         }
 
-        QFile f(dir.absoluteFilePath(id+QLatin1String(".json")));
+        QFile f(dir.absoluteFilePath(data.value(QLatin1String("type_")).toString()+id+QLatin1String(".json")));
         f.open(QIODevice::WriteOnly|QIODevice::Truncate);
         f.write(rawdata);
         f.close();
