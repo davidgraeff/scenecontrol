@@ -127,10 +127,10 @@ void CouchDB::requestEvents()
     QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
     if (!ok) {
         // Response is not json: no error recovery possible
-        qWarning() << "Json parser:" << rawdata;
+        qWarning() << "CouchDB: Json parser:" << rawdata;
         return;
     }
-    if ( ok && data.contains ( QLatin1String ( "rows" ) ) ) {
+    if (data.contains ( QLatin1String ( "rows" ) )) {
         QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
         for ( int i=0;i<list.size();++i ) {
             data = list[i].toMap().value ( QLatin1String ( "value" ) ).toMap();
@@ -142,7 +142,7 @@ void CouchDB::requestEvents()
 bool CouchDB::checkFailure(QNetworkReply* r)
 {
     if ( r->error() != QNetworkReply::NoError ) {
-        qWarning() << "Response error:" << r->url();
+        qWarning() << "CouchDB: Response error:" << r->url();
         emit couchDB_failed(r->url().toString());
         return true;
     }
@@ -175,7 +175,7 @@ void CouchDB::replyEvent()
         if ( ok )
             emit couchDB_Event_add ( ServiceID::id(data), data );
         else {
-            qWarning() << "Json parser:" << line;
+            qWarning() << "CouchDB: Json parser:" << line;
             return;
         }
     }
@@ -284,8 +284,8 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
             }
         }
         data.remove(QLatin1String("_id"));
-	data.remove(QLatin1String("_rev"));
-	data.remove(QLatin1String("type_"));
+        data.remove(QLatin1String("_rev"));
+        data.remove(QLatin1String("type_"));
         emit couchDB_settings ( pluginid, data );
 
     }
@@ -305,11 +305,10 @@ void CouchDB::replyPluginSettingsChange()
         QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
         if ( ok && data.contains ( QLatin1String ( "seq" ) ) ) {
             const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
-	    QString pluginid = ServiceID::idChangeSeq ( data );
-	    if (!pluginid.startsWith(QLatin1String("configplugin_")))
-	      continue;
-	    pluginid = pluginid.mid(sizeof("configplugin_")-1);
-	    qDebug() << "settings changed" << pluginid;
+            QString pluginid = ServiceID::idChangeSeq ( data );
+            if (!pluginid.startsWith(QLatin1String("configplugin_")))
+                continue;
+            pluginid = pluginid.mid(sizeof("configplugin_")-1);
             if ( seq > m_last_changes_seq_nr )
                 m_last_changes_seq_nr = seq;
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
@@ -429,4 +428,67 @@ int CouchDB::installPluginData(const QString& pluginid) {
         }
     }
     return count;
+}
+
+void CouchDB::extractJSONFromCouchDB(const QString& path)
+{
+    qDebug() << "CouchDB: Extract JSON Files to" << path;
+    QEventLoop eventLoop;
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_all_docs") );
+    QNetworkReply *r = get ( request );
+    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    eventLoop.exec();
+    if (r->error() != QNetworkReply::NoError) {
+        qWarning() << "CouchDB: Failed to extract JSON Files";
+        return;
+    }
+
+    bool ok;
+    QByteArray rawdata = r->readAll();
+    delete r;
+    QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+    if (!ok) {
+        // Response is not json: no error recovery possible
+        qWarning() << "CouchDB: Json parser:" << rawdata;
+        return;
+    }
+
+    if (!data.contains ( QLatin1String ( "rows" ) )) {
+        // Response is not json: no error recovery possible
+        qWarning() << "CouchDB: Field rows not found";
+        return;
+    }
+
+    QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
+    for ( int i=0;i<list.size();++i ) {
+        const QString id = list[i].toMap().value ( QLatin1String ( "id" ) ).toString();
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl(id) );
+        QNetworkReply *r = get ( request );
+        if (r->error() != QNetworkReply::NoError) {
+            qWarning() << "CouchDB: Extraction failed" << id;
+            continue;
+        }
+
+        const QByteArray rawdata = r->readAll();
+        bool ok;
+        QVariantMap data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+        if (!ok) {
+            qWarning() << "CouchDB: Extraction failed (JSON!)" << id;
+            continue;
+        }
+        QDir dir(path);
+        if (data.contains(QLatin1String("plugin_"))) {
+            const QString pluginid = data.value(QLatin1String("plugin_")).toString();
+            if (!dir.mkdir(pluginid) || !dir.cd(pluginid)) {
+                qWarning() << "CouchDB: Failed to create subdir" << dir;
+                continue;
+            }
+        }
+
+        QFile f(dir.absoluteFilePath(id+QLatin1String(".json")));
+        f.open(QIODevice::WriteOnly|QIODevice::Truncate);
+        f.write(rawdata);
+        f.close();
+        delete r;
+    }
 }
