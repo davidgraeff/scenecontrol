@@ -95,7 +95,7 @@ bool CouchDB::connectToDatabase() {
         request.setRawHeader ( "Connection","keep-alive" );
         QNetworkReply *r = get ( request );
         connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange()) );
-        connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
+        //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
     }
     // startChangeLister for settings
     {
@@ -103,7 +103,7 @@ bool CouchDB::connectToDatabase() {
         request.setRawHeader ( "Connection","keep-alive" );
         QNetworkReply *r = get ( request );
         connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
-        connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorFatal(QNetworkReply::NetworkError)) );
+        //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
     }
     emit couchDB_ready();
     return true;
@@ -198,8 +198,11 @@ void CouchDB::replyActionOfCollection()
 
 void CouchDB::replyEventsChange() {
     QNetworkReply *r = ( QNetworkReply* ) sender();
-    if (checkFailure(r))
+    if ( r->error() != QNetworkReply::NoError ) {
+        qWarning() << "CouchDB: replyEventsChange" << r->url();
+        delete r;
         return;
+    }
 
     while ( r->canReadLine() ) {
         const QByteArray line = r->readLine();
@@ -295,8 +298,11 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
 void CouchDB::replyPluginSettingsChange()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
-    if (checkFailure(r))
+    if ( r->error() != QNetworkReply::NoError ) {
+        qWarning() << "CouchDB: replyPluginSettingsChange" << r->url();
+        delete r;
         return;
+    }
 
     while ( r->canReadLine() ) {
         const QByteArray line = r->readLine();
