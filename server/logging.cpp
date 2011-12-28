@@ -30,7 +30,13 @@ bool logToConsole = true;
 void setLogOptions(bool toConsole, const char* logfilename) {
 	logToConsole = toConsole;
 	if (!logfilename) return;
+	#if defined(_WIN32)
 	logfile.setFileName(QDir::home().absoluteFilePath(QLatin1String(logfilename)));
+	#elif defined(linux) || defined(__linux)
+	logfile.setFileName(QDir(QLatin1String("/var/log")).absoluteFilePath(QLatin1String(logfilename)));
+	#else
+	logfile.setFileName(QDir::temp().absoluteFilePath(QLatin1String(logfilename)));
+	#endif
 	logfile.open(QIODevice::WriteOnly|QIODevice::Append);
 	logfile.write("--------------------------------------\n");
 }
