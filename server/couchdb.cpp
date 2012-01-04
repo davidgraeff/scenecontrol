@@ -15,11 +15,12 @@
 #include <QSocketNotifier>
 #include <shared/abstractplugin.h>
 #include <qeventloop.h>
+#include <QTimer>
 #define __FUNCTION__ __FUNCTION__
 
 static CouchDB* couchdbInstance = 0;
 
-CouchDB::CouchDB () : m_last_changes_seq_nr ( 0 ) {
+CouchDB::CouchDB () : m_last_changes_seq_nr ( 0 ), m_settingsChangeFailCounter(0), m_eventsChangeFailCounter(0) {
 }
 
 CouchDB::~CouchDB() {
@@ -88,25 +89,29 @@ bool CouchDB::connectToDatabase() {
     }
     m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
 
+    startChangeListenerEvents();
+    startChangeListenerSettings();
 
-    // startChangeLister for settings
-    {
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/events&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
-        request.setRawHeader ( "Connection","keep-alive" );
-        QNetworkReply *r = get ( request );
-        connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange()) );
-        //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
-    }
-    // startChangeLister for settings
-    {
-        QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
-        request.setRawHeader ( "Connection","keep-alive" );
-        QNetworkReply *r = get ( request );
-        connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
-        //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
-    }
     emit couchDB_ready();
     return true;
+}
+
+void CouchDB::startChangeListenerEvents()
+{
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/events&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
+    request.setRawHeader ( "Connection","keep-alive" );
+    QNetworkReply *r = get ( request );
+    connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange()) );
+    //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
+}
+
+void CouchDB::startChangeListenerSettings()
+{
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
+    request.setRawHeader ( "Connection","keep-alive" );
+    QNetworkReply *r = get ( request );
+    connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
+    //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
 void CouchDB::requestEvents()
@@ -199,11 +204,18 @@ void CouchDB::replyActionOfCollection()
 void CouchDB::replyEventsChange() {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     if ( r->error() != QNetworkReply::NoError ) {
-        qWarning() << "CouchDB: replyEventsChange" << r->url();
+        ++m_eventsChangeFailCounter;
+        if (m_eventsChangeFailCounter > 5) {
+            qWarning() << "CouchDB: replyEventsChange" << r->url();
+        } else {
+            QTimer::singleShot(1000, this, SLOT(replyPluginSettingsChange()));
+        }
         delete r;
         return;
     }
 
+    m_eventsChangeFailCounter = 0;
+    
     while ( r->canReadLine() ) {
         const QByteArray line = r->readLine();
         if ( line.size() <= 1 ) continue;
@@ -299,10 +311,17 @@ void CouchDB::replyPluginSettingsChange()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     if ( r->error() != QNetworkReply::NoError ) {
-        qWarning() << "CouchDB: replyPluginSettingsChange" << r->url();
+        ++m_settingsChangeFailCounter;
+        if (m_settingsChangeFailCounter > 5) {
+            qWarning() << "CouchDB: replyPluginSettingsChange" << r->url();
+        } else {
+            QTimer::singleShot(1000, this, SLOT(replyPluginSettingsChange()));
+        }
         delete r;
         return;
     }
+
+    m_settingsChangeFailCounter = 0;
 
     while ( r->canReadLine() ) {
         const QByteArray line = r->readLine();

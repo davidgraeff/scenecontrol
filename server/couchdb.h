@@ -38,10 +38,14 @@ public:
 private:
     CouchDB ();
     int m_last_changes_seq_nr;
+    int m_settingsChangeFailCounter;
+    int m_eventsChangeFailCounter;
     bool checkFailure(QNetworkReply*);
-    
+
     int installPluginData(const QString& pluginid);
 private Q_SLOTS:
+    void startChangeListenerSettings();
+    void startChangeListenerEvents();
     // Called if events on the database changed and fetches those events
     void replyEventsChange();
     // Called as result of replyEventsChange
