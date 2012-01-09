@@ -96,6 +96,7 @@ private:
     readStateEnum m_readState;
     // rs232 special
     QextSerialPort* m_serial;
+    bool m_panicTimeoutAck;
 private Q_SLOTS:
     // LIGHTS //
     void readyRead();

@@ -34,6 +34,7 @@ public:
     void requestEvents();
     void requestActionsOfCollection(const QString& collecion_id);
     void requestPluginSettings(const QString& pluginid, bool tryToInstall = true);
+    void savePluginSetting(const QString& pluginid, const QString& key, const QVariantMap& value);
     void extractJSONFromCouchDB(const QString& path);
 private:
     CouchDB ();

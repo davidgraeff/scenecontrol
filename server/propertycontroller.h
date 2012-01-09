@@ -56,14 +56,17 @@ private:
     virtual void pluginRegisterPropertyChangeListener ( const QString& unqiue_property_id, const char* pluginid = "" );
     virtual void pluginUnregisterAllPropertyChangeListeners ( const char* pluginid = "" );
     virtual void pluginUnregisterPropertyChangeListener ( const QString& unqiue_property_id, const char* pluginid = "" );
-    
+
     // satisfy interfaces
-    virtual void clear(){}
-    virtual void initialize(){}
-    virtual bool condition(const QVariantMap&, int){return false;}
+    virtual void clear() {}
+    virtual void initialize() {}
+    virtual bool condition(const QVariantMap&, int) {
+        return false;
+    }
     virtual void execute(const QVariantMap&, int); // implement execute of interface AbstractPlugin_services
-    virtual void register_event(const QVariantMap&, const QString&, int){}
-    virtual void unregister_event(const QString&, int){}
-    virtual void settingsChanged(const QVariantMap&){}
-    virtual QList< QVariantMap > properties(int){return QList< QVariantMap >();}
+    virtual void register_event(const QVariantMap&, const QString&, int) {}
+    virtual void unregister_event(const QString&, int) {}
+    virtual void settingsChanged(const QVariantMap&) {}
+    virtual QList< QVariantMap > properties(int);
+    virtual void saveSettings(const QString& key, const QVariantMap& value, const char* pluginid);
 };

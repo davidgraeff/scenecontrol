@@ -12,6 +12,7 @@
 #include "plugincontroller.h"
 #include "websocket.h"
 #include <QDebug>
+#include "couchdb.h"
 #define __FUNCTION__ __FUNCTION__
 
 PropertyController::PropertyController () : m_plugincontroller ( 0 ) {}
@@ -41,7 +42,7 @@ void PropertyController::pluginPropertyChanged ( const QVariantMap& data, int se
         else
             WebSocket::instance()->sendToClient(jsondata, sessionid);
     } else if (data.size()) {
-	qWarning() << "Json Serializer failed at:" << data;
+        qWarning() << "Json Serializer failed at:" << data;
     }
 }
 
@@ -83,4 +84,12 @@ void PropertyController::execute(const QVariantMap& data, int sessionid) {
     if ( ServiceID::isMethod(data, "requestProperties" ) ) {
         WebSocket::instance()->sendToClient(allProperties(sessionid), sessionid);
     }
+}
+
+QList< QVariantMap > PropertyController::properties(int) {
+    return QList< QVariantMap >();
+}
+
+void PropertyController::saveSettings(const QString& key, const QVariantMap& value, const char* pluginid) {
+  CouchDB::instance()->savePluginSetting(QString::fromAscii(pluginid), key, value);
 }

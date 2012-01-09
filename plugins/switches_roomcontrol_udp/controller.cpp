@@ -24,7 +24,9 @@
 #include <shared/qextserialport/qextserialport.h>
 #include <shared/abstractplugin.h>
 
-bool operator<(const Controller::ledid& src, const Controller::ledid& vgl) {return (src.port<vgl.port || (src.port==vgl.port && src.pin < vgl.pin));}
+bool operator<(const Controller::ledid& src, const Controller::ledid& vgl) {
+    return (src.port<vgl.port || (src.port==vgl.port && src.pin < vgl.pin));
+}
 
 Controller::Controller ( AbstractPlugin* plugin ) :m_plugin ( plugin ), m_channels ( 0 ), m_socket ( 0 ) {
 }
@@ -65,23 +67,23 @@ void Controller::setChannel ( const Controller::ledid& channel, bool value ) {
     if ( !m_socket ) return;
     if ( !m_leds.contains(channel) ) return;
     m_leds[channel].value = value;
-	
+
     emit ledChanged ( getStringFromPortPin(channel), QString::null, value );
 
-	struct udpio_packet
-	{
-		/* Port: 0=PORTA, ..., 3=PORTD, ...
-		*/
-		uint8_t port;
-		/* Pins: Every bit corresponds to one pin, where the least significant (right) bit
-		means pin 0.
-		*/
-		uint8_t pinmask;
-		uint8_t mode;
-	} data;
+    struct udpio_packet
+    {
+        /* Port: 0=PORTA, ..., 3=PORTD, ...
+        */
+        uint8_t port;
+        /* Pins: Every bit corresponds to one pin, where the least significant (right) bit
+        means pin 0.
+        */
+        uint8_t pinmask;
+        uint8_t mode;
+    } data;
 
-	data.port = channel.port;
-	
+    data.port = channel.port;
+
     if (value) {
         data.mode = 1;
         data.pinmask = (1 << channel.pin);
@@ -97,7 +99,7 @@ void Controller::readyRead() {
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
     settings.beginGroup ( QLatin1String ( "channels" ) );
-	
+
     while (m_socket->hasPendingDatagrams()) {
         QByteArray bytes;
         bytes.resize ( m_socket->pendingDatagramSize() );
@@ -107,19 +109,19 @@ void Controller::readyRead() {
             if (bytes.startsWith("pins") && bytes.size() >= 8)  {
                 m_leds.clear();
                 emit ledsCleared();
-				
+
                 for (int port=0;port<4;++port) {
                     for (int pin=0;pin<8;++pin) {
-						const bool value = bytes[4+port] & (1 << pin);
-						const QString name = settings.value(QLatin1String ( "channel_name" ) + getStringFromPortPin(ledid(port, pin)),tr("Channel Port %1, Pin %2").arg(port).arg(pin)).toString();
-						const ledid id = ledid(port, pin);
+                        const bool value = bytes[4+port] & (1 << pin);
+                        const QString name = settings.value(QLatin1String ( "channel_name" ) + getStringFromPortPin(ledid(port, pin)),tr("Channel Port %1, Pin %2").arg(port).arg(pin)).toString();
+                        const ledid id = ledid(port, pin);
                         m_leds[id] = ledchannel(port, pin, value, name);
-						emit ledChanged(getStringFromPortPin(id), name, value);
+                        emit ledChanged(getStringFromPortPin(id), name, value);
                     }
                 }
                 bytes = bytes.mid(8);
             } else if (bytes.startsWith("pinc") && bytes.size() >= 6) {
-		emit watchpinChanged(bytes[4], bytes[5]);
+                emit watchpinChanged(bytes[4], bytes[5]);
             } else {
                 qWarning() << m_plugin->pluginid() << "Failed to parse" << bytes;
                 break;
@@ -134,7 +136,7 @@ void Controller::connectToLeds ( const QString& host, int port ) {
     m_socket = new QUdpSocket(this);
     connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
     m_socket->connectToHost(QHostAddress(host),m_sendPort);
-	
+
     // request all pin values
     char b[] = {0,0,3};
     m_socket->write ( b, sizeof ( b ) );
@@ -149,7 +151,7 @@ void Controller::registerPortObserver(unsigned char ioport, unsigned char pinmas
 }
 
 Controller::ledid Controller::getPortPinFromString(const QString& channel) const {
-	Controller::ledid lid(-1,0);
+    Controller::ledid lid(-1,0);
     if (channel.size()<3) {
         qWarning() << m_plugin->pluginid() << "getPortPinFromChannel failed. Right syntax: e.g. A:0 or 2:7" << channel;
         return lid;
@@ -190,10 +192,10 @@ Controller::ledid Controller::getPortPinFromString(const QString& channel) const
     if (lid.port == 250 || lid.pin >= 8) {
         qWarning() << m_plugin->pluginid() << "getPortPinFromChannel failed. Port range (A-F) or Pin range (0-7) wrong!" << channel;
     }
-    
+
     return lid;
 }
 
 QString Controller::getStringFromPortPin(const Controller::ledid& channel) const {
-	return QString::number(channel.port) + QLatin1String(":") + QString::number(channel.pin);
+    return QString::number(channel.port) + QLatin1String(":") + QString::number(channel.pin);
 }

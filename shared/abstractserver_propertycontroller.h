@@ -46,4 +46,8 @@ public:
      * Unregister all listeners. otherPropertyChanged will not be called by the server anymore.
      */
     virtual void pluginUnregisterAllPropertyChangeListeners(const char* pluginid = PLUGIN_ID) = 0;
+    /**
+     * Save settings
+     */
+    virtual void saveSettings(const QString& key, const QVariantMap& value, const char* pluginid = PLUGIN_ID) = 0;
 };

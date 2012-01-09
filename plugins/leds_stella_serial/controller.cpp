@@ -25,9 +25,10 @@
 #include <shared/abstractplugin.h>
 
 Controller::Controller ( AbstractPlugin* plugin ) : m_curtain_max ( 0 ), m_curtain_value ( 0 ), m_plugin ( plugin ), m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {
+    m_panicTimeoutAck = false;
     connect(&m_moodlightTimer, SIGNAL(timeout()),SLOT(moodlightTimeout()));
     m_moodlightTimer.setInterval(5000);
-	srand(100);
+    srand(100);
 }
 
 Controller::~Controller() {
@@ -77,8 +78,11 @@ void Controller::readyRead() {
                 if ( m_buffer.size() <2 ) break;
                 parseInit ( m_buffer[1] );
                 break;
+            case 'O': //panic timeout ack
+                m_panicTimeoutAck = true;
+                break;
             default:
-                qWarning()<<"RoomLeds: Not detected:" << m_buffer[0] << m_buffer.size();
+                qWarning()<< m_plugin->pluginid() << "command unknown: (Command, BufferSize)" << m_buffer[0] << m_buffer.size();
                 m_buffer.clear();
                 m_bufferpos = 0;
             }
@@ -94,7 +98,7 @@ void Controller::parseCurtain ( unsigned char current, unsigned char max ) {
 }
 
 void Controller::parseInit ( unsigned char protocolversion ) {
-    qDebug() <<m_plugin->pluginid() << "LED Protocol:" << protocolversion;
+    qDebug() <<m_plugin->pluginid() << "Firmware Protocol:" << protocolversion;
 }
 
 void Controller::parseSensors ( unsigned char s1 ) {
@@ -115,15 +119,15 @@ void Controller::parseLeds ( const QByteArray& data ) {
     // set new
     qDebug() <<m_plugin->pluginid() << "LED Channels:" << m_channels;
     for ( int i=0;i<m_channels;++i ) {
-		const QString channelid = QString::number(i);
-		ledchannel l;
+        const QString channelid = QString::number(i);
+        ledchannel l;
         l.value = ( uint8_t ) data[i];
         l.name = settings.value ( QLatin1String ( "channel_name" ) +QString::number ( i ),
-                                              tr ( "Channel %1" ).arg ( i ) ).toString();
+                                  tr ( "Channel %1" ).arg ( i ) ).toString();
         l.moodlight =  settings.value ( QLatin1String ( "channel_moodlight" ) +QString::number ( i )).toBool();
         if (l.moodlight) m_moodlightTimer.start();
-		
-		m_leds[channelid] = l;
+
+        m_leds[channelid] = l;
         emit ledChanged ( channelid, l.name, l.value );
     }
     emit dataLoadingComplete();
@@ -185,16 +189,16 @@ void Controller::setChannel ( const QString& channel, uint value, uint fade ) {
 }
 
 void Controller::moodlight(const QString& channel, bool moodlight) {
-	if ( !m_leds.contains(channel) ) return;
+    if ( !m_leds.contains(channel) ) return;
     m_leds[channel].moodlight = moodlight;
     QSettings settings;
     settings.beginGroup ( m_plugin->pluginid() );
     settings.beginGroup ( QLatin1String ( "channels" ) );
     settings.setValue ( QLatin1String ( "channel_moodlight" ) +channel , moodlight );
     if (moodlight) {
-		m_moodlightTimer.start();
-		moodlightTimeout();
-	}
+        m_moodlightTimer.start();
+        moodlightTimeout();
+    }
 }
 
 void Controller::inverseChannel ( const QString& channel, uint fade ) {
@@ -245,14 +249,19 @@ void Controller::panicTimeout() {
     if ( !m_serial->isOpen() || m_serial->write ( t1, sizeof ( t1 ) ) == -1 ) {
         if (m_connected) {
             m_connected = false;
-            qWarning() << "IO: Failed to reset panic counter. Try reconnection";
+            qWarning() << m_plugin->pluginid() << "Failed to reset panic counter. Try reconnection";
         }
         m_serial->close();
         const char t1[] = {0xef};
         if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1,  sizeof ( t1 ) ) ) {
-            qWarning() << "IO: rs232 init fehler";
+            qWarning() << m_plugin->pluginid() << "rs232 init fehler";
         }
     }
+
+    if (!m_panicTimeoutAck) {
+        qWarning() << m_plugin->pluginid() << "No panic timeout ack!";
+    }
+    m_panicTimeoutAck = false;
 }
 void Controller::connectToLeds ( const QString& device ) {
     // disable old
@@ -261,8 +270,7 @@ void Controller::connectToLeds ( const QString& device ) {
     m_serial = 0;
     m_connected = false;
     // create new
-    QSettings settings;
-    settings.beginGroup ( m_plugin->pluginid() );
+
     // Open device and ask for pins
     if ( !QFile::exists ( device ) ) {
         qWarning() << m_plugin->pluginid() << "device not found"<<device;
@@ -280,7 +288,10 @@ void Controller::connectToLeds ( const QString& device ) {
     const char t1[] = {0xef};
     if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1, sizeof ( t1 ) ) ) {
         qWarning() << m_plugin->pluginid() << "rs232 error:" << m_serial->errorString();
+    } else {
+        qDebug() << m_plugin->pluginid() << "connected to"<<device;
     }
+
     // panic counter
     m_panicTimer.setInterval ( 50000 );
     connect ( &m_panicTimer,SIGNAL ( timeout() ),SLOT ( panicTimeout() ) );
@@ -288,13 +299,13 @@ void Controller::connectToLeds ( const QString& device ) {
 }
 
 void Controller::moodlightTimeout() {
-	QMap<QString,ledchannel>::iterator i = m_leds.begin();
-	int c = 0;
-	for (;i != m_leds.end();++i) {
-		if (!i.value().moodlight) continue;
-		++c;
-		if (rand()/RAND_MAX >0.5) continue;
-		setChannel(i.key(),rand()%255,STELLA_SET_FADE);
-	}
-	if (!c) m_moodlightTimer.stop();
+    QMap<QString,ledchannel>::iterator i = m_leds.begin();
+    int c = 0;
+    for (;i != m_leds.end();++i) {
+        if (!i.value().moodlight) continue;
+        ++c;
+        if (rand()/RAND_MAX >0.5) continue;
+        setChannel(i.key(),rand()%255,STELLA_SET_FADE);
+    }
+    if (!c) m_moodlightTimer.stop();
 }

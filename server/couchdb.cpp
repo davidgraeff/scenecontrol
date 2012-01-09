@@ -215,7 +215,7 @@ void CouchDB::replyEventsChange() {
     }
 
     m_eventsChangeFailCounter = 0;
-    
+
     while ( r->canReadLine() ) {
         const QByteArray line = r->readLine();
         if ( line.size() <= 1 ) continue;
@@ -252,7 +252,7 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
 {
     if (pluginid.isEmpty())
         return;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("configplugin_%1" ).arg(pluginid));
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/settings?key=\"%1\"" ).arg(pluginid));
 
     QNetworkReply* r = get ( request );
     QEventLoop eventLoop;
@@ -273,37 +273,34 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
         }
     }
 
-    while (r->canReadLine()) {
-        QByteArray line = r->readLine();
-        if ( line.isEmpty() ) return;
-        bool ok;
-        QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
-        if ( !ok ) {
-            qWarning() << "CouchDB: Json parser:" << line;
+    bool ok;
+    QVariantMap data = QJson::Parser().parse ( r->readAll(), &ok ).toMap();
+    if ( ok && data.contains ( QLatin1String ( "rows" ) ) ) {
+        const QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
+        foreach(QVariant v, list) {
+            data = v.toMap();
+            data.remove(QLatin1String("_id"));
+            data.remove(QLatin1String("_rev"));
+            data.remove(QLatin1String("type_"));
+            data.remove(QLatin1String("plugin_"));
+            emit couchDB_settings ( pluginid, data );
+        }
+    } else if (data.value(QLatin1String("error")) == QLatin1String("not_found")) {
+        if (tryToInstall) {
+            // settings not found, try to install initial plugin values to the couchdb
+            installPluginData(pluginid);
+            tryToInstall = false;
+            delete r;
+            r = get ( request );
+            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            eventLoop.exec();
+            continue;
+        } else {
+            emit couchDB_no_settings_found(pluginid);
             continue;
         }
-
-        if (data.value(QLatin1String("error")) == QLatin1String("not_found")) {
-            if (tryToInstall) {
-                // settings not found, try to install initial plugin values to the couchdb
-                installPluginData(pluginid);
-                tryToInstall = false;
-                delete r;
-                r = get ( request );
-                connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-                eventLoop.exec();
-                continue;
-            } else {
-                emit couchDB_no_settings_found(pluginid);
-                continue;
-            }
-        }
-        data.remove(QLatin1String("_id"));
-        data.remove(QLatin1String("_rev"));
-        data.remove(QLatin1String("type_"));
-        emit couchDB_settings ( pluginid, data );
-
     }
+
     delete r;
 }
 
@@ -328,20 +325,36 @@ void CouchDB::replyPluginSettingsChange()
         if ( line.size() <= 1 ) continue;
         bool ok;
         QVariantMap data = QJson::Parser().parse ( line, &ok ).toMap();
-        if ( ok && data.contains ( QLatin1String ( "seq" ) ) ) {
-            const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
-            QString pluginid = ServiceID::idChangeSeq ( data );
-            if (!pluginid.startsWith(QLatin1String("configplugin_")))
-                continue;
-            pluginid = pluginid.mid(sizeof("configplugin_")-1);
-            if ( seq > m_last_changes_seq_nr )
-                m_last_changes_seq_nr = seq;
-            if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
-                emit couchDB_no_settings_found(pluginid);
-            } else {
-                requestPluginSettings(pluginid);
-            }
-        }
+        if ( !ok || !data.contains ( QLatin1String ( "seq" ) ) )
+            continue;
+
+        const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
+
+        if ( seq > m_last_changes_seq_nr )
+            m_last_changes_seq_nr = seq;
+
+        if ( data.contains ( QLatin1String ( "deleted" ) ) )
+            continue;
+
+        const QString docid = ServiceID::idChangeSeq ( data );
+
+        // request document that is mentioned in the changes feed
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl(docid));
+
+        QNetworkReply* r = get ( request );
+        QEventLoop eventLoop;
+        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+
+        const QVariantMap document = QJson::Parser().parse ( r->readAll(), &ok ).toMap();
+
+        if (ServiceID::type(document) != QLatin1String("configuration"))
+            continue;
+        document.remove(QLatin1String("_id"));
+        document.remove(QLatin1String("_rev"));
+        document.remove(QLatin1String("type_"));
+        document.remove(QLatin1String("plugin_"));
+        emit couchDB_settings ( ServiceID::pluginid(document), document );
     }
 }
 
@@ -371,21 +384,31 @@ int CouchDB::installPluginData(const QString& pluginid) {
                 qWarning() << "\tFile to big!" << files[i] << file.size();
                 continue;
             }
+            bool ok;
+            QVariantMap jsonData = QJson::Parser().parse(file, &ok).toMap();
+            if (!ok) {
+                qWarning() << "\tNot a json file although json file extension!";
+                continue;
+            }
+            // Add plugin id before inserting into database
+            jsonData[QLatin1String("plugin_")] = pluginid;
+            const QByteArray dataToSend = QJson::Serializer().serialize(jsonData);
+
             // Document ID: Consist of filename without extension + "{pluginid}".
             // "()" are replaced by "/".
-            const QString doc_name = QFileInfo(files[i]).baseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
-            QNetworkRequest request( setup::couchdbAbsoluteUrl( doc_name ) );
+            const QString docid = QFileInfo(files[i]).baseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
+            QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
             request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
-            request.setHeader(QNetworkRequest::ContentLengthHeader, file.size());
-            QNetworkReply* rf = put(request, file.readAll());
+            request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
+            QNetworkReply* rf = put(request, dataToSend);
             connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
             eventLoop.exec();
             file.close();
             if (rf->error() == QNetworkReply::NoError) {
-                qDebug() << "\tInstalled" << doc_name << ", size:" << file.size();
+                qDebug() << "\tInstalled" << docid << ", entries:" << jsonData.size();
                 ++count;
             } else {
-                qWarning() << "\tInstallation failed:" << doc_name << file.size() << rf->error();
+                qWarning() << "\tInstallation failed (name, file size, entries, error):" << docid << file.size() << jsonData.size() << rf->error();
             }
             delete rf;
         }
@@ -524,4 +547,43 @@ void CouchDB::extractJSONFromCouchDB(const QString& path)
         f.close();
         delete r;
     }
+}
+
+void CouchDB::savePluginSetting(const QString& pluginid, const QString& key, const QVariantMap& value) {
+    // 1) try to get old settings document
+    QVariantMap data;
+    QEventLoop eventLoop;
+    const QString docid = QLatin1String("configplugin_") + pluginid + QLatin1String("_") + key;
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl(docid) );
+    QNetworkReply *r = get ( request );
+    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    eventLoop.exec();
+    if (r->error() == QNetworkReply::NoError) {
+        bool ok;
+        QByteArray rawdata = r->readAll();
+        delete r;
+        data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+        if (!ok) {
+            // Response is not json: no error recovery possible
+            qWarning() << "CouchDB: Json parser:" << rawdata;
+            return;
+        }
+    }
+
+    // 2) save new data
+    const QString rev = data.value(QLatin1String("_rev"));
+    data = value;
+    if (rev.size())
+        data[QLatin1String("_rev")] = rev;
+    data[QLatin1String("_id")] = docid;
+
+    // 3) send to couchdb
+    const QByteArray dataToSend = QJson::Serializer().serialize(data);
+    QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
+    request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
+    QNetworkReply* rf = put(request, dataToSend);
+    connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    eventLoop.exec();
+    rf->deleteLater();
 }

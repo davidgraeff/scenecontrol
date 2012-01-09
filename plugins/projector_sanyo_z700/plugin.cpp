@@ -58,7 +58,7 @@ void plugin::settingsChanged(const QVariantMap& data)
         if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
             qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
         } else {
-            qDebug() << "sanyo connected to"<<device;
+            qDebug() << pluginid() << "connected to"<<device;
         }
     }
 }
