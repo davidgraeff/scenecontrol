@@ -27,8 +27,9 @@
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
 #include "shared/plugin_interconnect.h"
+#include <QTimer>
 
-class plugin : public QObject, public AbstractPlugin, public AbstractPlugin_services, private PluginInterconnect
+class plugin : public PluginInterconnect, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
@@ -46,27 +47,28 @@ public:
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
     virtual void unregister_event ( const QString& eventid, int sessionid );
 private:
-    virtual dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
+    void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
 
-    QString getSwitchName ( const QString& pin );
-    void setSwitch ( const QString& pin, bool value );
-    void setSwitchName ( const QString& pin, const QString& name );
-    void toggleSwitch ( const QString& pin );
-    bool getSwitch( const QString& pin ) const;
+    QString getSwitchName ( const QString& channel );
+    void setSwitch ( const QString& channel, bool value );
+    void setSwitchName ( const QString& channel, const QString& name );
+    void toggleSwitch ( const QString& channel );
+    bool getSwitch( const QString& channel ) const;
     int countSwitchs();
 
     struct iochannel {
         int value;
         QString name;
+	QString channel;
         QByteArray plugin_id;
 
         iochannel() {
-            value = 300;
+            value = -1;
         }
     };
     QMap<QString,iochannel> m_ios;
     QTimer m_cacheTimer;
-    QMap<QString, int> m_cache;
+    QSet<iochannel*> m_cache;
 private slots:
     void cacheToDevice();
 };

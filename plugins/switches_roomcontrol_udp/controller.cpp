@@ -28,7 +28,7 @@ bool operator<(const Controller::ledid& src, const Controller::ledid& vgl) {
     return (src.port<vgl.port || (src.port==vgl.port && src.pin < vgl.pin));
 }
 
-Controller::Controller ( AbstractPlugin* plugin ) :m_plugin ( plugin ), m_channels ( 0 ), m_socket ( 0 ) {
+Controller::Controller ( AbstractPlugin* plugin ) :m_plugin ( plugin ), m_socket ( 0 ) {
 }
 
 Controller::~Controller() {
@@ -56,7 +56,7 @@ void Controller::toogleChannel ( const Controller::ledid& channel ) {
 }
 
 int Controller::countChannels() {
-    return m_channels;
+    return m_leds.size();
 }
 
 QString Controller::getChannelName ( const Controller::ledid& channel ) {

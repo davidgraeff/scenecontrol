@@ -123,7 +123,7 @@ void CouchDB::requestEvents()
     eventLoop.exec();
     if (r->error() != QNetworkReply::NoError) {
         // Database events could not be read: no error recovery possible
-        qWarning() << "CouchDB: _design/_server/_view/events";
+        qWarning() << "CouchDB: " << r->readAll() << request.url();
         return;
     }
 
@@ -285,20 +285,8 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
             data.remove(QLatin1String("plugin_"));
             emit couchDB_settings ( pluginid, data );
         }
-    } else if (data.value(QLatin1String("error")) == QLatin1String("not_found")) {
-        if (tryToInstall) {
-            // settings not found, try to install initial plugin values to the couchdb
-            installPluginData(pluginid);
-            tryToInstall = false;
-            delete r;
-            r = get ( request );
-            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-            eventLoop.exec();
-            continue;
-        } else {
-            emit couchDB_no_settings_found(pluginid);
-            continue;
-        }
+    } else {
+      qWarning() << "CouchDB: Get settings failed for" << pluginid << data;
     }
 
     delete r;
@@ -346,7 +334,7 @@ void CouchDB::replyPluginSettingsChange()
         connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
         eventLoop.exec();
 
-        const QVariantMap document = QJson::Parser().parse ( r->readAll(), &ok ).toMap();
+        QVariantMap document = QJson::Parser().parse ( r->readAll(), &ok ).toMap();
 
         if (ServiceID::type(document) != QLatin1String("configuration"))
             continue;
@@ -385,7 +373,7 @@ int CouchDB::installPluginData(const QString& pluginid) {
                 continue;
             }
             bool ok;
-            QVariantMap jsonData = QJson::Parser().parse(file, &ok).toMap();
+            QVariantMap jsonData = QJson::Parser().parse(&file, &ok).toMap();
             if (!ok) {
                 qWarning() << "\tNot a json file although json file extension!";
                 continue;
@@ -550,40 +538,46 @@ void CouchDB::extractJSONFromCouchDB(const QString& path)
 }
 
 void CouchDB::savePluginSetting(const QString& pluginid, const QString& key, const QVariantMap& value) {
-    // 1) try to get old settings document
     QVariantMap data;
     QEventLoop eventLoop;
     const QString docid = QLatin1String("configplugin_") + pluginid + QLatin1String("_") + key;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl(docid) );
-    QNetworkReply *r = get ( request );
-    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-    eventLoop.exec();
-    if (r->error() == QNetworkReply::NoError) {
-        bool ok;
-        QByteArray rawdata = r->readAll();
-        delete r;
-        data = QJson::Parser().parse ( rawdata, &ok ).toMap();
-        if (!ok) {
-            // Response is not json: no error recovery possible
-            qWarning() << "CouchDB: Json parser:" << rawdata;
-            return;
+    // 1) try to get old settings document
+    {
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl(docid) );
+        QNetworkReply *r = get ( request );
+        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+        if (r->error() == QNetworkReply::NoError) {
+            bool ok;
+            QByteArray rawdata = r->readAll();
+            delete r;
+            data = QJson::Parser().parse ( rawdata, &ok ).toMap();
+            if (!ok) {
+                // Response is not json: no error recovery possible
+                qWarning() << "CouchDB: Json parser:" << rawdata;
+                return;
+            }
         }
     }
 
     // 2) save new data
-    const QString rev = data.value(QLatin1String("_rev"));
-    data = value;
-    if (rev.size())
-        data[QLatin1String("_rev")] = rev;
-    data[QLatin1String("_id")] = docid;
+    {
+        const QString rev = data.value(QLatin1String("_rev")).toString();
+        data = value;
+        if (rev.size())
+            data[QLatin1String("_rev")] = rev;
+        data[QLatin1String("_id")] = docid;
+    }
 
     // 3) send to couchdb
-    const QByteArray dataToSend = QJson::Serializer().serialize(data);
-    QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
-    request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
-    request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
-    QNetworkReply* rf = put(request, dataToSend);
-    connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-    eventLoop.exec();
-    rf->deleteLater();
+    {
+        const QByteArray dataToSend = QJson::Serializer().serialize(data);
+        QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
+        request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
+        request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
+        QNetworkReply* rf = put(request, dataToSend);
+        connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+        rf->deleteLater();
+    }
 }

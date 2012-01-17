@@ -79,8 +79,8 @@ void Controller::readyRead() {
 		if (name.isEmpty())
 			name = initialname;
 		
-        const bool alreadyinside = m_mapPinToHost.contains(initialname);
-        m_mapPinToHost[initialname] = QPair<QHostAddress,uint>(host,pin);
+        const bool alreadyinside = m_mapChannelToHost.contains(initialname);
+        m_mapChannelToHost[initialname] = QPair<QHostAddress,uint>(host,pin);
         bool changedvalue = false;
         if (m_ios[initialname].value != value)
 			changedvalue = true;
@@ -103,16 +103,16 @@ void Controller::readyRead() {
     emit dataLoadingComplete();
 }
 
-bool Controller::getPin(const QString& pin) const
+bool Controller::getChannel(const QString& pin) const
 {
     if (!m_ios.contains(pin)) return false;
     return m_ios[pin].value;
 }
 
-void Controller::setPin ( const QString& pin, bool value )
+void Controller::setChannel ( const QString& pin, bool value )
 {
-    if (!m_mapPinToHost.contains(pin)) return;
-    QPair<QHostAddress,uint> p = m_mapPinToHost[pin];
+    if (!m_mapChannelToHost.contains(pin)) return;
+    QPair<QHostAddress,uint> p = m_mapChannelToHost[pin];
 
     if (value)
         m_cache[p.first.toString()] |= (unsigned char)(1 << p.second);
@@ -122,7 +122,7 @@ void Controller::setPin ( const QString& pin, bool value )
     if (!m_cacheTimer.isActive()) m_cacheTimer.start();
 }
 
-void Controller::setPinName ( const QString& pin, const QString& name )
+void Controller::setChannelName ( const QString& pin, const QString& name )
 {
     if ( !m_ios.contains(pin) ) return;
     m_ios[pin].name = name;
@@ -135,10 +135,10 @@ void Controller::setPinName ( const QString& pin, const QString& name )
     emit dataChanged(pin, name, -1);
 }
 
-void Controller::togglePin ( const QString& pin )
+void Controller::toggleChannel ( const QString& pin )
 {
     if (!m_ios.contains(pin)) return;
-    setPin ( pin, !m_ios[pin].value );
+    setChannel ( pin, !m_ios[pin].value );
 }
 
 void Controller::cacheToDevice()
@@ -155,11 +155,11 @@ void Controller::cacheToDevice()
     }
 }
 
-int Controller::countPins() {
+int Controller::countChannels() {
     return m_ios.size();
 }
 
-QString Controller::getPinName(const QString& pin) {
+QString Controller::getChannelName(const QString& pin) {
     if (!m_ios.contains(pin)) return QString();
     return m_ios[pin].name;
 }

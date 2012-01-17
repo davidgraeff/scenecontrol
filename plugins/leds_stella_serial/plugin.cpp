@@ -116,7 +116,7 @@ void plugin::curtainChanged(int current, int max) {
 }
 
 void plugin::ledsCleared() {
-    m_serverPropertyController->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "roomcontrol.leds", "channel").getData());
+  sendCmdToPlugin("leds", "CLEAR");
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {

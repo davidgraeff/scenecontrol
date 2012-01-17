@@ -24,6 +24,7 @@
 #include <QLocalSocket>
 #include <QLocalServer>
 #include <QSet>
+#include <QVariant>
 
 
 #ifndef PLUGIN_ID
@@ -32,17 +33,19 @@
 
 class PluginInterconnect: public QLocalServer {
     Q_OBJECT
-private:
+protected:
     PluginInterconnect();
 public:
-    virtual dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data) = 0;
-    bool sendDataToPlugin(const QByteArray& plugin_id, const QByteArray& data);
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data) = 0;
+    bool sendCmdToPlugin(const QByteArray& plugin_id, const QByteArray& data);
+    bool sendDataToPlugin(const QByteArray& plugin_id, const QVariant& data);
 private Q_SLOT:
-  void readyRead();
-  void newConnection ();
+    void readyRead();
+    void newConnection ();
 private:
-  QMap<QByteArray, QLocalSocket*> m_connectionsByID;
-  QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
-  QSet<QLocalSocket*> m_pendingConnections;
+    QMap<QByteArray, QLocalSocket*> m_connectionsByID;
+    QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
+    QSet<QLocalSocket*> m_pendingConnections;
+    QLocalSocket* getClientConnection(const QByteArray& plugin_id);
 };
 

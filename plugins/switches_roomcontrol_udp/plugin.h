@@ -28,9 +28,10 @@
 #include "shared/abstractplugin_services.h"
 
 #include <QVector>
+#include <shared/plugin_interconnect.h>
 
 class Controller;
-class plugin : public QObject, public AbstractPlugin, public AbstractPlugin_services
+class plugin : public PluginInterconnect, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
@@ -48,6 +49,7 @@ public:
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
     virtual void unregister_event ( const QString& eventid, int sessionid );
 private:
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
     Controller* m_controller;
     EventMap<int> m_events; //mode->set of uids
     QVector<bool> m_sensors;

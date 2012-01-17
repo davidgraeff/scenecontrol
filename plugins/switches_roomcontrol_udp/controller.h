@@ -32,21 +32,33 @@ class Controller : public QObject
 {
     Q_OBJECT
 public:
-	struct ledchannel {
-		bool value;
-		QString name;
+    struct ledchannel {
+        bool value;
+        QString name;
         int port;
-		int pin;
-		ledchannel(int port, int pin, bool value, const QString& name) { this->port = port; this->pin = pin; this->value = value; this->name = name; }
-		ledchannel() {value = false; }
-	};
-	struct ledid {
-		int port;
-		uint8_t pin;
-		ledid(int port, uint8_t pin) { this->port = port; this->pin = pin; }
-		bool operator<(ledid& vgl) {return (port<vgl.port || (port==vgl.port && pin < vgl.pin));}
-	};
-	
+        int pin;
+        ledchannel(int port, int pin, bool value, const QString& name) {
+            this->port = port;
+            this->pin = pin;
+            this->value = value;
+            this->name = name;
+        }
+        ledchannel() {
+            value = false;
+        }
+    };
+    struct ledid {
+        int port;
+        uint8_t pin;
+        ledid(int port, uint8_t pin) {
+            this->port = port;
+            this->pin = pin;
+        }
+        bool operator<(ledid& vgl) {
+            return (port<vgl.port || (port==vgl.port && pin < vgl.pin));
+        }
+    };
+
     Controller(AbstractPlugin* plugin);
     ~Controller();
     void connectToLeds(const QString& host, int port);
@@ -58,23 +70,22 @@ public:
     void toogleChannel(const Controller::ledid& channel);
     bool getChannel(const Controller::ledid& channel) const;
     void registerPortObserver(unsigned char ioport, unsigned char pinmask) const;
-	Controller::ledid getPortPinFromString(const QString& channel) const;
-	QString getStringFromPortPin(const Controller::ledid& channel) const;
+    Controller::ledid getPortPinFromString(const QString& channel) const;
+    QString getStringFromPortPin(const Controller::ledid& channel) const;
 
     QMap<ledid,ledchannel> m_leds;
 private:
     AbstractPlugin* m_plugin;
 
-    int m_channels;
-	// udp
+    // udp
     int m_sendPort;
     QUdpSocket *m_socket;
 private Q_SLOTS:
     // LIGHTS //
     void readyRead();
 Q_SIGNALS:
-	void ledChanged(const QString& id, const QString& name, int value);
-	void watchpinChanged(const unsigned char port, const unsigned char pinmask);
+    void ledChanged(const QString& id, const QString& name, int value);
+    void watchpinChanged(const unsigned char port, const unsigned char pinmask);
     void dataLoadingComplete();
     void ledsCleared();
 };

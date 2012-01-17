@@ -30,24 +30,26 @@ class Controller : public QObject
 public:
     Controller(AbstractPlugin* plugin);
     ~Controller();
-	void reinitialize();
-    QString getPinName ( const QString& pin );
-    void setPin ( const QString& pin, bool value );
-    void setPinName ( const QString& pin, const QString& name );
-    void togglePin ( const QString& pin );
-    bool getPin( const QString& pin ) const;
-    int countPins();
+    void reinitialize();
+    QString getChannelName ( const QString& pin );
+    void setChannel ( const QString& pin, bool value );
+    void setChannelName ( const QString& pin, const QString& name );
+    void toggleChannel ( const QString& pin );
+    bool getChannel( const QString& pin ) const;
+    int countChannels();
     void connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd);
 
-	struct iochannel {
-		int value;
-		QString name;
-		iochannel() { value = 300; }
-	};
+    struct iochannel {
+        int value;
+        QString name;
+        iochannel() {
+            value = -1;
+        }
+    };
     QMap<QString,iochannel> m_ios;
 private:
     AbstractPlugin* m_plugin;
-    QMap< QString, QPair<QHostAddress,uint> > m_mapPinToHost;
+    QMap< QString, QPair<QHostAddress,uint> > m_mapChannelToHost;
     int m_sendPort;
     QString m_user;
     QString m_pwd;
@@ -59,6 +61,6 @@ private slots:
     void readyRead();
     void cacheToDevice();
 Q_SIGNALS:
-	void dataChanged(const QString& id, const QString& name, int value);
+    void dataChanged(const QString& id, const QString& name, int value);
     void dataLoadingComplete();
 };

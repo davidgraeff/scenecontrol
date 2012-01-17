@@ -35,7 +35,7 @@ plugin::~plugin() {
 void plugin::clear() {}
 void plugin::initialize() {
     m_ios.clear();
-    m_ios.clear();
+    m_cache.clear();
 }
 
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
@@ -77,9 +77,9 @@ QList<QVariantMap> plugin::properties(int sessionid) {
         l.append(ServiceCreation::createModelReset(PLUGIN_ID, "switches", "channel").getData());
         QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
         for (;i!=m_ios.end();++i) {
-            const plugin::iochannel str = i.value();
+            const plugin::iochannel& str = i.value();
             ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "switches");
-            sc.setData("channel", i.key());
+            sc.setData("channel", str.channel);
             sc.setData("value", str.value);
             sc.setData("name", str.name);
             l.append(sc.getData());
@@ -97,7 +97,9 @@ bool plugin::getSwitch(const QString& channel) const
 void plugin::setSwitch ( const QString& channel, bool value )
 {
     if (!m_ios.contains(channel)) return;
-    m_cache[channel] = value;
+    iochannel& p = m_ios[channel];
+    p.value = value;
+    m_cache.insert(&p);
 
     if (!m_cacheTimer.isActive()) m_cacheTimer.start();
 }
@@ -120,22 +122,22 @@ void plugin::setSwitchName ( const QString& channel, const QString& name )
     settings[QLatin1String("channel")] = channel;
     settings[QLatin1String("name")] = name;
     settings[QLatin1String("isname")] = true;
-    m_serverPropertyController->saveSettings(QString(QLatin1String("channelname_%1")).arg(channel),settings);
+    m_serverPropertyController->saveSettings(QString(QLatin1String("channelname_%1")).arg(channel),settings, PLUGIN_ID);
 }
 
-void plugin::toggleSwitch ( const QString& pin )
+void plugin::toggleSwitch ( const QString& channel )
 {
-    if (!m_ios.contains(pin)) return;
-    setSwitch ( pin, !m_ios[pin].value );
+    if (!m_ios.contains(channel)) return;
+    setSwitch ( channel, !m_ios[channel].value );
 }
 
 int plugin::countSwitchs() {
     return m_ios.size();
 }
 
-QString plugin::getSwitchName(const QString& pin) {
-    if (!m_ios.contains(pin)) return QString();
-    return m_ios[pin].name;
+QString plugin::getSwitchName(const QString& channel) {
+    if (!m_ios.contains(channel)) return QString();
+    return m_ios[channel].name;
 }
 
 // Get names from couchdb settings
@@ -146,23 +148,49 @@ void plugin::settingsChanged(const QVariantMap& data) {
 // send data from set-cache (max 50ms old) to the respective plugin via interconnect communication
 void plugin::cacheToDevice()
 {
-    QMap<QString, unsigned char>::const_iterator it = m_cache.constBegin();
+    QSet<iochannel*>::const_iterator it = m_cache.constBegin();
     for (;it != m_cache.constEnd(); ++it) {
-        //SENDEN
-        QByteArray str;
-//TODO
+        sendDataToPlugin((*it)->plugin_id, (*it)->channel.toAscii() + "\t" + QByteArray::number((*it)->value));
     }
+    m_cache.clear();
 }
 
-plugin::dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data)
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data)
 {
-    const iochannel& p = m_ios[channel];
-//TODO
+    const QList<QByteArray> t = data.split('\t');
+    // t[0]: channel
+    // t[1]: value
+    // t[2]: name
+    if (t.size() < 2) {
+        if (t[0] == "CLEAR") {
+            m_serverPropertyController->pluginPropertyChanged(sc.getData());
+            QMutableMapIterator<QString, iochannel> i(m_ios);
+            while (i.hasNext()) {
+                i.next();
+                if (i.value().plugin_id = plugin_id) {
+                    ServiceCreation sc = ServiceCreation::createModelRemoveItem(PLUGIN_ID, "switches");
+                    sc.setData("channel", i.value().channel);
+                    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+                    i.remove();
+                }
+            }
+            return;
+        }
+        qWarning() << pluginid() << "DataFromPlugin expected >= 2 data blocks";
+        return;
+    }
+
+    // Assign data to structure
+    iochannel& io = m_ios[QString::fromAscii(t[0])];
+    io.channel = QString::fromAscii(t[0]);
+    io.value = t[1].toInt();
+    io.plugin_id = plugin_id;
+    if (t.size()>2) io.name = QString::fromAscii(t[2]);
 
     ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "switches");
-    sc.setData("channel", channel);
-    if (!name.isNull()) sc.setData("name", name);
-    if (value != -1) sc.setData("value", value);
+    sc.setData("channel", io.channel);
+    if (!io.name.isNull()) sc.setData("name", io.name);
+    if (io.value != -1) sc.setData("value", io.value);
 
     m_serverPropertyController->pluginPropertyChanged(sc.getData());
 }

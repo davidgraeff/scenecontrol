@@ -102,7 +102,7 @@ QList<QVariantMap> plugin::properties(int sessionid) {
 }
 
 void plugin::ledsCleared() {
-    m_serverPropertyController->pluginPropertyChanged(ServiceCreation::createModelReset(PLUGIN_ID, "udpled.names", "channel").getData());
+  sendCmdToPlugin("leds", "CLEAR");
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {

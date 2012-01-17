@@ -1,6 +1,6 @@
 /*
  *    RoomControlServer. Home automation for controlling sockets, leds and music.
- *    Copyright (C) 2010  David Gräff
+ *    Copyright (C) 2010-2012  David Gräff
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -26,9 +26,10 @@
 #include "shared/abstractserver_propertycontroller.h"
 #include "shared/pluginservicehelper.h"
 #include "shared/abstractplugin_services.h"
+#include "shared/plugin_interconnect.h"
+#include <QTimer>
 
-class Controller;
-class plugin : public QObject, public AbstractPlugin, public AbstractPlugin_services
+class plugin : public PluginInterconnect, public AbstractPlugin, public AbstractPlugin_services
 {
     Q_OBJECT
     PLUGIN_MACRO
@@ -46,11 +47,38 @@ public:
     virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
     virtual void unregister_event ( const QString& eventid, int sessionid );
 private:
-    Controller* m_controller;
-private Q_SLOTS:
-    /**
-     * Updated led state.
-     */
-    void ledChanged ( QString,QString = QString::null,int = -1);
-    void ledsCleared();
+    void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
+
+    QString getLedName ( const QString& channel );
+    void setLed ( const QString& channel, int value, uint fade );
+    void setLedName ( const QString& channel, const QString& name, bool updateDatabase = true );
+    void setLedExponential ( const QString& channel, int multiplikator, uint fade );
+    void setLedRelative ( const QString& channel, int value, uint fade );
+    void toggleLed ( const QString& channel, uint fade );
+    bool getLed( const QString& channel ) const;
+    int countLeds();
+    void moodlight(const QString& channel, bool moodlight);
+
+    struct iochannel {
+        int value;
+        QString name;
+        QString channel;
+        QByteArray plugin_id;
+        bool moodlight;
+	int fadeType;
+
+        iochannel() {
+            moodlight = false;
+            value = -1;
+        }
+    };
+    QMap<QString,iochannel> m_ios;
+    QTimer m_cacheTimer;
+    QSet<iochannel*> m_cache;
+    QMap<QString, QString> m_namecache;
+    
+    QTimer m_moodlightTimer;
+private slots:
+    void cacheToDevice();
+    void moodlightTimeout();
 };

@@ -48,11 +48,11 @@ void plugin::settingsChanged(const QVariantMap& data) {
 void plugin::execute ( const QVariantMap& data, int sessionid ) {
     Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "iovalue_absolut" ) ) {
-        m_controller->setPin ( DATA("channel"),BOOLDATA("value") );
+        m_controller->setChannel ( DATA("channel"),BOOLDATA("value") );
     } else if ( ServiceID::isMethod(data, "iovalue_toogle" ) ) {
-        m_controller->togglePin ( DATA("channel") );
+        m_controller->toggleChannel ( DATA("channel") );
     } else if ( ServiceID::isMethod(data, "ioname" ) ) {
-        m_controller->setPinName ( DATA("channel"),DATA("name") );
+        m_controller->setChannelName ( DATA("channel"),DATA("name") );
     } else if ( ServiceID::isMethod(data, "reload" ) ) {
         m_controller->reinitialize();
     }
@@ -61,7 +61,7 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
 bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     Q_UNUSED ( sessionid );
     if ( ServiceID::isMethod(data, "iocondition" ) ) {
-        return ( m_controller->getPin ( DATA("channel") ) == BOOLDATA("value") );
+        return ( m_controller->getChannel ( DATA("channel") ) == BOOLDATA("value") );
     }
     return false;
 }
@@ -103,3 +103,25 @@ void plugin::dataChanged(QString channel, QString name, int value) {
 
     m_serverPropertyController->pluginPropertyChanged(sc.getData());
 }
+
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data) {
+    if (plugin_id != "switches")
+        return;
+
+    const QList<QByteArray> t = data.split('\t');
+    // t[0]: channel
+    // t[1]: value
+    if (t.size() < 2) {
+        qWarning() << pluginid() << "DataFromPlugin expected >= 2 data blocks";
+        return;
+    }
+
+    Controller::ledid lid =  m_controller->getPortChannelFromString( QString::fromAscii(t[0]));
+    if (lid.port == -1) {
+        qWarning() << pluginid() << "DataFromPlugin channel not found" << t[0];
+        return;
+    }
+
+    m_controller->setChannel(lid, t[1].toInt());
+}
+
