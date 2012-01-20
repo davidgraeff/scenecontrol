@@ -1,0 +1,133 @@
+#include "socket.h"
+#include "paths.h"
+#include "config.h"
+#include <QDebug>
+#include <QSslKey>
+#include <shared/json.h>
+//openssl req -x509 -new -out server.crt -keyout server.key -days 365
+
+#define __FUNCTION__ __FUNCTION__
+
+Socket::~Socket()
+{
+}
+
+Socket::Socket() {
+    if (listen(QHostAddress::Any, ROOM_LISTENPORT)) {
+        qDebug() << "SSL TCPSocket Server ready on port" << ROOM_LISTENPORT;
+    }
+}
+
+static Socket* websocket_instance = 0;
+Socket* Socket::instance()
+{
+    if (!websocket_instance)
+        websocket_instance = new Socket();
+    return websocket_instance;
+}
+
+void Socket::incomingConnection(int socketDescriptor)
+{
+    QSslSocket *socket = new QSslSocket;
+    if (socket->setSocketDescriptor(socketDescriptor)) {
+        m_sockets.insert(socketDescriptor, socket);
+        connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
+        connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+        connect(socket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
+        socket->ignoreSslErrors();
+        socket->setProtocol(QSsl::SslV3);
+
+        QByteArray key;
+        QByteArray cert;
+
+        QFile fileKey(setup::certificateFile("server.key"));
+        if (fileKey.open(QIODevice::ReadOnly))
+        {
+            key = fileKey.readAll();
+            fileKey.close();
+        }
+        else
+        {
+            qWarning() << fileKey.errorString();
+        }
+
+        QFile fileCert(setup::certificateFile("server.crt"));
+        if (fileCert.open(QIODevice::ReadOnly))
+        {
+            cert = fileCert.readAll();
+            fileCert.close();
+        }
+        else
+        {
+            qWarning() << fileCert.errorString();
+        }
+
+        QSslKey sslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
+        if (key.isNull()) {
+            qWarning() << "key invalid";
+        }
+
+        QSslCertificate sslCert(cert);
+        if (sslCert.isNull()) {
+            qWarning() << "sslCert invalid";
+        }
+        socket->setPrivateKey(sslKey);
+        socket->setLocalCertificate(sslCert);
+        socket->startServerEncryption();
+        qDebug() << "new socket" << socketDescriptor << socket->state() << socket->peerAddress() << socket->sslErrors();
+    } else {
+        delete socket;
+    }
+}
+
+void Socket::sslErrors ( const QList<QSslError> & errors ) {
+    qDebug() << errors;
+}
+
+void Socket::readyRead() {
+    QSslSocket *serverSocket = (QSslSocket *)sender();
+    while (serverSocket->canReadLine()) {
+        const QByteArray rawdata = serverSocket->readLine();
+        if (!rawdata.length())
+            continue;
+        QVariant v =JSON::parse(rawdata);
+        if (!v.isNull())
+            emit requestExecution(v.toMap(), serverSocket->socketDescriptor());
+    }
+}
+
+void Socket::socketDisconnected() {
+    QSslSocket *socket = (QSslSocket *)sender();
+    m_sockets.remove(socket->socketDescriptor());
+    socket->deleteLater();
+    qDebug() << "socket closed" << socket->socketDescriptor() << socket->errorString() << socket->error();
+}
+
+void Socket::sendToAllClients(const QByteArray& rawdata) {
+    // send data over sockets
+    QMap<int, QSslSocket*>::const_iterator it = m_sockets.constBegin();
+    for (;it != m_sockets.constEnd();++it) {
+        it.value()->write(rawdata);
+    }
+}
+
+void Socket::sendToClient(const QByteArray& rawdata, int sessionid) {
+    // try to find a socket connection with corresponding sessionid
+    QSslSocket *socket = m_sockets.value(sessionid);
+    if (socket) {
+        socket->write(rawdata);
+        return;
+    }
+}
+
+void Socket::propagateProperty(const QVariantMap& data, int sessionid) {
+    QByteArray jsondata = JSON::stringify(data) + "\n";
+    if (!jsondata.isEmpty()) {
+        if (sessionid==-1)
+            sendToAllClients(jsondata);
+        else
+            sendToClient(jsondata, sessionid);
+    } else if (data.size()) {
+        qWarning() << "Json Serializer failed at:" << data;
+    }
+}

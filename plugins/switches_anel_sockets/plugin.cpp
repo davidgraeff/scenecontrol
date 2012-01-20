@@ -22,7 +22,7 @@
 #include "plugin.h"
 #include "controller.h"
 
-Q_EXPORT_PLUGIN2 ( libexecute, plugin )
+
 
 plugin::plugin() {
     m_controller = new Controller ( this );
@@ -38,70 +38,70 @@ void plugin::initialize() {
 
 }
 
-void plugin::settingsChanged(const QVariantMap& data) {
+void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     if (data.contains(QLatin1String("sendingport")) && data.contains(QLatin1String("listenport")) &&
             data.contains(QLatin1String("username")) && data.contains(QLatin1String("password")))
         m_controller->connectToIOs ( data[QLatin1String("sendingport")].toInt(), data[QLatin1String("listenport")].toInt(),
 				     data[QLatin1String("username")].toString(), data[QLatin1String("password")].toString() );
 }
 
-void plugin::execute ( const QVariantMap& data, int sessionid ) {
+void plugin::execute ( const QVariantMap& data) {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "iovalue_absolut" ) ) {
+    if ( ServiceData::isMethod(data, "iovalue_absolut" ) ) {
         m_controller->setChannel ( DATA("channel"),BOOLDATA("value") );
-    } else if ( ServiceID::isMethod(data, "iovalue_toogle" ) ) {
+    } else if ( ServiceData::isMethod(data, "iovalue_toogle" ) ) {
         m_controller->toggleChannel ( DATA("channel") );
-    } else if ( ServiceID::isMethod(data, "ioname" ) ) {
+    } else if ( ServiceData::isMethod(data, "ioname" ) ) {
         m_controller->setChannelName ( DATA("channel"),DATA("name") );
-    } else if ( ServiceID::isMethod(data, "reload" ) ) {
+    } else if ( ServiceData::isMethod(data, "reload" ) ) {
         m_controller->reinitialize();
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, int sessionid )  {
+bool plugin::condition ( const QVariantMap& data)  {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "iocondition" ) ) {
+    if ( ServiceData::isMethod(data, "iocondition" ) ) {
         return ( m_controller->getChannel ( DATA("channel") ) == BOOLDATA("value") );
     }
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
     Q_UNUSED(sessionid);
     Q_UNUSED ( collectionuid );
     Q_UNUSED ( data );
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+void plugin::unregister_event ( const QString& eventid) {
     Q_UNUSED(sessionid);
     Q_UNUSED(eventid);
 }
 
-QList<QVariantMap> plugin::properties(int sessionid) {
+void plugin::requestProperties(int sessionid) {
     Q_UNUSED(sessionid);
-    QList<QVariantMap> l;
+
     {
-        l.append(ServiceCreation::createModelReset(PLUGIN_ID, "anel.io", "channel").getData());
+        changeProperty(ServiceData::createModelReset("anel.io", "channel").getData());
         QMap<QString, Controller::iochannel>::iterator i = m_controller->m_ios.begin();
         for (;i!=m_controller->m_ios.end();++i) {
             const Controller::iochannel str = i.value();
-            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io");
+            ServiceData sc = ServiceData::createModelChangeItem("anel.io");
             sc.setData("channel", i.key());
             sc.setData("value", str.value);
             sc.setData("name", str.name);
-            l.append(sc.getData());
+            changeProperty(sc.getData());
         }
     }
     return l;
 }
 
 void plugin::dataChanged(QString channel, QString name, int value) {
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "anel.io");
+    ServiceData sc = ServiceData::createModelChangeItem("anel.io");
     sc.setData("channel", channel);
     if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value);
 
-    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+    changeProperty(sc.getData());
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data) {

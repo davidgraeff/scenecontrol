@@ -8,105 +8,88 @@
 #include <qjson/parser.h>
 #include "paths.h"
 #include <shared/pluginservicehelper.h>
-#include "propertycontroller.h"
 #include "collectioncontroller.h"
 #include "couchdb.h"
 #include "plugincontroller.h"
+#include "socket.h"
+#include "pluginprocess.h"
+#include <shared/json.h>
 
 #define __FUNCTION__ __FUNCTION__
+#define MAGICSTRING "roomcontrol_"
+#define COMSERVERSTRING "server"
 
-PluginController::PluginController (PropertyController* propertycontroller, CollectionController* collectioncontroller)
-        :m_propertycontroller(propertycontroller), m_collectioncontroller(collectioncontroller) {}
+static PluginController* plugincontroller_instance = 0;
+
+PluginController* PluginController::instance() {
+    if (!plugincontroller_instance) {
+        plugincontroller_instance = new PluginController();
+    }
+    return plugincontroller_instance;
+}
+
+PluginController::PluginController () {
+    connect(&m_comserver, SIGNAL(newConnection()), SLOT(newConnection()));
+}
 
 PluginController::~PluginController()
 {
-    QMap<QString, AbstractPlugin_services*>::iterator i = m_registeredevents.begin();
+    qDebug() << "Unregister events";
+    QMap<QString,PluginCommunication*>::iterator i = m_registeredevents.begin();
     for (;i!=m_registeredevents.end();++i) {
-        AbstractPlugin_services* executeplugin = i.value();
-        qDebug() << "unregister event" << i.key() << executeplugin;
-        executeplugin->unregister_event ( i.key(), -1 );
+        PluginCommunication* executeplugin = i.value();
+        executeplugin->unregister_event ( i.key() );
     }
     qDeleteAll(m_plugins);
+    qDeleteAll(m_pluginprocesses);
 }
 
-QMap< QString, PluginInfo* >::iterator PluginController::getPluginIterator() {
+void PluginController::newConnection()
+{
+    while ( QLocalSocket* socket = m_comserver.nextPendingConnection()) {
+        PluginCommunication* plugin =  m_pendingplugins.value(socket);
+        if (!plugin)
+	  m_pendingplugins.insert( socket, new PluginCommunication( this, socket ) );
+    }
+}
+
+QMap< QString, PluginCommunication* >::iterator PluginController::getPluginIterator() {
     return m_plugins.begin();
 }
 
-AbstractPlugin* PluginController::nextPlugin(QMap<QString,PluginInfo*>::iterator& index) {
+PluginCommunication* PluginController::nextPlugin(QMap< QString, PluginCommunication* >::iterator& index) {
     if (m_plugins.end()==index) return 0;
-    return (*(index++))->plugin;
+    return (*(index++));
 }
 
-AbstractPlugin_settings* PluginController::nextSettingsPlugin(QMap<QString,PluginInfo*>::iterator& index) {
-    while (m_plugins.end()!=index) {
-        AbstractPlugin_settings* s = dynamic_cast<AbstractPlugin_settings*>((*(index++))->plugin);
-        if (s) return s;
-    }
-    return 0;
-}
-
-AbstractPlugin_services* PluginController::nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index) {
-    while (m_plugins.end()!=index) {
-        AbstractPlugin_services* s = dynamic_cast<AbstractPlugin_services*>((*(index++))->plugin);
-        if (s) return s;
-    }
-    return 0;
-}
-
-AbstractPlugin_sessions* PluginController::nextSessionPlugin(QMap<QString,PluginInfo*>::iterator& index) {
-    while (m_plugins.end()!=index) {
-        AbstractPlugin_sessions* s = dynamic_cast<AbstractPlugin_sessions*>((*(index++))->plugin);
-        if (s) return s;
-    }
-    return 0;
-}
-
-AbstractPlugin* PluginController::getPlugin(const QString& pluginid) {
-    PluginInfo* pinfo = m_plugins.value(pluginid);
-    if (!pinfo) return 0;
-    return pinfo->plugin;
-}
-
-QList< QVariantMap > PluginController::properties(int sessionid) {
-    Q_UNUSED(sessionid);
-    QList<QVariantMap> l;
-    QStringList pluginlist;
-    QMap<QString,PluginInfo*>::iterator i = m_plugins.begin();
-    for (;i!=m_plugins.end();++i) {
-        pluginlist += (*i)->plugin->pluginid();
-    }
-    ServiceCreation s = ServiceCreation::createNotification("PluginController", "plugins");
-    s.setData("plugins", pluginlist);
-    l.append(s.getData());
-    return l;
+PluginCommunication* PluginController::getPlugin(const QString& pluginid) {
+    return m_plugins.value(pluginid);
 }
 
 void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& event_data) {
-    QString destination_collectionuid = ServiceID::collectionid ( event_data );
+    QString destination_collectionuid = ServiceData::collectionid ( event_data );
     if ( destination_collectionuid.isEmpty() ) {
-        qWarning() <<"Plugins: Cannot register event. No collection set:"<<ServiceID::pluginid ( event_data ) << id;
+        qWarning() <<"Plugins: Cannot register event. No collection set:"<<ServiceData::pluginid ( event_data ) << id;
         return;
     }
 
-    AbstractPlugin* plugin = getPlugin ( ServiceID::pluginid ( event_data ) );
-    AbstractPlugin_services* executeplugin = dynamic_cast<AbstractPlugin_services*> ( plugin );
-    if ( !executeplugin ) {
-        qWarning() <<"Plugins: Cannot register event. No plugin found:"<<ServiceID::pluginid ( event_data ) << id;
+    PluginCommunication* plugin = getPlugin ( ServiceData::pluginid ( event_data ) );
+    if ( !plugin ) {
+        qWarning() <<"Plugins: Cannot register event. No plugin found:"<<ServiceData::pluginid ( event_data ) << id;
         return;
     }
 
-    qDebug() << "Plugins: register event:" << id << ServiceID::pluginid ( event_data ) << ServiceID::pluginmember ( event_data );
-    executeplugin->unregister_event ( id, -1 );
-    executeplugin->register_event ( event_data, destination_collectionuid, -1 );
-    m_registeredevents.insert(id, executeplugin);
+    qDebug() << "Plugins: register event:" << id << ServiceData::pluginid ( event_data ) << ServiceData::method ( event_data );
+    plugin->unregister_event ( id );
+    plugin->register_event ( event_data, destination_collectionuid );
+    m_registeredevents.insert(id, plugin);
 }
 
 void PluginController::couchDB_Event_remove(const QString& id) {
-    AbstractPlugin_services* executeplugin = m_registeredevents.take ( id );
+    PluginCommunication* executeplugin = m_registeredevents.take ( id );
     if ( executeplugin ) {
         qDebug() << "Plugins: unregister event" << id << executeplugin;
-        executeplugin->unregister_event ( id, -1 );
+        executeplugin->unregister_event ( id );
     }
 }
 
@@ -115,76 +98,93 @@ void PluginController::couchDB_failed(const QString& url) {
     QCoreApplication::exit(1);
 }
 
-void PluginController::couchDB_no_settings_found(const QString& pluginid) {
-    qWarning() << "Plugins: Couldn't load configuration for" << pluginid;
-}
-
-void PluginController::couchDB_settings(const QString& pluginid, const QVariantMap& data) {
-    AbstractPlugin* p = getPlugin(pluginid);
+void PluginController::couchDB_settings(const QString& pluginid, const QString& key, const QVariantMap& data) {
+    PluginCommunication* p = getPlugin(pluginid);
     if (!p) {
         qWarning() << "Plugins: Configuration for unknown plugin" << pluginid;
         return;
     } else {
-      qDebug() << "Plugins:" << data.size() << "Settings for plugin" << pluginid << "loaded";
+        qDebug() << "Plugins:" << data.size() << "Config" << key << "for plugin" << pluginid << "loaded";
     }
-    p->settingsChanged(data);
+    p->configChanged(key.toAscii(), data);
 }
 
-void PluginController::couchDB_ready() {
-    // add this class to plugins
-    {
-        PluginInfo* plugininfo = new PluginInfo(this);
-        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-        this->connectToServer(m_collectioncontroller, m_propertycontroller);
+bool PluginController::loadplugins() {
+    const QString name = QLatin1String(MAGICSTRING) + QLatin1String(COMSERVERSTRING);
+    m_comserver.removeServer(name);
+    if (!m_comserver.listen(name)) {
+        return false;
     }
-    {
-        PluginInfo* plugininfo = new PluginInfo(m_propertycontroller);
-        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-        m_propertycontroller->connectToServer(m_collectioncontroller, m_propertycontroller);
-    }
-    {
-        PluginInfo* plugininfo = new PluginInfo(m_collectioncontroller);
-        m_plugins.insert(plugininfo->plugin->pluginid(), plugininfo);
-        m_collectioncontroller->connectToServer(m_collectioncontroller, m_propertycontroller);
-    }
-
-    AbstractPlugin *plugin;
-
     const QDir plugindir = setup::pluginDir();
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     if (pluginfiles.empty())
         qWarning() << "Plugins: No plugins found in" << plugindir;
 
     for (int i=0;i<pluginfiles.size();++i) {
-        const QString filename = plugindir.absoluteFilePath ( pluginfiles[i] );
-        QPluginLoader* loader = new QPluginLoader ( filename, this );
-        loader->setLoadHints(QLibrary::ResolveAllSymbolsHint);
-        if (!loader->load()) {
-            qWarning() << "Plugins: Failed loading Plugin" << pluginfiles[i] << loader->errorString();
-            delete loader;
-            continue;
-        }
-
-        plugin = dynamic_cast<AbstractPlugin*> ( loader->instance() );
-        if (!plugin) {
-            qWarning() << "Plugins: Failed to get instance" << filename;
-            delete loader;
-            continue;
-        }
-
-        const QString plugin_id = plugin->pluginid();
-        PluginInfo* plugininfo = new PluginInfo(plugin);
-        m_plugins.insert ( plugin_id, plugininfo );
-
-        plugin->connectToServer(m_collectioncontroller, m_propertycontroller);
-        CouchDB::instance()->requestPluginSettings(plugin_id);
+        // Start process by filename and insert into processes list
+        m_pluginprocesses.insert( new PluginProcess( this, plugindir.absoluteFilePath ( pluginfiles[i] ) ) );
     }
-    
-    QMap<QString,PluginInfo*>::iterator i = m_plugins.begin();
+
+    QMap<QString,PluginCommunication*>::iterator i = m_plugins.begin();
     for (;i!=m_plugins.end();++i) {
-        (*i)->plugin->initialize();
+        (*i)->initialize();
     }
-    
-     CouchDB::instance()->requestEvents();
+    return true;
 }
+
+void PluginController::requestAllProperties(int sessionid) {
+    {
+        QMap<QString,PluginCommunication*>::iterator i = getPluginIterator();
+        while (PluginCommunication* plugin = nextPlugin(i)) {
+            plugin->requestProperties(sessionid);
+        }
+    }
+
+    // Generate plugin list
+    QStringList pluginlist;
+    QMap<QString,PluginCommunication*>::iterator i = m_plugins.begin();
+    for (;i!=m_plugins.end();++i) {
+        pluginlist += (*i)->id;
+    }
+    ServiceData s = ServiceData::createNotification("plugins");
+    s.setData("plugins", pluginlist);
+    s.setPluginid("PluginController");
+    Socket::instance()->propagateProperty(s.getData());
+}
+
+void PluginController::removePlugin(const QString& id) {
+    PluginCommunication* p = m_plugins.take(id);
+    if (!p)
+        return;
+    // Remove plugin process
+    p->deleteLater();
+    // Remove all registered events of this plugin out of the map m_registeredevents
+    // (they are not active already due to removing the plugin process instance but to conserve memory)
+    QMutableMapIterator<QString, PluginCommunication*> i = m_registeredevents;
+    while (i.hasNext()) {
+        i.next();
+        if (i.value() == p)
+            i.remove();
+    }
+}
+void PluginController::removePluginFromPending(PluginCommunication* pluginprocess) {
+    m_pendingplugins.remove(pluginprocess->getSocket());
+    pluginprocess->deleteLater();
+}
+
+void PluginController::addPlugin(const QString& id, PluginCommunication* pluginprocess) {
+    m_pendingplugins.remove(pluginprocess->getSocket());
+    m_plugins.insert(id, pluginprocess);
+}
+
+void PluginController::removeProcess(PluginProcess* process) {
+    m_pluginprocesses.remove(process);
+    process->deleteLater();
+}
+
+// void PluginController::execute(const QVariantMap& data ) {
+//     if ( ServiceData::isMethod(data, "requestProperties" ) ) {
+//         Socket::instance()->sendToClient(allProperties(sessionid), sessionid);
+//     }
+// }
 

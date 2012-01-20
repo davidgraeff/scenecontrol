@@ -22,64 +22,48 @@
 #include <QObject>
 #include <QVariantMap>
 #include <QTimer>
+#include <qpointer.h>
 
-#undef PLUGIN_ID
-#define PLUGIN_ID "CollectionController"
-#include "shared/abstractserver_collectioncontroller.h"
-#include <shared/abstractplugin_services.h>
-#include <shared/abstractplugin.h>
-
+class PluginCommunication;
 class PluginController;
 
 class RunningCollection: public QObject {
     Q_OBJECT
 public:
-    RunningCollection(const QVariantList& actions, const QString& collectionid);
+    RunningCollection(const QList<QVariantMap>& actions, const QList<QVariantMap>& conditions, const QString& collectionid);
     void start();
 private:
     QString m_collectionid;
     QTimer m_timer;
     int m_lasttime;
-    QMultiMap<int, QVariantMap> m_timetable;
+    struct dataWithPlugin {
+        QPointer<PluginCommunication> plugin;
+        QVariantMap data;
+        dataWithPlugin(QPointer<PluginCommunication> p, QVariantMap m) : plugin(p), data(m) {}
+    };
+    QMultiMap<int, dataWithPlugin> m_timetable;
+    QList<dataWithPlugin> m_conditions;
 private Q_SLOTS:
-  void timeout();
+    void timeout();
 Q_SIGNALS:
-    void runningCollectionAction ( const QVariantMap& actiondata );
     void runningCollectionFinished (const QString& collectionid);
 };
 
-class CollectionController: public QObject, public AbstractServerCollectionController, public AbstractPlugin, public AbstractPlugin_services {
+class CollectionController: public QObject {
     Q_OBJECT
-    PLUGIN_MACRO
-public:
+
+private:
     CollectionController ();
+public:
+    static CollectionController* instance();
     virtual ~CollectionController();
-    void setPluginController ( PluginController* pc );
 private:
     PluginController* m_plugincontroller;
     QMap<QString, RunningCollection*> m_runningCollections;
     void updateListOfRunningCollections();
-
-    /////////////// server interface ///////////////
-    virtual void pluginEventTriggered ( const QString& event_id, const QString& destination_collectionuid, const char* pluginid = "" );
-    virtual void pluginRequestExecution ( const QVariantMap& data, const char* pluginid = "" );
-
-    // satisfy interfaces
-    virtual void clear() {}
-    virtual void initialize() {}
-    virtual void settingsChanged(const QVariantMap&){}
-    virtual bool condition(const QVariantMap&, int) {
-        return false;
-    }
-    virtual void execute(const QVariantMap&, int); // implement execute of interface AbstractPlugin_services
-    virtual void register_event(const QVariantMap&, const QString&, int) {}
-    virtual void unregister_event(const QString&, int) {}
-    virtual QList< QVariantMap > properties(int) {
-        return QList< QVariantMap >();
-    }
 public Q_SLOTS:
-    void requestExecution ( const QVariantMap& data, int sessionid);
-    void runningCollectionAction ( const QVariantMap& actiondata );
-    void actionsOfCollection ( const QVariantList& actions, const QString& collectionid);
+    void requestExecutionByCollectionId ( const QString& collectionid );
+    void requestExecution ( const QVariantMap& data, int sessionid );
     void runningCollectionFinished (const QString& collectionid);
+    void dataOfCollection ( const QList<QVariantMap>& actions, const QList<QVariantMap>& conditions, const QString& collectionid);
 };

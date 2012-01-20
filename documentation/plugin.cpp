@@ -17,56 +17,25 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
 
 #include "plugin.h"
-#include "configplugin.h"
+#include <QCoreApplication>
 
-Q_EXPORT_PLUGIN2(libexecute, plugin)
+/**
+ * A plugin is a separate process and for that reason a main function have to be implemented
+ * which instantiate the plugin object.
+ */
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
+}
 
 plugin::plugin() {
-    _config(this);
 }
 
 plugin::~plugin() {
-
 }
 
-void plugin::clear() {}
-void plugin::initialize() {
-}
-
-
-void plugin::setSetting(const QString& name, const QVariant& value, bool init) {
-	PluginSettingsHelper::setSetting(name, value, init);
-}
-
-void plugin::execute(const QVariantMap& data, int sessionid) {
-	Q_UNUSED(sessionid);
-	if (ServiceID::isMethod(data,"bla")) {
-	}
-}
-
-bool plugin::condition(const QVariantMap& data, int sessionid)  {
-	Q_UNUSED(data);
-	Q_UNUSED(sessionid);
-	return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
-}
-
-void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
-}
-
-QList<QVariantMap> plugin::properties(int sessionid) {
-Q_UNUSED(sessionid);
-	QList<QVariantMap> l;
-	return l;
-}

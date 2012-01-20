@@ -21,33 +21,21 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
-
-#include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
-#include "shared/plugin_interconnect.h"
 #include <QTimer>
 
-class plugin : public PluginInterconnect, public AbstractPlugin, public AbstractPlugin_services
+class plugin : public AbstractPlugin
 {
     Q_OBJECT
-    PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_services)
 public:
     plugin();
     virtual ~plugin();
 
+private Q_SLOTS:
     virtual void initialize();
     virtual void clear();
-    virtual QList<QVariantMap> properties(int sessionid);
-    virtual void settingsChanged(const QVariantMap& data);
-    virtual void execute ( const QVariantMap& data, int sessionid );
-    virtual bool condition ( const QVariantMap& data, int sessionid ) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-    virtual void unregister_event ( const QString& eventid, int sessionid );
-private:
-    void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
+    virtual void requestProperties(int sessionid);
+    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
+    void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 
     QString getLedName ( const QString& channel );
     void setLed ( const QString& channel, int value, uint fade );
@@ -55,17 +43,21 @@ private:
     void setLedExponential ( const QString& channel, int multiplikator, uint fade );
     void setLedRelative ( const QString& channel, int value, uint fade );
     void toggleLed ( const QString& channel, uint fade );
-    bool getLed( const QString& channel ) const;
+    int getLed( const QString& channel ) const;
+    bool isValue( const QString& channel, int value );
     int countLeds();
     void moodlight(const QString& channel, bool moodlight);
 
+    void cacheToDevice();
+    void moodlightTimeout();
+private:
     struct iochannel {
         int value;
         QString name;
         QString channel;
         QByteArray plugin_id;
         bool moodlight;
-	int fadeType;
+        int fadeType;
 
         iochannel() {
             moodlight = false;
@@ -76,9 +68,6 @@ private:
     QTimer m_cacheTimer;
     QSet<iochannel*> m_cache;
     QMap<QString, QString> m_namecache;
-    
+
     QTimer m_moodlightTimer;
-private slots:
-    void cacheToDevice();
-    void moodlightTimeout();
 };

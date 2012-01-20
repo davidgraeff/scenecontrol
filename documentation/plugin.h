@@ -1,6 +1,6 @@
 /*
  *    RoomControlServer. Home automation for controlling sockets, leds and music.
- *    Copyright (C) 2010  David Gräff
+ *    Copyright (C) 2010-2012  David Gräff
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -21,30 +21,29 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
 
-#include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginsettingshelper.h" 
-#include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
-
-class plugin : public QObject, public PluginSettingsHelper, public AbstractPlugin_services
+/**
+ * Minimal example plugin. You always should inherit AbstractPlugin for getting
+ * preimplemented funcatinaliy like plugin<-->plugin and plugin<-->server
+ * communication as well as predefined overridable methods like initialize and clear.
+ */
+class plugin : public AbstractPlugin
 {
     Q_OBJECT
-    PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_settings AbstractPlugin_services)
 public:
+    /**
+     * Do not use the constructor, instead use override "initialize" for setting up your ressources.
+     */
     plugin();
+    /**
+    * Do not (only) clean up in the destructor. The server process may like to recycle the plugin
+    * process. Use "clear" for cleaning up and "initialize" for setting up your ressources.
+    */
     virtual ~plugin();
-
-    virtual void session_change(const QString& id, bool running) {Q_UNUSED(id);Q_UNUSED(running);}
-    virtual void initialize();
-    virtual void clear();
-    virtual QList<QVariantMap> properties(int sessionid);
-    virtual void setSetting(const QString& name, const QVariant& value, bool init = false);
-    virtual void execute(const QVariantMap& data, int sessionid);
-    virtual bool condition(const QVariantMap& data, int sessionid) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-	virtual void unregister_event ( const QString& eventid, int sessionid );
+    /**
+     * Implement dataFromPlugin for receiving data from other plugins identified by plugin_id or 
+     * from the server (plugin_id==COMSERVERSTRING)
+     */
+    void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 private:
 };

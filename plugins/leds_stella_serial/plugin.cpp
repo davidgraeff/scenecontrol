@@ -22,7 +22,7 @@
 #include "plugin.h"
 #include "controller.h"
 
-Q_EXPORT_PLUGIN2 ( libexecute, plugin )
+
 
 plugin::plugin() {
     m_controller = new Controller ( this );
@@ -38,81 +38,81 @@ void plugin::clear() {}
 void plugin::initialize() {
 }
 
-void plugin::settingsChanged(const QVariantMap& data) {
+void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     if (data.contains(QLatin1String("serialport")))
         m_controller->connectToLeds ( data[QLatin1String("serialport")].toString() );
 }
 
-void plugin::execute ( const QVariantMap& data, int sessionid ) {
+void plugin::execute ( const QVariantMap& data) {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "ledvalue_relative" ) ) {
+    if ( ServiceData::isMethod(data, "ledvalue_relative" ) ) {
         m_controller->setChannelRelative ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "ledvalue_absolut" ) ) {
+    } else if ( ServiceData::isMethod(data, "ledvalue_absolut" ) ) {
         m_controller->setChannel ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "ledvalue_invers" ) ) {
+    } else if ( ServiceData::isMethod(data, "ledvalue_invers" ) ) {
         m_controller->inverseChannel ( DATA("channel"),INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "ledmoodlight" ) ) {
+    } else if ( ServiceData::isMethod(data, "ledmoodlight" ) ) {
         m_controller->moodlight ( DATA("channel"),BOOLDATA("moodlight") );
-    } else if ( ServiceID::isMethod(data, "ledname" ) ) {
+    } else if ( ServiceData::isMethod(data, "ledname" ) ) {
         m_controller->setChannelName ( DATA("channel"), DATA("name") );
-    } else if ( ServiceID::isMethod(data, "curtain" ) ) {
+    } else if ( ServiceData::isMethod(data, "curtain" ) ) {
         m_controller->setCurtain ( INTDATA("value") );
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, int sessionid )  {
+bool plugin::condition ( const QVariantMap& data)  {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "ledcondition" ) ) {
+    if ( ServiceData::isMethod(data, "ledcondition" ) ) {
         const int v = m_controller->getChannel ( DATA("channel") );
         if ( v>INTDATA("upper") ) return false;
         if ( v<INTDATA("lower") ) return false;
         return true;
-    } else if ( ServiceID::isMethod(data, "curtain_condition" ) ) {
+    } else if ( ServiceData::isMethod(data, "curtain_condition" ) ) {
         return ( INTDATA("value") == m_controller->getCurtain() );
     }
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
     Q_UNUSED(sessionid);
     Q_UNUSED ( data );
     Q_UNUSED ( collectionuid );
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+void plugin::unregister_event ( const QString& eventid) {
     Q_UNUSED(eventid);
     Q_UNUSED(sessionid);
 }
 
-QList<QVariantMap> plugin::properties(int sessionid) {
+void plugin::requestProperties(int sessionid) {
     Q_UNUSED(sessionid);
-    QList<QVariantMap> l;
+
 
     ledsCleared();
     QMap<QString, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
     for (;i!=m_controller->m_leds.end();++i) {
         {
-            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "roomcontrol.leds");
+            ServiceData sc = ServiceData::createModelChangeItem("roomcontrol.leds");
             sc.setData("channel", i.key());
             sc.setData("value", i.value().value);
             sc.setData("name", i.value().name);
-            l.append(sc.getData());
+            changeProperty(sc.getData());
         }
     }
     {
-        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "curtain.state");
+        ServiceData sc = ServiceData::createNotification(PLUGIN_ID, "curtain.state");
         sc.setData("value", m_controller->m_curtain_value);
         sc.setData("max", m_controller->m_curtain_max);
-        l.append(sc.getData());
+        changeProperty(sc.getData());
     }
     return l;
 }
 
 void plugin::curtainChanged(int current, int max) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "curtain.state");
+    ServiceData sc = ServiceData::createNotification(PLUGIN_ID, "curtain.state");
     sc.setData("value", current);
     sc.setData("max", max);
-    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+    changeProperty(sc.getData());
 }
 
 void plugin::ledsCleared() {
@@ -120,9 +120,9 @@ void plugin::ledsCleared() {
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "roomcontrol.leds");
+    ServiceData sc = ServiceData::createModelChangeItem("roomcontrol.leds");
     sc.setData("channel", channel);
     if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value);
-    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+    changeProperty(sc.getData());
 }

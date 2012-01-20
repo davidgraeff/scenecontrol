@@ -21,31 +21,23 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
-
-#include "shared/abstractserver_propertycontroller.h"
 #include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
-#include <shared/plugin_interconnect.h>
 
 class Controller;
-class plugin : public PluginInterconnect, public AbstractPlugin, public AbstractPlugin_services
+class plugin : public AbstractPlugin
 {
     Q_OBJECT
-    PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_services)
+
+
 public:
     plugin();
     virtual ~plugin();
 
     virtual void initialize();
     virtual void clear();
-    virtual QList<QVariantMap> properties(int sessionid);
-    virtual void settingsChanged(const QVariantMap& data);
-    virtual void execute ( const QVariantMap& data, int sessionid );
-    virtual bool condition ( const QVariantMap& data, int sessionid ) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-    virtual void unregister_event ( const QString& eventid, int sessionid );
+    virtual void requestProperties(int sessionid);
+    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
+    virtual void unregister_event ( const QString& eventid);
 private:
   void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
     Controller* m_controller;

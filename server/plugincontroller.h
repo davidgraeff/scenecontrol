@@ -24,73 +24,45 @@
 #include <QVariantMap>
 #include <QTimer>
 #include <QDir>
-#include <shared/abstractplugin.h>
-#include <shared/abstractplugin_services.h>
-#include <shared/abstractplugin_otherproperties.h>
-#include <shared/abstractplugin_settings.h>
-#include <shared/abstractplugin_sessions.h>
+#include <QLocalSocket>
+#include <QLocalServer>
 
-#undef PLUGIN_ID
-#define PLUGIN_ID "PluginController"
-
+class PluginProcess;
 class CollectionController;
-class PropertyController;
+class PluginCommunication;
 
-
-class PluginInfo {
-public:
-    AbstractPlugin* plugin;
-    QString version;
-    void setVersion(const QString& version) {
-        this->version = version;
-    }
-    PluginInfo(AbstractPlugin* plugin) {
-        this->plugin=plugin;
-    }
-    ~PluginInfo() {/* do not delete plugin. will be done by QPluginLoader automaticly */ }
-};
-
-class PluginController: public QObject, public AbstractPlugin, public AbstractPlugin_services
+class PluginController: public QObject
 {
     Q_OBJECT
-    PLUGIN_MACRO
 public:
-    PluginController (PropertyController* propertycontroller, CollectionController* collectioncontroller);
+    static PluginController* instance();
     virtual ~PluginController();
-    int knownServices();
+    bool loadplugins();
+    void removePlugin(const QString& id);
+    void removePluginFromPending(PluginCommunication* pluginprocess);
+    void addPlugin(const QString& id, PluginCommunication* pluginprocess);
+    void removeProcess(PluginProcess* process);
 
-    AbstractPlugin* getPlugin(const QString& pluginid);
+    PluginCommunication* getPlugin(const QString& pluginid);
 
-    QMap<QString,PluginInfo*>::iterator getPluginIterator();
-    AbstractPlugin* nextPlugin(QMap<QString,PluginInfo*>::iterator& index);
-	AbstractPlugin_settings* nextSettingsPlugin(QMap<QString,PluginInfo*>::iterator& index);
-    AbstractPlugin_services* nextServicePlugin(QMap<QString,PluginInfo*>::iterator& index);
-	AbstractPlugin_sessions* nextSessionPlugin(QMap<QString,PluginInfo*>::iterator& index);
+    QMap<QString,PluginCommunication*>::iterator getPluginIterator();
+    PluginCommunication* nextPlugin(QMap<QString,PluginCommunication*>::iterator& index);
 
-    // satisfy interfaces
-    virtual void clear(){}
-    virtual void initialize(){}
-    virtual bool condition(const QVariantMap&, int){return false;}
-    virtual void execute(const QVariantMap&, int) {}
-    virtual void register_event(const QVariantMap&, const QString&, int){}
-    virtual void unregister_event(const QString&, int){}
-    virtual void settingsChanged(const QVariantMap&) {}
-
-    // Properties
-    virtual QList< QVariantMap > properties(int sessionid);
+    void requestAllProperties(int sessionid = -1);
 private:
-    QMap<QString,PluginInfo*> m_plugins;
+    PluginController ();
+    QMap<QString,PluginCommunication*> m_plugins;
+    QMap<QLocalSocket*,PluginCommunication*> m_pendingplugins;
+    QSet<PluginProcess*> m_pluginprocesses;
+    QMap<QString, PluginCommunication*> m_registeredevents;
     int m_index;
-    QMap<QString, AbstractPlugin_services*> m_registeredevents;
-    
-    PropertyController* m_propertycontroller;
-    CollectionController* m_collectioncontroller;
+    QLocalServer m_comserver;
+private Q_SLOTS:
+    void newConnection();
 public Q_SLOTS:
     void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
     void couchDB_Event_remove(const QString& id);
     void couchDB_failed(const QString& url);
-    void couchDB_ready();
-    void couchDB_no_settings_found(const QString& pluginid);
-    void couchDB_settings(const QString& pluginid, const QVariantMap& data);
+    void couchDB_settings(const QString& pluginid, const QString& key, const QVariantMap& data);
 };
 #undef PLUGIN_ID

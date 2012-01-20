@@ -27,8 +27,7 @@
 #include <stdio.h>
 #include "plugincontroller.h"
 #include <QDebug>
-#include "websocket.h"
-#include "propertycontroller.h"
+#include "socket.h"
 #include "collectioncontroller.h"
 #include "couchdb.h"
 #include "paths.h"
@@ -52,13 +51,14 @@ int main(int argc, char *argv[])
 
     // help text
     if (cmdargs.contains("--help")) {
-        printf("%s - %s\n%s [--no-restart] [--no-event-loop] [--no-network] [--observe-service-dir] [--ignore-lock] [--help] [--version]\nLockfile: %s\n"
-               "--no-restart: Do not restart after exit\n--no-event-loop: Shutdown after initialisation\n"
-               "--ignore-lock: Try to remove lock and acquire lock file\n"
-	       "--extract PATH: Extract JSON Data from couchDB and save them to PATH\n"
-               "--help: This help text\n--version: Version information, parseable for scripts\n",
-               ROOM_SERVICENAME, ABOUT_VERSION, argv[0],
-               QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath()).toUtf8().constData());
+        printf("%s - %s\n%s [CMDs]\n"
+               "--no-restart: Do not restart after exit\n"
+               "--no-event-loop: Shutdown after initialisation\n"
+               "--extract PATH: Extract JSON Data from couchDB and save them to PATH\n"
+               "--no-autoload-plugins Only start the server and no plugin processes\n"
+               "--help: This help text\n"
+               "--version: Version information, parseable for scripts. Quits after output.\n",
+               ROOM_SERVICENAME, ABOUT_VERSION, argv[0]);
         return 0;
     }
     if (cmdargs.contains("--version")) {
@@ -70,14 +70,14 @@ int main(int argc, char *argv[])
     signal(SIGINT, catch_int);
     signal(SIGTERM, catch_int);
 
-    // Qt Application Object, choose language codec
+    // Qt Application; choose language codec
     QCoreApplication qapp(argc, argv);
     qapp.setApplicationName(QLatin1String(ROOM_SERVICENAME));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
     qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
 
-    // set uo log options and message handler and print out a first message
+    // Set up log options and message handler and print out a first message
     setLogOptions(ROOM_LOGTOCONSOLE, ROOM_LOGFILE);
     qInstallMsgHandler(roomMessageOutput);
     qDebug() << QString(QLatin1String("%1 (%2) - Pid: %3")).
@@ -85,53 +85,57 @@ int main(int argc, char *argv[])
     arg(QCoreApplication::applicationVersion()).
     arg(QCoreApplication::applicationPid());
 
-    // create lock file to allow only one instance of the server process
-    QFile lockfile(QString(QLatin1String("%1/roomcontrolserver.pid")).arg(QDir::tempPath()));
-    if (lockfile.exists() && (!cmdargs.contains("--ignore-lock") || !lockfile.remove())) {
-        qWarning() << "Lockfile"<<lockfile.fileName()<<"already exists. Only one instance at a time is allowed. If you are sure no other instance is running, remove the lockfile!";
+    // create network socket for controlling the server
+    Socket* socket = Socket::instance();
+    if (!socket->isListening()) {
+        qWarning() << "TCP Socket initalizing failed. Maybe another instance is already running";
+        delete socket;
         return -1;
     }
-    lockfile.open(QIODevice::ReadWrite|QIODevice::Append);
-    lockfile.write(QByteArray::number(QCoreApplication::applicationPid()));
 
+    // Write last start time to the log
     setup::writeLastStarttime();
 
-    // create objects
-    WebSocket* websocket = WebSocket::instance();
+    // Set up the database connection. All events, actions, configurations are hold within a couchdb.
     CouchDB* couchdb = CouchDB::instance();
-    PropertyController* propertycontroller = new PropertyController();
-    CollectionController* collectioncontroller = new CollectionController();
-    PluginController* plugins = new PluginController(propertycontroller, collectioncontroller);
+
+    // CollectionController: Starts, stops collections
+    // and hold references to running collections.
+    CollectionController* collectioncontroller = CollectionController::instance();
+
+    // PluginController: Start plugin processes and set up sockets for communication
+    PluginController* plugins = PluginController::instance();
 
     // connect objects
-    propertycontroller->setPluginController(plugins);
-    collectioncontroller->setPluginController(plugins);
     plugins->connect(couchdb, SIGNAL(couchDB_Event_add(QString,QVariantMap)), plugins,  SLOT(couchDB_Event_add(QString,QVariantMap)));
     plugins->connect(couchdb, SIGNAL(couchDB_Event_remove(QString)), plugins, SLOT(couchDB_Event_remove(QString)));
     plugins->connect(couchdb, SIGNAL(couchDB_failed(QString)), plugins, SLOT(couchDB_failed(QString)));
-    plugins->connect(couchdb, SIGNAL(couchDB_ready()), plugins, SLOT(couchDB_ready()));
-    plugins->connect(couchdb, SIGNAL(couchDB_no_settings_found(QString)), plugins, SLOT(couchDB_no_settings_found(QString)));
-    plugins->connect(couchdb, SIGNAL(couchDB_settings(QString,QVariantMap)), plugins, SLOT(couchDB_settings(QString,QVariantMap)));
-    collectioncontroller->connect(websocket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
-    collectioncontroller->connect(couchdb, SIGNAL(couchDB_actionsOfCollection(QVariantList,QString)), collectioncontroller, SLOT(actionsOfCollection(QVariantList,QString)));
-    
+    plugins->connect(couchdb, SIGNAL(couchDB_settings(QString,QString,QVariantMap)), plugins, SLOT(couchDB_settings(QString,QString,QVariantMap)));
+    collectioncontroller->connect(socket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
+    collectioncontroller->connect(couchdb, SIGNAL(couchDB_dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
+
     int exitcode = 0;
     exitcode |= couchdb->connectToDatabase()?0:-2;
-    
-    if (cmdargs.contains("--extract"))
-      couchdb->extractJSONFromCouchDB(QDir::currentPath());
-    else if (!exitcode && !cmdargs.contains("--no-event-loop"))
-        exitcode = qapp.exec();
 
-    qDebug() << "Shutdown: Service Controller";
-    delete websocket;
-    delete propertycontroller;
+    // Only extract json data from couchdb
+    if (cmdargs.contains("--extract"))
+        couchdb->extractJSONFromCouchDB(QDir::currentPath());
+    else if (!exitcode && !cmdargs.contains("--no-event-loop")) {
+        // Start plugin processes
+        if (!cmdargs.contains("--no-autoload-plugins"))
+            plugins->loadplugins();
+	// request some data from database and start change listeners
+        couchdb->requestEvents();
+        couchdb->startChangeListenerEvents();
+        couchdb->startChangeListenerSettings();
+        exitcode = qapp.exec();
+    }
+
+    qDebug() << "Shutdown...";
+    delete socket;
     delete collectioncontroller;
     delete plugins;
     delete couchdb;
-
-    // remove lockfile
-    lockfile.remove();
 
     // close log file. only console log is possible from here on
     logclose();
@@ -144,12 +148,12 @@ int main(int argc, char *argv[])
             qDebug() << "Shutdown: Start another instance not allowed!";
         } else if (exitcode == 0) {
             qDebug() << "Shutdown: Start another instance";
-            int rtry = 0;
+            int retry = 0;
             for (int i=0;i<argc;++i) {
                 QString arg = QString::fromAscii(argv[i]);
-                if (arg.startsWith(QLatin1String("--restart-try="))) rtry = arg.mid(strlen("--restart-try=")).toInt();
+                if (arg.startsWith(QLatin1String("--restart-try="))) retry = arg.mid(strlen("--restart-try=")).toInt();
             }
-            QString cmd = QString::fromAscii(argv[0]) + QLatin1String(" --restart-try=") + QString::number(rtry);
+            QString cmd = QString::fromAscii(argv[0]) + QLatin1String(" --restart-try=") + QString::number(retry);
             QProcess::startDetached(cmd);
         }
     }

@@ -21,7 +21,7 @@
 #include <QSettings>
 #include <qfile.h>
 #include <QDebug>
-#include <shared/qextserialport/qextserialport.h>
+#include <shared/qxtserialdevice/qxtserialdevice.h>
 #include <shared/abstractplugin.h>
 
 Controller::Controller ( AbstractPlugin* plugin ) : m_curtain_max ( 0 ), m_curtain_value ( 0 ), m_plugin ( plugin ), m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {
@@ -277,7 +277,7 @@ void Controller::connectToLeds ( const QString& device ) {
         return;
     }
 
-    m_serial = new QextSerialPort ( device,QextSerialPort::EventDriven );
+    m_serial = new QxtSerialDevice ( device,QxtSerialDevice::EventDriven );
     m_serial->setBaudRate ( BAUD115200 );
     m_serial->setFlowControl ( FLOW_OFF );
     m_serial->setParity ( PAR_NONE );

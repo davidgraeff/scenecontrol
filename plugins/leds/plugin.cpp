@@ -20,8 +20,15 @@
 #include <QtPlugin>
 
 #include "plugin.h"
+#include <QCoreApplication>
 
-Q_EXPORT_PLUGIN2 ( libexecute, plugin )
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
+}
 
 plugin::plugin() {
     connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
@@ -35,68 +42,34 @@ plugin::plugin() {
 plugin::~plugin() {
 }
 
-void plugin::clear() {}
+void plugin::clear() {
+
+}
+
 void plugin::initialize() {
     m_ios.clear();
     m_cache.clear();
 }
 
-void plugin::execute ( const QVariantMap& data, int sessionid ) {
-    Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "led.value" ) ) {
-        setLed ( DATA("channel"),INTDATA("value"), INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "led.value_relative" ) ) {
-        setLedRelative ( DATA("channel"),INTDATA("value"), INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "led.value_exponential" ) ) {
-        setLedExponential ( DATA("channel"),INTDATA("multiplikator"), INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "led.toogle" ) ) {
-        toggleLed ( DATA("channel"), INTDATA("fade")  );
-    } else if ( ServiceID::isMethod(data, "led.name" ) ) {
-        setLedName ( DATA("channel"),DATA("name") );
-    } else if ( ServiceID::isMethod(data, "reload" ) ) {
-        initialize();
+bool plugin::isValue ( const QString& channel, int value )  {
+    return ( getLed ( channel ) == value );
+}
+
+void plugin::requestProperties(int sessionid) {
+    changeProperty(ServiceData::createModelReset("leds", "channel").getData(), sessionid);
+    QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
+    for (;i!=m_ios.end();++i) {
+        const plugin::iochannel& io = i.value();
+        ServiceData sc = ServiceData::createModelChangeItem("leds");
+        sc.setData("channel", io.channel);
+        sc.setData("value", io.value);
+        sc.setData("name", io.name);
+        sc.setData("moodlight", io.moodlight);
+        changeProperty(sc.getData(), sessionid);
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, int sessionid )  {
-    Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "led.condition" ) ) {
-        return ( getLed ( DATA("channel") ) == INTDATA("value") );
-    }
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
-    Q_UNUSED(sessionid);
-    Q_UNUSED ( collectionuid );
-    Q_UNUSED ( data );
-}
-
-void plugin::unregister_event ( const QString& eventid, int sessionid ) {
-    Q_UNUSED(sessionid);
-    Q_UNUSED(eventid);
-}
-
-QList<QVariantMap> plugin::properties(int sessionid) {
-    Q_UNUSED(sessionid);
-    QList<QVariantMap> l;
-    {
-        l.append(ServiceCreation::createModelReset(PLUGIN_ID, "leds", "channel").getData());
-        QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
-        for (;i!=m_ios.end();++i) {
-            const plugin::iochannel& io = i.value();
-            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "leds");
-            sc.setData("channel", io.channel);
-            sc.setData("value", io.value);
-            sc.setData("name", io.name);
-            sc.setData("moodlight", io.moodlight);
-            l.append(sc.getData());
-        }
-    }
-    return l;
-}
-
-bool plugin::getLed(const QString& channel) const
+int plugin::getLed(const QString& channel) const
 {
     if (!m_ios.contains(channel)) return false;
     return m_ios[channel].value;
@@ -158,12 +131,12 @@ void plugin::setLedName ( const QString& channel, const QString& name, bool upda
     io.name = name;
 
     // change name property
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "leds");
+    ServiceData sc = ServiceData::createModelChangeItem("leds");
     sc.setData("channel", channel);
     sc.setData("name", name);
     sc.setData("value", io.value);
     sc.setData("moodlight", io.moodlight);
-    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+    changeProperty(sc.getData());
 
     if (updateDatabase) {
         // save name to database
@@ -171,7 +144,7 @@ void plugin::setLedName ( const QString& channel, const QString& name, bool upda
         settings[QLatin1String("channel")] = channel;
         settings[QLatin1String("name")] = name;
         settings[QLatin1String("isname")] = true;
-        m_serverPropertyController->saveSettings(QString(QLatin1String("channelname_%1")).arg(channel),settings, PLUGIN_ID);
+        changeConfig("channelname_" + channel.toUtf8(),settings);
     }
 }
 
@@ -204,7 +177,8 @@ void plugin::moodlightTimeout() {
 }
 
 // Get names from couchdb settings
-void plugin::settingsChanged(const QVariantMap& data) {
+void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
+    Q_UNUSED(configid);
     if (data.contains(QLatin1String("isname")) && data.contains(QLatin1String("channel")) && data.contains(QLatin1String("name"))) {
         const QString channel = data.value(QLatin1String("channel")).toString();
         const QString name = data.value(QLatin1String("name")).toString();
@@ -212,8 +186,6 @@ void plugin::settingsChanged(const QVariantMap& data) {
             m_ios[channel].name = name;
         }
         m_namecache.insert(channel, name);
-
-
     }
 }
 
@@ -221,56 +193,58 @@ void plugin::settingsChanged(const QVariantMap& data) {
 void plugin::cacheToDevice()
 {
     QSet<iochannel*>::const_iterator it = m_cache.constBegin();
+    QVariantMap datamap;
     for (;it != m_cache.constEnd(); ++it) {
-        sendDataToPlugin((*it)->plugin_id, (*it)->channel.toAscii() + "\t" + QByteArray::number((*it)->value));
+        datamap[QLatin1String("channel")] = (*it)->channel;
+        datamap[QLatin1String("value")] = (*it)->value;
+        sendDataToPlugin((*it)->plugin_id, datamap);
     }
     m_cache.clear();
 }
 
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data)
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data)
 {
-    if (data.startsWith("CLEAR")) {
+    if (ServiceData::isMethod(data, "clear")) {
         // Remove all leds referenced by "plugin_id"
         QMutableMapIterator<QString, iochannel> i(m_ios);
         while (i.hasNext()) {
             i.next();
             if (i.value().plugin_id == plugin_id) {
-                ServiceCreation sc = ServiceCreation::createModelRemoveItem(PLUGIN_ID, "leds");
+                ServiceData sc = ServiceData::createModelRemoveItem("leds");
                 sc.setData("channel", i.value().channel);
-                m_serverPropertyController->pluginPropertyChanged(sc.getData());
+                changeProperty(sc.getData());
                 i.remove();
             }
         }
         return;
     }
 
-    const QDataStream stream ( data );
-    QVariantMap datamap;
-    stream >> datamap;
-
-    if (!datamap.contains(QLatin1String("channel")) ||
-            !datamap.contains(QLatin1String("value"))
+    if (!data.contains(QLatin1String("channel")) ||
+            !data.contains(QLatin1String("value"))
        ) {
-        qWarning() << pluginid() << "DataFromPlugin expected channel, name, value" << datamap;
+        qWarning() << pluginid() << "DataFromPlugin expected channel, name, value" << data;
         return;
     }
 
     // Assign data to structure
-    iochannel& io = m_ios[datamap[QLatin1String("channel")].toString()];
+    bool before = m_ios.contains(QLatin1String("channel"));
+    iochannel& io = m_ios[data[QLatin1String("channel")].toString()];
     io.plugin_id = plugin_id;
     //p.moodlight = false;
     //p.fadeType = 1;
-    io.channel = datamap[QLatin1String("channel")].toString();
-    io.value = datamap[QLatin1String("value")].toInt();
-    if (datamap.contains(QLatin1String("name")))
-        io.name = datamap[QLatin1String("name")].toString();
+    io.channel = data[QLatin1String("channel")].toString();
+    io.value = data[QLatin1String("value")].toInt();
+    if (data.contains(QLatin1String("name")))
+        io.name = data[QLatin1String("name")].toString();
+    else if (!before)
+        io.name = m_namecache.value(io.channel);
 
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "leds");
+    ServiceData sc = ServiceData::createModelChangeItem("leds");
     sc.setData("channel", io.channel);
     if (io.name.size()) sc.setData("name", io.name);
     if (io.value != -1) sc.setData("value", io.value);
     sc.setData("moodlight", io.moodlight);
 
-    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+    changeProperty(sc.getData());
 }
 

@@ -23,7 +23,7 @@
 #include "plugin.h"
 #include <qfileinfo.h>
 
-Q_EXPORT_PLUGIN2 ( libexecute, plugin )
+
 
 plugin::plugin() {
 }
@@ -36,11 +36,11 @@ void plugin::clear() {}
 void plugin::initialize() {
 }
 
-void plugin::settingsChanged(const QVariantMap& data) {Q_UNUSED(data);}
+void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {Q_UNUSED(data);}
 
-void plugin::execute ( const QVariantMap& data, int sessionid ) {
+void plugin::execute ( const QVariantMap& data) {
 	Q_UNUSED(sessionid);
-    if ( ServiceID::isMethod ( data,"wol" ) ) {
+    if ( ServiceData::isMethod ( data,"wol" ) ) {
         QStringList parts = data["mac"].toString().split ( QLatin1Char ( ':' ) );
         if ( parts.size() !=6 ) return;
         QByteArray mac;
@@ -59,27 +59,27 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, int sessionid )  {
+bool plugin::condition ( const QVariantMap& data)  {
     Q_UNUSED ( data );
 	Q_UNUSED(sessionid);
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) { 
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) { 
 	Q_UNUSED(sessionid);
     Q_UNUSED ( data );
 	Q_UNUSED(collectionuid);
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) { 
+void plugin::unregister_event ( const QString& eventid) { 
 	Q_UNUSED(sessionid);
 	Q_UNUSED(eventid);
 }
 
-QList<QVariantMap> plugin::properties ( int sessionid ) {
+QList<QVariantMap> plugin::properties (  ) {
     Q_UNUSED ( sessionid );
-    QList<QVariantMap> l;
-	l.append(ServiceCreation::createModelReset(PLUGIN_ID, "wol.arpcache", "mac").getData());
+
+	changeProperty(ServiceData::createModelReset("wol.arpcache", "mac").getData());
 	
     QFile file(QLatin1String("/proc/net/arp"));
     if (file.exists() && file.open(QFile::ReadOnly)) {
@@ -99,10 +99,10 @@ QList<QVariantMap> plugin::properties ( int sessionid ) {
 			// get mac
 			QByteArray mac = line.mid(c, line.indexOf(' ', c) - c);
 			
-			ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "wol.arpcache");
+			ServiceData sc = ServiceData::createModelChangeItem("wol.arpcache");
             sc.setData("mac", mac);
             sc.setData("ip", ip);
-            l.append(sc.getData());
+            changeProperty(sc.getData());
 		}
 		file.close();
 	}

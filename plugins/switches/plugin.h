@@ -21,33 +21,21 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
-
-#include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
-#include "shared/plugin_interconnect.h"
 #include <QTimer>
 
-class plugin : public PluginInterconnect, public AbstractPlugin, public AbstractPlugin_services
+class plugin : public AbstractPlugin
 {
     Q_OBJECT
-    PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_services)
 public:
     plugin();
     virtual ~plugin();
+private Q_SLOTS:
 
     virtual void initialize();
     virtual void clear();
-    virtual QList<QVariantMap> properties(int sessionid);
-    virtual void settingsChanged(const QVariantMap& data);
-    virtual void execute ( const QVariantMap& data, int sessionid );
-    virtual bool condition ( const QVariantMap& data, int sessionid ) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-    virtual void unregister_event ( const QString& eventid, int sessionid );
-private:
-    void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
+    virtual void requestProperties(int sessionid);
+    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
+    void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 
     QString getSwitchName ( const QString& channel );
     void setSwitch ( const QString& channel, bool value );
@@ -55,7 +43,10 @@ private:
     void toggleSwitch ( const QString& channel );
     bool getSwitch( const QString& channel ) const;
     int countSwitchs();
-
+    bool isOn( const QString& channel, bool value );
+    
+    void cacheToDevice();
+private:
     struct iochannel {
         int value;
         QString name;
@@ -69,6 +60,5 @@ private:
     QMap<QString,iochannel> m_ios;
     QTimer m_cacheTimer;
     QSet<iochannel*> m_cache;
-private slots:
-    void cacheToDevice();
+    QMap<QString, QString> m_namecache;
 };

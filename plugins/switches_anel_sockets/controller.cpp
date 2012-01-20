@@ -20,7 +20,7 @@
 #include "controller.h"
 #include <QDebug>
 #include <QSettings>
-#include "shared/qextserialport/qextserialport.h"
+#include "shared/qxtserialdevice/qxtserialdevice.h"
 #include <qfile.h>
 #include <shared/abstractplugin.h>
 #include <QUdpSocket>

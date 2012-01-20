@@ -21,33 +21,27 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
-
-#include "shared/abstractserver_propertycontroller.h"
 #include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
 #include <QSet>
+#include <shared/plugineventmap.h>
 
-class plugin : public QObject, public AbstractPlugin, public AbstractPlugin_services
+class plugin : public AbstractPlugin
 {
     Q_OBJECT
-    PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_services)
+
+
 public:
     plugin();
     virtual ~plugin();
 
-    virtual void initialize();
-    virtual void clear();
-    virtual QList<QVariantMap> properties(int sessionid);
-    virtual void settingsChanged(const QVariantMap& data);
-    virtual void execute(const QVariantMap& data, int sessionid);
-    virtual bool condition(const QVariantMap& data, int sessionid) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-    virtual void unregister_event ( const QString& eventid, int sessionid );
+    virtual void requestProperties(int sessionid);
+    virtual void unregister_event ( const QString& eventid);
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {}
+public Q_SLOTS:
+    void eventmode ( const QString& eventid, const QString& mode, const QString& collectionuid);
+    void modeChange(const QString& mode);
 private:
-	QString m_mode;
-	EventMap<QString> m_mode_events; //mode->set of uids
-private Q_SLOTS:
-	void modeChanged(const QString& mode);
+    QString m_mode;
+    // mode -> (eventid, [collectionids])
+    QMultiMap<QString, QPair<QString, QString> > m_collectionsOnMode;
 };

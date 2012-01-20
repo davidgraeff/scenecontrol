@@ -36,7 +36,7 @@
 #include "managed_device_list.h"
 #include <qfileinfo.h>
 
-Q_EXPORT_PLUGIN2 ( libexecute, plugin )
+
 
 plugin::plugin() : m_events ( QLatin1String ( "inputdevice" ) ) {
     m_repeat = 0;
@@ -60,15 +60,15 @@ void plugin::initialize() {
     m_devicelist->start();
 }
 
-void plugin::settingsChanged(const QVariantMap& data) {
+void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
   if (data.contains(QLatin1String("repeat")))
       m_repeat = data[QLatin1String("repeat")].toInt();
   if (data.contains(QLatin1String("repeat_init")))
       m_repeatInit = data[QLatin1String("repeat_init")].toInt();
 }
 
-void plugin::execute ( const QVariantMap& data, int sessionid ) {
-    if ( ServiceID::isMethod ( data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
+void plugin::execute ( const QVariantMap& data) {
+    if ( ServiceData::isMethod ( data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
         QMap<QString, InputDevice*>::iterator it = m_devices.begin();
         for ( ;it != m_devices.end();++it ) {
             ( *it )->disconnectSession ( sessionid );
@@ -79,29 +79,29 @@ void plugin::execute ( const QVariantMap& data, int sessionid ) {
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, int sessionid )  {
+bool plugin::condition ( const QVariantMap& data)  {
     Q_UNUSED ( sessionid );
     Q_UNUSED ( data );
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
     Q_UNUSED(sessionid);
-    if ( ServiceID::isMethod ( data, "inputevent" ) ) {
+    if ( ServiceData::isMethod ( data, "inputevent" ) ) {
         m_events.add ( data, collectionuid );
         InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
-        if ( inputdevice ) inputdevice->registerKey ( ServiceID::id ( data ), collectionuid, DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
+        if ( inputdevice ) inputdevice->registerKey ( ServiceData::id ( data ), collectionuid, DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
     }
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+void plugin::unregister_event ( const QString& eventid) {
     Q_UNUSED(sessionid);
     const QVariantMap& data = m_events.remove ( eventid );
     InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
     if ( inputdevice ) inputdevice->unregisterKey (eventid );
 }
 
-void plugin::session_change ( int sessionid, bool running ) {
+void plugin::session_change ( , bool running ) {
     PluginSessionsHelper::session_change ( sessionid, running );
     if ( running ) return;
     foreach ( InputDevice* device, m_devices ) {
@@ -109,10 +109,10 @@ void plugin::session_change ( int sessionid, bool running ) {
     }
 }
 
-QList<QVariantMap> plugin::properties ( int sessionid ) {
+QList<QVariantMap> plugin::properties (  ) {
     Q_UNUSED ( sessionid );
-    QList<QVariantMap> l;
-    l.append ( ServiceCreation::createModelReset ( PLUGIN_ID, "inputdevice", "udid" ).getData() );
+
+    l.append ( ServiceData::createModelReset ( PLUGIN_ID, "inputdevice", "udid" ).getData() );
     foreach ( InputDevice* device, m_devices ) {
         l.append ( createServiceOfDevice ( device->device() ).getData() );
     }
@@ -120,7 +120,7 @@ QList<QVariantMap> plugin::properties ( int sessionid ) {
 }
 
 void plugin::deviceAdded ( ManagedDevice* device ) {
-    m_serverPropertyController->pluginPropertyChanged ( createServiceOfDevice ( device ).getData() );
+    changeProperty ( createServiceOfDevice ( device ).getData() );
     InputDevice* inputdevice = m_devices.value ( device->udid );
     if ( !inputdevice ) {
         inputdevice = new InputDevice ( this );
@@ -129,19 +129,19 @@ void plugin::deviceAdded ( ManagedDevice* device ) {
     inputdevice->setDevice ( device );
     const QList<QVariantMap> datas = m_events.data(device->udid);
     foreach(QVariantMap data, datas) {
-        inputdevice->registerKey ( ServiceID::id ( data ), ServiceID::collectionid(data), DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
+        inputdevice->registerKey ( ServiceData::id ( data ), ServiceData::collectionid(data), DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
     }
 }
 
 void plugin::deviceRemoved ( ManagedDevice* device ) {
-    ServiceCreation sc = ServiceCreation::createModelRemoveItem ( PLUGIN_ID, "inputdevice" );
+    ServiceData sc = ServiceData::createModelRemoveItem ( PLUGIN_ID, "inputdevice" );
     sc.setData ( "udid", device->udid );
-    m_serverPropertyController->pluginPropertyChanged ( sc.getData() );
+    changeProperty ( sc.getData() );
     delete m_devices.take ( device->udid );
 }
 
-ServiceCreation plugin::createServiceOfDevice ( ManagedDevice* device ) {
-    ServiceCreation sc = ServiceCreation::createModelChangeItem ( PLUGIN_ID, "inputdevice" );
+ServiceData plugin::createServiceOfDevice ( ManagedDevice* device ) {
+    ServiceData sc = ServiceData::createModelChangeItem ( PLUGIN_ID, "inputdevice" );
     sc.setData ( "path", device->devPath );
     sc.setData ( "info", device->info );
     sc.setData ( "udid", device->udid );
@@ -167,21 +167,21 @@ bool InputDevice::isClosable() {
     return ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() );
 }
 
-void InputDevice::connectSession ( int sessionid ) {
+void InputDevice::connectSession (  ) {
     m_sessionids.insert ( sessionid );
     if ( fd ) {
-        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "input.device.selected" );
+        ServiceData sc = ServiceData::createNotification ( PLUGIN_ID, "input.device.selected" );
         sc.setData ( "udid", m_device->udid );
         sc.setData ( "listen", true );
         sc.setData ( "errormsg", QString() );
         // Propagate to all interested clients
-        foreach ( int sessionid, m_sessionids ) {
-            m_plugin->m_serverPropertyController->pluginPropertyChanged ( sc.getData(), sessionid );
+        foreach ( , m_sessionids ) {
+            m_plugin->changeProperty ( sc.getData(), sessionid );
         }
         return;
     }
 }
-void InputDevice::disconnectSession ( int sessionid ) {
+void InputDevice::disconnectSession (  ) {
     m_sessionids.remove ( sessionid );
     if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() ) {
         disconnectDevice();
@@ -200,7 +200,7 @@ void InputDevice::connectDevice() {
         // only reconnect to new device if a client is actually listening or events are registered
         if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() ) return;
 
-        ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "input.device.selected" );
+        ServiceData sc = ServiceData::createNotification ( PLUGIN_ID, "input.device.selected" );
         sc.setData ( "udid", m_device->udid );
 
         if ( !QFileInfo ( m_device->devPath ).isReadable() ) {
@@ -222,8 +222,8 @@ void InputDevice::connectDevice() {
             }
         }
         // Propagate to all interested clients
-        foreach ( int sessionid, m_sessionids ) {
-            m_plugin->m_serverPropertyController->pluginPropertyChanged ( sc.getData(), sessionid );
+        foreach ( , m_sessionids ) {
+            m_plugin->changeProperty ( sc.getData(), sessionid );
         }
     }
 }
@@ -274,13 +274,13 @@ void InputDevice::eventData() {
             // properties
             {
                 // last key property. Will be propagated to interested clients only.
-                ServiceCreation sc = ServiceCreation::createNotification ( PLUGIN_ID, "input.device.key" );
+                ServiceData sc = ServiceData::createNotification ( PLUGIN_ID, "input.device.key" );
                 sc.setData ( "kernelkeyname", kernelkeyname );
                 sc.setData ( "udid", m_device->udid );
 
                 // Propagate to all interested clients
-                foreach ( int sessionid, m_sessionids ) {
-                    m_plugin->m_serverPropertyController->pluginPropertyChanged ( sc.getData(), sessionid );
+                foreach ( , m_sessionids ) {
+                    m_plugin->changeProperty ( sc.getData(), sessionid );
                 }
             }
             m_lastkey = kernelkeyname;

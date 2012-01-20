@@ -21,16 +21,11 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
-
-#include "shared/abstractserver_propertycontroller.h"
 #include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
 #include <QSet>
 #include <QTimer>
 #include <qfile.h>
 #include <linux/input.h>
-#include <shared/pluginsessionhelper.h>
 #include <QSocketNotifier>
 
 class plugin;
@@ -57,8 +52,8 @@ public:
     InputDevice(plugin* plugin) ;
     ~InputDevice();
     bool isClosable();
-    void connectSession(int sessionid);
-    void disconnectSession(int sessionid);
+    void connectSession();
+    void disconnectSession();
     void setDevice(ManagedDevice* device);
     void connectDevice();
     void disconnectDevice();
@@ -70,11 +65,9 @@ private Q_SLOTS:
     void repeattrigger(bool initial_event = false);
 };
 
-class plugin : public QObject, public AbstractPlugin, public PluginSessionsHelper, public AbstractPlugin_services
+class plugin : public AbstractPlugin
 {
     Q_OBJECT
-    PLUGIN_MACRO
-    Q_INTERFACES(AbstractPlugin AbstractPlugin_services AbstractPlugin_sessions)
     friend class InputDevice;
 public:
     plugin();
@@ -82,22 +75,20 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual QList<QVariantMap> properties(int sessionid);
-    virtual void session_change(int sessionid, bool running);
-    virtual void settingsChanged(const QVariantMap& data);
-    virtual void execute(const QVariantMap& data, int sessionid);
-    virtual bool condition(const QVariantMap& data, int sessionid) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid );
-    virtual void unregister_event ( const QString& eventid, int sessionid );
+    virtual void requestProperties(int sessionid);
+    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
+    virtual void unregister_event ( const QString& eventid);
+
+
 private:
     ManagedDeviceList* m_devicelist;
     QMap<QString, InputDevice*> m_devices;
     QMap<uint, QString> m_keymapping;
-    EventMap<QString> m_events;
+//EventMap<QString> m_events;
 
     int m_repeat;
     int m_repeatInit;
-    ServiceCreation createServiceOfDevice(ManagedDevice* device);
+    ServiceData createServiceOfDevice(ManagedDevice* device);
 private Q_SLOTS:
     void deviceAdded(ManagedDevice*);
     void deviceRemoved(ManagedDevice*);

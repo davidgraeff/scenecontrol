@@ -18,142 +18,127 @@
 */
 
 #pragma once
-#include <QVariantMap>
+#include <QMap>
+#include <QObject>
 #include <QString>
+#include <QLocalSocket>
+#include <QLocalServer>
 #include <QSet>
+#include <QVariant>
 
-class AbstractServerCollectionController;
-class AbstractServerPropertyController;
 
-#define PLUGIN_MACRO \
-protected: \
-	virtual QString pluginid() { return QLatin1String(PLUGIN_ID); } \
-	AbstractServerCollectionController* m_serverCollectionController; \
-	AbstractServerPropertyController* m_serverPropertyController; \
-public: \
-	virtual void connectToServer(AbstractServerCollectionController* serverCollectionController, \
-				    AbstractServerPropertyController* serverPropertyController) {\
-				    this->m_serverCollectionController = serverCollectionController; \
-				    this->m_serverPropertyController = serverPropertyController; \
-				    } \
- 
-class ServiceID {
-public:
-    static QString id(const QVariantMap& data) {
-        return data[QLatin1String("_id")].toString();
-    }
-    static QString string(const QVariantMap& data, const char* key) {
-        return data[QString::fromAscii(key)].toString();
-    }
-    static QString idChangeSeq(const QVariantMap& data) {
-        return data[QLatin1String("id")].toString();
-    }
-    static QString pluginid(const QVariantMap& data) {
-        return data[QLatin1String("plugin_")].toString();
-    }
-//     static void setId(QVariantMap& data, const QString& id) {
-//         data[QLatin1String("_id")] = id;
-//     }
+#ifndef PLUGIN_ID
+#error Define PLUGIN_ID before including this header!
+#endif
 
-    static QString collectionid(const QVariantMap& data) {
-        return data.value(QLatin1String("collection_")).toString();
-    }
+#define COMSERVERSTRING "server"
 
-    static bool isAction(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("action");
-    }
-    static bool isCondition(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("condition");
-    }
-    static bool isEvent(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("event");
-    }
-    static bool isCollection(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("collection");
-    }
-    static bool isExecutable(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("execute");
-    }
-    static bool isRemoveCmd(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("remove");
-    }
-    static bool isNotification(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("notification");
-    }
-    static bool isModelItem(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString() == QLatin1String("model");
-    }
-    static bool isNegatedCondition(const QVariantMap& data) {
-        return data.value(QLatin1String("conditionnegate_")).toBool();
-    }
-    static QString conditionGroup(const QVariantMap& data) {
-        QString cg = data.value(QLatin1String("conditiongroup_")).toString();
-        if (cg.isEmpty()) cg = QLatin1String("all");
-        return cg;
-    }
+#include "shared/pluginservicehelper.h"
 
-    static QString type(const QVariantMap& data) {
-        return data[QLatin1String("type_")].toString();
-    }
-
-    static bool isMethod(const QVariantMap& data, const char* id) {
-        return data[QLatin1String("member_")].toString() == QLatin1String(id);
-    }
-    static QString pluginmember(const QVariantMap& data) {
-        return data[QLatin1String("member_")].toString();
-    }
-
-    static void setPluginmember(QVariantMap& data, const QString& uid) {
-        data[QLatin1String("member_")] = uid;
-    }
-
-    /**
-     * Write toCollection property
-     */
-//     static void setToCollection(QVariantMap& data, const QString& collectionuid) {
-//         data[QLatin1String("__toCollection")] = collectionuid;
-//     }
-//
-    /**
-     * For eventMap
-     */
-    static QVariantMap newDataWithCollectionUid(const QVariantMap& data, const QString& collectionuid) {
-        QVariantMap modifieddata = data;
-        modifieddata[QLatin1String("collection_")] = collectionuid;
-        return modifieddata;
-    }
-};
-
-class AbstractPlugin
-{
+/**
+ * Use this as your plugin base class. You have to define PLUGIN_ID before
+ * including the header of this class.
+ *
+ * Communication:
+ * You may use sendCmdToPlugin and sendDataToPlugin to communicate with other
+ * plugins or with the server process (use plugin_id="server") and you have
+ * to implement dataFromPlugin for receiving data from other processes.
+ *
+ * Reimplementable methods:
+ * You may reimplement initialize, clear or configChanged to react on server state
+ * changes. configChanged in only called by the server process for configuration
+ * (key, value)-pairs that you saved by the method changeConfig before.
+ *
+ * Events:
+ * If your plugin provides events (like current time == alarm time etc) you may
+ * implement register_event and unregister_event and call eventTriggered if your
+ * event is triggered.
+ *
+ * Conditions, Actions:
+ * Just implement normal qt slots with up to 8 parameters
+ * like "void dim_light(int id, int value)" or "bool isOn(int id)"
+ */
+class AbstractPlugin: public QLocalServer {
+    Q_OBJECT
 public:
     /**
-     * Hint: Do not reimplement this method (It is implemented within the PLUGIN_MACRO macro).
+     * Create local socket for incoming connections and connects to the server socket.
+     * Return false if connection to server failed otherwise true.
+     *
+     * Use this in your plugin main method.
      */
-    virtual QString pluginid() = 0;
-
+    bool createCommunicationSockets();
+protected:
+    AbstractPlugin();
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) = 0;
+    bool sendCmdToPlugin(const QByteArray& plugin_id, const QByteArray& data);
+    bool sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    void changeConfig(const QByteArray& key, const QVariantMap& data);
+    void changeProperty(const QVariantMap& data, int sessionid = -1);
+    void eventTriggered(const QByteArray& eventid, const QByteArray& dest_collectionId);
+private Q_SLOTS:
+    void readyRead();
+    void newConnection ();
+    // If disconnected from server, quit plugin process
+    void disconnectedFromServer();
+private:
+    QMap<QByteArray, QLocalSocket*> m_connectionsByID;
+    QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
+    QSet<QLocalSocket*> m_pendingConnections;
+    QLocalSocket* getClientConnection(const QByteArray& plugin_id);
+public Q_SLOTS:
     /**
-     * Hint: Do not reimplement this method (It is implemented within the PLUGIN_MACRO macro).
+     * Return pluginid
      */
-    virtual void connectToServer(AbstractServerCollectionController* m_serverCollectionController,
-                                 AbstractServerPropertyController* m_serverPropertyController) = 0;
+    QString pluginid() {
+        return QLatin1String(PLUGIN_ID);
+    }
 
     /**
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the
-     * network is initiated or by request from a client with sufficient access rights.
+     * network is initiated.
      */
-    virtual void initialize() = 0;
+    virtual void initialize() {}
 
     /**
      * Called by server process before it releases all ressources and finish.
      * Tidy up here.
      */
-    virtual void clear() = 0;
-    
+    virtual void clear() {}
+
     /**
      * Settings have changed. This method is called at startup for initial settings, too.
      */
-    virtual void settingsChanged(const QVariantMap& data) = 0;
+    virtual void configChanged(const QByteArray& configid, const QVariantMap& data) {
+        Q_UNUSED(configid);
+        Q_UNUSED(data);
+    };
+    /**
+     * Return current state of all plugin properties. The server
+     * reguests all properties from all plugins after a client has connected.
+     *
+     * Example in the VariantMap: fancyplugin_ledIsOn = true
+     *
+     * Note: Properties are temporary and are not saved by the server.
+     * You should cache longer-to-generate properties. This call
+     * should not block the server noticable!
+     * \param sessionid id of the client session that requests properties of this plugin
+     */
+    virtual void requestProperties(int sessionid) {
+        Q_UNUSED(sessionid);
+    };
 
+    /**
+    * All events of a collection are registered by their specific plugin.
+    * A method of your plugin is called if an event
+    * of the collection referenced by "collectionuid" should be registered
+    * within your plugin.
+    * If internally the event is triggered, you should call eventTriggered to nofiy
+    * the server and execute the collection eventually.
+
+    * When collections get removed they unregister their events with this method. If collections are changed
+    * they will call unregister_event and register_event in sequence.
+    */
+    virtual void unregister_event ( const QString& eventid ) {Q_UNUSED(eventid);}
 };
 Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/2.0")

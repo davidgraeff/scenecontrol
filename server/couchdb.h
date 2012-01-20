@@ -28,13 +28,26 @@
 class CouchDB: public QNetworkAccessManager {
     Q_OBJECT
 public:
+  /**
+   * CouchDB is a singleton object
+   */
     static CouchDB* instance();
     virtual ~CouchDB();
+    /**
+     * Connect to couchdb (synchronous)
+     */
     bool connectToDatabase();
+    /**
+     * Request all events (synchronous)
+     * Is called 
+     */
     void requestEvents();
-    void requestActionsOfCollection(const QString& collecion_id);
+    void startChangeListenerSettings();
+    void startChangeListenerEvents();
+
+    void requestDataOfCollection(const QString& collecion_id);
     void requestPluginSettings(const QString& pluginid, bool tryToInstall = true);
-    void savePluginSetting(const QString& pluginid, const QString& key, const QVariantMap& value);
+    void changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value);
     void extractJSONFromCouchDB(const QString& path);
 private:
     CouchDB ();
@@ -45,28 +58,24 @@ private:
 
     int installPluginData(const QString& pluginid);
 private Q_SLOTS:
-    void startChangeListenerSettings();
-    void startChangeListenerEvents();
     // Called if events on the database changed and fetches those events
     void replyEventsChange();
-    // Called as result of replyEventsChange
-    void replyEvent();
     // Called if plugin settings on the database changed and fetches those settings. Will fire the signal couchDB_settings
     void replyPluginSettingsChange();
     // Fetches all conditions and actions of a collection. Will fire the signal couchDB_actionsOfCollection
-    void replyActionOfCollection();
+    void replyDataOfCollection();
     void errorWithRecovery(QNetworkReply::NetworkError);
     void errorFatal(QNetworkReply::NetworkError);
     void errorNoSettings();
 Q_SIGNALS:
     // Fail signals
     void couchDB_failed(const QString& url);
-    void couchDB_no_settings_found(const QString& prefix);
+    void couchDB_no_settings_found(const QString& pluginid);
     // Change signals
-    void couchDB_settings(const QString& prefix, const QVariantMap& data);
+    void couchDB_settings(const QString& pluginid, const QString& key, const QVariantMap& data);
     void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
     void couchDB_Event_remove(const QString& id);
-    void couchDB_actionsOfCollection(const QVariantList& actions, const QString& collectionid);
+    void couchDB_dataOfCollection ( const QList<QVariantMap>& actions, const QList<QVariantMap>& conditions, const QString& collectionid);
     // Ready signals
     void couchDB_ready();
 };

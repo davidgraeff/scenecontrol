@@ -22,7 +22,7 @@
 #include "plugin.h"
 #include "controller.h"
 
-Q_EXPORT_PLUGIN2 ( libexecute, plugin )
+
 
 plugin::plugin() {
     m_controller = new Controller ( this );
@@ -38,31 +38,31 @@ void plugin::clear() {}
 void plugin::initialize() {
 }
 
-void plugin::settingsChanged(const QVariantMap& data) {
+void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port")))
        m_controller->connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
 }
 
-void plugin::execute ( const QVariantMap& data, int sessionid ) {
+void plugin::execute ( const QVariantMap& data) {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "udpled.value_relative" ) ) {
+    if ( ServiceData::isMethod(data, "udpled.value_relative" ) ) {
         m_controller->setChannelRelative ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "udpled.value_absolut" ) ) {
+    } else if ( ServiceData::isMethod(data, "udpled.value_absolut" ) ) {
         m_controller->setChannel ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "udpled.value_invers" ) ) {
+    } else if ( ServiceData::isMethod(data, "udpled.value_invers" ) ) {
         m_controller->inverseChannel ( DATA("channel"),INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "udpled.value_exp" ) ) {
+    } else if ( ServiceData::isMethod(data, "udpled.value_exp" ) ) {
         m_controller->setChannelExponential ( DATA("channel"),INTDATA("multiplicator") ,INTDATA("fade") );
-    } else if ( ServiceID::isMethod(data, "udpled.moodlight" ) ) {
+    } else if ( ServiceData::isMethod(data, "udpled.moodlight" ) ) {
         m_controller->moodlight ( DATA("channel"),BOOLDATA("moodlight") );
-    } else if ( ServiceID::isMethod(data, "udpled.name" ) ) {
+    } else if ( ServiceData::isMethod(data, "udpled.name" ) ) {
         m_controller->setChannelName ( DATA("channel"), DATA("name") );
     }
 }
 
-bool plugin::condition ( const QVariantMap& data, int sessionid )  {
+bool plugin::condition ( const QVariantMap& data)  {
     Q_UNUSED ( sessionid );
-    if ( ServiceID::isMethod(data, "udpled.condition" ) ) {
+    if ( ServiceData::isMethod(data, "udpled.condition" ) ) {
         const int v = m_controller->getChannel ( DATA("channel") );
         if ( v>INTDATA("upper") ) return false;
         if ( v<INTDATA("lower") ) return false;
@@ -71,31 +71,31 @@ bool plugin::condition ( const QVariantMap& data, int sessionid )  {
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
     Q_UNUSED(sessionid);
     Q_UNUSED ( data );
     Q_UNUSED ( collectionuid );
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+void plugin::unregister_event ( const QString& eventid) {
     Q_UNUSED(sessionid);
     Q_UNUSED(eventid);
 }
 
-QList<QVariantMap> plugin::properties(int sessionid) {
+void plugin::requestProperties(int sessionid) {
     Q_UNUSED(sessionid);
-    QList<QVariantMap> l;
 
-    l.append(ServiceCreation::createModelReset(PLUGIN_ID, "udpled.names", "channel").getData());
+
+    changeProperty(ServiceData::createModelReset("udpled.names", "channel").getData());
 
     QMap<QString, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
     for (;i!=m_controller->m_leds.end();++i) {
         {
-            ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "udpled.names");
+            ServiceData sc = ServiceData::createModelChangeItem("udpled.names");
             sc.setData("channel", i.key());
             sc.setData("value", i.value().value);
             sc.setData("name", i.value().name);
-            l.append(sc.getData());
+            changeProperty(sc.getData());
         }
     }
     return l;
@@ -106,9 +106,9 @@ void plugin::ledsCleared() {
 }
 
 void plugin::ledChanged(QString channel, QString name, int value) {
-    ServiceCreation sc = ServiceCreation::createModelChangeItem(PLUGIN_ID, "udpled.names");
+    ServiceData sc = ServiceData::createModelChangeItem("udpled.names");
     sc.setData("channel", channel);
     if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value);
-    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+    changeProperty(sc.getData());
 }

@@ -17,69 +17,61 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
-
 #include "plugin.h"
+#include <QCoreApplication>
 
-Q_EXPORT_PLUGIN2(libexecute, plugin)
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
+}
 
-plugin::plugin() : m_mode_events(QLatin1String("mode")) {
+plugin::plugin() {
 }
 
 plugin::~plugin() {
 
 }
 
-void plugin::clear() {}
-void plugin::initialize() {
-}
-
-void plugin::settingsChanged(const QVariantMap& data) {}
-
-void plugin::execute(const QVariantMap& data, int sessionid) {
+bool plugin::condition(const QVariantMap& data)  {
     Q_UNUSED(sessionid);
-    if (ServiceID::isMethod(data,"changemode")) {
-        m_mode = DATA("mode");
-        modeChanged(m_mode);
-    }
-}
-
-bool plugin::condition(const QVariantMap& data, int sessionid)  {
-    Q_UNUSED(sessionid);
-    if (ServiceID::isMethod(data,"modecondition")) {
+    if (ServiceData::isMethod(data,"modecondition")) {
         return (m_mode == DATA("mode"));
     }
     return false;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid, int sessionid ) {
+void plugin::eventmode ( const QString& eventid, const QString& mode, const QString& collectionuid) {
+  m_collectionsOnMode.insertMulti(mode, QPair<QString,QString>(eventid, collectionuid>));
+}
+
+void plugin::unregister_event ( const QString& eventid) {
     Q_UNUSED(sessionid);
-    Q_UNUSED(collectionuid);
-    if (ServiceID::isMethod(data,"modeevent")) {
-        m_mode_events.add(data, collectionuid);
+    QMutableMapIterator< QString, QPair<QString, QString> > i = m_collectionsOnMode;
+    while (i.hasNext()) {
+      i.next();
+      if (i.value().first == eventid)
+	i.remove();
     }
 }
 
-void plugin::unregister_event ( const QString& eventid, int sessionid ) {
+void plugin::requestProperties(int sessionid) {
     Q_UNUSED(sessionid);
-    m_mode_events.remove( eventid );
+    ServiceData sc = ServiceData::createNotification(PLUGIN_ID, "mode");
+    sc.setData("mode", m_mode);
+    changeProperty(sc.getData());
 }
 
-QList<QVariantMap> plugin::properties(int sessionid) {
-    Q_UNUSED(sessionid);
-    QList<QVariantMap> l;
-    {
-        ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mode");
-        sc.setData("mode", m_mode);
-        l.append(sc.getData());
-    }
-    return l;
-}
-
-void plugin::modeChanged(const QString& mode) {
-    ServiceCreation sc = ServiceCreation::createNotification(PLUGIN_ID, "mode");
+void plugin::modeChange(const QString& mode) {
+    m_mode = mode;
+    ServiceData sc = ServiceData::createNotification(PLUGIN_ID, "mode");
     sc.setData("mode", mode);
-    m_serverPropertyController->pluginPropertyChanged(sc.getData());
+    changeProperty(sc.getData());
 
-    m_mode_events.triggerEvent(mode, m_serverCollectionController);
+    QList< QPair<QString, QString> > list = m_collectionsOnMode.values(mode);
+    while (const QPair<QString, QString>& data, list) {
+        eventTriggered(ServiceData::id(data), ServiceData::collectionid ( data ).toAscii());
+    }
 }

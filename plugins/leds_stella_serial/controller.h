@@ -26,8 +26,8 @@
 #include <QVariantMap>
 #include <stdint.h>
 
+class QxtSerialDevice;
 class AbstractPlugin;
-class QextSerialPort;
 class myPluginExecute;
 class CurtainStateTracker;
 class ChannelNameStateTracker;
@@ -95,7 +95,7 @@ private:
     };
     readStateEnum m_readState;
     // rs232 special
-    QextSerialPort* m_serial;
+    QxtSerialDevice* m_serial;
     bool m_panicTimeoutAck;
 private Q_SLOTS:
     // LIGHTS //
