@@ -7,7 +7,7 @@
 
 AbstractPlugin::AbstractPlugin()
 {
-    connect(this, SIGNAL(newConnection()), SLOT(newConnection()));
+    connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
 }
 
 bool AbstractPlugin::createCommunicationSockets()
@@ -29,7 +29,7 @@ bool AbstractPlugin::createCommunicationSockets()
     return true;
 }
 
-void AbstractPlugin::readyRead()
+void AbstractPlugin::readyReadCommunication()
 {
     QLocalSocket* socket = (QLocalSocket*)sender();
 
@@ -45,7 +45,7 @@ void AbstractPlugin::readyRead()
         QVariantMap variantdata;
         stream >> variantdata;
         const QByteArray method = ServiceData::method(variantdata);
-        qDebug() << "Plugin: Received from" << plugin_id << method << variantdata;
+        qDebug() << PLUGIN_ID << "Received from" << plugin_id << method << variantdata;
 
         if (method.size()) {
             // Predefined methods
@@ -87,7 +87,7 @@ void AbstractPlugin::readyRead()
 }
 
 
-void AbstractPlugin::newConnection()
+void AbstractPlugin::newConnectionCommunication()
 {
     while (hasPendingConnections()) {
         QLocalSocket * socket = nextPendingConnection ();
@@ -133,7 +133,7 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& plugin_id) {
     if (!socket) {
         socket = new QLocalSocket();
         socket->connectToServer(QLatin1String(MAGICSTRING) + plugin_id);
-        connect(socket, SIGNAL(readyRead()), SLOT(readyRead()));
+        connect(socket, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
         // wait for at least 30 seconds for a connection
         if (!socket->waitForConnected()) {
             delete socket;

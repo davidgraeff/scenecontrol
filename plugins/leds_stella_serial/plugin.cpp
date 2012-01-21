@@ -40,6 +40,10 @@ plugin::~plugin() {
 void plugin::clear() {
     m_leds.clear();
     changeProperty(ServiceData::createModelReset("roomcontrol.leds", "channel").getData());
+    m_panicTimer.stop();
+    delete m_serial;
+    m_serial = 0;
+    m_connected = false;
 }
 void plugin::initialize() {
 }
@@ -289,12 +293,7 @@ void plugin::panicTimeout() {
 }
 
 void plugin::connectToLeds ( const QString& device ) {
-    // disable old
-    m_panicTimer.stop();
-    delete m_serial;
-    m_serial = 0;
-    m_connected = false;
-    // create new
+    clear();
 
     // Open device and ask for pins
     if ( !QFile::exists ( device ) ) {

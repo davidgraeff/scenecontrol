@@ -14,8 +14,8 @@ PluginCommunication::PluginCommunication(PluginController* controller, QLocalSoc
     ServiceData::setMethod(data, "pluginid");
     QDataStream stream(m_pluginCommunication);
     stream << data << '\n';
-    // Waiting at most 3 seconds for a respond otherwise kill the connection
-    QTimer::singleShot(3000, this, SLOT(startTimeout()));
+    // Waiting at most 7 seconds for a respond otherwise kill the connection
+    QTimer::singleShot(7000, this, SLOT(startTimeout()));
     readyRead();
 }
 
@@ -31,7 +31,7 @@ void PluginCommunication::readyRead()
         QVariantMap variantdata;
         stream >> variantdata;
         const QByteArray method = ServiceData::method(variantdata);
-        qDebug() << "data from plugin" << variantdata;
+        qDebug() << "Data from" << id << variantdata;
         if (method == "pluginid") {
             id = ServiceData::pluginid(variantdata);
             if (id.isEmpty()) {
@@ -200,6 +200,9 @@ PluginProcess::~PluginProcess() {
 }
 
 void PluginProcess::finished(int) {
+  if (m_pluginProcess.exitStatus()==QProcess::CrashExit)
+    qWarning() << "Server: Plugin crashed" << m_filename << m_pluginProcess.pid();
+  else
     qDebug() << "Server: Plugin finished" << m_filename << m_pluginProcess.pid();
     if (!m_aboutToFree)
         m_controller->removeProcess(this);

@@ -36,7 +36,7 @@ public:
 
     virtual void requestProperties(int sessionid);
     virtual void unregister_event ( const QString& eventid);
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {}
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 public Q_SLOTS:
     void eventmode ( const QString& eventid, const QString& mode, const QString& collectionuid);
     void modeChange(const QString& mode);

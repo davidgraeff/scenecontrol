@@ -69,3 +69,8 @@ void plugin::modeChange(const QString& mode) {
         eventTriggered(list[i].first.toAscii(), list[i].second.toAscii());
     }
 }
+
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
+}

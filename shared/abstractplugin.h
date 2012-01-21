@@ -76,8 +76,8 @@ public:
     void changeProperty(const QVariantMap& data, int sessionid = -1);
     void eventTriggered(const QByteArray& eventid, const QByteArray& dest_collectionId);
 private Q_SLOTS:
-    void readyRead();
-    void newConnection ();
+    void readyReadCommunication();
+    void newConnectionCommunication ();
     // If disconnected from server, quit plugin process
     void disconnectedFromServer();
 private:
@@ -150,4 +150,3 @@ public Q_SLOTS:
         Q_UNUSED(eventid);
     }
 };
-Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/2.0")

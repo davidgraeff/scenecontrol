@@ -43,6 +43,7 @@ plugin::~plugin() {
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data)
 {
+    Q_UNUSED(configid);
     if (data.contains(QLatin1String("serialport"))) {
         delete m_serial;
         const QString device = data[QLatin1String("serialport")].toString();
@@ -65,6 +66,8 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data)
 }
 
 void plugin::writeToDevice() {
+    if (!m_serial)
+        return;
     if ( !m_serial->write ( m_buffer,4 ) ) {
         qWarning() << pluginid() << "send failed\n";
         return;
