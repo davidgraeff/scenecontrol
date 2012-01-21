@@ -21,28 +21,39 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/pluginservicehelper.h"
-#include <QSet>
-#include <shared/plugineventmap.h>
 
 class plugin : public AbstractPlugin
 {
     Q_OBJECT
-
-
 public:
     plugin();
     virtual ~plugin();
 
+    virtual void initialize();
+    virtual void clear();
     virtual void requestProperties(int sessionid);
-    virtual void unregister_event ( const QString& eventid);
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {}
+    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
 public Q_SLOTS:
-    void eventmode ( const QString& eventid, const QString& mode, const QString& collectionuid);
-    void modeChange(const QString& mode);
-    bool isMode(const QString& mode);
+    void play();
+    void pause();
+    void stop();
+    void next();
+    void prev();
+    void info();
+    void AspectRatio();
+    void NextSubtitle();
+    void AudioNextLanguage ();
+    void previousmenu();
+    void ActivateWindow();
+    void select();
+    void down();
+    void up();
+    void left();
+    void right();
+    void close();
+    void ContextMenu();
+    void FastForward();
+    void Rewind();
 private:
-    QString m_mode;
-    // mode -> (eventid, [collectionids])
-    QMultiMap<QString, QPair<QString, QString> > m_collectionsOnMode;
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 };

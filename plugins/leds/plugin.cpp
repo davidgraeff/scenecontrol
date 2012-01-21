@@ -51,8 +51,11 @@ void plugin::initialize() {
     m_cache.clear();
 }
 
-bool plugin::isValue ( const QString& channel, int value )  {
-    return ( getLed ( channel ) == value );
+bool plugin::isValue ( const QString& channel, int lower, int upper )  {
+    const int v = getLed ( channel );
+    if ( v>upper ) return false;
+    if ( v<lower ) return false;
+    return true;
 }
 
 void plugin::requestProperties(int sessionid) {
@@ -195,6 +198,7 @@ void plugin::cacheToDevice()
     QSet<iochannel*>::const_iterator it = m_cache.constBegin();
     QVariantMap datamap;
     for (;it != m_cache.constEnd(); ++it) {
+        ServiceData::setMethod(datamap,"ledChanged");
         datamap[QLatin1String("channel")] = (*it)->channel;
         datamap[QLatin1String("value")] = (*it)->value;
         sendDataToPlugin((*it)->plugin_id, datamap);
@@ -217,34 +221,28 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
             }
         }
         return;
+    } else if (ServiceData::isMethod(data, "ledChanged")) {
+        const QString channel = data[QLatin1String("channel")].toString();
+        // Assign data to structure
+        bool before = m_ios.contains(channel);
+        iochannel& io = m_ios[channel];
+        io.plugin_id = plugin_id;
+        //p.moodlight = false;
+        //p.fadeType = 1;
+        io.channel = channel;
+        io.value = data[QLatin1String("value")].toInt();
+        if (data.contains(QLatin1String("name")))
+            io.name = data[QLatin1String("name")].toString();
+        else if (!before)
+            io.name = m_namecache.value(io.channel);
+
+        ServiceData sc = ServiceData::createModelChangeItem("leds");
+        sc.setData("channel", io.channel);
+        if (io.name.size()) sc.setData("name", io.name);
+        if (io.value != -1) sc.setData("value", io.value);
+        sc.setData("moodlight", io.moodlight);
+
+        changeProperty(sc.getData());
     }
-
-    if (!data.contains(QLatin1String("channel")) ||
-            !data.contains(QLatin1String("value"))
-       ) {
-        qWarning() << pluginid() << "DataFromPlugin expected channel, name, value" << data;
-        return;
-    }
-
-    // Assign data to structure
-    bool before = m_ios.contains(QLatin1String("channel"));
-    iochannel& io = m_ios[data[QLatin1String("channel")].toString()];
-    io.plugin_id = plugin_id;
-    //p.moodlight = false;
-    //p.fadeType = 1;
-    io.channel = data[QLatin1String("channel")].toString();
-    io.value = data[QLatin1String("value")].toInt();
-    if (data.contains(QLatin1String("name")))
-        io.name = data[QLatin1String("name")].toString();
-    else if (!before)
-        io.name = m_namecache.value(io.channel);
-
-    ServiceData sc = ServiceData::createModelChangeItem("leds");
-    sc.setData("channel", io.channel);
-    if (io.name.size()) sc.setData("name", io.name);
-    if (io.value != -1) sc.setData("value", io.value);
-    sc.setData("moodlight", io.moodlight);
-
-    changeProperty(sc.getData());
 }
 

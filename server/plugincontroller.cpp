@@ -81,7 +81,7 @@ void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& e
 
     qDebug() << "Plugins: register event:" << id << ServiceData::pluginid ( event_data ) << ServiceData::method ( event_data );
     plugin->unregister_event ( id );
-    plugin->register_event ( event_data, destination_collectionuid );
+    plugin->callQtSlot(event_data);
     m_registeredevents.insert(id, plugin);
 }
 

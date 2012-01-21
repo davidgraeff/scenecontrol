@@ -17,111 +17,183 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
+#include <QSettings>
+#include <qfile.h>
+#include <QStringList>
 
 #include "plugin.h"
-#include "controller.h"
+#include <QCoreApplication>
 
-
-
-plugin::plugin() {
-    m_controller = new Controller ( this );
-    connect ( m_controller,SIGNAL(dataChanged(QString,QString,int)),SLOT(dataChanged(QString,QString,int)));
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
 }
 
-plugin::~plugin() {
-    delete m_controller;
+plugin::plugin() : m_listenSocket(0) {
+    m_writesocket = new QUdpSocket(this);
+    connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
+    m_cacheTimer.setInterval(50);
+    m_cacheTimer.setSingleShot(true);
 }
 
-void plugin::clear() {}
+plugin::~plugin() {}
+
+void plugin::connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd) {
+    m_sendPort = portSend;
+    m_user = user;
+    m_pwd = pwd;
+    delete m_listenSocket;
+    m_listenSocket = new QUdpSocket(this);
+    connect(m_listenSocket,SIGNAL(readyRead()),SLOT(readyRead()));
+    m_listenSocket->bind(QHostAddress::Broadcast,portListen);
+
+    initialize();
+}
+
+void plugin::readyRead() {
+    if (!m_listenSocket->hasPendingDatagrams()) {
+        return;
+    }
+    QByteArray bytes;
+    bytes.resize(1000);
+    const int read = m_listenSocket->readDatagram(bytes.data(), 1000);
+    if (read == -1) return;
+    bytes.resize(read-2);
+    const QList<QByteArray> cmd = bytes.split(':');
+    if (cmd[0] != "NET-PwrCtrl") return;
+    //cmd[2] = ip
+    //cmd[6] .. ende -2
+    // set new
+    int pins = cmd.size()-2;
+    unsigned char activated = ~cmd[cmd.size()-2].toInt();
+    const QHostAddress host = QHostAddress(QString::fromAscii(cmd[2]));
+    for ( int i=6;i<pins;++i )
+    {
+        const int pin = i-6;
+        if (!(activated & (1 << pin))) continue;
+        const QStringList data = QString::fromLatin1(cmd[i]).split(QLatin1Char(','));
+        const QString channelid = data[0];
+        const int value = data[1].toInt();
+
+//        const bool alreadyinside = m_mapChannelToHost.contains(channelid);
+        m_mapChannelToHost[channelid] = QPair<QHostAddress,uint>(host,pin);
+
+        if (m_ios[channelid].value == value)
+            continue;
+
+        m_ios[channelid].value = value;
+
+        ServiceData sc = ServiceData::createModelChangeItem("anel.io");
+        sc.setData("channel", pin);
+        sc.setData("value", value);
+        changeProperty(sc.getData(), -1);
+
+        // update cache
+        if (value)
+            m_cache[host.toString()] |= (unsigned char)(1 << pin);
+        else
+            m_cache[host.toString()] &= (unsigned char)~(1 << pin);
+
+    }
+}
+
+bool plugin::getChannel(const QString& pin) const
+{
+    if (!m_ios.contains(pin)) return false;
+    return m_ios[pin].value;
+}
+
+void plugin::setChannel ( const QString& pin, bool value, bool propagate )
+{
+    if (!m_mapChannelToHost.contains(pin)) return;
+    QPair<QHostAddress,uint> p = m_mapChannelToHost[pin];
+
+    if (value)
+        m_cache[p.first.toString()] |= (unsigned char)(1 << p.second);
+    else
+        m_cache[p.first.toString()] &= (unsigned char)~(1 << p.second);
+
+    if (!m_cacheTimer.isActive()) m_cacheTimer.start();
+
+    if (!propagate)
+        return;
+
+    ServiceData sc = ServiceData::createModelChangeItem("anel.io");
+    sc.setData("channel", pin);
+    sc.setData("value", value);
+    changeProperty(sc.getData(), -1);
+}
+
+void plugin::toggleChannel ( const QString& pin )
+{
+    if (!m_ios.contains(pin)) return;
+    setChannel ( pin, !m_ios[pin].value );
+}
+
+void plugin::cacheToDevice()
+{
+    QMap<QString, unsigned char>::const_iterator it = m_cache.constBegin();
+    for (;it != m_cache.constEnd(); ++it) {
+        //SENDEN
+        QByteArray str;
+        str.append( "Sw" );
+        str.append(it.value());
+        str.append(m_user.toLatin1());
+        str.append(m_pwd.toLatin1());
+        m_writesocket->writeDatagram(str, QHostAddress(it.key()), m_sendPort);
+    }
+}
+
+int plugin::countChannels() {
+    return m_ios.size();
+}
+
 void plugin::initialize() {
+    clear();
+    QByteArray str("wer da?");
+    str.append(0x0D);
+    str.append(0x0A);
+    m_writesocket->writeDatagram(str, QHostAddress::Broadcast, m_sendPort);
+}
 
+void plugin::clear() {
+    m_ios.clear();
+    m_ios.clear();
 }
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
+    Q_UNUSED(configid);
     if (data.contains(QLatin1String("sendingport")) && data.contains(QLatin1String("listenport")) &&
             data.contains(QLatin1String("username")) && data.contains(QLatin1String("password")))
-        m_controller->connectToIOs ( data[QLatin1String("sendingport")].toInt(), data[QLatin1String("listenport")].toInt(),
-				     data[QLatin1String("username")].toString(), data[QLatin1String("password")].toString() );
+        connectToIOs ( data[QLatin1String("sendingport")].toInt(), data[QLatin1String("listenport")].toInt(),
+                       data[QLatin1String("username")].toString(), data[QLatin1String("password")].toString() );
 }
 
-void plugin::execute ( const QVariantMap& data) {
-    Q_UNUSED ( sessionid );
-    if ( ServiceData::isMethod(data, "iovalue_absolut" ) ) {
-        m_controller->setChannel ( DATA("channel"),BOOLDATA("value") );
-    } else if ( ServiceData::isMethod(data, "iovalue_toogle" ) ) {
-        m_controller->toggleChannel ( DATA("channel") );
-    } else if ( ServiceData::isMethod(data, "ioname" ) ) {
-        m_controller->setChannelName ( DATA("channel"),DATA("name") );
-    } else if ( ServiceData::isMethod(data, "reload" ) ) {
-        m_controller->reinitialize();
-    }
-}
-
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( sessionid );
-    if ( ServiceData::isMethod(data, "iocondition" ) ) {
-        return ( m_controller->getChannel ( DATA("channel") ) == BOOLDATA("value") );
-    }
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
-    Q_UNUSED(sessionid);
-    Q_UNUSED ( collectionuid );
-    Q_UNUSED ( data );
-}
-
-void plugin::unregister_event ( const QString& eventid) {
-    Q_UNUSED(sessionid);
-    Q_UNUSED(eventid);
+bool plugin::isChannelValue( const QString& pin , bool value) {
+    return ( getChannel ( pin ) == value );
 }
 
 void plugin::requestProperties(int sessionid) {
-    Q_UNUSED(sessionid);
-
-    {
-        changeProperty(ServiceData::createModelReset("anel.io", "channel").getData());
-        QMap<QString, Controller::iochannel>::iterator i = m_controller->m_ios.begin();
-        for (;i!=m_controller->m_ios.end();++i) {
-            const Controller::iochannel str = i.value();
-            ServiceData sc = ServiceData::createModelChangeItem("anel.io");
-            sc.setData("channel", i.key());
-            sc.setData("value", str.value);
-            sc.setData("name", str.name);
-            changeProperty(sc.getData());
-        }
+    changeProperty(ServiceData::createModelReset("anel.io", "channel").getData(), sessionid);
+    QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
+    for (;i!=m_ios.end();++i) {
+        const plugin::iochannel str = i.value();
+        ServiceData sc = ServiceData::createModelChangeItem("anel.io");
+        sc.setData("channel", i.key());
+        sc.setData("value", str.value);
+        changeProperty(sc.getData(), sessionid);
     }
-    return l;
 }
 
-void plugin::dataChanged(QString channel, QString name, int value) {
-    ServiceData sc = ServiceData::createModelChangeItem("anel.io");
-    sc.setData("channel", channel);
-    if (!name.isNull()) sc.setData("name", name);
-    if (value != -1) sc.setData("value", value);
-
-    changeProperty(sc.getData());
-}
-
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data) {
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
     if (plugin_id != "switches")
         return;
 
-    const QList<QByteArray> t = data.split('\t');
-    // t[0]: channel
-    // t[1]: value
-    if (t.size() < 2) {
-        qWarning() << pluginid() << "DataFromPlugin expected >= 2 data blocks";
-        return;
+    if (ServiceData::isMethod(data, "switchChanged")) {
+        setChannel(data[QLatin1String("channel")].toString(), data[QLatin1String("value")].toInt(), false);
     }
-
-    Controller::ledid lid =  m_controller->getPortChannelFromString( QString::fromAscii(t[0]));
-    if (lid.port == -1) {
-        qWarning() << pluginid() << "DataFromPlugin channel not found" << t[0];
-        return;
-    }
-
-    m_controller->setChannel(lid, t[1].toInt());
 }
 

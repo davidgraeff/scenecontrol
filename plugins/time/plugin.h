@@ -20,29 +20,32 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/abstractplugin.h"
-#include "shared/pluginservicehelper.h"
+#include <QTimer>
 #include <QSet>
-#include <shared/plugineventmap.h>
+#include "shared/abstractplugin.h"
+#include <QDateTime>
 
 class plugin : public AbstractPlugin
 {
     Q_OBJECT
-
-
 public:
     plugin();
     virtual ~plugin();
 
+    virtual void initialize();
+    virtual void clear();
     virtual void requestProperties(int sessionid);
+    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
     virtual void unregister_event ( const QString& eventid);
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {}
-public Q_SLOTS:
-    void eventmode ( const QString& eventid, const QString& mode, const QString& collectionuid);
-    void modeChange(const QString& mode);
-    bool isMode(const QString& mode);
 private:
-    QString m_mode;
-    // mode -> (eventid, [collectionids])
-    QMultiMap<QString, QPair<QString, QString> > m_collectionsOnMode;
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    void calculate_next_events();
+    typedef QPair<QString, QVariantMap> EventWithCollection;
+    typedef QMap<QString, EventWithCollection> EventsWithCollectionMap;
+    QMap<QString, EventWithCollection> m_remaining_events;
+    EventsWithCollectionMap m_timeout_events;
+    QTimer m_timer;
+    QDateTime m_nextAlarm;
+private Q_SLOTS:
+    void timeout();
 };

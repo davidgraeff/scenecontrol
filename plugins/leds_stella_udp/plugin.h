@@ -18,22 +18,28 @@
  */
 
 #pragma once
-#include <QObject>
-#include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
+#include <QStringList>
+#include <QObject>
+#include <QMap>
+#include <QUdpSocket>
+#include <QTimer>
+#include <QVariantMap>
+#include <stdint.h>
 
-#include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
-#include <shared/plugin_interconnect.h>
+enum stella_fade_function
+{
+    STELLA_SET_IMMEDIATELY,
+    STELLA_SET_FADE,
+    STELLA_SET_FLASHY,
+    STELLA_SET_IMMEDIATELY_RELATIVE,
+    STELLA_SET_MOODLIGHTED, // only relevant for udp stella protocoll
+    STELLA_GETALL = 255
+};
 
-class Controller;
 class plugin : public AbstractPlugin
 {
     Q_OBJECT
-
-
 public:
     plugin();
     virtual ~plugin();
@@ -42,17 +48,39 @@ public:
     virtual void clear();
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
-    virtual void execute ( const QVariantMap& data);
-    virtual bool condition ( const QVariantMap& data) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid);
-    virtual void unregister_event ( const QString& eventid);
 private:
-    void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
-    Controller* m_controller;
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    void connectToLeds(const QString& host, int port);
+    void ledChanged(QString channel, int value);
+
+    struct ledchannel {
+        int value;
+        QString name;
+        uint8_t channel;
+        ledchannel(uint8_t channel, int value) {
+            this->channel = channel;
+            this->value = value;
+        }
+        ledchannel() {
+            value = -1;
+        }
+    };
+    QMap<QString,ledchannel> m_leds;
+    AbstractPlugin* m_plugin;
+
+    int m_channels;
+    // udp
+    int m_sendPort;
+    QUdpSocket *m_socket;
 private Q_SLOTS:
-    /**
-     * Updated led state.
-     */
-    void ledChanged ( QString,QString = QString::null,int = -1);
-    void ledsCleared();
+    // LIGHTS //
+    void readyRead();
+public Q_SLOTS:
+    int countChannels();
+    void setChannel ( const QString& channel, int value, uint fade );
+    void inverseChannel(const QString& channel, uint fade);
+    void setChannelExponential ( const QString& channel, int multiplikator, uint fade );
+    void setChannelRelative ( const QString& channel, int value, uint fade );
+    unsigned int getChannel(const QString& channel) const;
+    bool isValue( const QString& channel, int lower, int upper );
 };

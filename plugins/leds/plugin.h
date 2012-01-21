@@ -44,7 +44,7 @@ private Q_SLOTS:
     void setLedRelative ( const QString& channel, int value, uint fade );
     void toggleLed ( const QString& channel, uint fade );
     int getLed( const QString& channel ) const;
-    bool isValue( const QString& channel, int value );
+    bool isValue( const QString& channel, int lower, int upper );
     int countLeds();
     void moodlight(const QString& channel, bool moodlight);
 

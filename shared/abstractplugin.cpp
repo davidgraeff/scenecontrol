@@ -65,6 +65,9 @@ void AbstractPlugin::readyRead()
             } else if (method == "requestProperties") {
                 const int sessionid = ServiceData::sessionid(variantdata);
                 requestProperties(sessionid);
+            } else if (method == "session_change") {
+                const int sessionid = ServiceData::sessionid(variantdata);
+                session_change(sessionid, variantdata.value(QLatin1String("running")).toBool());
             } else if (method == "unregister_event") {
                 const QString eventid = variantdata.value(QLatin1String("eventid")).toString();
                 unregister_event(eventid);

@@ -19,16 +19,29 @@
 
 #pragma once
 #include <QObject>
+#include <QMap>
 #include <QStringList>
+#include <QUdpSocket>
+#include <QTimer>
+#include <QVariantMap>
+#include <stdint.h>
 #include "shared/abstractplugin.h"
-#include "shared/pluginservicehelper.h"
+#include <shared/qxtserialdevice/qxtserialdevice.h>
 
-class Controller;
+
+enum stella_fade_function
+{
+    STELLA_SET_IMMEDIATELY,
+    STELLA_SET_FADE,
+    STELLA_SET_FLASHY,
+    STELLA_SET_IMMEDIATELY_RELATIVE,
+    STELLA_SET_MOODLIGHTED, // only relevant for udp stella protocoll
+    STELLA_GETALL = 255
+};
+
 class plugin : public AbstractPlugin
 {
     Q_OBJECT
-
-
 public:
     plugin();
     virtual ~plugin();
@@ -37,15 +50,53 @@ public:
     virtual void clear();
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
-    virtual void unregister_event ( const QString& eventid);
 private:
-  void dataFromPlugin(const QByteArray& plugin_id, const QByteArray& data);
-    Controller* m_controller;
-private Q_SLOTS:
+    void connectToLeds(const QString& url);
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    void ledChanged ( QString channel, int value);
     void curtainChanged ( int current, int max );
-    /**
-     * Updated led state.
-     */
-    void ledChanged ( QString,QString = QString::null,int = -1);
-    void ledsCleared();
+
+    struct ledchannel {
+        int value;
+        ledchannel() {
+            value = 300;
+        }
+    };
+    QMap<QString,ledchannel> m_leds;
+    int m_curtain_max;
+    int m_curtain_value;
+
+    bool m_connected;
+    int m_channels;
+    QByteArray m_buffer;
+    void parseLeds(const QByteArray& data);
+    void parseCurtain(unsigned char current, unsigned char max);
+    void parseInit(unsigned char protocolversion);
+    void parseSensors(unsigned char s1);
+    QTimer m_panicTimer;
+    int m_bufferpos;
+    enum readStateEnum {
+        ReadOK,
+        ReadEnd
+    };
+    readStateEnum m_readState;
+    // rs232 special
+    QxtSerialDevice* m_serial;
+    bool m_panicTimeoutAck;
+
+public Q_SLOTS:
+    void setCurtain(unsigned int position);
+    int getCurtain();
+    bool isCurtainInPosition( int lower, int upper );
+
+    int countChannels();
+    bool isValue( const QString& channel, int lower, int upper );
+    void setChannel ( const QString& channel, uint value, uint fade );
+    void inverseChannel(const QString& channel, uint fade);
+    void setChannelExponential ( const QString& channel, int multiplikator, uint fade );
+    void setChannelRelative ( const QString& channel, int value, uint fade );
+    unsigned int getChannel(const QString& channel) const;
+private Q_SLOTS:
+    void readyRead();
+    void panicTimeout();
 };

@@ -27,7 +27,7 @@ include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DI
 
 # rs232
 if (DEFINED USE_SERIALPORT)
-	LIST(APPEND SRCS_SERVER_H ${SHAREDDIR}/qxtserialdevice/qxtserialdevice.h)
+	LIST(APPEND SRCS_SERVER_H ${SHAREDDIR}/qxtserialdevice/qxtserialdevice.h ${SHAREDDIR}/qxtserialdevice/qxtserialdevice_p.h)
 	LIST(APPEND SRCS_SERVER ${SHAREDDIR}/qxtserialdevice/qxtserialdevice.cpp)
 	IF (WIN32)
 		#LIST(APPEND SRCS_SERVER ${SHAREDDIR}/qxtserialdevice/win_qxtserialdevice.cpp)

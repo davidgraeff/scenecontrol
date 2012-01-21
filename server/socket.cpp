@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QSslKey>
 #include <shared/json.h>
+#include "plugincontroller.h"
+#include "pluginprocess.h"
 //openssl req -x509 -new -out server.crt -keyout server.key -days 365
 
 #define __FUNCTION__ __FUNCTION__
@@ -75,6 +77,13 @@ void Socket::incomingConnection(int socketDescriptor)
         socket->setLocalCertificate(sslCert);
         socket->startServerEncryption();
         qDebug() << "new socket" << socketDescriptor << socket->state() << socket->peerAddress() << socket->sslErrors();
+
+        // Notify plugins of new session
+        PluginController* pc = PluginController::instance();
+        QMap<QString,PluginCommunication*>::iterator i = pc->getPluginIterator();
+        while (PluginCommunication* plugin = pc->nextPlugin(i)) {
+            plugin->session_change(socketDescriptor, true);
+        }
     } else {
         delete socket;
     }
@@ -98,9 +107,18 @@ void Socket::readyRead() {
 
 void Socket::socketDisconnected() {
     QSslSocket *socket = (QSslSocket *)sender();
-    m_sockets.remove(socket->socketDescriptor());
+    const int socketDescriptor = socket->socketDescriptor();
+    m_sockets.remove(socketDescriptor);
     socket->deleteLater();
-    qDebug() << "socket closed" << socket->socketDescriptor() << socket->errorString() << socket->error();
+
+    // Notify plugins of finished session
+    PluginController* pc = PluginController::instance();
+    QMap<QString,PluginCommunication*>::iterator i = pc->getPluginIterator();
+    while (PluginCommunication* plugin = pc->nextPlugin(i)) {
+        plugin->session_change(socketDescriptor, false);
+    }
+    
+    qDebug() << "socket closed" << socketDescriptor << socket->errorString() << socket->error();
 }
 
 void Socket::sendToAllClients(const QByteArray& rawdata) {

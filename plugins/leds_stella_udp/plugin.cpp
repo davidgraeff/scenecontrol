@@ -17,98 +17,165 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
 
 #include "plugin.h"
-#include "controller.h"
+#include <QCoreApplication>
 
-
-
-plugin::plugin() {
-    m_controller = new Controller ( this );
-    connect(m_controller,SIGNAL(ledChanged(QString,QString,int)),SLOT(ledChanged(QString,QString,int)));
-    connect(m_controller,SIGNAL(ledsCleared()),SLOT(ledsCleared()));
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
 }
 
+plugin::plugin() {}
 plugin::~plugin() {
-    delete m_controller;
+    delete m_socket;
 }
 
-void plugin::clear() {}
+void plugin::clear() {
+    m_leds.clear();
+    changeProperty(ServiceData::createModelReset("udpled.values", "channel").getData());
+}
 void plugin::initialize() {
 }
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
+    Q_UNUSED(configid);
     if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port")))
-       m_controller->connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
+        connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
 }
 
-void plugin::execute ( const QVariantMap& data) {
-    Q_UNUSED ( sessionid );
-    if ( ServiceData::isMethod(data, "udpled.value_relative" ) ) {
-        m_controller->setChannelRelative ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceData::isMethod(data, "udpled.value_absolut" ) ) {
-        m_controller->setChannel ( DATA("channel"),INTDATA("value"),INTDATA("fade") );
-    } else if ( ServiceData::isMethod(data, "udpled.value_invers" ) ) {
-        m_controller->inverseChannel ( DATA("channel"),INTDATA("fade") );
-    } else if ( ServiceData::isMethod(data, "udpled.value_exp" ) ) {
-        m_controller->setChannelExponential ( DATA("channel"),INTDATA("multiplicator") ,INTDATA("fade") );
-    } else if ( ServiceData::isMethod(data, "udpled.moodlight" ) ) {
-        m_controller->moodlight ( DATA("channel"),BOOLDATA("moodlight") );
-    } else if ( ServiceData::isMethod(data, "udpled.name" ) ) {
-        m_controller->setChannelName ( DATA("channel"), DATA("name") );
-    }
-}
-
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( sessionid );
-    if ( ServiceData::isMethod(data, "udpled.condition" ) ) {
-        const int v = m_controller->getChannel ( DATA("channel") );
-        if ( v>INTDATA("upper") ) return false;
-        if ( v<INTDATA("lower") ) return false;
-        return true;
-    }
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
-    Q_UNUSED(sessionid);
-    Q_UNUSED ( data );
-    Q_UNUSED ( collectionuid );
-}
-
-void plugin::unregister_event ( const QString& eventid) {
-    Q_UNUSED(sessionid);
-    Q_UNUSED(eventid);
+bool plugin::isValue( const QString& channel, int lower, int upper ) {
+    const int v = getChannel ( channel );
+    if ( v>upper ) return false;
+    if ( v<lower ) return false;
+    return true;
 }
 
 void plugin::requestProperties(int sessionid) {
-    Q_UNUSED(sessionid);
+    changeProperty(ServiceData::createModelReset("udpled.values", "channel").getData(), sessionid);
 
-
-    changeProperty(ServiceData::createModelReset("udpled.names", "channel").getData());
-
-    QMap<QString, Controller::ledchannel>::iterator i = m_controller->m_leds.begin();
-    for (;i!=m_controller->m_leds.end();++i) {
+    QMap<QString, plugin::ledchannel>::iterator i = m_leds.begin();
+    for (;i!=m_leds.end();++i) {
         {
-            ServiceData sc = ServiceData::createModelChangeItem("udpled.names");
+            ServiceData sc = ServiceData::createModelChangeItem("udpled.values");
             sc.setData("channel", i.key());
             sc.setData("value", i.value().value);
-            sc.setData("name", i.value().name);
-            changeProperty(sc.getData());
+            changeProperty(sc.getData(), sessionid);
         }
     }
-    return l;
 }
 
-void plugin::ledsCleared() {
-  sendCmdToPlugin("leds", "CLEAR");
-}
-
-void plugin::ledChanged(QString channel, QString name, int value) {
-    ServiceData sc = ServiceData::createModelChangeItem("udpled.names");
+void plugin::ledChanged(QString channel, int value) {
+    ServiceData sc = ServiceData::createModelChangeItem("udpled.values");
     sc.setData("channel", channel);
-    if (!name.isNull()) sc.setData("name", name);
     if (value != -1) sc.setData("value", value);
     changeProperty(sc.getData());
+}
+
+unsigned int plugin::getChannel ( const QString& channel ) const {
+    return m_leds.value ( channel ).value;
+}
+
+void plugin::inverseChannel ( const QString& channel, uint fade ) {
+    if ( !m_leds.contains(channel) ) return;
+    const unsigned int newvalue = 255 - m_leds[channel].value;
+    setChannel ( channel, newvalue, fade );
+}
+
+void plugin::setChannelExponential ( const QString& channel, int multiplikator, uint fade ) {
+    if ( !m_leds.contains(channel) ) return;
+    unsigned int v = m_leds[channel].value;
+    if ( multiplikator>100 ) {
+        if ( v==0 )
+            v=1;
+        else if ( v==1 )
+            v=2;
+        else
+            v = ( v * multiplikator ) /100+1;
+    } else {
+        if ( v<2 )
+            v = 0;
+        else
+            v = ( v * multiplikator ) /100-1;
+    }
+
+    setChannel ( channel, v, fade );
+}
+
+void plugin::setChannelRelative ( const QString& channel, int value, uint fade ) {
+    if (! m_leds.contains(channel) ) return;
+    setChannel ( channel,  value + m_leds[channel].value, fade );
+}
+
+
+int plugin::countChannels() {
+    return m_channels;
+}
+
+void plugin::setChannel ( const QString& channel, int value, uint fade ) {
+    if ( !m_socket ) return;
+    if ( !m_leds.contains(channel) ) return;
+    ledchannel* l = &(m_leds[channel]);
+
+    value = qBound ( 0, value, 255 );
+    l->value = value;
+    ledChanged ( channel, value );
+
+    struct
+    {
+        uint8_t type;    // see above
+        uint8_t channel; // if port: pin
+        uint8_t value;
+    } data;
+
+    data.type = fade;
+    data.channel = l->channel;
+    data.value = value;
+
+    m_socket->write ( (char*)&data, sizeof ( data ) );
+}
+
+void plugin::readyRead() {
+    while (m_socket->hasPendingDatagrams()) {
+        QByteArray bytes;
+        bytes.resize ( m_socket->pendingDatagramSize() );
+        m_socket->readDatagram ( bytes.data(), bytes.size() );
+
+        while ( bytes.size() >= 7 ) {
+            if (bytes.startsWith("stella") && bytes.size() >= 7+bytes[6])  {
+                m_channels = bytes[6];
+                clear();
+                for (uint8_t c=0;c<m_channels;++c) {
+                    const unsigned int value = (uint8_t)bytes[7+c];
+                    m_leds[QString::number(c)] = ledchannel(c, value);
+                    ledChanged(QString::number(c), value);
+                }
+                bytes = bytes.mid(7+m_channels);
+            } else {
+                qWarning() << m_plugin->pluginid() << "Failed to parse" << bytes << bytes.size() << 7+bytes[6];
+                break;
+            }
+        } //while
+    }
+}
+
+void plugin::connectToLeds ( const QString& host, int port ) {
+    m_sendPort = port;
+    delete m_socket;
+    m_socket = new QUdpSocket(this);
+    connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
+    m_socket->connectToHost(QHostAddress(host),m_sendPort);
+
+    // request all channel values
+    char b[] = {255,0,0};
+    m_socket->write ( b, sizeof ( b ) );
+    m_socket->flush();
+}
+
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+  Q_UNUSED(plugin_id);
+  Q_UNUSED(data);
 }

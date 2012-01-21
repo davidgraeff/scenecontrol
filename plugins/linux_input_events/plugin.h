@@ -21,7 +21,6 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/pluginservicehelper.h"
 #include <QSet>
 #include <QTimer>
 #include <qfile.h>
@@ -52,8 +51,8 @@ public:
     InputDevice(plugin* plugin) ;
     ~InputDevice();
     bool isClosable();
-    void connectSession();
-    void disconnectSession();
+    void connectSession(int sessionid);
+    void disconnectSession(int sessionid);
     void setDevice(ManagedDevice* device);
     void connectDevice();
     void disconnectDevice();
@@ -78,14 +77,28 @@ public:
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
     virtual void unregister_event ( const QString& eventid);
-
-
+    virtual void session_change ( int sessionid, bool running );
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+public Q_SLOTS:
+  void select_input_device ( int sessionid, const QString& udid);
+  void eventinput ( const QString& eventid, const QString& collectionuid, const QString& inputdevice, const QString& kernelkeyname, bool repeat);
 private:
     ManagedDeviceList* m_devicelist;
+    // udid -> device
     QMap<QString, InputDevice*> m_devices;
+    // eventid -> device
+    QMap<QString, InputDevice*> m_devices_by_eventsids;
+    struct EventInputStructure {
+      QString collectionuid;
+      QString inputdevice;
+      QString kernelkeyname;
+      bool repeat;
+    };
+    // eventid -> structure for registering a key as soon as the device is available
+    QMap<QString, EventInputStructure> m_events;
+    
     QMap<uint, QString> m_keymapping;
-//EventMap<QString> m_events;
-
+    
     int m_repeat;
     int m_repeatInit;
     ServiceData createServiceOfDevice(ManagedDevice* device);

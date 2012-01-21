@@ -120,6 +120,18 @@ void PluginCommunication::unregister_event(const QString& eventid) {
     stream << mdata << '\n';
 }
 
+void PluginCommunication::session_change(int sessionid, bool running)
+{
+    if (!m_pluginCommunication)
+        return;
+    QVariantMap data;
+    ServiceData::setMethod(data, "session_change");
+    ServiceData::setSessionID(data, sessionid);
+    data[QLatin1String("running")] = running;
+    QDataStream stream(m_pluginCommunication);
+    stream << data << '\n';
+}
+
 bool PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, QVariant* returnValue) {
     if (!methodAndArguments.contains(QLatin1String("method_"))) return false;
     // Block signals to not call readyRead by the event system for the next read

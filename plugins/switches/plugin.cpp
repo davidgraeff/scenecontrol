@@ -137,6 +137,7 @@ void plugin::cacheToDevice()
     QSet<iochannel*>::const_iterator it = m_cache.constBegin();
     QVariantMap datamap;
     for (;it != m_cache.constEnd(); ++it) {
+        ServiceData::setMethod(datamap,"switchChanged");
         datamap[QLatin1String("channel")] = (*it)->channel;
         datamap[QLatin1String("value")] = (*it)->value;
         sendDataToPlugin((*it)->plugin_id, datamap);
@@ -159,30 +160,24 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
             }
         }
         return;
+    } else if (ServiceData::isMethod(data, "switchChanged")) {
+        const QString channel = data[QLatin1String("channel")].toString();
+        // Assign data to structure
+        bool before = m_ios.contains(channel);
+        iochannel& io = m_ios[channel];
+        io.plugin_id = plugin_id;
+        io.channel = channel;
+        io.value = data[QLatin1String("value")].toInt();
+        if (data.contains(QLatin1String("name")))
+            io.name = data[QLatin1String("name")].toString();
+        else if (!before)
+            io.name = m_namecache.value(io.channel);
+
+        ServiceData sc = ServiceData::createModelChangeItem("switches");
+        sc.setData("channel", io.channel);
+        if (io.name.size()) sc.setData("name", io.name);
+        if (io.value != -1) sc.setData("value", io.value);
+
+        changeProperty(sc.getData());
     }
-
-    if (!data.contains(QLatin1String("channel")) ||
-            !data.contains(QLatin1String("value"))
-       ) {
-        qWarning() << pluginid() << "DataFromPlugin expected channel, name, value" << data;
-        return;
-    }
-
-    // Assign data to structure
-    bool before = m_ios.contains(QLatin1String("channel"));
-    iochannel& io = m_ios[data[QLatin1String("channel")].toString()];
-    io.plugin_id = plugin_id;
-    io.channel = data[QLatin1String("channel")].toString();
-    io.value = data[QLatin1String("value")].toInt();
-    if (data.contains(QLatin1String("name")))
-        io.name = data[QLatin1String("name")].toString();
-    else if (!before)
-        io.name = m_namecache.value(io.channel);
-
-    ServiceData sc = ServiceData::createModelChangeItem("switches");
-    sc.setData("channel", io.channel);
-    if (io.name.size()) sc.setData("name", io.name);
-    if (io.value != -1) sc.setData("value", io.value);
-
-    changeProperty(sc.getData());
 }

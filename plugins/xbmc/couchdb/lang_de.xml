@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+	<titel>XBMC Kontrollieren</titel>
+	<description>Kontrolliert Abspieleigenschaften des xbox media centers (xbmc)</description>
+	<sections>
+		<control>
+			<titel>XBMC steuern</titel>
+			<description>Kontrolliert Abspieleigenschaften des xbox media centers (xbmc)</description>
+		</control>
+	</sections>
+	<xbmcvolume>
+		<titel>Lautstärke</titel>
+		<description>Setzt die Laustärke</description>
+		<volume><titel>Lautstärke</titel></volume>
+		<relative><titel>Relativ</titel></relative>
+	</xbmcvolume>
+	<xbmcposition>
+		<titel>Position</titel>
+		<description>Setzt die Position in ms im Mediastream</description>
+		<position><titel>Position in ms</titel></position>
+		<relative><titel>Relativ</titel></relative>
+	</xbmcposition>
+	<xbmcmedia>
+		<titel>xbmc Medium</titel>
+		<description>Ändert das aktuelle Abspielmedium</description>
+		<url><titel>Url oder Datei auf dem Server</titel></url>
+	</xbmcmedia>
+	<xbmccmd>
+		<titel>xbmc Kommando</titel>
+		<description>Setzt ein Kommando an die Vorführungsengine ab</description>
+		<state><titel>Kommando</titel>
+		<entry>Abspielen</entry><entry>Pausieren</entry><entry>Stoppen</entry>
+		<entry>Nächster</entry><entry>Vorheriger</entry><entry>Info anzeigen</entry>
+		<entry>Nächster Bildmodus</entry><entry>Nächster Untertitel</entry><entry>Nächste Sprache</entry>
+		<entry>Navigation Zurück</entry><entry>Navigation Home</entry><entry>Navigation OK</entry>
+		<entry>Navigation nach unten</entry><entry>Navigation nach oben</entry><entry>Navigation nach links</entry>
+		<entry>Navigation nach rechts</entry><entry>Navigation Schließen</entry><entry>Navigation ContextMenu</entry>
+		<entry>FastForward</entry><entry>FastRewind</entry>
+		</state>
+	</xbmccmd>
+	<xbmcstate>
+		<titel>xbmc Status</titel>
+		<description>xbmc Status geändert</description>
+		<url><titel>Url oder Datei auf dem Server</titel></url>
+		<state><titel>Status</titel>
+		<entry>Abspielend</entry><entry>Pausierend</entry><entry>Stoppend</entry>
+		</state>
+	</xbmcstate>
+</plugin>

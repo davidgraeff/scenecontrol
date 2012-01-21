@@ -17,94 +17,73 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
 #include <QUdpSocket>
 #include <QHostAddress>
 #include "plugin.h"
-#include <qfileinfo.h>
+#include <qfile.h>
+#include <QCoreApplication>
 
-
-
-plugin::plugin() {
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
 }
 
-plugin::~plugin() {
+plugin::plugin() {}
 
+plugin::~plugin() {}
+
+void plugin::wol ( const QString& mac) {
+    QStringList parts = mac.split ( QLatin1Char ( ':' ) );
+    if ( parts.size() !=6 ) return;
+    QByteArray macdecoded;
+    for ( int i=0;i<6;++i )
+        macdecoded.append ( QByteArray::fromHex ( parts[i].toAscii() ) );
+
+    // 6 mal FF
+    const char header[] = {255,255,255,255,255,255};
+    QByteArray bytes ( header );
+    // 16 mal mac
+    for ( int i=0;i<16;++i )
+        bytes.append ( macdecoded );
+
+    QUdpSocket socket;
+    socket.writeDatagram ( bytes,QHostAddress::Broadcast,9 );
 }
 
-void plugin::clear() {}
-void plugin::initialize() {
-}
+void plugin::requestProperties(int sessionid) {
+    changeProperty(ServiceData::createModelReset("wol.arpcache", "mac").getData(), sessionid);
 
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {Q_UNUSED(data);}
+    QFile file(QLatin1String("/proc/net/arp"));
+    if (file.exists() && file.open(QFile::ReadOnly)) {
+        file.readLine(); // ignore first line
+        while (file.canReadLine()) {
+            QByteArray line = file.readLine();
+            // get ip
+            int c = line.indexOf(' ', 0);
+            QByteArray ip = line.mid(0, c);
+            while (line.size()>c && line[c] == ' ') ++c;
+            // jump over HW type
+            c = line.indexOf(' ', c);
+            while (line.size()>c && line[c] == ' ') ++c;
+            // jump over flags
+            c = line.indexOf(' ', c);
+            while (line.size()>c && line[c] == ' ') ++c;
+            // get mac
+            QByteArray mac = line.mid(c, line.indexOf(' ', c) - c);
 
-void plugin::execute ( const QVariantMap& data) {
-	Q_UNUSED(sessionid);
-    if ( ServiceData::isMethod ( data,"wol" ) ) {
-        QStringList parts = data["mac"].toString().split ( QLatin1Char ( ':' ) );
-        if ( parts.size() !=6 ) return;
-        QByteArray mac;
-        for ( int i=0;i<6;++i )
-            mac.append ( QByteArray::fromHex ( parts[i].toAscii() ) );
-
-        // 6 mal FF
-        const char header[] = {255,255,255,255,255,255};
-        QByteArray bytes ( header );
-        // 16 mal mac
-        for ( int i=0;i<16;++i )
-            bytes.append ( mac );
-
-        QUdpSocket socket;
-        socket.writeDatagram ( bytes,QHostAddress::Broadcast,9 );
+            ServiceData sc = ServiceData::createModelChangeItem("wol.arpcache");
+            sc.setData("mac", mac);
+            sc.setData("ip", ip);
+            changeProperty(sc.getData(), sessionid);
+        }
+        file.close();
     }
 }
 
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( data );
-	Q_UNUSED(sessionid);
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) { 
-	Q_UNUSED(sessionid);
-    Q_UNUSED ( data );
-	Q_UNUSED(collectionuid);
-}
-
-void plugin::unregister_event ( const QString& eventid) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED(eventid);
-}
-
-QList<QVariantMap> plugin::properties (  ) {
-    Q_UNUSED ( sessionid );
-
-	changeProperty(ServiceData::createModelReset("wol.arpcache", "mac").getData());
-	
-    QFile file(QLatin1String("/proc/net/arp"));
-    if (file.exists() && file.open(QFile::ReadOnly)) {
-		file.readLine(); // ignore first line
-		while (file.canReadLine()) {
-			QByteArray line = file.readLine();
-			// get ip
-			int c = line.indexOf(' ', 0);
-			QByteArray ip = line.mid(0, c);
-			while (line.size()>c && line[c] == ' ') ++c;
-			// jump over HW type
-			c = line.indexOf(' ', c);
-			while (line.size()>c && line[c] == ' ') ++c;
-			// jump over flags
-			c = line.indexOf(' ', c);
-			while (line.size()>c && line[c] == ' ') ++c;
-			// get mac
-			QByteArray mac = line.mid(c, line.indexOf(' ', c) - c);
-			
-			ServiceData sc = ServiceData::createModelChangeItem("wol.arpcache");
-            sc.setData("mac", mac);
-            sc.setData("ip", ip);
-            changeProperty(sc.getData());
-		}
-		file.close();
-	}
-    return l;
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+  Q_UNUSED(plugin_id);
+  Q_UNUSED(data);
 }

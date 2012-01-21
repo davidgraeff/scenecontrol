@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin>
+	<titel>Zeitereignisse</titel>
+	<description>Auslösen von Zeitereignissen</description>
+	
+	<sections>
+		<control>
+			<titel>Weckzeiten</titel>
+			<description>Wecker</description>
+		</control>
+	</sections>
+	
+	<datespan>
+		<titel>Zeitspannenbedingung (Datum)</titel>
+		<description>Bedingung, dass das aktuelle Datum zwischen bestimmten Daten liegt</description>
+		<lower><titel>Startdatum</titel></lower>
+		<upper><titel>Enddatum</titel></upper>
+	</datespan>
+	<timespan>
+		<titel>Zeitspannenbedingung (Zeit)</titel>
+		<description>Bedingung, dass die aktuelle Zeit zwischen einer bestimmten Zeitspanne liegt</description>
+		<lower><titel>Startzeitpunkt</titel></lower>
+		<upper><titel>Endzeitpunkt</titel></upper>
+	</timespan>
+	<timedate>
+		<titel>Zeitereignis</titel>
+		<description>Wird ausgelöst, sobald ein bestimmter Zeitpunkt eintritt</description>
+		<date><titel>Datum</titel></date>
+		<time><titel>Zeit</titel></time>
+	</timedate>
+	<timeperiodic>
+		<titel>Periodisches Ereignis</titel>
+		<description>Wird ausgelöst, sobald ein periodischer Zeitpunkt erreicht ist. Eine Periode ist eine Woche.</description>
+		<time><titel>Zeit</titel></time>
+		<days><titel>Tage</titel>
+		<entry>Montag</entry><entry>Dienstag</entry><entry>Mittwoch</entry>
+		<entry>Donnerstag</entry><entry>Freitag</entry><entry>Samstag</entry>
+		<entry>Sonntag</entry>
+		</days>
+	</timeperiodic>
+</plugin>

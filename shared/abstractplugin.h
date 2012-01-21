@@ -68,7 +68,6 @@ public:
      * Use this in your plugin main method.
      */
     bool createCommunicationSockets();
-protected:
     AbstractPlugin();
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) = 0;
     bool sendCmdToPlugin(const QByteArray& plugin_id, const QByteArray& data);
@@ -107,6 +106,14 @@ public Q_SLOTS:
     virtual void clear() {}
 
     /**
+    * Called by server process if a new session with sessionid is starting (running=true)
+    * or a session finished (running=false).
+    */
+    virtual void session_change ( int sessionid, bool running ) {
+        Q_UNUSED(sessionid);
+        Q_UNUSED(running);
+    }
+    /**
      * Settings have changed. This method is called at startup for initial settings, too.
      */
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data) {
@@ -139,6 +146,8 @@ public Q_SLOTS:
     * When collections get removed they unregister their events with this method. If collections are changed
     * they will call unregister_event and register_event in sequence.
     */
-    virtual void unregister_event ( const QString& eventid ) {Q_UNUSED(eventid);}
+    virtual void unregister_event ( const QString& eventid ) {
+        Q_UNUSED(eventid);
+    }
 };
 Q_DECLARE_INTERFACE(AbstractPlugin, "com.roomcontrol.Plugin/2.0")

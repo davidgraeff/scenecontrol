@@ -17,7 +17,6 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,10 +34,17 @@
 #include "plugin.h"
 #include "managed_device_list.h"
 #include <qfileinfo.h>
+#include <QCoreApplication>
 
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
+}
 
-
-plugin::plugin() : m_events ( QLatin1String ( "inputdevice" ) ) {
+plugin::plugin() {
     m_repeat = 0;
     m_repeatInit = 0;
     m_devicelist = new ManagedDeviceList();
@@ -47,13 +53,18 @@ plugin::plugin() : m_events ( QLatin1String ( "inputdevice" ) ) {
 }
 
 plugin::~plugin() {
-    qDeleteAll(m_devices);
+    clear();
     delete m_devicelist;
 }
 
-void plugin::clear() {}
+void plugin::clear() {
+    m_keymapping.clear();
+    qDeleteAll(m_devices);
+    m_devices.clear();
+}
+
 void plugin::initialize() {
-    m_serverPropertyController->pluginRegisterPropertyChangeListener ( QLatin1String ( "selected_input_device" ) );
+    clear();
     for ( int i=0;keynames[i].name;++i ) {
         m_keymapping[keynames[i].value] = QString::fromAscii ( keynames[i].name );
     }
@@ -61,87 +72,86 @@ void plugin::initialize() {
 }
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-  if (data.contains(QLatin1String("repeat")))
-      m_repeat = data[QLatin1String("repeat")].toInt();
-  if (data.contains(QLatin1String("repeat_init")))
-      m_repeatInit = data[QLatin1String("repeat_init")].toInt();
+    Q_UNUSED(configid);
+    if (data.contains(QLatin1String("repeat")))
+        m_repeat = data[QLatin1String("repeat")].toInt();
+    if (data.contains(QLatin1String("repeat_init")))
+        m_repeatInit = data[QLatin1String("repeat_init")].toInt();
 }
 
-void plugin::execute ( const QVariantMap& data) {
-    if ( ServiceData::isMethod ( data, "selected_input_device" ) && m_sessions.contains ( sessionid ) ) {
-        QMap<QString, InputDevice*>::iterator it = m_devices.begin();
-        for ( ;it != m_devices.end();++it ) {
-            ( *it )->disconnectSession ( sessionid );
-        }
-        InputDevice* inputdevice = m_devices.value ( DATA ( "udid" ) );
-        if ( !inputdevice ) return;
-        inputdevice->connectSession ( sessionid );
+void plugin::select_input_device ( int sessionid, const QString& udid) {
+    QMap<QString, InputDevice*>::iterator it = m_devices.begin();
+    for ( ;it != m_devices.end();++it ) {
+        ( *it )->disconnectSession ( sessionid );
     }
+    InputDevice* inputdevice = m_devices.value ( udid );
+    if ( !inputdevice ) return;
+    inputdevice->connectSession ( sessionid );
 }
 
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( sessionid );
-    Q_UNUSED ( data );
-    return false;
-}
+void plugin::eventinput ( const QString& eventid, const QString& collectionuid, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
+    // Add to input events list
+    EventInputStructure s;
+    s.collectionuid = collectionuid;
+    s.inputdevice = inputdevice;
+    s.kernelkeyname = kernelkeyname;
+    s.repeat = repeat;
+    m_events.insert(eventid, s);
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
-    Q_UNUSED(sessionid);
-    if ( ServiceData::isMethod ( data, "inputevent" ) ) {
-        m_events.add ( data, collectionuid );
-        InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
-        if ( inputdevice ) inputdevice->registerKey ( ServiceData::id ( data ), collectionuid, DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
-    }
+    // If device for this event already exists, register key
+    InputDevice* inputdeviceObj = m_devices.value ( inputdevice );
+    if ( !inputdeviceObj )
+        return;
+    m_devices_by_eventsids.insert(eventid, inputdeviceObj);
+    inputdeviceObj->registerKey ( eventid, collectionuid, kernelkeyname, repeat );
 }
 
 void plugin::unregister_event ( const QString& eventid) {
-    Q_UNUSED(sessionid);
-    const QVariantMap& data = m_events.remove ( eventid );
-    InputDevice* inputdevice = m_devices.value ( DATA ( "inputdevice" ) );
-    if ( inputdevice ) inputdevice->unregisterKey (eventid );
+    m_events.remove(eventid);
+    InputDevice* inputdevice = m_devices_by_eventsids.take ( eventid );
+    if ( inputdevice )
+        inputdevice->unregisterKey (eventid );
 }
 
-void plugin::session_change ( , bool running ) {
-    PluginSessionsHelper::session_change ( sessionid, running );
+void plugin::session_change ( int sessionid, bool running ) {
     if ( running ) return;
     foreach ( InputDevice* device, m_devices ) {
         device->disconnectSession ( sessionid );
     }
 }
 
-QList<QVariantMap> plugin::properties (  ) {
-    Q_UNUSED ( sessionid );
-
-    l.append ( ServiceData::createModelReset ( PLUGIN_ID, "inputdevice", "udid" ).getData() );
+void plugin::requestProperties(int sessionid) {
+    changeProperty( ServiceData::createModelReset ( "inputdevice", "udid" ).getData(), sessionid );
     foreach ( InputDevice* device, m_devices ) {
-        l.append ( createServiceOfDevice ( device->device() ).getData() );
+        changeProperty( createServiceOfDevice ( device->device() ).getData(), sessionid );
     }
-    return l;
 }
 
 void plugin::deviceAdded ( ManagedDevice* device ) {
     changeProperty ( createServiceOfDevice ( device ).getData() );
     InputDevice* inputdevice = m_devices.value ( device->udid );
-    if ( !inputdevice ) {
-        inputdevice = new InputDevice ( this );
-        m_devices[device->udid] = inputdevice;
-    }
+    if ( inputdevice )
+        return;
+
+    inputdevice = new InputDevice ( this );
+    m_devices[device->udid] = inputdevice;
     inputdevice->setDevice ( device );
-    const QList<QVariantMap> datas = m_events.data(device->udid);
-    foreach(QVariantMap data, datas) {
-        inputdevice->registerKey ( ServiceData::id ( data ), ServiceData::collectionid(data), DATA ( "kernelkeyname" ), BOOLDATA ( "repeat" ) );
+    QMap<QString, EventInputStructure>::iterator i = m_events.begin();
+    for (;i!=m_events.end(); ++i) {
+        if (i.value().inputdevice == device->udid)
+            inputdevice->registerKey ( i.key(), i.value().collectionuid, i.value().kernelkeyname, i.value().repeat );
     }
 }
 
 void plugin::deviceRemoved ( ManagedDevice* device ) {
-    ServiceData sc = ServiceData::createModelRemoveItem ( PLUGIN_ID, "inputdevice" );
+    ServiceData sc = ServiceData::createModelRemoveItem ( "inputdevice" );
     sc.setData ( "udid", device->udid );
     changeProperty ( sc.getData() );
     delete m_devices.take ( device->udid );
 }
 
 ServiceData plugin::createServiceOfDevice ( ManagedDevice* device ) {
-    ServiceData sc = ServiceData::createModelChangeItem ( PLUGIN_ID, "inputdevice" );
+    ServiceData sc = ServiceData::createModelChangeItem ( "inputdevice" );
     sc.setData ( "path", device->devPath );
     sc.setData ( "info", device->info );
     sc.setData ( "udid", device->udid );
@@ -167,21 +177,21 @@ bool InputDevice::isClosable() {
     return ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() );
 }
 
-void InputDevice::connectSession (  ) {
+void InputDevice::connectSession ( int sessionid ) {
     m_sessionids.insert ( sessionid );
     if ( fd ) {
-        ServiceData sc = ServiceData::createNotification ( PLUGIN_ID, "input.device.selected" );
+        ServiceData sc = ServiceData::createNotification ( "input.device.selected" );
         sc.setData ( "udid", m_device->udid );
         sc.setData ( "listen", true );
         sc.setData ( "errormsg", QString() );
         // Propagate to all interested clients
-        foreach ( , m_sessionids ) {
+        foreach ( int sessionid, m_sessionids ) {
             m_plugin->changeProperty ( sc.getData(), sessionid );
         }
         return;
     }
 }
-void InputDevice::disconnectSession (  ) {
+void InputDevice::disconnectSession ( int sessionid ) {
     m_sessionids.remove ( sessionid );
     if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() ) {
         disconnectDevice();
@@ -200,7 +210,7 @@ void InputDevice::connectDevice() {
         // only reconnect to new device if a client is actually listening or events are registered
         if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() ) return;
 
-        ServiceData sc = ServiceData::createNotification ( PLUGIN_ID, "input.device.selected" );
+        ServiceData sc = ServiceData::createNotification ( "input.device.selected" );
         sc.setData ( "udid", m_device->udid );
 
         if ( !QFileInfo ( m_device->devPath ).isReadable() ) {
@@ -222,7 +232,7 @@ void InputDevice::connectDevice() {
             }
         }
         // Propagate to all interested clients
-        foreach ( , m_sessionids ) {
+        foreach ( int sessionid, m_sessionids ) {
             m_plugin->changeProperty ( sc.getData(), sessionid );
         }
     }
@@ -246,6 +256,7 @@ void InputDevice::unregisterKey ( QString uid ) {
     if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() )
         disconnectDevice();
 }
+
 void InputDevice::registerKey ( QString uid, QString collectionuid, QString key, bool repeat ) {
     EventKey* eventkey = m_keyToUids[key];
     if (!eventkey) eventkey = new EventKey();
@@ -254,6 +265,7 @@ void InputDevice::registerKey ( QString uid, QString collectionuid, QString key,
     m_keyToUids[key] = eventkey;
     connectDevice();
 }
+
 void InputDevice::eventData() {
     m_socketnotifier->setEnabled(false);
     static char readbuff[sizeof ( struct input_event ) ] = {0};
@@ -274,12 +286,12 @@ void InputDevice::eventData() {
             // properties
             {
                 // last key property. Will be propagated to interested clients only.
-                ServiceData sc = ServiceData::createNotification ( PLUGIN_ID, "input.device.key" );
+                ServiceData sc = ServiceData::createNotification ( "input.device.key" );
                 sc.setData ( "kernelkeyname", kernelkeyname );
                 sc.setData ( "udid", m_device->udid );
 
                 // Propagate to all interested clients
-                foreach ( , m_sessionids ) {
+                foreach ( int sessionid, m_sessionids ) {
                     m_plugin->changeProperty ( sc.getData(), sessionid );
                 }
             }
@@ -296,10 +308,14 @@ void InputDevice::repeattrigger ( bool initial_event ) {
     const EventKey* event = *it;
     QMap<QString, QString>::const_iterator i = event->ServiceUidToCollectionUid.constBegin();
     for (;i!=event->ServiceUidToCollectionUid.constEnd();++i) {
-        m_plugin->m_serverCollectionController->pluginEventTriggered ( i.key(), i.value() );
+        m_plugin->eventTriggered ( i.key().toAscii(), i.value().toAscii() );
     }
 
     if ( event->repeat )
         m_repeattimer.start ( initial_event?m_plugin->m_repeatInit:m_plugin->m_repeat );
 }
 
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
+}
