@@ -21,6 +21,7 @@
 #include <QObject>
 #include <QStringList>
 #include <QTimer>
+#include <QBitArray>
 #include <QSet>
 #include "shared/abstractplugin.h"
 #include <QDateTime>
@@ -35,15 +36,24 @@ public:
     virtual void initialize();
     virtual void clear();
     virtual void requestProperties(int sessionid);
-    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
     virtual void unregister_event ( const QString& eventid);
+public Q_SLOTS:
+    void eventDateTime ( const QString& eventid, const QString& collectionuid, const QString& date, const QString& time);
+    void eventPeriodic ( const QString& eventid, const QString& collectionuid, const QString& time, const QBitArray& days);
+    bool datespan ( const QString& current, const QString& lower, const QString& upper);
+    bool timespan ( const QString& current, const QString& lower, const QString& upper);
 private:
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     void calculate_next_events();
-    typedef QPair<QString, QVariantMap> EventWithCollection;
-    typedef QMap<QString, EventWithCollection> EventsWithCollectionMap;
-    QMap<QString, EventWithCollection> m_remaining_events;
-    EventsWithCollectionMap m_timeout_events;
+    struct EventTimeStructure {
+        QString collectionuid;
+        QDate date;
+        QTime time;
+        QBitArray days;
+    };
+    // eventid -> structure for a time event
+    QMap<QString, EventTimeStructure> m_remaining_events;
+    QMap<QString, EventTimeStructure> m_timeout_events;
     QTimer m_timer;
     QDateTime m_nextAlarm;
 private Q_SLOTS:

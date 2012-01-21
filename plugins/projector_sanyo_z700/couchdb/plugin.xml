@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="projector_sanyo_z700" version="1.0">
+  <action id="projector_sanyo_power">
+    <bool id="power">1</bool>
+  </action>
+  <action id="projector_sanyo_video">
+    <bool id="mute">1</bool>
+  </action>
+  <action id="projector_sanyo_lamp">
+    <bool id="eco">1</bool>
+  </action>
+  
+  <section>onoff</section>
+</plugin>

@@ -20,39 +20,47 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
+#include <QHostAddress>
 #include "shared/abstractplugin.h"
+#include "shared/abstractserver_collectioncontroller.h"
 
-class plugin : public AbstractPlugin
+#include "shared/abstractserver_propertycontroller.h"
+#include "shared/pluginservicehelper.h"
+#include "shared/abstractplugin_services.h"
+#include <QUdpSocket>
+#include <QTimer>
+
+class ExternalClient {
+public:
+    QHostAddress host;
+    quint16 port;
+    bool noResponse;
+};
+
+class plugin : public QObject
 {
     Q_OBJECT
+
+
 public:
     plugin();
     virtual ~plugin();
 
     virtual void initialize();
     virtual void clear();
+    virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
-public Q_SLOTS:
-    void play();
-    void pause();
-    void stop();
-    void next();
-    void prev();
-    void info();
-    void AspectRatio();
-    void NextSubtitle();
-    void AudioNextLanguage ();
-    void previousmenu();
-    void ActivateWindow();
-    void select();
-    void down();
-    void up();
-    void left();
-    void right();
-    void close();
-    void ContextMenu();
-    void FastForward();
-    void Rewind();
+    virtual void execute(const QVariantMap& data, );
+    virtual bool condition(const QVariantMap& data, ) ;
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid);
+    virtual void unregister_event ( const QString& eventid);
 private:
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    QMap<QString, ExternalClient> m_clients;
+    QUdpSocket m_listenSocket;
+    QTimer m_checkClientTimer;
+    QStringList m_allowedmembers;
+    QVariantMap stateChanged(const ExternalClient* client, bool propagate);
+private Q_SLOTS:
+    void checkClientAlive();
+    void readyRead();
 };

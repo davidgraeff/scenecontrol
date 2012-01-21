@@ -19,7 +19,15 @@
 #include <QDebug>
 #include <QDateTime>
 #include "plugin.h"
+#include <QCoreApplication>
 
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
+}
 
 plugin::plugin() {
     m_timer.setSingleShot ( true );
@@ -38,50 +46,61 @@ void plugin::clear() {
     m_timer.stop();
 }
 
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {Q_UNUSED ( data );}
-
-void plugin::execute ( const QVariantMap& data) {
-    Q_UNUSED ( data );
-    Q_UNUSED ( sessionid );
+bool plugin::datespan ( const QString& current, const QString& lower, const QString& upper)  {
+    QDate m_lower = QDate::fromString ( lower,Qt::ISODate );
+    QDate m_upper = QDate::fromString ( upper,Qt::ISODate );
+    QDate m_current = QDate::fromString ( current,Qt::ISODate );
+    if ( m_current < m_lower ) return false;
+    if ( m_current > m_upper ) return false;
+    return true;
 }
 
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( sessionid );
-    if ( ServiceData::isMethod(data, "datespan" ) ) {
-        QDate m_lower = QDate::fromString ( DATA ( "lower" ),Qt::ISODate );
-        QDate m_upper = QDate::fromString ( DATA ( "upper" ),Qt::ISODate );
-        if ( QDate::currentDate() < m_lower ) return false;
-        if ( QDate::currentDate() > m_upper ) return false;
-        return true;
-    } else
-        if ( ServiceData::isMethod(data, "timespan" ) ) {
-            QTime m_lower = QTime::fromString ( DATA ( "lower" ),Qt::ISODate );
-            QTime m_upper = QTime::fromString ( DATA ( "upper" ),Qt::ISODate );
-            if ( QTime::currentTime() < m_lower ) return false;
-            if ( QTime::currentTime() > m_upper ) return false;
-            return true;
-        }
-    return false;
+bool plugin::timespan ( const QString& current, const QString& lower, const QString& upper)  {
+    QTime m_lower = QTime::fromString ( lower,Qt::ISODate );
+    QTime m_upper = QTime::fromString ( upper,Qt::ISODate );
+    QTime m_current = QTime::fromString ( current,Qt::ISODate );
+    if ( m_current < m_lower ) return false;
+    if ( m_current > m_upper ) return false;
+    return true;
 }
 
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
-    Q_UNUSED(sessionid);
-    const QString eventid = ServiceData::id(data);
+void plugin::eventDateTime ( const QString& eventid, const QString& collectionuid, const QString& date, const QString& time) {
     // remove from next events
     m_timeout_events.remove ( eventid );
 
     // recalculate next event
-    m_remaining_events[eventid] = EventWithCollection(collectionuid, data);
+    EventTimeStructure s;
+    s.collectionuid = collectionuid;
+    s.date = QDate::fromString(date, QLatin1String("dd.MM.yyyy"));
+    s.time = QTime::fromString(time, QLatin1String("h:m"));
+    m_remaining_events[eventid] = s;
     calculate_next_events();
 
     // property update
     ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
-    sc.setData("uid", ServiceData::id(data));
+    sc.setData("uid", eventid);
+    changeProperty(sc.getData());
+}
+
+void plugin::eventPeriodic ( const QString& eventid, const QString& collectionuid, const QString& time, const QBitArray& days) {
+    // remove from next events
+    m_timeout_events.remove ( eventid );
+
+    // recalculate next event
+    EventTimeStructure s;
+    s.collectionuid = collectionuid;
+    s.time = QTime::fromString(time, QLatin1String("h:m"));
+    s.days = days;
+    m_remaining_events[eventid] = s;
+    calculate_next_events();
+
+    // property update
+    ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
+    sc.setData("uid", eventid);
     changeProperty(sc.getData());
 }
 
 void plugin::unregister_event ( const QString& eventid) {
-    Q_UNUSED(sessionid);
     // remove from next events
     m_timeout_events.remove ( eventid );
 
@@ -98,33 +117,31 @@ void plugin::unregister_event ( const QString& eventid) {
 }
 
 void plugin::requestProperties(int sessionid) {
-    Q_UNUSED(sessionid);
-
     if (!m_nextAlarm.isNull()) {
-        ServiceData s = ServiceData::createNotification(PLUGIN_ID, "nextalarm");
+        ServiceData s = ServiceData::createNotification("nextalarm");
         s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
-        changeProperty(s.getData());
+        changeProperty(s.getData(), sessionid);
     } else {
-        ServiceData s = ServiceData::createNotification(PLUGIN_ID, "nextalarm");
-        changeProperty(s.getData());
+        ServiceData s = ServiceData::createNotification("nextalarm");
+        changeProperty(s.getData(), sessionid);
     }
 
-    changeProperty(ServiceData::createModelReset("time.alarms", "uid").getData());
+    changeProperty(ServiceData::createModelReset("time.alarms", "uid").getData(), sessionid);
 
-    foreach ( EventWithCollection edata, m_remaining_events ) {
+    QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
+    for (;i != m_remaining_events.end(); ++i) {
         ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
-        sc.setData("uid", ServiceData::id(edata.second));
-        changeProperty(sc.getData());
+        sc.setData("uid", i.key());
+        changeProperty(sc.getData(), sessionid);
     }
-
-    return l;
 }
 
 void plugin::timeout() {
     // events triggered, propagate to server
-    foreach ( EventWithCollection edata, m_timeout_events ) {
-        m_serverCollectionController->pluginEventTriggered ( ServiceData::id(edata.second), edata.first );
+    QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
+    for (;i != m_remaining_events.end(); ++i) {
+        eventTriggered( i.key().toAscii(), i.value().collectionuid.toAscii() );
     }
     m_timeout_events.clear();
 
@@ -133,53 +150,45 @@ void plugin::timeout() {
 }
 
 void plugin::calculate_next_events() {
-    QMap<int, EventsWithCollectionMap > min_next_time;
-    QSet<QString> remove;
+    QMap<int, QMap<QString, EventTimeStructure> > min_next_time;
+    QSet<QString> removeEventids;
 
-    foreach ( EventWithCollection edata, m_remaining_events ) {
-        const QVariantMap eventdata = edata.second;
-	const QString eventid = ServiceData::id(eventdata);
-	
-        if ( ServiceData::isMethod(eventdata, "timedate" ) ) {
-            const QTime time = QTime::fromString ( ServiceData::string(eventdata, "time" ), QLatin1String("h:m") );
-            const QDate date = QDate::fromString ( ServiceData::string(eventdata, "date" ), QLatin1String("dd.MM.yyyy"));
-            const QDateTime datetime(date, time);
+    QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
+    for (;i != m_remaining_events.end(); ++i) {
+      const QString& eventid = i.key();
+      const EventTimeStructure& eventtime = i.value();
+      
+        if ( !eventtime.date.isNull() ) {
+            const QDateTime datetime(eventtime.date, eventtime.time);
             const int sec = QDateTime::currentDateTime().secsTo ( datetime );
             if ( sec > 86400 ) {
                 min_next_time[86400];
             } else if ( sec > 10 ) {
                 qDebug() << "One-time alarm: Armed" << sec;
                 m_nextAlarm = datetime;
-                min_next_time[sec].insert ( eventid, EventWithCollection(edata.first, eventdata) );
-                remove.insert ( eventid );
+                min_next_time[sec].insert ( eventid, eventtime );
+                removeEventids.insert ( eventid );
             } else if ( sec > -10 && sec < 10 ) {
-                m_serverCollectionController->pluginEventTriggered ( eventid, edata.first );
-                remove.insert ( eventid );
+                eventTriggered ( eventid.toAscii(), eventtime.collectionuid.toAscii() );
+                removeEventids.insert ( eventid );
             }
-        } else if ( ServiceData::isMethod(eventdata, "timeperiodic" ) ) {
-            QTime m_time = QDateTime::fromString ( ServiceData::string(eventdata, "time" ),QLatin1String("h:m") ).time();
+        } else if ( !eventtime.days.isEmpty() ) {
             QDateTime datetime = QDateTime::currentDateTime();
-            datetime.setTime ( m_time );
-            bool days[7];
-            {
-                QList<QVariant> tempdays = eventdata.value ( QLatin1String("days") ).toList();
-                for ( int i=0;i<7;++i ) {
-                    days[i] = tempdays.contains(i);
-                }
-            }
+            datetime.setTime ( eventtime.time );
+
             int dow = QDate::currentDate().dayOfWeek() - 1;
             int offsetdays = 0;
 
             // If it is too late for the alarm today then
             // try with the next weekday
-            if ( QTime::currentTime() > m_time ) {
+            if ( QTime::currentTime() > eventtime.time ) {
                 dow = ( dow+1 ) % 7;
                 ++offsetdays;
             }
 
             // Search for the next activated weekday
             for ( ; offsetdays < 8; ++offsetdays ) {
-                if ( days[dow] ) break;
+                if ( eventtime.days.testBit(dow) ) break;
                 dow = ( dow+1 ) % 7;
             }
 
@@ -187,13 +196,13 @@ void plugin::calculate_next_events() {
                 datetime = datetime.addDays ( offsetdays );
                 m_nextAlarm = datetime;
                 const int sec = QDateTime::currentDateTime().secsTo ( datetime ) + 1;
-                min_next_time[sec].insert ( eventid, EventWithCollection(edata.first, eventdata) );
+                min_next_time[sec].insert ( eventid, eventtime );
             }
         }
     }
 
     // remove remaining events that are in the next event list
-    foreach (QString uid, remove) {
+    foreach (QString uid, removeEventids) {
         m_remaining_events.remove ( uid );
         ServiceData s = ServiceData::createModelRemoveItem("time.alarms");
         s.setData("uid", uid);
@@ -201,18 +210,18 @@ void plugin::calculate_next_events() {
     }
 
     if (!m_nextAlarm.isNull()) {
-        ServiceData s = ServiceData::createNotification(PLUGIN_ID, "nextalarm");
+        ServiceData s = ServiceData::createNotification("nextalarm");
         s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         changeProperty(s.getData());
     } else {
-        ServiceData s = ServiceData::createNotification(PLUGIN_ID, "nextalarm");
+        ServiceData s = ServiceData::createNotification("nextalarm");
         changeProperty(s.getData());
     }
 
     if ( min_next_time.size() > 0 ) {
         // add entry to next events
-        QMap<int, EventsWithCollectionMap >::const_iterator i = min_next_time.lowerBound(0);
+        QMap<int, QMap<QString, EventTimeStructure> >::const_iterator i = min_next_time.lowerBound(0);
         m_timeout_events = i.value();
         // start timer
         m_timer.start ( i.key() * 1000 );
@@ -220,6 +229,6 @@ void plugin::calculate_next_events() {
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-  Q_UNUSED(plugin_id);
-  Q_UNUSED(data);
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
 }

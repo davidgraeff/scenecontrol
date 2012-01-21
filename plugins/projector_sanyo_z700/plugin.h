@@ -21,38 +21,34 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
+#include "shared/abstractserver_collectioncontroller.h"
 
-class plugin : public AbstractPlugin
+#include "shared/abstractserver_propertycontroller.h"
+#include "shared/pluginservicehelper.h"
+#include "shared/abstractplugin_services.h"
+
+class QextSerialPort;
+class plugin : public QObject, public AbstractPlugin,  public AbstractPlugin_services
 {
     Q_OBJECT
+
+
 public:
     plugin();
     virtual ~plugin();
 
     virtual void initialize();
     virtual void clear();
+    virtual void requestProperties(int sessionid);
+    virtual void execute(const QVariantMap& data, );
+    virtual bool condition(const QVariantMap& data, ) ;
+    virtual void register_event ( const QVariantMap& data, const QString& collectionuid);
+    virtual void unregister_event ( const QString& eventid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
-public Q_SLOTS:
-    void play();
-    void pause();
-    void stop();
-    void next();
-    void prev();
-    void info();
-    void AspectRatio();
-    void NextSubtitle();
-    void AudioNextLanguage ();
-    void previousmenu();
-    void ActivateWindow();
-    void select();
-    void down();
-    void up();
-    void left();
-    void right();
-    void close();
-    void ContextMenu();
-    void FastForward();
-    void Rewind();
 private:
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    QextSerialPort* m_serial;
+    char m_buffer[4];
+    void writeToDevice();
+public slots:
+    void readyRead();
 };

@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 2.6)
+set(USE_SERIALPORT TRUE)
+find_package(RoomPlugins REQUIRED)
+
+SET(DEBFOUND TRUE)
+IF (DEBFOUND)
+	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)
+
+	IF (PLUGIN_${PROJECT_NAME})
+		build_server_lib()
+		target_link_libraries(${PROJECT_NAME} ${QT_QTCORE_LIBRARY})
+		install_server_lib()
+	ENDIF()
+ELSE()
+	MESSAGE("Not building: ${PROJECT_NAME}")
+ENDIF()
