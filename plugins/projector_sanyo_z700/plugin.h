@@ -21,32 +21,22 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
-#include "shared/abstractserver_collectioncontroller.h"
 
-#include "shared/abstractserver_propertycontroller.h"
-#include "shared/pluginservicehelper.h"
-#include "shared/abstractplugin_services.h"
-
-class QextSerialPort;
-class plugin : public QObject, public AbstractPlugin,  public AbstractPlugin_services
+class QxtSerialDevice;
+class plugin : public AbstractPlugin
 {
     Q_OBJECT
-
-
 public:
     plugin();
     virtual ~plugin();
-
-    virtual void initialize();
-    virtual void clear();
-    virtual void requestProperties(int sessionid);
-    virtual void execute(const QVariantMap& data, );
-    virtual bool condition(const QVariantMap& data, ) ;
-    virtual void register_event ( const QVariantMap& data, const QString& collectionuid);
-    virtual void unregister_event ( const QString& eventid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
+public Q_SLOTS:
+  void projector_sanyo_power(bool power);
+  void projector_sanyo_video(bool mute);
+  void projector_sanyo_lamp(bool eco);
 private:
-    QextSerialPort* m_serial;
+    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    QxtSerialDevice* m_serial;
     char m_buffer[4];
     void writeToDevice();
 public slots:

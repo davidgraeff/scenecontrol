@@ -78,6 +78,8 @@ void AbstractPlugin::readyRead()
                 for (int i=0;i<c;++i) {
                     qDebug() << metaObject()->method(i).signature();
                 }
+                // If method not found call dataFromPlugin
+                dataFromPlugin(plugin_id, variantdata);
             }
         } else
             dataFromPlugin(plugin_id, variantdata);

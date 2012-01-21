@@ -2,7 +2,6 @@
 #include <qdesktopwidget.h>
 #include <QUrl>
 #include <QSocketNotifier>
-#include "configexternal.h"
 
 MediaPlayer::MediaPlayer(QWidget *parent)
         : Phonon::VideoWidget(parent), m_bufferpos(0), m_socket(0)

@@ -8,7 +8,7 @@ IF (DEBFOUND)
 
 	IF (PLUGIN_${PROJECT_NAME})
 		build_server_lib()
-		target_link_libraries(${PROJECT_NAME} ${QT_QTCORE_LIBRARY})
+		target_link_libraries(${PROJECT_NAME} ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES})
 		install_server_lib()
 	ENDIF()
 ELSE()

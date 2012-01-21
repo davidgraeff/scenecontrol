@@ -17,12 +17,16 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
-
 #include "plugin.h"
-#include <qjson/serializer.h>
+#include <QCoreApplication>
 
-
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
+}
 
 plugin::plugin() {
     connect(&m_listenSocket, SIGNAL(readyRead()), SLOT(readyRead()));
@@ -44,20 +48,23 @@ plugin::plugin() {
     m_allowedmembers << QLatin1String("previousmedia");
     m_allowedmembers << QLatin1String("nextplaylistmedia");
     m_allowedmembers << QLatin1String("previousplaylistmedia");
-
 }
 
 plugin::~plugin() {
-    m_clients.clear();
+    clear();
 }
 
-void plugin::clear() {}
+void plugin::clear() {
+    m_clients.clear();
+}
 void plugin::initialize() {}
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
+  Q_UNUSED(configid);
     if (!data.contains(QLatin1String("listenport")) || !data.contains(QLatin1String("broadcastport")))
         return;
 
+    clear();
     m_listenSocket.bind(data[QLatin1String("listenport")].toInt());
     m_listenSocket.writeDatagram("ROOMCONTROLCLIENTS\n", QHostAddress::Broadcast, data[QLatin1String("broadcastport")].toInt());
 }
@@ -79,54 +86,16 @@ void plugin::readyRead() {
             m_checkClientTimer.start();
             if (changed)
                 stateChanged(c, true);
-	}
+        }
     }
-}
-
-
-void plugin::execute ( const QVariantMap& data) {
-    Q_UNUSED(sessionid);
-    QMap<QString, ExternalClient>::const_iterator i = m_clients.constBegin();
-
-    if (!m_allowedmembers.contains(ServiceData::method(data))) {
-        qWarning() << "Unallowed memeber action requested" << data;
-        return;
-    }
-
-    const QByteArray d = QJson::Serializer().serialize(data);
-
-    for (;i != m_clients.constEnd(); ++i) {
-        const ExternalClient* c = &(*i);
-        QUdpSocket().writeDatagram(d, c->host, c->port);
-    }
-}
-
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( data );
-    Q_UNUSED(sessionid);
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
-    Q_UNUSED(sessionid);
-    Q_UNUSED ( data );
-    Q_UNUSED(collectionuid);
-}
-
-void plugin::unregister_event ( const QString& eventid) {
-    Q_UNUSED(eventid);
-    Q_UNUSED(sessionid);
 }
 
 void plugin::requestProperties(int sessionid) {
-    Q_UNUSED(sessionid);
-
-    changeProperty(ServiceData::createModelReset("remote.connection.state", "server").getData());
+    changeProperty(ServiceData::createModelReset("remote.connection.state", "server").getData(), sessionid);
     QMap<QString, ExternalClient>::const_iterator i = m_clients.constBegin();
     for (;i != m_clients.constEnd(); ++i) {
-        changeProperty(stateChanged(&(*i), false));
+        changeProperty(stateChanged(&(*i), false), sessionid);
     }
-    return l;
 }
 
 inline QVariantMap plugin::stateChanged(const ExternalClient* client, bool propagate) {
@@ -153,4 +122,26 @@ void plugin::checkClientAlive() {
 
     if (m_clients.size())
         m_checkClientTimer.start();
+}
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+    if (plugin_id != COMSERVERSTRING) {
+        qWarning() << "Plugin" << pluginid() << "only controllable by the server";
+        return;
+    }
+
+    QMap<QString, ExternalClient>::const_iterator i = m_clients.constBegin();
+
+    if (!m_allowedmembers.contains(ServiceData::method(data))) {
+        qWarning() << "Unallowed memeber action requested" << data;
+        return;
+    }
+
+    QByteArray d;
+    QDataStream stream(d);
+    stream << data;
+
+    for (;i != m_clients.constEnd(); ++i) {
+        const ExternalClient* c = &(*i);
+        QUdpSocket().writeDatagram(d, c->host, c->port);
+    }
 }

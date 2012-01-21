@@ -17,13 +17,20 @@
  *
  */
 #include <QDebug>
-#include <QtPlugin>
 
 #include "plugin.h"
 #include <qfile.h>
-#include <shared/qextserialport/qextserialport.h>
+#include <shared/qxtserialdevice/qxtserialdevice.h>
 
+#include <QCoreApplication>
 
+int main(int argc, char* argv[]) {
+    QCoreApplication app(argc, argv);
+    plugin p;
+    if (!p.createCommunicationSockets())
+        return -1;
+    return app.exec();
+}
 
 plugin::plugin() {
     m_serial = 0;
@@ -32,11 +39,6 @@ plugin::plugin() {
 
 plugin::~plugin() {
     delete m_serial;
-}
-
-void plugin::clear() {}
-void plugin::initialize() {
-
 }
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data)
@@ -48,12 +50,11 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data)
             qWarning() << pluginid() << "device not found" << device;
             return;
         }
-        m_serial = new QextSerialPort ( device,QextSerialPort::EventDriven );
-        m_serial->setBaudRate ( BAUD19200 );
-        m_serial->setFlowControl ( FLOW_OFF );
-        m_serial->setParity ( PAR_NONE );
-        m_serial->setDataBits ( DATA_8 );
-        m_serial->setStopBits ( STOP_1 );
+        m_serial = new QxtSerialDevice ( device );
+        m_serial->setBaud ( QxtSerialDevice::Baud19200 );
+        m_serial->setPortSettings ( QxtSerialDevice::FlowOff | QxtSerialDevice::ParityNone
+                                    | QxtSerialDevice::Stop1 | QxtSerialDevice::Bit8);
+
         connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
         if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
             qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
@@ -70,58 +71,41 @@ void plugin::writeToDevice() {
     }
 }
 
-void plugin::execute ( const QVariantMap& data) {
-    Q_UNUSED(sessionid);
-    if ( !m_serial ) return;
-    if ( ServiceData::isMethod(data, "projector_sanyo_power" ) ) {
-        if ( BOOLDATA ( "power" ) )
-            strncpy ( m_buffer, "C00", 3 );
-        else
-            strncpy ( m_buffer, "C01", 3 );
-        writeToDevice();
-    } else if ( ServiceData::isMethod(data, "projector_sanyo_video" ) ) {
-        if ( BOOLDATA ( "mute" ) )
-            strncpy ( m_buffer, "C0D", 3 );
-        else
-            strncpy ( m_buffer, "C0E", 3 );
-        writeToDevice();
-    } else if ( ServiceData::isMethod(data, "projector_sanyo_lamp" ) ) {
-        if ( BOOLDATA ( "eco" ) )
-            strncpy ( m_buffer, "C75", 3 );
-        else
-            strncpy ( m_buffer, "C74", 3 );
-        writeToDevice();
-    } else if ( ServiceData::isMethod(data, "projector_sanyo_focus" ) ) {
-        //TODO
-    }
-}
-
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( data );
-    Q_UNUSED(sessionid);
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) {
-    Q_UNUSED ( data );
-    Q_UNUSED(collectionuid);
-    Q_UNUSED(sessionid);
-}
-
-void plugin::unregister_event ( const QString& eventid) {
-    Q_UNUSED(eventid);
-    Q_UNUSED(sessionid);
-}
-
-void plugin::requestProperties(int sessionid) {
-    Q_UNUSED(sessionid);
-
-    return l;
-}
-
 void plugin::readyRead() {
     QByteArray bytes;
     int a = m_serial->bytesAvailable();
     bytes.resize ( a );
     m_serial->read ( bytes.data(), bytes.size() );
+}
+
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
+}
+
+void plugin::projector_sanyo_power(bool power) {
+    if ( !m_serial ) return;
+    if (power)
+        strncpy ( m_buffer, "C00", 3 );
+    else
+        strncpy ( m_buffer, "C01", 3 );
+    writeToDevice();
+}
+
+void plugin::projector_sanyo_video(bool mute) {
+    if ( !m_serial ) return;
+    if (mute)
+        strncpy ( m_buffer, "C0D", 3 );
+    else
+        strncpy ( m_buffer, "C0E", 3 );
+    writeToDevice();
+}
+
+void plugin::projector_sanyo_lamp(bool eco) {
+    if ( !m_serial ) return;
+    if (eco)
+        strncpy ( m_buffer, "C75", 3 );
+    else
+        strncpy ( m_buffer, "C74", 3 );
+    writeToDevice();
 }
