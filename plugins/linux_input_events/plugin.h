@@ -44,9 +44,9 @@ private:
     int fd;
     ManagedDevice* m_device;
     QSet<int> m_sessionids;
-    QMap<QString, EventKey*> m_keyToUids;
+    QMap<QByteArray, EventKey*> m_keyToUids;
     QTimer m_repeattimer;
-    QString m_lastkey;
+    QByteArray m_lastkey;
 public:
     InputDevice(plugin* plugin) ;
     ~InputDevice();
@@ -56,8 +56,8 @@ public:
     void setDevice(ManagedDevice* device);
     void connectDevice();
     void disconnectDevice();
-    void unregisterKey(QString uid);
-    void registerKey( QString uid, QString collectionuid, QString key, bool repeat);
+    void unregisterKey(const QByteArray& uid);
+    void registerKey( QString uid, QString collectionuid, const QByteArray& key, bool repeat);
     ManagedDevice* device();
 private Q_SLOTS:
     void eventData();
@@ -80,24 +80,24 @@ public:
     virtual void session_change ( int sessionid, bool running );
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 public Q_SLOTS:
-  void select_input_device ( int sessionid, const QString& udid);
-  void eventinput ( const QString& eventid, const QString& collectionuid, const QString& inputdevice, const QString& kernelkeyname, bool repeat);
+  void select_input_device ( int sessionid, const QByteArray& udid);
+  void inputevent ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& inputdevice, const QByteArray& kernelkeyname, bool repeat);
 private:
     ManagedDeviceList* m_devicelist;
     // udid -> device
-    QMap<QString, InputDevice*> m_devices;
+    QMap<QByteArray, InputDevice*> m_devices;
     // eventid -> device
-    QMap<QString, InputDevice*> m_devices_by_eventsids;
+    QMap<QByteArray, InputDevice*> m_devices_by_eventsids;
     struct EventInputStructure {
-      QString collectionuid;
-      QString inputdevice;
-      QString kernelkeyname;
+      QByteArray collectionuid;
+      QByteArray inputdevice;
+      QByteArray kernelkeyname;
       bool repeat;
     };
     // eventid -> structure for registering a key as soon as the device is available
-    QMap<QString, EventInputStructure> m_events;
+    QMap<QByteArray, EventInputStructure> m_events;
     
-    QMap<uint, QString> m_keymapping;
+    QMap<uint, QByteArray> m_keymapping;
     
     int m_repeat;
     int m_repeatInit;

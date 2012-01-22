@@ -12,10 +12,10 @@ struct udev_device;
 
 class ManagedDevice {
 public:
-    QString devPath;
-    QString sysPath;
-    QString info;
-	QString udid;
+    QByteArray devPath;
+    QByteArray sysPath;
+    QByteArray info;
+    QByteArray udid;
 };
 
 class ManagedDeviceList : public QObject

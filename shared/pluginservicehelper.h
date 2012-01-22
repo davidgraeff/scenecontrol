@@ -96,7 +96,7 @@ public:
     void setPluginid(const QByteArray& pluginid) {
         m_map[QLatin1String("plugin_")] = pluginid;
     }
-    
+
     static QString collectionid(const QVariantMap& data) {
         return data.value(QLatin1String("collection_")).toString();
     }
@@ -172,6 +172,10 @@ public:
         data[QLatin1String("member_")] = methodname;
     }
 
+    static bool hasMethod(const QVariantMap& data) {
+        return data.contains(QLatin1String("member_"));
+    }
+
     static int sessionid(const QVariantMap& data) {
         return data[QLatin1String("sessionid_")].toInt();
     }
@@ -181,6 +185,14 @@ public:
             data.remove(QLatin1String("sessionid_"));
         else
             data[QLatin1String("sessionid_")] = sessionid;
+    }
+
+    static bool isQtSlotRespons(const QVariantMap& data) {
+        return data.contains(QLatin1String("isrespons_"));
+    }
+
+    static void setQtSlotRespons(QVariantMap& data) {
+        data[QLatin1String("isrespons_")] = true;
     }
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(ServiceData::checkTypeEnums)

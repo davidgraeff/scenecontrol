@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() {}
+plugin::plugin() : AbstractPlugin(this) {}
 plugin::~plugin() {
     delete m_socket;
 }

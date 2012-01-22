@@ -38,11 +38,11 @@ public:
     virtual void unregister_event ( const QString& eventid);
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 public Q_SLOTS:
-    void eventmode ( const QString& eventid, const QString& mode, const QString& collectionuid);
-    void modeChange(const QString& mode);
-    bool isMode(const QString& mode);
+    void eventmode ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& mode);
+    void modeChange(const QByteArray& mode);
+    bool isMode(const QByteArray& mode);
 private:
-    QString m_mode;
+    QByteArray m_mode;
     // mode -> (eventid, [collectionids])
-    QMultiMap<QString, QPair<QString, QString> > m_collectionsOnMode;
+    QMultiMap<QByteArray, QPair<QByteArray, QByteArray> > m_collectionsOnMode;
 };

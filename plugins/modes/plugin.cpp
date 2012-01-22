@@ -28,26 +28,27 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() {
+plugin::plugin() : AbstractPlugin(this) {
 }
 
 plugin::~plugin() {
 
 }
 
-bool plugin::isMode(const QString& mode)  {
+bool plugin::isMode(const QByteArray& mode)  {
     return (m_mode == mode);
 }
 
-void plugin::eventmode ( const QString& eventid, const QString& mode, const QString& collectionuid) {
-    m_collectionsOnMode.insertMulti(mode, QPair<QString,QString>(eventid, collectionuid));
+void plugin::eventmode ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& mode) {
+    m_collectionsOnMode.insertMulti(mode, QPair<QByteArray,QByteArray>(_id, collection_));
 }
 
 void plugin::unregister_event ( const QString& eventid) {
-    QMutableMapIterator< QString, QPair<QString, QString> > i = m_collectionsOnMode;
+  const QByteArray eventid2 = eventid.toAscii();
+    QMutableMapIterator< QByteArray, QPair<QByteArray, QByteArray> > i = m_collectionsOnMode;
     while (i.hasNext()) {
         i.next();
-        if (i.value().first == eventid)
+        if (i.value().first == eventid2)
             i.remove();
     }
 }
@@ -58,15 +59,15 @@ void plugin::requestProperties(int sessionid) {
     changeProperty(sc.getData(), sessionid);
 }
 
-void plugin::modeChange(const QString& mode) {
+void plugin::modeChange(const QByteArray& mode) {
     m_mode = mode;
     ServiceData sc = ServiceData::createNotification("mode");
     sc.setData("mode", mode);
     changeProperty(sc.getData());
 
-    QList< QPair<QString, QString> > list = m_collectionsOnMode.values(mode);
+    QList< QPair<QByteArray, QByteArray> > list = m_collectionsOnMode.values(mode);
     for (int i=0;i<list.size(); ++i) {
-        eventTriggered(list[i].first.toAscii(), list[i].second.toAscii());
+        eventTriggered(list[i].first, list[i].second);
     }
 }
 

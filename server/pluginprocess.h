@@ -55,10 +55,12 @@ public:
 private:
     PluginController* m_controller;
     QLocalSocket* m_pluginCommunication;
+    QByteArray m_chunk;
     QString m_version;
+    bool writeToPlugin(const QVariantMap& data);
 private Q_SLOTS:
     void readyRead();
-    void disconnected();
+    void stateChanged(QLocalSocket::LocalSocketState state);
     // After a process got started it has 3 seconds to establish a communication socket
     // otherwise the process will get killed by the server and removed from the pending
     // processes of PluginController

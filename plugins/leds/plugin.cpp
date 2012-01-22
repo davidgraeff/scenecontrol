@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() {
+plugin::plugin() : AbstractPlugin(this) {
     connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
     m_cacheTimer.setInterval(50);
     m_cacheTimer.setSingleShot(true);

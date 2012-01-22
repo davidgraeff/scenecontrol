@@ -123,8 +123,75 @@ void CouchDB::requestEvents()
         QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
         for ( int i=0;i<list.size();++i ) {
             data = list[i].toMap().value ( QLatin1String ( "value" ) ).toMap();
+            data.remove(QLatin1String("_rev"));
+            data.remove(QLatin1String("type_"));
+            if ( ServiceData::collectionid ( data ).isEmpty() ) {
+                qWarning() <<"CouchDB: Received event without collection:"<<ServiceData::pluginid ( data ) << ServiceData::id ( data );
+                continue;
+            }
             emit couchDB_Event_add ( ServiceData::id(data), data );
         }
+    }
+}
+
+
+void CouchDB::replyEventsChange() {
+    QNetworkReply *r = ( QNetworkReply* ) sender();
+    if ( r->error() != QNetworkReply::NoError ) {
+        ++m_eventsChangeFailCounter;
+        if (m_eventsChangeFailCounter > 5) {
+            qWarning() << "CouchDB: replyEventsChange" << r->url();
+        } else {
+            QTimer::singleShot(1000, this, SLOT(startChangeListenerEvents()));
+        }
+        delete r;
+        return;
+    }
+
+    m_eventsChangeFailCounter = 0;
+
+    while ( r->canReadLine() ) {
+        QString docid;
+        { // one line = one changed event; evaluate and extract docid
+            const QByteArray line = r->readLine();
+            if ( line.size() <= 1 ) continue;
+            QVariantMap data = JSON::parse ( line ).toMap();
+            if ( data.isEmpty() || !data.contains ( QLatin1String ( "seq" ) ) )
+                continue;
+            const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
+            if ( seq > m_last_changes_seq_nr )
+                m_last_changes_seq_nr = seq;
+
+            if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
+                emit couchDB_Event_remove(ServiceData::idChangeSeq ( data ));
+                continue;
+            }
+
+
+            docid = ServiceData::idChangeSeq ( data );
+        }
+        
+        // request document that is mentioned in the changes feed
+        QNetworkRequest request ( setup::couchdbAbsoluteUrl(docid));
+
+        QNetworkReply* r = get ( request );
+        QEventLoop eventLoop;
+        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+
+        QVariantMap document = JSON::parse(r->readAll() ).toMap();
+
+        if (!ServiceData::checkType(document, ServiceData::TypeEvent)) {
+            qWarning() << "Event changed but is not of type event" << document;
+            continue;
+        }
+        document.remove(QLatin1String("_rev"));
+        document.remove(QLatin1String("type_"));
+        if ( ServiceData::collectionid ( document ).isEmpty() ) {
+            qWarning() <<"CouchDB: Received event without collection:"<<ServiceData::pluginid ( document ) << ServiceData::id ( document );
+            continue;
+        }
+        emit couchDB_Event_add ( ServiceData::id(document), document );
     }
 }
 
@@ -184,45 +251,10 @@ void CouchDB::replyDataOfCollection()
             // Check if type is action type
             if ( ServiceData::checkType ( data, ServiceData::TypeCondition ))
                 conditionList.append(data);
-	    else if ( ServiceData::checkType ( data, ServiceData::TypeAction ))
+            else if ( ServiceData::checkType ( data, ServiceData::TypeAction ))
                 actionsList.append(data);
         }
         emit couchDB_dataOfCollection( actionsList, conditionList, r->url().fragment() );
-    }
-}
-
-void CouchDB::replyEventsChange() {
-    QNetworkReply *r = ( QNetworkReply* ) sender();
-    if ( r->error() != QNetworkReply::NoError ) {
-        ++m_eventsChangeFailCounter;
-        if (m_eventsChangeFailCounter > 5) {
-            qWarning() << "CouchDB: replyEventsChange" << r->url();
-        } else {
-            QTimer::singleShot(1000, this, SLOT(replyEventsChange()));
-        }
-        delete r;
-        return;
-    }
-
-    m_eventsChangeFailCounter = 0;
-
-    while ( r->canReadLine() ) {
-        const QByteArray line = r->readLine();
-        if ( line.size() <= 1 ) continue;
-        QVariantMap data = JSON::parse ( line ).toMap();
-        if ( !data.isEmpty() && data.contains ( QLatin1String ( "seq" ) ) ) {
-            const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
-            if ( seq > m_last_changes_seq_nr )
-                m_last_changes_seq_nr = seq;
-            if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
-                emit couchDB_Event_remove(ServiceData::idChangeSeq ( data ));
-            } else {
-                const QNetworkRequest request ( setup::couchdbAbsoluteUrl("%1" ).arg ( data[QLatin1String ( "id" ) ].toString() ) );
-                QNetworkReply* r = get ( request );
-                connect ( r, SIGNAL ( finished() ), SLOT ( replyEvent() ) );
-                connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
-            }
-        }
     }
 }
 
@@ -268,13 +300,14 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
     if ( !data.isEmpty() && data.contains ( QLatin1String ( "rows" ) ) ) {
         const QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
         foreach(const QVariant& v, list) {
-            data = v.toMap();
+            data = v.toMap().value(QLatin1String ( "value" )).toMap();
             data.remove(QLatin1String("_id"));
             data.remove(QLatin1String("_rev"));
             data.remove(QLatin1String("type_"));
             data.remove(QLatin1String("plugin_"));
             const QString key = data.take(QLatin1String("key_")).toString();
-            emit couchDB_settings ( pluginid, key, data );
+            if (data.size())
+                emit couchDB_settings ( pluginid, key, data );
         }
     } else {
         qWarning() << "CouchDB: Get settings failed for" << pluginid << data;
@@ -326,8 +359,11 @@ void CouchDB::replyPluginSettingsChange()
 
         QVariantMap document = JSON::parse(r->readAll() ).toMap();
 
-        if (!ServiceData::checkType(document, ServiceData::TypeConfiguration))
+        if (!ServiceData::checkType(document, ServiceData::TypeConfiguration)) {
+            qWarning() << "Configuration changed but is not of type configuration" << document;
             continue;
+        }
+
         document.remove(QLatin1String("_id"));
         document.remove(QLatin1String("_rev"));
         document.remove(QLatin1String("type_"));

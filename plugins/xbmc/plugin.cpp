@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() {}
+plugin::plugin() : AbstractPlugin(this) {}
 
 plugin::~plugin() {}
 
@@ -20,6 +20,7 @@ void plugin::clear() {}
 void plugin::initialize() {}
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
+  Q_UNUSED(configid);
     if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port"))) {
 //         delete m_xbmcClient;
 //         m_xbmcClient = new CXBMCClient( data[QLatin1String("server")].toString().toAscii(),

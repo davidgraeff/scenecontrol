@@ -68,9 +68,8 @@ public:
      * Use this in your plugin main method.
      */
     bool createCommunicationSockets();
-    AbstractPlugin();
+    AbstractPlugin(QObject* plugin);
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) = 0;
-    bool sendCmdToPlugin(const QByteArray& plugin_id, const QByteArray& data);
     bool sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     void changeConfig(const QByteArray& key, const QVariantMap& data);
     void changeProperty(const QVariantMap& data, int sessionid = -1);
@@ -81,10 +80,16 @@ private Q_SLOTS:
     // If disconnected from server, quit plugin process
     void disconnectedFromServer();
 private:
+    QObject* m_plugin;
+    QByteArray m_chunk;
     QMap<QByteArray, QLocalSocket*> m_connectionsByID;
     QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
     QSet<QLocalSocket*> m_pendingConnections;
     QLocalSocket* getClientConnection(const QByteArray& plugin_id);
+    void writeToSocket(QLocalSocket* socket, const QVariantMap& data);
+    int invokeHelperGetMethodId(const QByteArray& methodName);
+    int invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output);
+    QVariant invokeSlot(const QByteArray& methodname, int numParams, const char* returntype, QVariant p0, QVariant p1, QVariant p2, QVariant p3, QVariant p4, QVariant p5, QVariant p6, QVariant p7, QVariant p8);
 public Q_SLOTS:
     /**
      * Return pluginid

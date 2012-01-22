@@ -95,8 +95,8 @@ void ManagedDeviceList::processDevice(struct udev_device *dev)
     if (!sys_path_t) return;
     const char* dev_path_t = udev_device_get_devnode(dev);
     if (!dev_path_t) return;
-    const QString sys_path = QString::fromAscii(sys_path_t);
-    const QString dev_path = QString::fromAscii(dev_path_t);
+    const QByteArray sys_path = sys_path_t;
+    const QByteArray dev_path = dev_path_t;
 
     if (action && strcmp(action,"remove")==0) {
         /* get device */
@@ -113,12 +113,12 @@ void ManagedDeviceList::processDevice(struct udev_device *dev)
         device->devPath = dev_path;
         device->sysPath = sys_path;
 
-        device->info = QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"product")) +
-                       QLatin1Literal(" - ") +  QString::fromUtf8(udev_device_get_sysattr_value(usbdev,"manufacturer")) +
-                       QLatin1Literal(" (") + dev_path + QLatin1Literal(")");
-        device->udid = QString::fromUtf8(udev_device_get_sysattr_value(usbdev, "idVendor"))  +
-                       QString::fromUtf8(udev_device_get_sysattr_value(usbdev, "idProduct")) +
-                       QString::fromUtf8(udev_device_get_sysattr_value(usbdev, "serial"));
+        device->info = QByteArray(udev_device_get_sysattr_value(usbdev,"product")) +
+                       " - " + QByteArray(udev_device_get_sysattr_value(usbdev,"manufacturer")) +
+                       " (" + dev_path + ")";
+        device->udid = QByteArray(udev_device_get_sysattr_value(usbdev, "idVendor"))  +
+                       QByteArray(udev_device_get_sysattr_value(usbdev, "idProduct")) +
+                       QByteArray(udev_device_get_sysattr_value(usbdev, "serial"));
         if (device->udid.isEmpty()) device->udid = dev_path;
 
         /* add to list */

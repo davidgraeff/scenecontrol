@@ -31,16 +31,16 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() {}
+plugin::plugin() : AbstractPlugin(this) {}
 
 plugin::~plugin() {}
 
-void plugin::wol ( const QString& mac) {
-    QStringList parts = mac.split ( QLatin1Char ( ':' ) );
+void plugin::wol ( const QByteArray& mac) {
+    QList<QByteArray> parts = mac.split ( ':' );
     if ( parts.size() !=6 ) return;
     QByteArray macdecoded;
     for ( int i=0;i<6;++i )
-        macdecoded.append ( QByteArray::fromHex ( parts[i].toAscii() ) );
+        macdecoded.append ( QByteArray::fromHex ( parts[i] ) );
 
     // 6 mal FF
     const char header[] = {255,255,255,255,255,255};

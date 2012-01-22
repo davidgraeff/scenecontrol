@@ -67,12 +67,6 @@ PluginCommunication* PluginController::getPlugin(const QString& pluginid) {
 }
 
 void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& event_data) {
-    QString destination_collectionuid = ServiceData::collectionid ( event_data );
-    if ( destination_collectionuid.isEmpty() ) {
-        qWarning() <<"Plugins: Cannot register event. No collection set:"<<ServiceData::pluginid ( event_data ) << id;
-        return;
-    }
-
     PluginCommunication* plugin = getPlugin ( ServiceData::pluginid ( event_data ) );
     if ( !plugin ) {
         qWarning() <<"Plugins: Cannot register event. No plugin found:"<<ServiceData::pluginid ( event_data ) << id;
@@ -152,7 +146,7 @@ void PluginController::requestAllProperties(int sessionid) {
     Socket::instance()->propagateProperty(s.getData());
 }
 
-void PluginController::removePlugin(const QString& id) {
+void PluginController::unloadPlugin(const QString& id) {
     PluginCommunication* p = m_plugins.take(id);
     if (!p)
         return;

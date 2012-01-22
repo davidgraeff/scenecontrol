@@ -38,7 +38,7 @@ public:
     static PluginController* instance();
     virtual ~PluginController();
     bool loadplugins();
-    void removePlugin(const QString& id);
+    void unloadPlugin(const QString& id);
     void removePluginFromPending(PluginCommunication* pluginprocess);
     void addPlugin(const QString& id, PluginCommunication* pluginprocess);
     void removeProcess(PluginProcess* process);

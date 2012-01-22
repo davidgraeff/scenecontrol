@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() {
+plugin::plugin() : AbstractPlugin(this) {
     connect(&m_listenSocket, SIGNAL(readyRead()), SLOT(readyRead()));
     connect(&m_checkClientTimer, SIGNAL(timeout()), SLOT(checkClientAlive()));
     m_checkClientTimer.setSingleShot(true);
@@ -137,7 +137,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
     }
 
     QByteArray d;
-    QDataStream stream(d);
+    QDataStream stream(&d, QIODevice::WriteOnly);
     stream << data;
 
     for (;i != m_clients.constEnd(); ++i) {

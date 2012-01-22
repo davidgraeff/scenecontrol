@@ -2,11 +2,39 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QMetaMethod>
+#include <QBitArray>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define MAGICSTRING "roomcontrol_"
 
-AbstractPlugin::AbstractPlugin()
+void roomMessageOutput(QtMsgType type, const char *msg)
 {
+    time_t rawtime;
+    tm * ptm;
+    time ( &rawtime );
+    ptm = gmtime ( &rawtime );
+
+    switch (type) {
+    case QtDebugMsg:
+        fprintf(stdout, "[%2d:%02d," PLUGIN_ID "] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        break;
+    case QtWarningMsg:
+        fprintf(stderr, "[%2d:%02d," PLUGIN_ID "] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        break;
+    case QtCriticalMsg:
+        fprintf(stderr, "[%2d:%02d," PLUGIN_ID "] \033[31mCritical: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        break;
+    case QtFatalMsg:
+        fprintf(stderr, "[%2d:%02d," PLUGIN_ID "] \033[31mFatal: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        abort();
+    }
+}
+
+AbstractPlugin::AbstractPlugin(QObject* plugin) :m_plugin(plugin)
+{
+    qInstallMsgHandler(roomMessageOutput);
     connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
 }
 
@@ -16,13 +44,13 @@ bool AbstractPlugin::createCommunicationSockets()
     const QString name = QLatin1String(MAGICSTRING) + QLatin1String(PLUGIN_ID);
     removeServer(name);
     if (!listen(name)) {
-        qWarning() << "Plugin interconnect server for" << PLUGIN_ID << "failed";
+        qWarning() << "Plugin interconnect server failed";
         return false;
     }
     // create connection to server
     QLocalSocket* socketToServer = getClientConnection(COMSERVERSTRING);
     if (!socketToServer) {
-        qWarning() << "Couldn't connect to server:" << PLUGIN_ID << "failed";
+        qWarning() << "Couldn't connect to server";
         return false;
     }
     connect(socketToServer, SIGNAL(disconnected()), SLOT(disconnectedFromServer()));
@@ -35,57 +63,95 @@ void AbstractPlugin::readyReadCommunication()
 
     const QByteArray& plugin_id = m_connectionsBySocket.value(socket);
     if (plugin_id.isEmpty()) {
-        qWarning() << PLUGIN_ID << "Receiving failed";
+        qWarning() << "Receiving failed";
         socket->deleteLater();
         return;
     }
-    while (socket->canReadLine()) {
-        const QByteArray l = socket->readLine();
-        QDataStream stream(l);
-        QVariantMap variantdata;
-        stream >> variantdata;
-        const QByteArray method = ServiceData::method(variantdata);
-        qDebug() << PLUGIN_ID << "Received from" << plugin_id << method << variantdata;
 
-        if (method.size()) {
-            // Predefined methods
-            if (method == "pluginid") {
-                QVariantMap dataout;
-                ServiceData::setMethod(dataout, "pluginid");
-                ServiceData::setPluginid(dataout, PLUGIN_ID);
-                QDataStream streamout(socket);
-                streamout << dataout << '\n';
-            } else if (method == "changeConfig") {
-                const QString key = ServiceData::configurationkey(variantdata);
-                configChanged(key.toUtf8(), variantdata);
-            } else if (method == "initialize") {
-                initialize();
-            } else if (method == "clear") {
-                clear();
-            } else if (method == "requestProperties") {
-                const int sessionid = ServiceData::sessionid(variantdata);
-                requestProperties(sessionid);
-            } else if (method == "session_change") {
-                const int sessionid = ServiceData::sessionid(variantdata);
-                session_change(sessionid, variantdata.value(QLatin1String("running")).toBool());
-            } else if (method == "unregister_event") {
-                const QString eventid = variantdata.value(QLatin1String("eventid")).toString();
-                unregister_event(eventid);
-            } else {
-                qDebug() << "call plugin slot" << PLUGIN_ID << method;
-                // try to call the slot with method name
-                const int c = metaObject()->methodCount();
-                for (int i=0;i<c;++i) {
-                    qDebug() << metaObject()->method(i).signature();
-                }
-                // If method not found call dataFromPlugin
-                dataFromPlugin(plugin_id, variantdata);
-            }
-        } else
+    m_chunk.append(socket->readAll());
+
+    int indexOfChunkEnd;
+    while ((indexOfChunkEnd = m_chunk.indexOf("\n\t")) != -1) {
+        // Read data and decode into a QVariantMap; clear chunk buffer
+        QVariantMap variantdata;
+        {
+            const QByteArray r(m_chunk, indexOfChunkEnd);
+            QDataStream stream(r);
+            stream >> variantdata;
+        }
+        // Drop chunk and chunk-complete-bytes
+        m_chunk.remove(0,indexOfChunkEnd+3);
+
+        // Retrieve method
+        const QByteArray method = ServiceData::method(variantdata);
+
+        if (method.size())
+            qDebug() << plugin_id << "calls method" << method;
+        else
+            qDebug() << "Received from" << plugin_id << variantdata;;
+
+        if (!method.size()) {
             dataFromPlugin(plugin_id, variantdata);
+            continue;
+        }
+        // Predefined methods
+        if (method == "pluginid") {
+            QVariantMap dataout;
+            ServiceData::setMethod(dataout, "pluginid");
+            ServiceData::setPluginid(dataout, PLUGIN_ID);
+            writeToSocket(socket, dataout);
+        } else if (method == "configChanged") {
+            const QString key = ServiceData::configurationkey(variantdata);
+            configChanged(key.toUtf8(), variantdata);
+        } else if (method == "initialize") {
+            initialize();
+        } else if (method == "clear") {
+            clear();
+        } else if (method == "requestProperties") {
+            const int sessionid = ServiceData::sessionid(variantdata);
+            requestProperties(sessionid);
+        } else if (method == "session_change") {
+            const int sessionid = ServiceData::sessionid(variantdata);
+            session_change(sessionid, variantdata.value(QLatin1String("running")).toBool());
+        } else if (method == "unregister_event") {
+            const QString eventid = variantdata.value(QLatin1String("eventid")).toString();
+            unregister_event(eventid);
+        } else {
+            // Prepare response
+            QVariantMap responseData;
+            ServiceData::setMethod(responseData, "methodresponse");
+            ServiceData::setPluginid(responseData, PLUGIN_ID);
+
+            int methodId = invokeHelperGetMethodId(method);
+            // If method not found call dataFromPlugin
+            if (methodId == -1) {
+                qWarning() << "Method not found!" << method;
+                responseData[QLatin1String("error")] = "Method not found!";
+                writeToSocket(socket, responseData);
+                continue;
+            }
+
+            QVector<QVariant> argumentsInOrder(9);
+            int params;
+            if ((params = invokeHelperMakeArgumentList(methodId, variantdata, argumentsInOrder)) == 0) {
+                responseData[QLatin1String("error")] = "Arguments list incompatible!";
+                writeToSocket(socket, responseData);
+                continue;
+            }
+
+            const char* returntype = m_plugin->metaObject()->method(methodId).typeName();
+            responseData[QLatin1String("response")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
+            writeToSocket(socket, responseData);
+        }
     }
 }
 
+
+void AbstractPlugin::writeToSocket(QLocalSocket* socket, const QVariantMap& data) {
+    QDataStream streamout(socket);
+    streamout << data;
+    streamout.writeRawData("\n\t\0", 3);
+}
 
 void AbstractPlugin::newConnectionCommunication()
 {
@@ -102,27 +168,14 @@ void AbstractPlugin::newConnectionCommunication()
     }
 }
 
-bool AbstractPlugin::sendCmdToPlugin(const QByteArray& plugin_id, const QByteArray& data)
-{
-    QLocalSocket* socket = getClientConnection(plugin_id);
-    if (!socket)
-        return false;
-    QDataStream stream(socket);
-    // send payload to other plugin
-    stream << data << '\n';
-    return true;
-}
-
-bool AbstractPlugin::sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data)
+bool AbstractPlugin::sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& dataout)
 {
     QLocalSocket* socket = getClientConnection(plugin_id);
     if (!socket) {
-        qWarning() << PLUGIN_ID << "Failed to send data to" << plugin_id;
+        qWarning() << "Failed to send data to" << plugin_id;
         return false;
     }
-    QDataStream stream(socket);
-    // send payload to other plugin
-    stream << data << '\n';
+    writeToSocket(socket, dataout);
     return true;
 }
 
@@ -177,3 +230,40 @@ void AbstractPlugin::disconnectedFromServer() {
     QCoreApplication::exit(1);
 }
 
+int AbstractPlugin::invokeHelperGetMethodId(const QByteArray& methodName) {
+    const int c = m_plugin->metaObject()->methodCount();
+    for (int i=0;i<c;++i) {
+        // Extract method name from signature of QMetaMethod
+        QByteArray methodNameOfPlugin(m_plugin->metaObject()->method(i).signature());
+        methodNameOfPlugin.resize(methodNameOfPlugin.indexOf('('));
+
+        if (methodNameOfPlugin == methodName)
+            return i;
+    }
+    return -1;
+}
+
+int AbstractPlugin::invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output) {
+    QList<QByteArray> parameterNames = m_plugin->metaObject()->method(methodID).parameterNames();
+    QList<QByteArray> parameterTypes = m_plugin->metaObject()->method(methodID).parameterTypes();
+    const int numParams = parameterNames.size();
+    for (int paramNameIndex=0;paramNameIndex<numParams && paramNameIndex<output.size();++paramNameIndex) {
+        // Look for a key in inputData that matches the current parameter name
+        const QVariantMap::const_iterator paramPosition = inputData.find(QString::fromAscii(parameterNames[paramNameIndex]));
+        // If not found abort
+        if (paramPosition == inputData.end()) {
+            qWarning() << "Method parameter missing!" << parameterNames[paramNameIndex] << inputData;
+            return 0;
+        } else { // Otherwise create a QVariant a copy that to the output QVector
+            output[paramNameIndex] = paramPosition.value();
+        }
+    }
+    return numParams;
+}
+
+#define QX_ARG(i) ((numParams>i)?QGenericArgument(p ## i .typeName(), p ## i .constData()):QGenericArgument())
+QVariant AbstractPlugin::invokeSlot(const QByteArray& methodname, int numParams, const char* returntype, QVariant p0, QVariant p1, QVariant p2, QVariant p3, QVariant p4, QVariant p5, QVariant p6, QVariant p7, QVariant p8) {
+    QVariant result;
+    QMetaObject::invokeMethod(m_plugin, methodname, QGenericReturnArgument(returntype,result.data()), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
+    return result;
+}

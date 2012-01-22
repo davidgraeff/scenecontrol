@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() {
+plugin::plugin() : AbstractPlugin(this) {
     m_repeat = 0;
     m_repeatInit = 0;
     m_devicelist = new ManagedDeviceList();
@@ -66,7 +66,7 @@ void plugin::clear() {
 void plugin::initialize() {
     clear();
     for ( int i=0;keynames[i].name;++i ) {
-        m_keymapping[keynames[i].value] = QString::fromAscii ( keynames[i].name );
+        m_keymapping[keynames[i].value] = keynames[i].name;
     }
     m_devicelist->start();
 }
@@ -79,8 +79,8 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         m_repeatInit = data[QLatin1String("repeat_init")].toInt();
 }
 
-void plugin::select_input_device ( int sessionid, const QString& udid) {
-    QMap<QString, InputDevice*>::iterator it = m_devices.begin();
+void plugin::select_input_device ( int sessionid, const QByteArray& udid) {
+    QMap<QByteArray, InputDevice*>::iterator it = m_devices.begin();
     for ( ;it != m_devices.end();++it ) {
         ( *it )->disconnectSession ( sessionid );
     }
@@ -89,28 +89,30 @@ void plugin::select_input_device ( int sessionid, const QString& udid) {
     inputdevice->connectSession ( sessionid );
 }
 
-void plugin::eventinput ( const QString& eventid, const QString& collectionuid, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
+void plugin::inputevent ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& inputdevice, const QByteArray& kernelkeyname, bool repeat) {
     // Add to input events list
     EventInputStructure s;
-    s.collectionuid = collectionuid;
+    s.collectionuid = collection_;
     s.inputdevice = inputdevice;
     s.kernelkeyname = kernelkeyname;
     s.repeat = repeat;
-    m_events.insert(eventid, s);
+    m_events.insert(_id, s);
 
     // If device for this event already exists, register key
     InputDevice* inputdeviceObj = m_devices.value ( inputdevice );
+    qDebug() << "inputevent"; // << inputdevice << inputdeviceObj;
     if ( !inputdeviceObj )
         return;
-    m_devices_by_eventsids.insert(eventid, inputdeviceObj);
-    inputdeviceObj->registerKey ( eventid, collectionuid, kernelkeyname, repeat );
+    m_devices_by_eventsids.insert(_id, inputdeviceObj);
+    inputdeviceObj->registerKey ( _id, collection_, kernelkeyname, repeat );
 }
 
 void plugin::unregister_event ( const QString& eventid) {
-    m_events.remove(eventid);
-    InputDevice* inputdevice = m_devices_by_eventsids.take ( eventid );
+  const QByteArray eventID2 = eventid.toAscii();
+    m_events.remove(eventID2);
+    InputDevice* inputdevice = m_devices_by_eventsids.take ( eventID2 );
     if ( inputdevice )
-        inputdevice->unregisterKey (eventid );
+        inputdevice->unregisterKey (eventID2 );
 }
 
 void plugin::session_change ( int sessionid, bool running ) {
@@ -136,7 +138,7 @@ void plugin::deviceAdded ( ManagedDevice* device ) {
     inputdevice = new InputDevice ( this );
     m_devices[device->udid] = inputdevice;
     inputdevice->setDevice ( device );
-    QMap<QString, EventInputStructure>::iterator i = m_events.begin();
+    QMap<QByteArray, EventInputStructure>::iterator i = m_events.begin();
     for (;i!=m_events.end(); ++i) {
         if (i.value().inputdevice == device->udid)
             inputdevice->registerKey ( i.key(), i.value().collectionuid, i.value().kernelkeyname, i.value().repeat );
@@ -218,7 +220,7 @@ void InputDevice::connectDevice() {
             sc.setData ( "listen", false );
             sc.setData ( "errormsg", QString ( QLatin1String ( "InputDevice " ) + m_device->devPath + QLatin1String ( " open failed. No access rights!" ) ) );
         } else {
-            fd = open ( m_device->devPath.toUtf8(), O_RDONLY|O_NDELAY );
+            fd = open ( m_device->devPath, O_RDONLY|O_NDELAY );
             if ( fd!=-1 ) {
                 delete m_socketnotifier;
                 m_socketnotifier = new QSocketNotifier ( fd, QSocketNotifier::Read );
@@ -244,8 +246,8 @@ void InputDevice::setDevice ( ManagedDevice* device ) {
     connectDevice();
 }
 
-void InputDevice::unregisterKey ( QString uid ) {
-    QMutableMapIterator<QString, EventKey* > it ( m_keyToUids );
+void InputDevice::unregisterKey ( const QByteArray& uid ) {
+    QMutableMapIterator<QByteArray, EventKey* > it ( m_keyToUids );
     while ( it.hasNext() ) {
         it.next();
         it.value()->ServiceUidToCollectionUid.remove ( uid );
@@ -257,7 +259,7 @@ void InputDevice::unregisterKey ( QString uid ) {
         disconnectDevice();
 }
 
-void InputDevice::registerKey ( QString uid, QString collectionuid, QString key, bool repeat ) {
+void InputDevice::registerKey ( QString uid, QString collectionuid, const QByteArray& key, bool repeat ) {
     EventKey* eventkey = m_keyToUids[key];
     if (!eventkey) eventkey = new EventKey();
     eventkey->ServiceUidToCollectionUid.insertMulti ( uid, collectionuid );
@@ -281,7 +283,7 @@ void InputDevice::eventData() {
         if ( ev->type != EV_KEY ) break;
         m_repeattimer.stop();
         if ( ( ev->value == KEY_PRESS ) || ( ev->value == KEY_KEEPING_PRESSED ) ) {
-            const QString& kernelkeyname = m_plugin->m_keymapping.value ( ev->code );
+            const QByteArray& kernelkeyname = m_plugin->m_keymapping.value ( ev->code );
             //qDebug() << "key event" << m_device->devPath << kernelkeyname;
             // properties
             {
@@ -302,7 +304,7 @@ void InputDevice::eventData() {
     m_socketnotifier->setEnabled(true);
 }
 void InputDevice::repeattrigger ( bool initial_event ) {
-    QMap<QString, EventKey*>::iterator it = m_keyToUids.find ( m_lastkey );
+    QMap<QByteArray, EventKey*>::iterator it = m_keyToUids.find ( m_lastkey );
     if ( it == m_keyToUids.end() ) return;
 
     const EventKey* event = *it;
