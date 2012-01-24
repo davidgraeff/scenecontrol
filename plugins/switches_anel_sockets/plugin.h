@@ -39,7 +39,7 @@ public:
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
 public Q_SLOTS:
-    void setSwitch ( const QByteArray& channel, bool value, bool propagate = true);
+    void setSwitch ( const QByteArray& channel, bool value);
     void toggleSwitch ( const QByteArray& channel );
     bool getSwitch( const QByteArray& channel ) const;
     bool isSwitchOn( const QByteArray& channel, bool value );

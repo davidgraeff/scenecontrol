@@ -106,7 +106,7 @@ bool plugin::getSwitch( const QByteArray& channel ) const
     return m_ios[channel].value;
 }
 
-void plugin::setSwitch ( const QByteArray& channel, bool value, bool propagate )
+void plugin::setSwitch ( const QByteArray& channel, bool value )
 {
     if (!m_mapChannelToHost.contains(channel)) return;
     QPair<QHostAddress,uint> p = m_mapChannelToHost[channel];
@@ -117,9 +117,6 @@ void plugin::setSwitch ( const QByteArray& channel, bool value, bool propagate )
         m_cache[p.first.toString()] &= (unsigned char)~(1 << p.second);
 
     if (!m_cacheTimer.isActive()) m_cacheTimer.start();
-
-    if (!propagate)
-        return;
 
     ServiceData sc = ServiceData::createModelChangeItem("anel.io");
     sc.setData("channel", channel);
@@ -193,7 +190,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
         return;
 
     if (ServiceData::isMethod(data, "switchChanged")) {
-        setSwitch(data[QLatin1String("channel")].toByteArray(), data[QLatin1String("value")].toInt(), false);
+        setSwitch(data[QLatin1String("channel")].toByteArray(), data[QLatin1String("value")].toInt());
     }
 }
 
