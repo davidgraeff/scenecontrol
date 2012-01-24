@@ -24,7 +24,7 @@ private Q_SLOTS:
     // processes of PluginController
     void startTimeout();
 public slots:
-    void finished(int);
+    void finished(int exitCode, QProcess::ExitStatus exitStatus);
 };
 
 class PluginCommunication: public QObject {

@@ -100,11 +100,11 @@ void plugin::inputevent ( const QByteArray& _id, const QByteArray& collection_, 
 
     // If device for this event already exists, register key
     InputDevice* inputdeviceObj = m_devices.value ( inputdevice );
-    qDebug() << "inputevent"; // << inputdevice << inputdeviceObj;
     if ( !inputdeviceObj )
         return;
     m_devices_by_eventsids.insert(_id, inputdeviceObj);
     inputdeviceObj->registerKey ( _id, collection_, kernelkeyname, repeat );
+    qDebug() << "inputevent" << inputdevice << inputdeviceObj;
 }
 
 void plugin::unregister_event ( const QString& eventid) {
@@ -143,6 +143,7 @@ void plugin::deviceAdded ( ManagedDevice* device ) {
         if (i.value().inputdevice == device->udid)
             inputdevice->registerKey ( i.key(), i.value().collectionuid, i.value().kernelkeyname, i.value().repeat );
     }
+    qDebug() << "deviceAdded" << inputdevice << device->udid;
 }
 
 void plugin::deviceRemoved ( ManagedDevice* device ) {

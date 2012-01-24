@@ -41,7 +41,7 @@ void PluginCommunication::readyRead()
         m_chunk.remove(0,indexOfChunkEnd+3);
 
         const QByteArray method = ServiceData::method(variantdata);
-        qDebug() << "Data from" << id << variantdata;
+        //qDebug() << "Data from" << id << variantdata;
         if (method == "pluginid") {
             id = ServiceData::pluginid(variantdata);
             if (id.isEmpty()) {
@@ -52,7 +52,9 @@ void PluginCommunication::readyRead()
             // Add to normal plugins
             m_controller->addPlugin(id, this);
             // request configuration
+            initialize();
             CouchDB::instance()->requestPluginSettings(id);
+            CouchDB::instance()->requestEvents(id);
         } else if (method == "changeConfig") {
             const QString key = ServiceData::configurationkey(variantdata);
             if (key.isEmpty()) {
@@ -73,6 +75,7 @@ void PluginCommunication::readyRead()
                 qWarning() << "Server: Request collection execution by event for" << id <<"but no collectionid provided";
                 continue;
             }
+            qDebug() << "eventTriggered";
             CollectionController::instance()->requestExecutionByCollectionId(collectionid);
         }
     }
@@ -151,7 +154,9 @@ bool PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, QVar
     }
     // Block signals to not call readyRead by the event system for the next read
 
-    if (!writeToPlugin(methodAndArguments))
+    QVariantMap modified = methodAndArguments;
+    modified[QLatin1String("expectresponse_")] = returnValue?true:false;
+    if (!writeToPlugin(modified))
         return false;
     m_pluginCommunication->waitForBytesWritten();
     m_pluginCommunication->blockSignals(true);
@@ -223,7 +228,7 @@ bool PluginCommunication::writeToPlugin(const QVariantMap& data) {
 PluginProcess::PluginProcess(PluginController* controller, const QString& filename)
         : m_controller(controller), m_filename(filename), m_aboutToFree(false) {
     m_pluginProcess.setProcessChannelMode(QProcess::ForwardedChannels);
-    connect(&m_pluginProcess, SIGNAL(finished(int)), SLOT(finished(int)));
+    connect(&m_pluginProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(finished(int,QProcess::ExitStatus)));
     m_pluginProcess.start(filename);
     if (m_pluginProcess.waitForStarted())
         qDebug() << "Started plugin process" << filename;
@@ -242,8 +247,8 @@ PluginProcess::~PluginProcess() {
     }
 }
 
-void PluginProcess::finished(int) {
-    if (m_pluginProcess.exitStatus()==QProcess::CrashExit)
+void PluginProcess::finished(int exitCode, QProcess::ExitStatus exitStatus) {
+    if (exitStatus==QProcess::CrashExit && exitCode != 0)
         qWarning() << "Server: Plugin crashed" << m_filename << m_pluginProcess.pid();
     else
         qDebug() << "Server: Plugin finished" << m_filename << m_pluginProcess.pid();

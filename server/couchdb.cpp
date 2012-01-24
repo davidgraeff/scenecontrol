@@ -99,10 +99,10 @@ bool CouchDB::connectToDatabase() {
     return true;
 }
 
-void CouchDB::requestEvents()
+void CouchDB::requestEvents(const QString& plugin_id)
 {
     QEventLoop eventLoop;
-    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/events" ) );
+    QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/events?key=\"%1\"#%1" ).arg ( plugin_id ) );
     QNetworkReply *r = get ( request );
     connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
     eventLoop.exec();

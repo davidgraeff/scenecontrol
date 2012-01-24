@@ -123,9 +123,8 @@ int main(int argc, char *argv[])
     else if (!exitcode && !cmdargs.contains("--no-event-loop")) {
         // Start plugin processes
         if (!cmdargs.contains("--no-autoload-plugins"))
-            plugins->loadplugins();
-	// request some data from database and start change listeners
-        couchdb->requestEvents();
+            plugins->startplugins();
+	// start change listeners
         couchdb->startChangeListenerEvents();
         couchdb->startChangeListenerSettings();
         exitcode = qapp.exec();

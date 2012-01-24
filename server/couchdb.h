@@ -41,7 +41,7 @@ public:
      * Request all events (synchronous)
      * Is called 
      */
-    void requestEvents();
+    void requestEvents(const QString& plugin_id);
     void startChangeListenerSettings();
     void startChangeListenerEvents();
 

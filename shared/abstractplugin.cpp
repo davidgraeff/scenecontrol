@@ -140,8 +140,15 @@ void AbstractPlugin::readyReadCommunication()
             }
 
             const char* returntype = m_plugin->metaObject()->method(methodId).typeName();
+	    // If no response is expected, write the method-response message before invoking the target method,
+	    // because that may write data the the server and the response-message have to be the first answer
+	    bool expectResult = variantdata.value(QLatin1String("expectresponse_")).toBool();
+	    if (!expectResult)
+	      writeToSocket(socket, responseData);
             responseData[QLatin1String("response")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
-            writeToSocket(socket, responseData);
+	    // For methods that expect a response, writing to the server is not allowed in the invoked slot
+	    if (expectResult)
+	      writeToSocket(socket, responseData);
         }
     }
 }
@@ -227,7 +234,7 @@ void AbstractPlugin::eventTriggered(const QByteArray& eventid, const QByteArray&
 }
 
 void AbstractPlugin::disconnectedFromServer() {
-    QCoreApplication::exit(1);
+    QCoreApplication::exit(0);
 }
 
 int AbstractPlugin::invokeHelperGetMethodId(const QByteArray& methodName) {

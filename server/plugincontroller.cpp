@@ -49,7 +49,7 @@ void PluginController::newConnection()
     while ( QLocalSocket* socket = m_comserver.nextPendingConnection()) {
         PluginCommunication* plugin =  m_pendingplugins.value(socket);
         if (!plugin)
-	  m_pendingplugins.insert( socket, new PluginCommunication( this, socket ) );
+            m_pendingplugins.insert( socket, new PluginCommunication( this, socket ) );
     }
 }
 
@@ -103,7 +103,7 @@ void PluginController::couchDB_settings(const QString& pluginid, const QString& 
     p->configChanged(key.toAscii(), data);
 }
 
-bool PluginController::loadplugins() {
+bool PluginController::startplugins() {
     const QString name = QLatin1String(MAGICSTRING) + QLatin1String(COMSERVERSTRING);
     m_comserver.removeServer(name);
     if (!m_comserver.listen(name)) {
@@ -117,11 +117,6 @@ bool PluginController::loadplugins() {
     for (int i=0;i<pluginfiles.size();++i) {
         // Start process by filename and insert into processes list
         m_pluginprocesses.insert( new PluginProcess( this, plugindir.absoluteFilePath ( pluginfiles[i] ) ) );
-    }
-
-    QMap<QString,PluginCommunication*>::iterator i = m_plugins.begin();
-    for (;i!=m_plugins.end();++i) {
-        (*i)->initialize();
     }
     return true;
 }
