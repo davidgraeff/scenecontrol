@@ -89,13 +89,13 @@ public Q_SLOTS:
     int getCurtain();
     bool isCurtainInPosition( int lower, int upper );
 
-    int countChannels();
-    bool isValue( const QString& channel, int lower, int upper );
-    void setChannel ( const QString& channel, uint value, uint fade );
-    void inverseChannel(const QString& channel, uint fade);
-    void setChannelExponential ( const QString& channel, int multiplikator, uint fade );
-    void setChannelRelative ( const QString& channel, int value, uint fade );
-    unsigned int getChannel(const QString& channel) const;
+    void setLed ( const QByteArray& channel, int value, int fade );
+    void setLedExponential ( const QByteArray& channel, int multiplikator, int fade );
+    void setLedRelative ( const QByteArray& channel, int value, int fade );
+    void toggleLed ( const QByteArray& channel, int fade );
+    int getLed( const QByteArray& channel ) const;
+    bool isLedValue( const QByteArray& channel, int lower, int upper );
+    int countLeds();
 private Q_SLOTS:
     void readyRead();
     void panicTimeout();

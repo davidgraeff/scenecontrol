@@ -54,20 +54,6 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         connectToLeds ( data[QLatin1String("serialport")].toString() );
 }
 
-bool plugin::isValue( const QString& channel, int lower, int upper ) {
-    const int v = getChannel ( channel );
-    if ( v>upper ) return false;
-    if ( v<lower ) return false;
-    return true;
-}
-
-bool plugin::isCurtainInPosition( int lower, int upper ) {
-    const int v = getCurtain();
-    if ( v>upper ) return false;
-    if ( v<lower ) return false;
-    return true;
-}
-
 void plugin::requestProperties(int sessionid) {
     changeProperty(ServiceData::createModelReset("roomcontrol.leds", "channel").getData(), sessionid);
     QMap<QString, plugin::ledchannel>::iterator i = m_leds.begin();
@@ -189,6 +175,13 @@ void plugin::parseLeds ( const QByteArray& data ) {
     }
 }
 
+bool plugin::isCurtainInPosition( int lower, int upper ) {
+    const int v = getCurtain();
+    if ( v>upper ) return false;
+    if ( v<lower ) return false;
+    return true;
+}
+
 void plugin::setCurtain ( unsigned int position ) {
     if ( !m_serial ) return;
     m_curtain_value = position;
@@ -201,14 +194,21 @@ int plugin::getCurtain() {
     return m_curtain_value;
 }
 
-unsigned int plugin::getChannel ( const QString& channel ) const {
+bool plugin::isLedValue( const QByteArray& channel, int lower, int upper ) {
+    const int v = getLed ( channel );
+    if ( v>upper ) return false;
+    if ( v<lower ) return false;
+    return true;
+}
+
+int plugin::getLed( const QByteArray& channel ) const {
     return m_leds.value ( channel ).value;
 }
 
-void plugin::setChannel ( const QString& channel, uint value, uint fade ) {
+void plugin::setLed ( const QByteArray& channel, int value, int fade ) {
     if ( !m_serial ) return;
     if ( !m_leds.contains(channel) ) return;
-    value = qBound ( ( unsigned int ) 0, value, ( unsigned int ) 255 );
+    value = qBound ( 0, value, 255 );
     m_leds[channel].value = value;
     ledChanged ( channel, value );
 
@@ -233,13 +233,13 @@ void plugin::setChannel ( const QString& channel, uint value, uint fade ) {
     m_serial->write ( t1, sizeof ( t1 ) );
 }
 
-void plugin::inverseChannel ( const QString& channel, uint fade ) {
-    if ( !m_leds.contains(channel) ) return;
-    const unsigned int newvalue = 255 - m_leds[channel].value;
-    setChannel ( channel, newvalue, fade );
+void plugin::toggleLed ( const QByteArray& channel, int fade )
+{
+    if (!m_leds.contains(channel)) return;
+    setLed ( channel, (m_leds[channel].value==0?255:0), fade );
 }
 
-void plugin::setChannelExponential ( const QString& channel, int multiplikator, uint fade ) {
+void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, int fade ) {
     if ( !m_leds.contains(channel) ) return;
     unsigned int v = m_leds[channel].value;
     if ( multiplikator>100 ) {
@@ -256,18 +256,18 @@ void plugin::setChannelExponential ( const QString& channel, int multiplikator, 
             v = ( v * multiplikator ) /100;
     }
 
-    setChannel ( channel, v, fade );
+    setLed ( channel, v, fade );
 }
 
-void plugin::setChannelRelative ( const QString& channel, int value, uint fade ) {
+void plugin::setLedRelative ( const QByteArray& channel, int value, int fade ) {
     if (! m_leds.contains(channel) )
         return;
     value += m_leds[channel].value;
     const unsigned int v = ( unsigned int ) qMin ( 0, value );
-    setChannel ( channel, v, fade );
+    setLed ( channel, v, fade );
 }
 
-int plugin::countChannels() {
+int plugin::countLeds() {
     return m_channels;
 }
 

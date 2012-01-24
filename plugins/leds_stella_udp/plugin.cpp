@@ -47,7 +47,7 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
 }
 
-bool plugin::isValue( const QString& channel, int lower, int upper ) {
+bool plugin::isLedValue( const QByteArray& channel, int lower, int upper ) {
     const int v = getChannel ( channel );
     if ( v>upper ) return false;
     if ( v<lower ) return false;
@@ -75,17 +75,17 @@ void plugin::ledChanged(QString channel, int value) {
     changeProperty(sc.getData());
 }
 
-unsigned int plugin::getChannel ( const QString& channel ) const {
+unsigned int plugin::getChannel ( const QByteArray& channel ) const {
     return m_leds.value ( channel ).value;
 }
 
-void plugin::inverseChannel ( const QString& channel, uint fade ) {
+void plugin::inverseChannel ( const QByteArray& channel, uint fade ) {
     if ( !m_leds.contains(channel) ) return;
     const unsigned int newvalue = 255 - m_leds[channel].value;
     setChannel ( channel, newvalue, fade );
 }
 
-void plugin::setChannelExponential ( const QString& channel, int multiplikator, uint fade ) {
+void plugin::setChannelExponential ( const QByteArray& channel, int multiplikator, uint fade ) {
     if ( !m_leds.contains(channel) ) return;
     unsigned int v = m_leds[channel].value;
     if ( multiplikator>100 ) {
@@ -105,7 +105,7 @@ void plugin::setChannelExponential ( const QString& channel, int multiplikator, 
     setChannel ( channel, v, fade );
 }
 
-void plugin::setChannelRelative ( const QString& channel, int value, uint fade ) {
+void plugin::setChannelRelative ( const QByteArray& channel, int value, uint fade ) {
     if (! m_leds.contains(channel) ) return;
     setChannel ( channel,  value + m_leds[channel].value, fade );
 }
@@ -115,7 +115,7 @@ int plugin::countChannels() {
     return m_channels;
 }
 
-void plugin::setChannel ( const QString& channel, int value, uint fade ) {
+void plugin::setChannel ( const QByteArray& channel, int value, uint fade ) {
     if ( !m_socket ) return;
     if ( !m_leds.contains(channel) ) return;
     ledchannel* l = &(m_leds[channel]);

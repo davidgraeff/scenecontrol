@@ -77,10 +77,10 @@ private Q_SLOTS:
     void readyRead();
 public Q_SLOTS:
     int countChannels();
-    void setChannel ( const QString& channel, int value, uint fade );
-    void inverseChannel(const QString& channel, uint fade);
-    void setChannelExponential ( const QString& channel, int multiplikator, uint fade );
-    void setChannelRelative ( const QString& channel, int value, uint fade );
-    unsigned int getChannel(const QString& channel) const;
-    bool isValue( const QString& channel, int lower, int upper );
+    void setChannel ( const QByteArray& channel, int value, uint fade );
+    void inverseChannel(const QByteArray& channel, uint fade);
+    void setChannelExponential ( const QByteArray& channel, int multiplikator, uint fade );
+    void setChannelRelative ( const QByteArray& channel, int value, uint fade );
+    unsigned int getChannel(const QByteArray& channel) const;
+    bool isLedValue( const QByteArray& channel, int lower, int upper );
 };
