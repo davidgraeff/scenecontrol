@@ -37,27 +37,29 @@ private Q_SLOTS:
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
     void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 
-    QString getSwitchName ( const QString& channel );
-    void setSwitch ( const QString& channel, bool value );
-    void setSwitchName ( const QString& channel, const QString& name );
-    void toggleSwitch ( const QString& channel );
-    bool getSwitch( const QString& channel ) const;
+    // Get, Set Names
+    QString getSwitchName ( const QByteArray& channel );
+    void setSwitchName ( const QByteArray& channel, const QString& name );
+    // Get, Set Values
+    void setSwitch ( const QByteArray& channel, bool value );
+    void toggleSwitch ( const QByteArray& channel );
+    bool getSwitch( const QByteArray& channel ) const;
+    bool isSwitchOn( const QByteArray& channel, bool value );
     int countSwitchs();
-    bool isOn( const QString& channel, bool value );
     
     void cacheToDevice();
 private:
     struct iochannel {
         int value;
         QString name;
-	QString channel;
+	QByteArray channel;
         QByteArray plugin_id;
 
         iochannel() {
             value = -1;
         }
     };
-    QMap<QString,iochannel> m_ios;
+    QMap<QByteArray,iochannel> m_ios;
     QTimer m_cacheTimer;
     QSet<iochannel*> m_cache;
     QMap<QString, QString> m_namecache;

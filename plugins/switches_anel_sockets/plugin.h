@@ -39,20 +39,21 @@ public:
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
 public Q_SLOTS:
-    void setChannel ( const QString& pin, bool value, bool propagate = true );
-    void toggleChannel ( const QString& pin );
-    bool getChannel( const QString& pin ) const;
-    bool isChannelValue( const QString& pin, bool value);
-    int countChannels();
+    void setSwitch ( const QByteArray& channel, bool value, bool propagate = true);
+    void toggleSwitch ( const QByteArray& channel );
+    bool getSwitch( const QByteArray& channel ) const;
+    bool isSwitchOn( const QByteArray& channel, bool value );
+    int countSwitchs();
     void connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd);
 private:
-    QMap< QString, QPair<QHostAddress,uint> > m_mapChannelToHost;
+    QMap< QByteArray, QPair<QHostAddress,uint> > m_mapChannelToHost;
     int m_sendPort;
     QString m_user;
     QString m_pwd;
     QUdpSocket *m_listenSocket;
     QUdpSocket *m_writesocket;
     QTimer m_cacheTimer;
+    // Host address -> 8-bit value (= 8 switches)
     QMap<QString, unsigned char> m_cache;
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     struct iochannel {
@@ -61,7 +62,7 @@ private:
             value = -1;
         }
     };
-    QMap<QString,iochannel> m_ios;
+    QMap<QByteArray,iochannel> m_ios;
 private Q_SLOTS:
     void readyRead();
     void cacheToDevice();

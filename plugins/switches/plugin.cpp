@@ -49,13 +49,13 @@ void plugin::initialize() {
     m_cache.clear();
 }
 
-bool plugin::isOn ( const QString& channel, bool value )  {
+bool plugin::isSwitchOn ( const QByteArray& channel, bool value )  {
     return ( getSwitch ( channel ) == value );
 }
 
 void plugin::requestProperties(int sessionid) {
     changeProperty(ServiceData::createModelReset("switches", "channel").getData(), sessionid);
-    QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
+    QMap<QByteArray, plugin::iochannel>::iterator i = m_ios.begin();
     for (;i!=m_ios.end();++i) {
         const plugin::iochannel& str = i.value();
         ServiceData sc = ServiceData::createModelChangeItem("switches");
@@ -66,13 +66,13 @@ void plugin::requestProperties(int sessionid) {
     }
 }
 
-bool plugin::getSwitch(const QString& channel) const
+bool plugin::getSwitch(const QByteArray& channel) const
 {
     if (!m_ios.contains(channel)) return false;
     return m_ios[channel].value;
 }
 
-void plugin::setSwitch ( const QString& channel, bool value )
+void plugin::setSwitch ( const QByteArray& channel, bool value )
 {
     if (!m_ios.contains(channel)) return;
     iochannel& p = m_ios[channel];
@@ -82,7 +82,7 @@ void plugin::setSwitch ( const QString& channel, bool value )
     if (!m_cacheTimer.isActive()) m_cacheTimer.start();
 }
 
-void plugin::setSwitchName ( const QString& channel, const QString& name )
+void plugin::setSwitchName ( const QByteArray& channel, const QString& name )
 {
     if ( !m_ios.contains(channel) ) return;
     if (name.isNull()) return;
@@ -100,10 +100,10 @@ void plugin::setSwitchName ( const QString& channel, const QString& name )
     settings[QLatin1String("channel")] = channel;
     settings[QLatin1String("name")] = name;
     settings[QLatin1String("isname")] = true;
-    changeConfig("channelname_" + channel.toUtf8(),settings);
+    changeConfig("channelname_" + channel,settings);
 }
 
-void plugin::toggleSwitch ( const QString& channel )
+void plugin::toggleSwitch ( const QByteArray& channel )
 {
     if (!m_ios.contains(channel)) return;
     setSwitch ( channel, !m_ios[channel].value );
@@ -113,7 +113,7 @@ int plugin::countSwitchs() {
     return m_ios.size();
 }
 
-QString plugin::getSwitchName(const QString& channel) {
+QString plugin::getSwitchName(const QByteArray& channel) {
     if (!m_ios.contains(channel)) return QString();
     return m_ios[channel].name;
 }
@@ -122,7 +122,7 @@ QString plugin::getSwitchName(const QString& channel) {
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     Q_UNUSED(configid);
     if (data.contains(QLatin1String("isname")) && data.contains(QLatin1String("channel")) && data.contains(QLatin1String("name"))) {
-        const QString channel = data.value(QLatin1String("channel")).toString();
+        const QByteArray channel = data.value(QLatin1String("channel")).toByteArray();
         const QString name = data.value(QLatin1String("name")).toString();
         if (m_ios.contains(channel)) {
             m_ios[channel].name = name;
@@ -149,7 +149,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
 {
     if (ServiceData::isMethod(data, "clear")) {
         // Remove all leds referenced by "plugin_id"
-        QMutableMapIterator<QString, iochannel> i(m_ios);
+        QMutableMapIterator<QByteArray, iochannel> i(m_ios);
         while (i.hasNext()) {
             i.next();
             if (i.value().plugin_id == plugin_id) {
@@ -161,7 +161,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
         }
         return;
     } else if (ServiceData::isMethod(data, "switchChanged")) {
-        const QString channel = data[QLatin1String("channel")].toString();
+        const QByteArray channel = data[QLatin1String("channel")].toByteArray();
         // Assign data to structure
         bool before = m_ios.contains(channel);
         iochannel& io = m_ios[channel];
