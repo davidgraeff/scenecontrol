@@ -321,7 +321,11 @@ void plugin::connectToLeds ( const QString& device ) {
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    Q_UNUSED(plugin_id);
-    Q_UNUSED(data);
-}
+    if (plugin_id != "leds")
+        return;
 
+    if (ServiceData::isMethod(data, "ledChanged")) {
+        qDebug() << "Led update" << data;
+        setLed(data[QLatin1String("channel")].toByteArray(), data[QLatin1String("value")].toInt(), data[QLatin1String("fade")].toInt());
+    }
+}

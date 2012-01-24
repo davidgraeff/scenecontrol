@@ -31,9 +31,6 @@ int main(int argc, char* argv[]) {
 }
 
 plugin::plugin() : AbstractPlugin(this) {
-    connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
-    m_cacheTimer.setInterval(50);
-    m_cacheTimer.setSingleShot(true);
     connect(&m_moodlightTimer, SIGNAL(timeout()),SLOT(moodlightTimeout()));
     m_moodlightTimer.setInterval(5000);
     srand(100);
@@ -48,7 +45,6 @@ void plugin::clear() {
 
 void plugin::initialize() {
     m_ios.clear();
-    m_cache.clear();
 }
 
 bool plugin::isLedValue ( const QByteArray& channel, int lower, int upper )  {
@@ -119,9 +115,13 @@ void plugin::setLed ( const QByteArray& channel, int value, int fade )
     iochannel& p = m_ios[channel];
     p.value = value;
     p.fadeType = fade;
-    m_cache.insert(&p);
 
-    if (!m_cacheTimer.isActive()) m_cacheTimer.start();
+    QVariantMap datamap;
+    ServiceData::setMethod(datamap,"ledChanged");
+    datamap[QLatin1String("channel")] = channel;
+    datamap[QLatin1String("value")] = value;
+    datamap[QLatin1String("fade")] = fade;
+    sendDataToPlugin(p.plugin_id, datamap);
 }
 
 void plugin::setLedName ( const QByteArray& channel, const QString& name, bool updateDatabase )
@@ -190,20 +190,6 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         }
         m_namecache.insert(channel, name);
     }
-}
-
-// send data from set-cache (max 50ms old) to the respective plugin via interconnect communication
-void plugin::cacheToDevice()
-{
-    QSet<iochannel*>::const_iterator it = m_cache.constBegin();
-    QVariantMap datamap;
-    for (;it != m_cache.constEnd(); ++it) {
-        ServiceData::setMethod(datamap,"ledChanged");
-        datamap[QLatin1String("channel")] = (*it)->channel;
-        datamap[QLatin1String("value")] = (*it)->value;
-        sendDataToPlugin((*it)->plugin_id, datamap);
-    }
-    m_cache.clear();
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data)

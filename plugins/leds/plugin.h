@@ -50,7 +50,6 @@ private Q_SLOTS:
     int countLeds();
     void moodlight(const QByteArray& channel, bool moodlight);
 
-    void cacheToDevice();
     void moodlightTimeout();
 private:
     struct iochannel {
@@ -67,8 +66,6 @@ private:
         }
     };
     QMap<QByteArray,iochannel> m_ios;
-    QTimer m_cacheTimer;
-    QSet<iochannel*> m_cache;
     QMap<QByteArray, QString> m_namecache;
 
     QTimer m_moodlightTimer;
