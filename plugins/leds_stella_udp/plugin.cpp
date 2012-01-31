@@ -29,17 +29,26 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this) {}
+plugin::plugin() : AbstractPlugin(this), m_socket(0) {
+    connect(&m_connectTimer, SIGNAL(timeout()), SLOT(resendConnectSequence()));
+    m_connectTimer.setSingleShot(true);
+}
 plugin::~plugin() {
     delete m_socket;
 }
 
 void plugin::clear() {
+    m_connectTimer.stop();
     m_leds.clear();
     changeProperty(ServiceData::createModelReset("udpled.values", "channel").getData());
+
+    QVariantMap datamap;
+    ServiceData::setMethod(datamap,"clear");
+    ServiceData::setPluginid(datamap, PLUGIN_ID);
+    sendDataToPlugin("leds", datamap);
 }
-void plugin::initialize() {
-}
+
+void plugin::initialize() {}
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     Q_UNUSED(configid);
@@ -73,19 +82,27 @@ void plugin::ledChanged(QString channel, int value) {
     sc.setData("channel", channel);
     if (value != -1) sc.setData("value", value);
     changeProperty(sc.getData());
+
+    QVariantMap datamap;
+    ServiceData::setMethod(datamap,"subpluginChange");
+    ServiceData::setPluginid(datamap, PLUGIN_ID);
+    datamap[QLatin1String("channel")] = channel.toUtf8();
+    datamap[QLatin1String("value")] = value;
+    datamap[QLatin1String("name")] = QByteArray();
+    sendDataToPlugin("leds", datamap);
 }
 
 int plugin::getLed ( const QByteArray& channel ) const {
     return m_leds.value ( channel ).value;
 }
 
-void plugin::toggleLed ( const QByteArray& channel, uint fade ) {
+void plugin::toggleLed ( const QByteArray& channel, int fade ) {
     if ( !m_leds.contains(channel) ) return;
     const unsigned int newvalue = 255 - m_leds[channel].value;
     setLed ( channel, newvalue, fade );
 }
 
-void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, uint fade ) {
+void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, int fade ) {
     if ( !m_leds.contains(channel) ) return;
     unsigned int v = m_leds[channel].value;
     if ( multiplikator>100 ) {
@@ -105,7 +122,7 @@ void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, u
     setLed ( channel, v, fade );
 }
 
-void plugin::setLedRelative ( const QByteArray& channel, int value, uint fade ) {
+void plugin::setLedRelative ( const QByteArray& channel, int value, int fade ) {
     if (! m_leds.contains(channel) ) return;
     setLed ( channel,  value + m_leds[channel].value, fade );
 }
@@ -115,7 +132,7 @@ int plugin::countChannels() {
     return m_channels;
 }
 
-void plugin::setLed ( const QByteArray& channel, int value, uint fade ) {
+void plugin::setLed ( const QByteArray& channel, int value, int fade ) {
     if ( !m_socket ) return;
     if ( !m_leds.contains(channel) ) return;
     ledchannel* l = &(m_leds[channel]);
@@ -139,12 +156,13 @@ void plugin::setLed ( const QByteArray& channel, int value, uint fade ) {
 }
 
 void plugin::readyRead() {
+    m_connectTimer.stop();
     while (m_socket->hasPendingDatagrams()) {
         QByteArray bytes;
         bytes.resize ( m_socket->pendingDatagramSize() );
         m_socket->readDatagram ( bytes.data(), bytes.size() );
 
-        while ( bytes.size() >= 7 ) {
+        while ( bytes.size() > 6 ) {
             if (bytes.startsWith("stella") && bytes.size() >= 7+bytes[6])  {
                 m_channels = bytes[6];
                 clear();
@@ -163,23 +181,29 @@ void plugin::readyRead() {
 }
 
 void plugin::connectToLeds ( const QString& host, int port ) {
+    clear();
     m_sendPort = port;
     delete m_socket;
     m_socket = new QUdpSocket(this);
     connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
     m_socket->connectToHost(QHostAddress(host),m_sendPort);
+    m_connectTime=1000;
+    m_connectTimer.start(m_connectTime);
+}
 
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
+}
+
+void plugin::resendConnectSequence() {
     // request all channel values
     char b[] = {255,0,0};
     m_socket->write ( b, sizeof ( b ) );
     m_socket->flush();
+    m_connectTime *= 2;
+    if (m_connectTime>60000)
+        m_connectTime=60000;
+    m_connectTimer.start(m_connectTime);
 }
 
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    if (plugin_id != "leds")
-        return;
-
-    if (ServiceData::isMethod(data, "ledChanged")) {
-        setLed(data[QLatin1String("channel")].toByteArray(), data[QLatin1String("value")].toInt(), data[QLatin1String("fade")].toInt());
-    }
-}

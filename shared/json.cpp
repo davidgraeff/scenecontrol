@@ -63,6 +63,9 @@ QByteArray JSON::stringify(const QVariant& v){
     if (t == QVariant::String){
         return "\""+v.toByteArray()+"\"";
     }
+    else if (t == QVariant::ByteArray){
+        return "\""+v.toByteArray()+"\"";
+    }
     else if (t == QVariant::Bool){
         return v.toBool()?"true":"false";
     }else if (t ==  QVariant::Int){

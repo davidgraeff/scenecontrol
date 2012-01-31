@@ -6,6 +6,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <QElapsedTimer>
 
 #define MAGICSTRING "roomcontrol_"
 
@@ -85,10 +86,10 @@ void AbstractPlugin::readyReadCommunication()
         // Retrieve method
         const QByteArray method = ServiceData::method(variantdata);
 
-        if (method.size())
-            qDebug() << plugin_id << "calls method" << method;
-        else
-            qDebug() << "Received from" << plugin_id << variantdata;;
+//         if (method.size())
+//             qDebug() << plugin_id << "calls method" << method;
+//         else
+//             qDebug() << "Received from" << plugin_id << variantdata;;
 
         if (!method.size()) {
             dataFromPlugin(plugin_id, variantdata);
@@ -103,6 +104,7 @@ void AbstractPlugin::readyReadCommunication()
         } else if (method == "configChanged") {
             const QString key = ServiceData::configurationkey(variantdata);
             configChanged(key.toUtf8(), variantdata);
+        } else if (method == "methodresponse") { // Ignore responses
         } else if (method == "initialize") {
             initialize();
         } else if (method == "clear") {
@@ -140,15 +142,15 @@ void AbstractPlugin::readyReadCommunication()
             }
 
             const char* returntype = m_plugin->metaObject()->method(methodId).typeName();
-	    // If no response is expected, write the method-response message before invoking the target method,
-	    // because that may write data the the server and the response-message have to be the first answer
-	    bool expectResult = variantdata.value(QLatin1String("expectresponse_")).toBool();
-	    if (!expectResult)
-	      writeToSocket(socket, responseData);
+            // If no response is expected, write the method-response message before invoking the target method,
+            // because that may write data the the server and the response-message have to be the first answer
+            bool expectResult = variantdata.value(QLatin1String("expectresponse_")).toBool();
+            if (!expectResult)
+                writeToSocket(socket, responseData);
             responseData[QLatin1String("response")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
-	    // For methods that expect a response, writing to the server is not allowed in the invoked slot
-	    if (expectResult)
-	      writeToSocket(socket, responseData);
+            // For methods that expect a response, writing to the server is not allowed in the invoked slot
+            if (expectResult)
+                writeToSocket(socket, responseData);
         }
     }
 }
@@ -164,14 +166,19 @@ void AbstractPlugin::newConnectionCommunication()
 {
     while (hasPendingConnections()) {
         QLocalSocket * socket = nextPendingConnection ();
-        // Accept only connections if their name start with roomcontrol_
-        if (!socket->serverName().startsWith(QLatin1String(MAGICSTRING))) {
+        QElapsedTimer t;
+        t.start();
+        while (!t.hasExpired(2000) && !socket->canReadLine()) {QCoreApplication::processEvents();}
+
+        if (socket->canReadLine()) {
+            const QByteArray plugin_id = socket->readLine();
+            m_connectionsByID[plugin_id] = socket;
+            m_connectionsBySocket[socket] = plugin_id;
+            connect(socket, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
+        } else {
+            qWarning()<<"Socket tried to connect: No authentification" << socket->bytesAvailable();
             socket->deleteLater();
-            continue;
         }
-        const QByteArray plugin_id = socket->serverName().mid(sizeof(MAGICSTRING)-1).toAscii();
-        m_connectionsByID[plugin_id] = socket;
-        m_connectionsBySocket[socket] = plugin_id;
     }
 }
 
@@ -202,6 +209,8 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& plugin_id) {
         // connection established: add to map, send welcome string with current plugin id
         m_connectionsByID[plugin_id] = socket;
         m_connectionsBySocket[socket] = plugin_id;
+        socket->write(PLUGIN_ID "\n");
+        socket->waitForBytesWritten();
     }
     return socket;
 }

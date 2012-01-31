@@ -14,6 +14,7 @@
 #include "socket.h"
 #include "pluginprocess.h"
 #include <shared/json.h>
+#include <QElapsedTimer>
 
 #define __FUNCTION__ __FUNCTION__
 #define MAGICSTRING "roomcontrol_"
@@ -47,9 +48,19 @@ PluginController::~PluginController()
 void PluginController::newConnection()
 {
     while ( QLocalSocket* socket = m_comserver.nextPendingConnection()) {
-        PluginCommunication* plugin =  m_pendingplugins.value(socket);
-        if (!plugin)
-            m_pendingplugins.insert( socket, new PluginCommunication( this, socket ) );
+        QElapsedTimer t;
+        t.start();
+        while (!t.hasExpired(2000) && !socket->canReadLine()) {QCoreApplication::processEvents();}
+
+        if (socket->canReadLine()) {
+            const QByteArray plugin_id = socket->readLine();
+            PluginCommunication* plugin =  m_pendingplugins.value(socket);
+            if (!plugin)
+                m_pendingplugins.insert( socket, new PluginCommunication( this, socket ) );
+        } else {
+            qWarning()<<"Socket tried to connect: No authentification" << socket->readAll();
+            socket->deleteLater();
+        }
     }
 }
 
@@ -98,7 +109,7 @@ void PluginController::couchDB_settings(const QString& pluginid, const QString& 
         qWarning() << "Plugins: Configuration for unknown plugin" << pluginid;
         return;
     } else {
-        qDebug() << "Plugins:" << data.size() << "Config" << key << "for plugin" << pluginid << "loaded";
+        //qDebug() << "Plugins:" << data.size() << "Config" << key << "for plugin" << pluginid << "loaded";
     }
     p->configChanged(key.toAscii(), data);
 }

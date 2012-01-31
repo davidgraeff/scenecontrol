@@ -75,9 +75,11 @@ void PluginCommunication::readyRead()
                 qWarning() << "Server: Request collection execution by event for" << id <<"but no collectionid provided";
                 continue;
             }
-            qDebug() << "eventTriggered";
+            //qDebug() << "eventTriggered";
             CollectionController::instance()->requestExecutionByCollectionId(collectionid);
-        }
+        } else {
+	    qWarning() << "Unknown data from plugin" << m_chunk;
+	}
     }
 }
 

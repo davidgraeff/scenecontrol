@@ -44,6 +44,10 @@ void plugin::clear() {
     delete m_serial;
     m_serial = 0;
     m_connected = false;
+    QVariantMap datamap;
+    ServiceData::setMethod(datamap,"clear");
+    ServiceData::setPluginid(datamap, PLUGIN_ID);
+    sendDataToPlugin("leds", datamap);
 }
 void plugin::initialize() {
 }
@@ -85,6 +89,14 @@ void plugin::ledChanged(QString channel, int value) {
     sc.setData("channel", channel);
     if (value != -1) sc.setData("value", value);
     changeProperty(sc.getData());
+
+    QVariantMap datamap;
+    ServiceData::setMethod(datamap,"subpluginChange");
+    ServiceData::setPluginid(datamap, PLUGIN_ID);
+    datamap[QLatin1String("channel")] = channel.toUtf8();
+    datamap[QLatin1String("value")] = value;
+    datamap[QLatin1String("name")] = QByteArray();
+    sendDataToPlugin("leds", datamap);
 }
 
 void plugin::readyRead() {
@@ -146,7 +158,7 @@ void plugin::readyRead() {
 void plugin::parseCurtain ( unsigned char current, unsigned char max ) {
     m_curtain_value = current;
     m_curtain_max = max;
-    emit curtainChanged ( current, max );
+    curtainChanged ( current, max );
 }
 
 void plugin::parseInit ( unsigned char protocolversion ) {
@@ -171,7 +183,7 @@ void plugin::parseLeds ( const QByteArray& data ) {
         l.value = ( uint8_t ) data[i];
 
         m_leds[channelid] = l;
-        emit ledChanged ( channelid, l.value );
+        ledChanged ( channelid, l.value );
     }
 }
 
@@ -324,11 +336,5 @@ void plugin::connectToLeds ( const QString& device ) {
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    if (plugin_id != "leds")
-        return;
-
-    if (ServiceData::isMethod(data, "ledChanged")) {
-        qDebug() << "Led update" << data;
-        setLed(data[QLatin1String("channel")].toByteArray(), data[QLatin1String("value")].toInt(), data[QLatin1String("fade")].toInt());
-    }
+  Q_UNUSED(plugin_id); Q_UNUSED(data);
 }

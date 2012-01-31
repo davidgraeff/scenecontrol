@@ -72,15 +72,18 @@ private:
     // udp
     int m_sendPort;
     QUdpSocket *m_socket;
+    int m_connectTime;
+    QTimer m_connectTimer;
 private Q_SLOTS:
     // LIGHTS //
     void readyRead();
+    void resendConnectSequence();
 public Q_SLOTS:
     int countChannels();
-    void setLed ( const QByteArray& channel, int value, uint fade );
-    void toggleLed(const QByteArray& channel, uint fade);
-    void setLedExponential ( const QByteArray& channel, int multiplikator, uint fade );
-    void setLedRelative ( const QByteArray& channel, int value, uint fade );
+    void setLed ( const QByteArray& channel, int value, int fade );
+    void toggleLed(const QByteArray& channel, int fade);
+    void setLedExponential ( const QByteArray& channel, int multiplikator, int fade );
+    void setLedRelative ( const QByteArray& channel, int value, int fade );
     int getLed(const QByteArray& channel) const;
     bool isLedValue( const QByteArray& channel, int lower, int upper );
 };

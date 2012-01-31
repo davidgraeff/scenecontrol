@@ -8,12 +8,6 @@ namespace setup {
 
 #include "config.h"
 
-#ifdef _WIN32
-const QString defaultpath = QLatin1String("");
-#else
-const QString defaultpath = QLatin1String("/usr/");
-#endif
-
 QSettings settings(QLatin1String(ABOUT_ORGANIZATIONID), QLatin1String(ABOUT_ORGANIZATIONID));
 
 void writeLastStarttime() {
@@ -21,7 +15,7 @@ void writeLastStarttime() {
 }
 
 QDir pluginDir() {
-    QDir dir(settings.value(QLatin1String("path"), defaultpath).toString());
+    QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
     if (!dir.cd(QLatin1String(ROOM_LIBPATH))) {
       qWarning() << "pluginDir path change failed";
     }
@@ -29,7 +23,7 @@ QDir pluginDir() {
 }
 
 QString certificateFile(const QString& file) {
-    QDir dir(settings.value(QLatin1String("path"), defaultpath).toString());
+    QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
     dir.cd(QLatin1String(ROOM_CERTPATH));
     return dir.absoluteFilePath ( file );
 }
@@ -39,7 +33,7 @@ QString certificateFile(const char* file) {
 }
 
 QDir pluginCouchDBDir() {
-    QDir dir(settings.value(QLatin1String("path"), defaultpath).toString());
+    QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
     if (!dir.cd(QLatin1String(ROOM_COUCHDBPATH)))
         qWarning() << "pluginCouchDBDir path change failed";
     return dir;

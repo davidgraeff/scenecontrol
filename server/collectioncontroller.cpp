@@ -141,7 +141,6 @@ void CollectionController::dataOfCollection(const QList< QVariantMap >& actions,
     connect(run, SIGNAL(runningCollectionFinished(QString)), SLOT(runningCollectionFinished(QString)));
     m_runningCollections.insert(collectionid, run);
     updateListOfRunningCollections();
-
     run->start();
 }
 
