@@ -295,6 +295,9 @@ void plugin::panicTimeout() {
 void plugin::connectToLeds ( const QString& device ) {
     clear();
 
+    if (device.isEmpty())
+        return;
+
     // Open device and ask for pins
     if ( !QFile::exists ( device ) ) {
         qWarning() << pluginid() << "device not found"<<device;

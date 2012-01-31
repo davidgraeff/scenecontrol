@@ -412,14 +412,14 @@ int CouchDB::installPluginData(const QString& pluginid) {
             bool error=false;
             QTextStream stream( &file );
             QVariantMap jsonData = JSON::parseValue(stream, error).toMap();
-            if (!error) {
+            if (error) {
                 qWarning() << "\tNot a json file although json file extension!";
                 continue;
             }
             // Add plugin id before inserting into database
             jsonData[QLatin1String("plugin_")] = pluginid;
             const QByteArray dataToSend = JSON::stringify(jsonData);
-
+            qDebug() << dataToSend << jsonData << stream;
             // Document ID: Consist of filename without extension + "{pluginid}".
             // "()" are replaced by "/".
             const QString docid = QFileInfo(files[i]).baseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
