@@ -170,7 +170,7 @@ void CouchDB::replyEventsChange() {
 
             docid = ServiceData::idChangeSeq ( data );
         }
-        
+
         // request document that is mentioned in the changes feed
         QNetworkRequest request ( setup::couchdbAbsoluteUrl(docid));
 
@@ -280,25 +280,35 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
     connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
     eventLoop.exec();
 
-    if ( r->error() != QNetworkReply::NoError ) {
-        if (!tryToInstall)
-            return;
-        // settings not found, try to install initial plugin values to the couchdb
-        installPluginData(pluginid);
-        delete r;
-        r = get ( request );
-        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-        eventLoop.exec();
-        if ( r->error() != QNetworkReply::NoError ) {
-            qWarning()<<"CouchDB: Get settings failed for" << pluginid;
-            delete r;
-            return;
-        }
+    if ( r->error() != QNetworkReply::NoError) {
+        qWarning()<<"CouchDB: Get settings failed for" << pluginid;
+
     }
 
     QVariantMap data = JSON::parse ( r->readAll() ).toMap();
     if ( !data.isEmpty() && data.contains ( QLatin1String ( "rows" ) ) ) {
-        const QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
+        QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
+        if (list.isEmpty()) {
+            if (!tryToInstall)
+                return;
+            // settings not found, try to install initial plugin values to the couchdb
+            installPluginData(pluginid);
+            delete r;
+            r = get ( request );
+            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            eventLoop.exec();
+            if ( r->error() != QNetworkReply::NoError ) {
+                qWarning()<<"CouchDB: Get settings failed for" << pluginid;
+                delete r;
+                return;
+            }
+            QVariantMap data = JSON::parse ( r->readAll() ).toMap();
+            if ( data.isEmpty() || !data.contains ( QLatin1String ( "rows" ) ) ) {
+                qWarning()<<"CouchDB: Get settings failed for" << pluginid;
+                return;
+            }
+            list = data.value ( QLatin1String ( "rows" ) ).toList();
+        }
         foreach(const QVariant& v, list) {
             data = v.toMap().value(QLatin1String ( "value" )).toMap();
             data.remove(QLatin1String("_id"));
