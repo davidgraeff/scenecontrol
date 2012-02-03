@@ -58,6 +58,9 @@ void RunningCollection::start()
     for (int i=0; i < m_conditions.size(); ++i) {
         m_conditions[i].plugin->callQtSlot ( m_conditions[i].data, QByteArray::number(i) );
     }
+    if (m_conditions.isEmpty()) {
+        timeoutNextAction();
+    }
     qDebug() << m_collectionid << __FUNCTION__ << m_conditionok << m_conditions.size();
 }
 
