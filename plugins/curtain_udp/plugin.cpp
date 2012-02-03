@@ -117,7 +117,7 @@ void plugin::readyRead() {
                 curtainChanged();
                 bytes = bytes.mid(10);
             } else {
-                qWarning() << m_plugin->pluginid() << "Failed to parse" << bytes << bytes.size() << 8+bytes[7];
+                qWarning() << pluginid() << "Failed to parse" << bytes << bytes.size() << 8+bytes[7];
                 break;
             }
         } //while

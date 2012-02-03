@@ -100,8 +100,12 @@ void Socket::readyRead() {
         if (!rawdata.length())
             continue;
         QVariant v =JSON::parse(rawdata);
-        if (!v.isNull())
+        if (!v.isNull()) {
             emit requestExecution(v.toMap(), serverSocket->socketDescriptor());
+            serverSocket->write("{\"response\":0, \"msg\":\"OK\"}\n");
+        } else {
+            serverSocket->write("{\"response\":1, \"msg\":\"Failed to parse json\"}\n");
+        }
     }
 }
 
@@ -117,7 +121,7 @@ void Socket::socketDisconnected() {
     while (PluginCommunication* plugin = pc->nextPlugin(i)) {
         plugin->session_change(socketDescriptor, false);
     }
-    
+
     qDebug() << "socket closed" << socketDescriptor << socket->errorString() << socket->error();
 }
 

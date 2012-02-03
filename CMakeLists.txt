@@ -96,6 +96,7 @@ find_package(Qt4 4.7.0 COMPONENTS QtCore QtNetwork REQUIRED)
 # add directories
 add_subdirectory(server)
 add_subdirectory(plugins)
+add_subdirectory(clients)
 
 # modify registry path after installation
 IF(WIN32)
