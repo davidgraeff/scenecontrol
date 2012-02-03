@@ -44,6 +44,20 @@ void plugin::clear() {
     m_cache.clear();
 }
 
+void plugin::clear(const QByteArray& plugin_) {
+    // Remove all leds referenced by "plugin_id"
+    QMutableMapIterator<QByteArray, iochannel> i(m_ios);
+    while (i.hasNext()) {
+        i.next();
+        if (i.value().plugin_id == plugin_) {
+            ServiceData sc = ServiceData::createModelRemoveItem("switches");
+            sc.setData("channel", i.value().channel);
+            changeProperty(sc.getData());
+            i.remove();
+        }
+    }
+}
+
 void plugin::initialize() {
     m_ios.clear();
     m_cache.clear();
@@ -145,39 +159,33 @@ void plugin::cacheToDevice()
     m_cache.clear();
 }
 
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data)
-{
-    if (ServiceData::isMethod(data, "clear")) {
-        // Remove all leds referenced by "plugin_id"
-        QMutableMapIterator<QByteArray, iochannel> i(m_ios);
-        while (i.hasNext()) {
-            i.next();
-            if (i.value().plugin_id == plugin_id) {
-                ServiceData sc = ServiceData::createModelRemoveItem("switches");
-                sc.setData("channel", i.value().channel);
-                changeProperty(sc.getData());
-                i.remove();
-            }
-        }
-        return;
-    } else if (ServiceData::isMethod(data, "switchChanged")) {
-        const QByteArray channel = data[QLatin1String("channel")].toByteArray();
-        // Assign data to structure
-        bool before = m_ios.contains(channel);
-        iochannel& io = m_ios[channel];
-        io.plugin_id = plugin_id;
-        io.channel = channel;
-        io.value = data[QLatin1String("value")].toInt();
-        if (data.contains(QLatin1String("name")))
-            io.name = data[QLatin1String("name")].toString();
-        else if (!before)
-            io.name = m_namecache.value(io.channel);
 
-        ServiceData sc = ServiceData::createModelChangeItem("switches");
-        sc.setData("channel", io.channel);
-        if (io.name.size()) sc.setData("name", io.name);
-        if (io.value != -1) sc.setData("value", io.value);
-
-        changeProperty(sc.getData());
-    }
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
 }
+
+void plugin::subpluginChange(const QByteArray& plugin_, const QByteArray& channel, int value, const QByteArray& name) {
+    // Assign data to structure
+    bool before = m_ios.contains(channel);
+    iochannel& io = m_ios[channel];
+    io.plugin_id = plugin_;
+    //p.moodlight = false;
+    //p.fadeType = 1;
+    io.channel = channel;
+    io.value = value;
+    if (!before)
+        io.name = name.size()?QString::fromUtf8(name) : m_namecache.value(io.channel);
+    if (io.name.isEmpty()) {
+        io.name = QLatin1String("Channel ") + QString::number(m_ios.size());
+    }
+
+    ServiceData sc = ServiceData::createModelChangeItem("switches");
+    sc.setData("channel", io.channel);
+    if (io.name.size()) sc.setData("name", io.name);
+    if (io.value != -1) sc.setData("value", io.value);
+
+    changeProperty(sc.getData());
+}
+
+

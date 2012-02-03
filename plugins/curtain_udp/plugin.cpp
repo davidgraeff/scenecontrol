@@ -61,7 +61,7 @@ bool plugin::isCurtainValue(  int lower, int upper ) {
 }
 
 void plugin::requestProperties(int sessionid) {
-    requestProperties(sessionid);
+    curtainChanged(sessionid);
 }
 
 void plugin::curtainChanged(int sessionid) {

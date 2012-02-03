@@ -86,10 +86,20 @@ void plugin::readyRead() {
 
         m_ios[channelid].value = value;
 
+	// send property
         ServiceData sc = ServiceData::createModelChangeItem("anel.io");
         sc.setData("channel", pin);
         sc.setData("value", value);
         changeProperty(sc.getData(), -1);
+
+	// send to switches plugin
+        QVariantMap datamap;
+        ServiceData::setMethod(datamap,"subpluginChange");
+        ServiceData::setPluginid(datamap, PLUGIN_ID);
+        datamap[QLatin1String("channel")] = QByteArray::number(pin);
+        datamap[QLatin1String("value")] = value;
+        datamap[QLatin1String("name")] = QByteArray::number(pin);
+        sendDataToPlugin("switches", datamap);
 
         // update cache
         if (value)
@@ -163,6 +173,11 @@ void plugin::initialize() {
 void plugin::clear() {
     m_ios.clear();
     m_ios.clear();
+
+    QVariantMap datamap;
+    ServiceData::setMethod(datamap,"clear");
+    ServiceData::setPluginid(datamap, PLUGIN_ID);
+    sendDataToPlugin("switches", datamap);
 }
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
@@ -186,11 +201,7 @@ void plugin::requestProperties(int sessionid) {
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    if (plugin_id != "switches")
-        return;
-
-    if (ServiceData::isMethod(data, "switchChanged")) {
-        setSwitch(data[QLatin1String("channel")].toByteArray(), data[QLatin1String("value")].toInt());
-    }
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
 }
 

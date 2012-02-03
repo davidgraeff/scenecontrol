@@ -55,7 +55,6 @@ void plugin::clear(const QByteArray& plugin_) {
             i.remove();
         }
     }
-
 }
 
 void plugin::initialize() {
