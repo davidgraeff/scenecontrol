@@ -285,7 +285,9 @@ void plugin::hostdisconnected() {
     qWarning() << "Lost connection to xbmc";
 }
 void plugin::error(QAbstractSocket::SocketError e) {
-    qWarning() << "Socket error" << e;
+  // Ignore "host not found" error
+    if (e != QAbstractSocket::ConnectionRefusedError && e != QAbstractSocket::HostNotFoundError)
+        qWarning() << "Socket error" << e;
 }
 
 void plugin::readyRead() {
@@ -320,8 +322,8 @@ void plugin::readyRead() {
                 --opening;
         }
     }
-    
+
     // To many data without {..}, drop everything
     if (m_socket.bytesAvailable()>10000)
-      m_socket.readAll();
+        m_socket.readAll();
 }
