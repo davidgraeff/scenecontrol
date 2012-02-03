@@ -53,11 +53,8 @@ plugin::plugin() {
 }
 
 plugin::~plugin() {
-    qDebug() << "before clear";
     clear();
-    qDebug() << "before m_devicelist";
     delete m_devicelist;
-    qDebug() << "after m_devicelist";
 }
 
 void plugin::clear() {
@@ -337,7 +334,7 @@ void InputDevice::eventData() {
         m_stopRepeatTimer.start();
         m_lastkey = kernelkeyname;
 
-        qDebug() << "KEY_PRESS FILTERED" << kernelkeyname;
+        //qDebug() << "KEY_PRESS FILTERED" << kernelkeyname;
 
         // event trigger
         {

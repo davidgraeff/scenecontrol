@@ -7,8 +7,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <QElapsedTimer>
+#include <signal.h>    /* signal name macros, and the signal() prototype */
 
 #define MAGICSTRING "roomcontrol_"
+
+static void catch_int(int )
+{
+    signal(SIGINT, 0);
+    signal(SIGTERM, 0);
+    QCoreApplication::exit(0);
+}
 
 void roomMessageOutput(QtMsgType type, const char *msg)
 {
@@ -37,6 +45,10 @@ AbstractPlugin::AbstractPlugin()
 {
     qInstallMsgHandler(roomMessageOutput);
     connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
+
+    //set up signal handlers to exit on CTRL+C and if server sends terminate signal
+    signal(SIGINT, catch_int);
+    signal(SIGTERM, catch_int);
 }
 
 bool AbstractPlugin::createCommunicationSockets()
@@ -145,7 +157,7 @@ void AbstractPlugin::readyReadCommunication()
             // If no response is expected, write the method-response message before invoking the target method,
             // because that may write data the the server and the response-message have to be the first answer
             QByteArray responseid = variantdata.value(QLatin1String("responseid_")).toByteArray();
-	    responseData[QLatin1String("responseid_")] = responseid;
+            responseData[QLatin1String("responseid_")] = responseid;
             responseData[QLatin1String("response_")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
             if (responseid.size())
                 writeToSocket(socket, responseData);
