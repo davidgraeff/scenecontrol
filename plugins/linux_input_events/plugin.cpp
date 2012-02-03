@@ -79,16 +79,6 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         m_repeatInit = data[QLatin1String("repeat_init")].toInt();
 }
 
-void plugin::select_input_device ( int sessionid, const QByteArray& udid) {
-    QMap<QByteArray, InputDevice*>::iterator it = m_devices.begin();
-    for ( ;it != m_devices.end();++it ) {
-        ( *it )->disconnectSession ( sessionid );
-    }
-    InputDevice* inputdevice = m_devices.value ( udid );
-    if ( !inputdevice ) return;
-    inputdevice->connectSession ( sessionid );
-}
-
 void plugin::inputevent ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& inputdevice, const QByteArray& kernelkeyname, bool repeat) {
     // Add to input events list
     EventInputStructure s;
@@ -116,9 +106,15 @@ void plugin::unregister_event ( const QString& eventid) {
 }
 
 void plugin::session_change ( int sessionid, bool running ) {
-    if ( running ) return;
-    foreach ( InputDevice* device, m_devices ) {
-        device->disconnectSession ( sessionid );
+    if (running) {
+        foreach ( InputDevice* device, m_devices ) {
+            device->disconnectSession ( sessionid );
+            device->connectSession ( sessionid );
+        }
+    } else {
+        foreach ( InputDevice* device, m_devices ) {
+            device->disconnectSession ( sessionid );
+        }
     }
 }
 

@@ -135,6 +135,10 @@ void CollectionController::requestExecutionByCollectionId ( const QString& colle
 
 void CollectionController::requestExecution(const QVariantMap& data, int sessionid) {
     if ( !ServiceData::checkType ( data, ServiceData::TypeExecution )) return;
+    if (ServiceData::pluginid(data)==QLatin1String("server") && ServiceData::isMethod(data, "requestAllProperties") && sessionid != -1) {
+        PluginController::instance()->requestAllProperties(sessionid);
+        return;
+    }
     PluginCommunication* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( data ) );
     if ( !plugin ) {
         qWarning() <<"Cannot execute service. No plugin found:"<<data << sessionid;

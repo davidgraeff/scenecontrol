@@ -79,7 +79,6 @@ public:
     virtual void session_change ( int sessionid, bool running );
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 public Q_SLOTS:
-  void select_input_device ( int sessionid, const QByteArray& udid);
   void inputevent ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& inputdevice, const QByteArray& kernelkeyname, bool repeat);
 private:
     ManagedDeviceList* m_devicelist;
