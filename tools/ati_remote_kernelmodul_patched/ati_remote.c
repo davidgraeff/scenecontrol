@@ -121,7 +121,7 @@
  * and we have to take this into account for an accurate repeat
  * behaviour.
  */
-#define FILTER_TIME	60 /* msec */
+#define FILTER_TIME	80 /* msec */
 #define REPEAT_DELAY	500 /* msec */
 
 static unsigned long channel_mask;
@@ -138,11 +138,11 @@ MODULE_PARM_DESC(keychange, "Enable support for Keychange remotes");
 
 static int repeat_filter = FILTER_TIME;
 module_param(repeat_filter, int, 0644);
-MODULE_PARM_DESC(repeat_filter, "Repeat filter time, default = 60 msec");
+MODULE_PARM_DESC(repeat_filter, "Repeat filter time, default = " FILTER_TIME " msec");
 
 static int repeat_delay = REPEAT_DELAY;
 module_param(repeat_delay, int, 0644);
-MODULE_PARM_DESC(repeat_delay, "Delay before sending repeats, default = 500 msec");
+MODULE_PARM_DESC(repeat_delay, "Delay before sending repeats, default = " REPEAT_DELAY " msec");
 
 #define dbginfo(dev, format, arg...) do { if (debug) dev_info(dev , format , ## arg); } while (0)
 #undef err

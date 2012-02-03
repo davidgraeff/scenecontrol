@@ -45,7 +45,7 @@ private:
     ManagedDevice* m_device;
     QSet<int> m_sessionids;
     QMap<QByteArray, EventKey*> m_keyToUids;
-    QTimer m_repeattimer;
+    QTimer m_stopRepeatTimer;
     QByteArray m_lastkey;
 public:
     InputDevice(plugin* plugin) ;
@@ -61,7 +61,6 @@ public:
     ManagedDevice* device();
 private Q_SLOTS:
     void eventData();
-    void repeattrigger(bool initial_event = false);
 };
 
 class plugin : public AbstractPlugin
@@ -99,8 +98,8 @@ private:
     
     QMap<uint, QByteArray> m_keymapping;
     
-    int m_repeat;
-    int m_repeatInit;
+    int m_repeat; //NotUsed
+    int m_repeatInit; //NotUsed
     ServiceData createServiceOfDevice(ManagedDevice* device);
 private Q_SLOTS:
     void deviceAdded(ManagedDevice*);

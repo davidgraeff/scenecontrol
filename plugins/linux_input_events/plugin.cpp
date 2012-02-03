@@ -53,8 +53,11 @@ plugin::plugin() {
 }
 
 plugin::~plugin() {
+    qDebug() << "before clear";
     clear();
+    qDebug() << "before m_devicelist";
     delete m_devicelist;
+    qDebug() << "after m_devicelist";
 }
 
 void plugin::clear() {
@@ -108,7 +111,7 @@ void plugin::inputevent ( const QByteArray& _id, const QByteArray& collection_, 
 }
 
 void plugin::unregister_event ( const QString& eventid) {
-  const QByteArray eventID2 = eventid.toAscii();
+    const QByteArray eventID2 = eventid.toAscii();
     m_events.remove(eventID2);
     InputDevice* inputdevice = m_devices_by_eventsids.take ( eventID2 );
     if ( inputdevice )
@@ -161,9 +164,14 @@ ServiceData plugin::createServiceOfDevice ( ManagedDevice* device ) {
     return sc;
 }
 
+
+
+
+
+
 InputDevice::InputDevice ( plugin* plugin ) : m_plugin ( plugin ), m_socketnotifier ( 0 ), fd ( 0 ), m_device ( 0 ) {
-    connect ( &m_repeattimer,SIGNAL ( timeout() ),SLOT ( repeattrigger() ) );
-    m_repeattimer.setSingleShot ( true );
+    m_stopRepeatTimer.setSingleShot ( true );
+    m_stopRepeatTimer.setInterval(150);
 }
 
 InputDevice::~InputDevice() {
@@ -274,6 +282,7 @@ void InputDevice::eventData() {
     static char readbuff[sizeof ( struct input_event ) ] = {0};
     static struct input_event* ev = ( struct input_event* ) readbuff;
     static unsigned int readbuffOffset = 0;
+    __u16 lastkeyInLoop = 0;
     while ( 1 ) {
         int ret = read ( fd, readbuff+readbuffOffset, sizeof ( struct input_event )-readbuffOffset );
         if ( ret == -1 ) break;
@@ -281,41 +290,64 @@ void InputDevice::eventData() {
         if ( readbuffOffset < sizeof ( struct input_event ) ) break;
         readbuffOffset = 0;
 
-        if ( ev->type != EV_KEY ) break;
-        m_repeattimer.stop();
-        if ( ( ev->value == KEY_PRESS ) || ( ev->value == KEY_KEEPING_PRESSED ) ) {
-            const QByteArray& kernelkeyname = m_plugin->m_keymapping.value ( ev->code );
-            //qDebug() << "key event" << m_device->devPath << kernelkeyname;
-            // properties
-            {
-                // last key property. Will be propagated to interested clients only.
-                ServiceData sc = ServiceData::createNotification ( "input.device.key" );
-                sc.setData ( "kernelkeyname", kernelkeyname );
-                sc.setData ( "udid", m_device->udid );
+        if ( ev->type != EV_KEY )
+            continue;
 
-                // Propagate to all interested clients
-                foreach ( int sessionid, m_sessionids ) {
-                    m_plugin->changeProperty ( sc.getData(), sessionid );
-                }
+        // Only look at KEY_PRESS
+        if (!ev->value == KEY_PRESS )
+            continue;
+
+        // Multiple key events in one buffer read; ignore
+        if (lastkeyInLoop == ev->code)
+            continue;
+        lastkeyInLoop = ev->code;
+
+        const QByteArray& kernelkeyname = m_plugin->m_keymapping.value ( ev->code );
+
+        //qDebug() << "KEY_PRESS" << kernelkeyname;
+
+        // properties
+        if (m_sessionids.size()) {
+            // last key property. Will be propagated to interested clients only.
+            ServiceData sc = ServiceData::createNotification ( "input.device.key" );
+            sc.setData ( "kernelkeyname", kernelkeyname );
+            sc.setData ( "udid", m_device->udid );
+
+            // Propagate to all interested clients
+            foreach ( int sessionid, m_sessionids ) {
+                m_plugin->changeProperty ( sc.getData(), sessionid );
             }
-            m_lastkey = kernelkeyname;
-            repeattrigger ( true );
+        }
+
+        // Get EventKey, abort if no one is registered
+        QMap<QByteArray, EventKey*>::iterator it = m_keyToUids.find ( kernelkeyname );
+        if ( it == m_keyToUids.end() ) continue;
+
+        const EventKey* event = *it;
+
+        // If received key is the same as last key, the event is not repeatable and
+        // a sensible amount of time to the last received key is not exceeded: abort
+        if (m_stopRepeatTimer.isActive() && !event->repeat && kernelkeyname == m_lastkey) {
+            // Restart timer to filter out all ongoing events for this key (if repeat==false)
+            m_stopRepeatTimer.stop();
+            m_stopRepeatTimer.start();
+            continue;
+        }
+
+        m_stopRepeatTimer.start();
+        m_lastkey = kernelkeyname;
+
+        qDebug() << "KEY_PRESS FILTERED" << kernelkeyname;
+
+        // event trigger
+        {
+            QMap<QString, QString>::const_iterator i = event->ServiceUidToCollectionUid.constBegin();
+            for (;i!=event->ServiceUidToCollectionUid.constEnd();++i) {
+                m_plugin->eventTriggered ( i.key().toAscii(), i.value().toAscii() );
+            }
         }
     }
     m_socketnotifier->setEnabled(true);
-}
-void InputDevice::repeattrigger ( bool initial_event ) {
-    QMap<QByteArray, EventKey*>::iterator it = m_keyToUids.find ( m_lastkey );
-    if ( it == m_keyToUids.end() ) return;
-
-    const EventKey* event = *it;
-    QMap<QString, QString>::const_iterator i = event->ServiceUidToCollectionUid.constBegin();
-    for (;i!=event->ServiceUidToCollectionUid.constEnd();++i) {
-        m_plugin->eventTriggered ( i.key().toAscii(), i.value().toAscii() );
-    }
-
-    if ( event->repeat )
-        m_repeattimer.start ( initial_event?m_plugin->m_repeatInit:m_plugin->m_repeat );
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
