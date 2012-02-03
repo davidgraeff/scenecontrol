@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this) {
+plugin::plugin() {
     m_serial = 0;
     m_buffer[3] = '\r';
 }

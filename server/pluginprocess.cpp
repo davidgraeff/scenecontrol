@@ -55,6 +55,9 @@ void PluginCommunication::readyRead()
             initialize();
             CouchDB::instance()->requestPluginSettings(id);
             CouchDB::instance()->requestEvents(id);
+        } else if (method == "methodresponse") {
+            emit qtSlotResponse(variantdata.value(QLatin1String("response_")),
+                                variantdata.value(QLatin1String("responseid_")).toByteArray(), id);
         } else if (method == "changeConfig") {
             const QString key = ServiceData::configurationkey(variantdata);
             if (key.isEmpty()) {
@@ -78,8 +81,8 @@ void PluginCommunication::readyRead()
             //qDebug() << "eventTriggered";
             CollectionController::instance()->requestExecutionByCollectionId(collectionid);
         } else {
-	    qWarning() << "Unknown data from plugin" << m_chunk;
-	}
+            qWarning() << "Unknown data from plugin" << m_chunk;
+        }
     }
 }
 
@@ -149,44 +152,15 @@ void PluginCommunication::session_change(int sessionid, bool running)
     writeToPlugin(mdata);
 }
 
-bool PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, QVariant* returnValue) {
+void PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid) {
     if (!ServiceData::hasMethod(methodAndArguments)) {
         qWarning() << "Call of qt slot without method" << methodAndArguments;
-        return false;
+        return;
     }
-    // Block signals to not call readyRead by the event system for the next read
 
     QVariantMap modified = methodAndArguments;
-    modified[QLatin1String("expectresponse_")] = returnValue?true:false;
-    if (!writeToPlugin(modified))
-        return false;
-    m_pluginCommunication->waitForBytesWritten();
-    m_pluginCommunication->blockSignals(true);
-    m_pluginCommunication->waitForReadyRead();
-    m_pluginCommunication->blockSignals(false);
-
-    //Warning: Expect data to arrive as whole chunk! Fix this by using asychronous behaviour
-    // or wait for all data to arrive
-
-    int indexOfChunkEnd;
-    QByteArray buffer(m_pluginCommunication->readAll());
-    if ((indexOfChunkEnd = buffer.indexOf("\n\t")) == -1) {
-        qWarning() << "callQtSlot; Missing chunk complete bytes for response!" << ServiceData::method(methodAndArguments);
-        return false;
-    }
-    // Read data and decode into a QVariantMap; clear chunk buffer
-    QVariantMap ret;
-    const QByteArray r(buffer, indexOfChunkEnd);
-    QDataStream stream(r);
-    stream >> ret;
-    if (ServiceData::isMethod(ret, "methodresponse")) {
-        if (returnValue) {
-            *returnValue = ret;
-        }
-    } else {
-        qWarning() << "Did not receive proper qt slot respons" << ServiceData::method(methodAndArguments) << ret;
-    }
-    return true;
+    modified[QLatin1String("responseid_")] = responseid;
+    writeToPlugin(modified);
 }
 
 void PluginCommunication::stateChanged(QLocalSocket::LocalSocketState state) {

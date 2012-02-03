@@ -43,32 +43,47 @@ RunningCollection::RunningCollection(const QList< QVariantMap >& actions, const 
         }
 
         m_conditions.append (dataWithPlugin(plugin, conditiondata));
+        connect(plugin,SIGNAL(qtSlotResponse(QVariant,QByteArray,QString)),
+                SLOT(qtSlotResponse(QVariant,QByteArray,QString)));
     }
     // prepare timer
-    connect(&m_timer, SIGNAL(timeout()), SLOT(timeout()));
+    connect(&m_timer, SIGNAL(timeout()), SLOT(timeoutNextAction()));
     m_timer.setSingleShot(true);
 }
 
 void RunningCollection::start()
 {
+    m_conditionok = 0;
     // Check conditions
-    QVariant ret;
-    foreach(const dataWithPlugin& dp, m_conditions) {
-        dp.plugin->callQtSlot ( dp.data, &ret );
-        if (!ret.canConvert(QVariant::Bool)) {
-            qWarning() << "Condition check failed. Return value not a boolean" << dp.data << ret;
-            continue;
-        }
-        if (!ret.toBool()) {
-            qDebug() << "Condition false. Not executing" << m_collectionid;
-            return;
-        }
+    for (int i=0; i < m_conditions.size(); ++i) {
+        m_conditions[i].plugin->callQtSlot ( m_conditions[i].data, QByteArray::number(i) );
     }
-    // Start executing
-    timeout();
+    qDebug() << m_collectionid << __FUNCTION__ << m_conditionok << m_conditions.size();
 }
 
-void RunningCollection::timeout()
+void RunningCollection::qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid) {
+    qDebug() << m_collectionid << __FUNCTION__ << m_conditionok;
+    Q_UNUSED(responseid);
+    if (!response.canConvert(QVariant::Bool)) {
+        qWarning() << "Condition check failed. Return value not a boolean" << pluginid << response;
+        return;
+    }
+    if (!response.toBool()) {
+        qDebug() << "Condition false. Not executing" << m_collectionid;
+        return;
+    }
+    ++m_conditionok;
+    conditionResponse();
+}
+
+void RunningCollection::conditionResponse(bool timeout)
+{
+    if (timeout || m_conditionok>=m_conditions.size())
+        // Start executing
+        timeoutNextAction();
+}
+
+void RunningCollection::timeoutNextAction()
 {
     QMap<int, dataWithPlugin>::const_iterator lowerBound = m_timetable.lowerBound(m_lasttime);
     if (lowerBound == m_timetable.constEnd()) {

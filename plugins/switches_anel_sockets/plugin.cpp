@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin()  : AbstractPlugin(this), m_listenSocket(0) {
+plugin::plugin() : m_listenSocket(0) {
     m_writesocket = new QUdpSocket(this);
     connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
     m_cacheTimer.setInterval(50);

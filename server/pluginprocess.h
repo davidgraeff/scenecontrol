@@ -51,7 +51,8 @@ public:
     /// Proxy Method: Session started or finished
     void session_change ( int sessionid, bool running );
     /// Proxy Method: Call Qt Slot of the plugin. The QVariantMap have to contain at least a method_ member
-    bool callQtSlot(const QVariantMap& methodAndArguments, QVariant* returnValue = 0);
+    /// Responses are asynchron and propagated through the signal qtSlotResponse
+    void callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid = QByteArray());
 private:
     PluginController* m_controller;
     QLocalSocket* m_pluginCommunication;
@@ -65,4 +66,6 @@ private Q_SLOTS:
     // otherwise the process will get killed by the server and removed from the pending
     // processes of PluginController
     void startTimeout();
+Q_SIGNALS:
+    void qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid);
 };

@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this) {
+plugin::plugin() {
     connect(&m_moodlightTimer, SIGNAL(timeout()),SLOT(moodlightTimeout()));
     m_moodlightTimer.setInterval(5000);
     srand(100);

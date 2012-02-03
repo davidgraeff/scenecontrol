@@ -66,7 +66,6 @@ private:
         }
     };
     QMap<QString,ledchannel> m_leds;
-    AbstractPlugin* m_plugin;
 
     int m_channels;
     // udp

@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this), m_curtain_max ( 0 ), m_curtain_value ( 0 ) , m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {
+plugin::plugin() : m_curtain_max ( 0 ), m_curtain_value ( 0 ) , m_channels ( 0 ), m_bufferpos ( 0 ), m_readState ( ReadOK ), m_serial ( 0 ) {
     m_panicTimeoutAck = false;
 }
 

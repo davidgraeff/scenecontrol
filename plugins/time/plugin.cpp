@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this) {
+plugin::plugin() {
     m_timer.setSingleShot ( true );
     connect ( &m_timer, SIGNAL ( timeout() ), SLOT ( timeout() ) );
 }

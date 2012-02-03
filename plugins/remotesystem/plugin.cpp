@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this) {
+plugin::plugin() {
     connect(&m_listenSocket, SIGNAL(readyRead()), SLOT(readyRead()));
     connect(&m_checkClientTimer, SIGNAL(timeout()), SLOT(checkClientAlive()));
     m_checkClientTimer.setSingleShot(true);

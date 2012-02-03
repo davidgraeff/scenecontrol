@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this), m_socket(0) {
+plugin::plugin() : m_socket(0) {
     connect(&m_connectTimer, SIGNAL(timeout()), SLOT(resendConnectSequence()));
     m_connectTimer.setSingleShot(true);
 }
@@ -173,7 +173,7 @@ void plugin::readyRead() {
                 }
                 bytes = bytes.mid(7+m_channels);
             } else {
-                qWarning() << m_plugin->pluginid() << "Failed to parse" << bytes << bytes.size() << 7+bytes[6];
+                qWarning() << pluginid() << "Failed to parse" << bytes << bytes.size() << 7+bytes[6];
                 break;
             }
         } //while

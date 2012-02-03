@@ -68,7 +68,7 @@ public:
      * Use this in your plugin main method.
      */
     bool createCommunicationSockets();
-    AbstractPlugin(QObject* plugin);
+    AbstractPlugin();
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) = 0;
     bool sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     void changeConfig(const QByteArray& key, const QVariantMap& data);
@@ -80,7 +80,6 @@ private Q_SLOTS:
     // If disconnected from server, quit plugin process
     void disconnectedFromServer();
 private:
-    QObject* m_plugin;
     QByteArray m_chunk;
     QMap<QByteArray, QLocalSocket*> m_connectionsByID;
     QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;

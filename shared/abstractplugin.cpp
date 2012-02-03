@@ -33,7 +33,7 @@ void roomMessageOutput(QtMsgType type, const char *msg)
     }
 }
 
-AbstractPlugin::AbstractPlugin(QObject* plugin) :m_plugin(plugin)
+AbstractPlugin::AbstractPlugin()
 {
     qInstallMsgHandler(roomMessageOutput);
     connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
@@ -141,15 +141,13 @@ void AbstractPlugin::readyReadCommunication()
                 continue;
             }
 
-            const char* returntype = m_plugin->metaObject()->method(methodId).typeName();
+            const char* returntype = metaObject()->method(methodId).typeName();
             // If no response is expected, write the method-response message before invoking the target method,
             // because that may write data the the server and the response-message have to be the first answer
-            bool expectResult = variantdata.value(QLatin1String("expectresponse_")).toBool();
-            if (!expectResult)
-                writeToSocket(socket, responseData);
-            responseData[QLatin1String("response")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
-            // For methods that expect a response, writing to the server is not allowed in the invoked slot
-            if (expectResult)
+            QByteArray responseid = variantdata.value(QLatin1String("responseid_")).toByteArray();
+	    responseData[QLatin1String("responseid_")] = responseid;
+            responseData[QLatin1String("response_")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
+            if (responseid.size())
                 writeToSocket(socket, responseData);
         }
     }
@@ -168,7 +166,9 @@ void AbstractPlugin::newConnectionCommunication()
         QLocalSocket * socket = nextPendingConnection ();
         QElapsedTimer t;
         t.start();
-        while (!t.hasExpired(2000) && !socket->canReadLine()) {QCoreApplication::processEvents();}
+        while (!t.hasExpired(2000) && !socket->canReadLine()) {
+            QCoreApplication::processEvents();
+        }
 
         if (socket->canReadLine()) {
             const QByteArray plugin_id = socket->readLine();
@@ -247,10 +247,10 @@ void AbstractPlugin::disconnectedFromServer() {
 }
 
 int AbstractPlugin::invokeHelperGetMethodId(const QByteArray& methodName) {
-    const int c = m_plugin->metaObject()->methodCount();
+    const int c = metaObject()->methodCount();
     for (int i=0;i<c;++i) {
         // Extract method name from signature of QMetaMethod
-        QByteArray methodNameOfPlugin(m_plugin->metaObject()->method(i).signature());
+        QByteArray methodNameOfPlugin(metaObject()->method(i).signature());
         methodNameOfPlugin.resize(methodNameOfPlugin.indexOf('('));
 
         if (methodNameOfPlugin == methodName)
@@ -260,8 +260,8 @@ int AbstractPlugin::invokeHelperGetMethodId(const QByteArray& methodName) {
 }
 
 int AbstractPlugin::invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output) {
-    QList<QByteArray> parameterNames = m_plugin->metaObject()->method(methodID).parameterNames();
-    QList<QByteArray> parameterTypes = m_plugin->metaObject()->method(methodID).parameterTypes();
+    QList<QByteArray> parameterNames = metaObject()->method(methodID).parameterNames();
+    QList<QByteArray> parameterTypes = metaObject()->method(methodID).parameterTypes();
     const int numParams = parameterNames.size();
     for (int paramNameIndex=0;paramNameIndex<numParams && paramNameIndex<output.size();++paramNameIndex) {
         // Look for a key in inputData that matches the current parameter name
@@ -280,6 +280,6 @@ int AbstractPlugin::invokeHelperMakeArgumentList(int methodID, const QVariantMap
 #define QX_ARG(i) ((numParams>i)?QGenericArgument(p ## i .typeName(), p ## i .constData()):QGenericArgument())
 QVariant AbstractPlugin::invokeSlot(const QByteArray& methodname, int numParams, const char* returntype, QVariant p0, QVariant p1, QVariant p2, QVariant p3, QVariant p4, QVariant p5, QVariant p6, QVariant p7, QVariant p8) {
     QVariant result;
-    QMetaObject::invokeMethod(m_plugin, methodname, QGenericReturnArgument(returntype,result.data()), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
+    QMetaObject::invokeMethod(this, methodname, QGenericReturnArgument(returntype,result.data()), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
     return result;
 }

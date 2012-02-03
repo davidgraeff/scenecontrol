@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     return app.exec();
 }
 
-plugin::plugin() : AbstractPlugin(this) {
+plugin::plugin() {
     m_repeat = 0;
     m_repeatInit = 0;
     m_devicelist = new ManagedDeviceList();

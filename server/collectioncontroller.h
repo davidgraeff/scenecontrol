@@ -43,8 +43,11 @@ private:
     };
     QMultiMap<int, dataWithPlugin> m_timetable;
     QList<dataWithPlugin> m_conditions;
+    int m_conditionok;
 private Q_SLOTS:
-    void timeout();
+    void timeoutNextAction();
+    void conditionResponse(bool timeout = false);
+    void qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid);
 Q_SIGNALS:
     void runningCollectionFinished (const QString& collectionid);
 };

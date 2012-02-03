@@ -21,6 +21,7 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/abstractplugin.h"
+#include <QTcpSocket>
 
 class plugin : public AbstractPlugin
 {
@@ -33,26 +34,32 @@ public:
     virtual void clear();
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
 public Q_SLOTS:
+    // player
     void play();
     void pause();
     void stop();
     void next();
     void prev();
-    void info();
-    void AspectRatio();
-    void NextSubtitle();
-    void AudioNextLanguage ();
-    void previousmenu();
-    void ActivateWindow();
+    void FastForward();
+    void Rewind();
+    // gui control
     void select();
     void down();
     void up();
     void left();
     void right();
-    void close();
-    void ContextMenu();
-    void FastForward();
-    void Rewind();
+    void home();
+    void back();
+    // volume
+    void setVolume(int v);
+private Q_SLOTS:
+    void readyRead();
+    void hostconnected();
+    void hostdisconnected();
+    void error(QAbstractSocket::SocketError);
 private:
+    QString m_host;
+    int m_port;
+    QTcpSocket m_socket;
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 };
