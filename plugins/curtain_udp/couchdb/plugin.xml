@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<plugin id="curtain_udp" version="1.0">
+	<action id="setCurtainRelative">
+		<int id="value" min="-255" max="255" />
+	</action>
+	<action id="setCurtain">
+		<int id="value" min="0" max="255" />
+	</action>
+	<action id="syncCurtain">
+	</action>
+
+	<condition id="isCurtainValue">
+		<int id="lower" min="0" max="255" />
+		<int id="upper" min="0" max="255" />
+	</condition>
+
+	<section>curtain</section>
+</plugin>
