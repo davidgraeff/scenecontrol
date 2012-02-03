@@ -177,14 +177,15 @@ public:
     }
 
     static int sessionid(const QVariantMap& data) {
-        return data[QLatin1String("sessionid_")].toInt();
+        return data.value(QLatin1String("sessionid_"),-1).toInt();
+    }
+
+    static void removeSessionID(QVariantMap& data) {
+        data.remove(QLatin1String("sessionid_"));
     }
 
     static void setSessionID(QVariantMap& data, const int sessionid) {
-        if (sessionid == -1)
-            data.remove(QLatin1String("sessionid_"));
-        else
-            data[QLatin1String("sessionid_")] = sessionid;
+        data[QLatin1String("sessionid_")] = sessionid;
     }
 
     static bool isQtSlotRespons(const QVariantMap& data) {

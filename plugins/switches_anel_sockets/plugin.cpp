@@ -96,7 +96,7 @@ void plugin::readyRead() {
         QVariantMap datamap;
         ServiceData::setMethod(datamap,"subpluginChange");
         ServiceData::setPluginid(datamap, PLUGIN_ID);
-        datamap[QLatin1String("channel")] = QByteArray::number(pin);
+        datamap[QLatin1String("channel")] = channelid;
         datamap[QLatin1String("value")] = value;
         datamap[QLatin1String("name")] = channelid;
         sendDataToPlugin("switches", datamap);

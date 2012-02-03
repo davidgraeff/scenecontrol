@@ -139,16 +139,19 @@ void Socket::sendToClient(const QByteArray& rawdata, int sessionid) {
     if (socket) {
         socket->write(rawdata);
         return;
+    } else {
+     qWarning() << "SessionID misused! No socket found" << sessionid; 
     }
 }
 
 void Socket::propagateProperty(const QVariantMap& data, int sessionid) {
-    QByteArray jsondata = JSON::stringify(data) + "\n";
+    QByteArray jsondata = JSON::stringify(data);
+    qDebug()<<__FUNCTION__<<jsondata<<sessionid;
     if (!jsondata.isEmpty()) {
         if (sessionid==-1)
-            sendToAllClients(jsondata);
+            sendToAllClients(jsondata + "\n");
         else
-            sendToClient(jsondata, sessionid);
+            sendToClient(jsondata + "\n", sessionid);
     } else if (data.size()) {
         qWarning() << "Json Serializer failed at:" << data;
     }

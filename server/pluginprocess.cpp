@@ -69,7 +69,7 @@ void PluginCommunication::readyRead()
         } else if (method == "changeProperty") {
             // Get session id and remove id from QVariantMap
             const int sessionid = ServiceData::sessionid(variantdata);
-            ServiceData::setSessionID(variantdata, -1);
+            ServiceData::removeSessionID(variantdata);
             // propagate changed property
             Socket::instance()->propagateProperty(variantdata, sessionid);
         } else if (method == "eventTriggered") {
