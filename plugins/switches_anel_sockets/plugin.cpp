@@ -88,7 +88,7 @@ void plugin::readyRead() {
 
 	// send property
         ServiceData sc = ServiceData::createModelChangeItem("anel.io");
-        sc.setData("channel", pin);
+        sc.setData("channel", channelid);
         sc.setData("value", value);
         changeProperty(sc.getData(), -1);
 
@@ -98,7 +98,7 @@ void plugin::readyRead() {
         ServiceData::setPluginid(datamap, PLUGIN_ID);
         datamap[QLatin1String("channel")] = QByteArray::number(pin);
         datamap[QLatin1String("value")] = value;
-        datamap[QLatin1String("name")] = QByteArray::number(pin);
+        datamap[QLatin1String("name")] = channelid;
         sendDataToPlugin("switches", datamap);
 
         // update cache
