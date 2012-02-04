@@ -19,6 +19,7 @@
 #include <QDebug>
 #include "plugin.h"
 #include <QCoreApplication>
+#include <shared/json.h>
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
@@ -86,7 +87,9 @@ void plugin::readyRead() {
             m_checkClientTimer.start();
             if (changed)
                 stateChanged(c, true);
-        }
+        } else {
+	    qWarning() << "Unknown client message" << bytes;
+	}
     }
 }
 
@@ -136,12 +139,8 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
         return;
     }
 
-    QByteArray d;
-    QDataStream stream(&d, QIODevice::WriteOnly);
-    stream << data;
-
     for (;i != m_clients.constEnd(); ++i) {
         const ExternalClient* c = &(*i);
-        QUdpSocket().writeDatagram(d, c->host, c->port);
+        QUdpSocket().writeDatagram(JSON::stringify(data)+"\n", c->host, c->port);
     }
 }
