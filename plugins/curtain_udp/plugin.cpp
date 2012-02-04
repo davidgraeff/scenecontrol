@@ -65,7 +65,7 @@ void plugin::requestProperties(int sessionid) {
 }
 
 void plugin::curtainChanged(int sessionid) {
-    ServiceData sc = ServiceData::createModelChangeItem("curtain.value");
+    ServiceData sc = ServiceData::createNotification("curtain.value");
     if (m_curtainvalue != -1) sc.setData("value", m_curtainvalue);
     if (m_curtainmax != -1) sc.setData("max", m_curtainmax);
     if (m_curtainButtons != -1) sc.setData("buttons", m_curtainButtons);
