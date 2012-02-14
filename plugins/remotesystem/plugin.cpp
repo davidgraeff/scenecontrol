@@ -37,6 +37,8 @@ plugin::plugin() {
 
     m_allowedmembers << QLatin1String("volume_relative");
     m_allowedmembers << QLatin1String("volume_absolute");
+    m_allowedmembers << QLatin1String("volume_up");
+    m_allowedmembers << QLatin1String("volume_down");
     m_allowedmembers << QLatin1String("display_off");
     m_allowedmembers << QLatin1String("display_on");
     m_allowedmembers << QLatin1String("mute");
