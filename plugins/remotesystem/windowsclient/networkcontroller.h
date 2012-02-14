@@ -11,7 +11,6 @@ public:
     static NetworkController* intance();
     void setId(const QByteArray& id);
 private:
-    QSslSocket* m_socket;
     QByteArray m_identifier;
     explicit NetworkController(QObject *parent = 0);
 public slots:

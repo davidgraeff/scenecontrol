@@ -73,5 +73,5 @@ void NetworkController::socketConnected()
     qDebug() << "socket connected";
     emit message(tr("Connected to %1").arg(this->peerAddress().toString()));
     this->write("{\"type_\":\"execute\", \"plugin_\":\"remotesystem\", \"member_\":\"registerclient\","
-                "\"host\":\""+ m_socket->localAddress().toString().toUtf8() +"\", \"identifier\":\""+m_identifier+"\"}\n");
+                "\"host\":\""+ this->localAddress().toString().toUtf8() +"\", \"identifier\":\""+m_identifier+"\"}\n");
 }
