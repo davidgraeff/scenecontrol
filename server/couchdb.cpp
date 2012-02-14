@@ -1,7 +1,5 @@
 #include "couchdb.h"
 
-#include <qjson/serializer.h>
-#include <qjson/parser.h>
 #include "paths.h"
 #include "config.h"
 
