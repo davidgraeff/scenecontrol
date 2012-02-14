@@ -52,7 +52,7 @@ public:
     void session_change ( int sessionid, bool running );
     /// Proxy Method: Call Qt Slot of the plugin. The QVariantMap have to contain at least a method_ member
     /// Responses are asynchron and propagated through the signal qtSlotResponse
-    void callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid = QByteArray());
+    void callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid = QByteArray(), int sessionid = -1);
 private:
     PluginController* m_controller;
     QLocalSocket* m_pluginCommunication;

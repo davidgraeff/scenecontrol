@@ -152,7 +152,7 @@ void PluginCommunication::session_change(int sessionid, bool running)
     writeToPlugin(mdata);
 }
 
-void PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid) {
+void PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid, int sessionid) {
     if (!ServiceData::hasMethod(methodAndArguments)) {
         qWarning() << "Call of qt slot without method" << methodAndArguments;
         return;
@@ -160,6 +160,7 @@ void PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, cons
 
     QVariantMap modified = methodAndArguments;
     modified[QLatin1String("responseid_")] = responseid;
+    ServiceData::setSessionID(modified, sessionid);
     writeToPlugin(modified);
 }
 

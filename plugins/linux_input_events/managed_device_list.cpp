@@ -39,6 +39,7 @@ ManagedDeviceList::ManagedDeviceList() {
 }
 
 ManagedDeviceList::~ManagedDeviceList() {
+    m_udevMonitorNotifier->setEnabled(false);
     delete m_udevMonitorNotifier;
     close (udev_monitor_fd);
 
@@ -62,6 +63,7 @@ ManagedDeviceList::StateEnum ManagedDeviceList::getState()
 void ManagedDeviceList::udevActivity ( int socket )
 {
     Q_UNUSED(socket);
+    m_udevMonitorNotifier->setEnabled(false);
     struct udev_device *dev;
     if (!(dev = udev_monitor_receive_device(udev_mon))) {
         qDebug() <<"Failed to get udev device object from monitor.";
@@ -73,6 +75,7 @@ void ManagedDeviceList::udevActivity ( int socket )
 
     processDevice(dev);
     udev_device_unref(dev);
+    m_udevMonitorNotifier->setEnabled(true);
 }
 
 void ManagedDeviceList::processDevice(struct udev_device *dev)

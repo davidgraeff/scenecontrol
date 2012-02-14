@@ -53,8 +53,10 @@ plugin::plugin() {
 }
 
 plugin::~plugin() {
+    qDebug() << "Free p1";
     clear();
     delete m_devicelist;
+    qDebug() << "Free p2";
 }
 
 void plugin::clear() {

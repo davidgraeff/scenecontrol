@@ -98,6 +98,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
 }
 
 void plugin::registerclient(const QByteArray& host, const QByteArray& identifier) {
+    qDebug() << "Session registered" << host << identifier << m_lastsessionid;
     if (m_lastsessionid == -1) {
         return;
     }
@@ -105,7 +106,6 @@ void plugin::registerclient(const QByteArray& host, const QByteArray& identifier
     c.host = host;
     c.identifier = identifier;
     c.sessionid = m_lastsessionid;
-    qDebug() << "Session registered" << host << identifier << m_lastsessionid;
     stateChanged(&c, true);
 }
 

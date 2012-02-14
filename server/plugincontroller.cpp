@@ -35,7 +35,6 @@ PluginController::PluginController () {
 
 PluginController::~PluginController()
 {
-    qDebug() << "Unregister events";
     QMap<QString,PluginCommunication*>::iterator i = m_registeredevents.begin();
     for (;i!=m_registeredevents.end();++i) {
         PluginCommunication* executeplugin = i.value();

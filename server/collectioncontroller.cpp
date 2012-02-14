@@ -135,17 +135,19 @@ void CollectionController::requestExecutionByCollectionId ( const QString& colle
 
 void CollectionController::requestExecution(const QVariantMap& data, int sessionid) {
     if ( !ServiceData::checkType ( data, ServiceData::TypeExecution )) return;
+    // Special case: all properties are requested, handle this immediatelly.
     if (ServiceData::pluginid(data)==QLatin1String("server") && ServiceData::isMethod(data, "requestAllProperties") && sessionid != -1) {
         PluginController::instance()->requestAllProperties(sessionid);
         return;
     }
+    // Look for a plugin that fits "data"
     PluginCommunication* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( data ) );
     if ( !plugin ) {
         qWarning() <<"Cannot execute service. No plugin found:"<<data << sessionid;
         return;
     }
 
-    plugin->callQtSlot ( data );
+    plugin->callQtSlot ( data, QByteArray(), sessionid );
 }
 
 void CollectionController::runningCollectionFinished(const QString& collectionid)
