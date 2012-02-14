@@ -75,7 +75,7 @@ public:
 
     void setData(const char* index, const QVariant& data) ;
 
-    QVariantMap getData() ;
+    QVariantMap& getData() ;
 
     static QString id(const QVariantMap& data) {
         return data[QLatin1String("_id")].toString();

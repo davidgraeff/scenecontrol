@@ -41,7 +41,7 @@ void roomMessageOutput(QtMsgType type, const char *msg)
     }
 }
 
-AbstractPlugin::AbstractPlugin()
+AbstractPlugin::AbstractPlugin() : m_lastsessionid(-1)
 {
     qInstallMsgHandler(roomMessageOutput);
     connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
@@ -95,6 +95,8 @@ void AbstractPlugin::readyReadCommunication()
         // Drop chunk and chunk-complete-bytes
         m_chunk.remove(0,indexOfChunkEnd+3);
 
+	m_lastsessionid = ServiceData::sessionid(variantdata);
+	
         // Retrieve method
         const QByteArray method = ServiceData::method(variantdata);
 

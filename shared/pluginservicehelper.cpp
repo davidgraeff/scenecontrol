@@ -59,6 +59,6 @@ void ServiceData::setData ( const char* index, const QVariant& data ) {
     m_map[QLatin1String ( index ) ] = data;
 }
 
-QVariantMap ServiceData::getData() {
+QVariantMap& ServiceData::getData() {
     return m_map;
 }

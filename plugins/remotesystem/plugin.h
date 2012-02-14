@@ -27,9 +27,9 @@
 
 class ExternalClient {
 public:
-    QHostAddress host;
-    quint16 port;
-    bool noResponse;
+    QByteArray host;
+    QByteArray identifier;
+    int sessionid;
 };
 
 class plugin : public AbstractPlugin
@@ -45,12 +45,10 @@ public:
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
 private:
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
-    QMap<QString, ExternalClient> m_clients;
-    QUdpSocket m_listenSocket;
-    QTimer m_checkClientTimer;
+    QMap<int, ExternalClient> m_clients;
     QStringList m_allowedmembers;
     QVariantMap stateChanged(const ExternalClient* client, bool propagate);
+    virtual void session_change(int sessionid, bool running);
 private Q_SLOTS:
-    void checkClientAlive();
-    void readyRead();
+    void registerclient(const QByteArray& host, const QByteArray& identifier);
 };

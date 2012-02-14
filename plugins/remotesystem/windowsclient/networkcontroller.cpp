@@ -6,7 +6,7 @@
 static NetworkController* i;
 
 NetworkController::NetworkController(QObject *parent) :
-    QSslSocket(parent)
+        QSslSocket(parent)
 {
     connect(this, SIGNAL(readyRead()), this, SLOT(readyRead()));
     connect(this, SIGNAL(connected()), this, SLOT(socketConnected()));
@@ -14,6 +14,8 @@ NetworkController::NetworkController(QObject *parent) :
     connect(this, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
     this->ignoreSslErrors();
     this->setProtocol(QSsl::SslV3);
+    
+    m_identifier = "winclient1";
 }
 
 void NetworkController::networkConfigChanged(QString host, int port)
@@ -27,6 +29,10 @@ NetworkController* NetworkController::intance() {
     return i;
 }
 
+void NetworkController::setId(const QByteArray& id)
+{
+    m_identifier = id;
+}
 
 void NetworkController::sslErrors ( const QList<QSslError> & errors ) {
     QList<QSslError> relevantErrors(errors);
@@ -66,5 +72,6 @@ void NetworkController::socketConnected()
 {
     qDebug() << "socket connected";
     emit message(tr("Connected to %1").arg(this->peerAddress().toString()));
-    this->write("{\"type_\":\"execute\", \"plugin_\":\"remotesystem\", \"member_\":\"registerclient\"}\n");
+    this->write("{\"type_\":\"execute\", \"plugin_\":\"remotesystem\", \"member_\":\"registerclient\","
+                "\"host\":\""+ m_socket->localAddress().toString().toUtf8() +"\", \"identifier\":\""+m_identifier+"\"}\n");
 }

@@ -79,6 +79,8 @@ private Q_SLOTS:
     void newConnectionCommunication ();
     // If disconnected from server, quit plugin process
     void disconnectedFromServer();
+protected:
+    int m_lastsessionid;
 private:
     QByteArray m_chunk;
     QMap<QByteArray, QLocalSocket*> m_connectionsByID;

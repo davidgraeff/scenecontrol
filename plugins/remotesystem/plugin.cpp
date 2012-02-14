@@ -30,11 +30,6 @@ int main(int argc, char* argv[]) {
 }
 
 plugin::plugin() {
-    connect(&m_listenSocket, SIGNAL(readyRead()), SLOT(readyRead()));
-    connect(&m_checkClientTimer, SIGNAL(timeout()), SLOT(checkClientAlive()));
-    m_checkClientTimer.setSingleShot(true);
-    m_checkClientTimer.setInterval(60000);
-
     m_allowedmembers << QLatin1String("volume_relative");
     m_allowedmembers << QLatin1String("volume_absolute");
     m_allowedmembers << QLatin1String("volume_up");
@@ -63,41 +58,13 @@ void plugin::clear() {
 void plugin::initialize() {}
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-  Q_UNUSED(configid);
-    if (!data.contains(QLatin1String("listenport")) || !data.contains(QLatin1String("broadcastport")))
-        return;
-
-    clear();
-    m_listenSocket.bind(data[QLatin1String("listenport")].toInt());
-    m_listenSocket.writeDatagram("ROOMCONTROLCLIENTS\n", QHostAddress::Broadcast, data[QLatin1String("broadcastport")].toInt());
-}
-
-void plugin::readyRead() {
-    while (m_listenSocket.hasPendingDatagrams()) {
-        QByteArray bytes;
-        QHostAddress host;
-        quint16 port;
-        bytes.resize ( m_listenSocket.pendingDatagramSize() );
-        m_listenSocket.readDatagram ( bytes.data(), bytes.size(), &host, &port );
-
-        if (bytes == "IAMAROOMCONTROLCLIENT\n") {
-            ExternalClient* c = &m_clients[host.toString()];
-            const bool changed = (c->host != host);
-            c->host = host;
-            c->port = port;
-            c->noResponse = false;
-            m_checkClientTimer.start();
-            if (changed)
-                stateChanged(c, true);
-        } else {
-	    qWarning() << "Unknown client message" << bytes;
-	}
-    }
+    Q_UNUSED(configid);
+    Q_UNUSED(data);
 }
 
 void plugin::requestProperties(int sessionid) {
-    changeProperty(ServiceData::createModelReset("remote.connection.state", "server").getData(), sessionid);
-    QMap<QString, ExternalClient>::const_iterator i = m_clients.constBegin();
+    changeProperty(ServiceData::createModelReset("remote.connection.state", "host").getData(), sessionid);
+    QMap<int, ExternalClient>::const_iterator i = m_clients.constBegin();
     for (;i != m_clients.constEnd(); ++i) {
         changeProperty(stateChanged(&(*i), false), sessionid);
     }
@@ -105,36 +72,19 @@ void plugin::requestProperties(int sessionid) {
 
 inline QVariantMap plugin::stateChanged(const ExternalClient* client, bool propagate) {
     ServiceData sc = ServiceData::createModelChangeItem("remote.connection.state");
-    sc.setData("host",client->host.toString());
-    sc.setData("port",client->port);
-    sc.setData("state", (int)client->noResponse);
+    sc.setData("host",client->host);
+    sc.setData("identifier",client->identifier);
     if (propagate) changeProperty(sc.getData());
     return sc.getData();
 }
 
-void plugin::checkClientAlive() {
-    QMutableMapIterator<QString, ExternalClient> i(m_clients);
-    while (i.hasNext())  {
-        i.next();
-        ExternalClient* c = &(i.value());
-        if (c->noResponse) {
-            i.remove();
-            continue;
-        }
-        c->noResponse = true;
-        QUdpSocket().writeDatagram("ROOMCONTROLCLIENTS\n", c->host, c->port);
-    }
-
-    if (m_clients.size())
-        m_checkClientTimer.start();
-}
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
     if (plugin_id != COMSERVERSTRING) {
         qWarning() << "Plugin" << pluginid() << "only controllable by the server";
         return;
     }
 
-    QMap<QString, ExternalClient>::const_iterator i = m_clients.constBegin();
+    QMap<int, ExternalClient>::const_iterator i = m_clients.constBegin();
 
     if (!m_allowedmembers.contains(ServiceData::method(data))) {
         qWarning() << "Unallowed memeber action requested" << data;
@@ -143,6 +93,34 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
 
     for (;i != m_clients.constEnd(); ++i) {
         const ExternalClient* c = &(*i);
-        QUdpSocket().writeDatagram(JSON::stringify(data)+"\n", c->host, c->port);
+        changeProperty(data, c->sessionid);
+    }
+}
+
+void plugin::registerclient(const QByteArray& host, const QByteArray& identifier) {
+    if (m_lastsessionid == -1) {
+        return;
+    }
+    ExternalClient& c = m_clients[m_lastsessionid];
+    c.host = host;
+    c.identifier = identifier;
+    c.sessionid = m_lastsessionid;
+    qDebug() << "Session registered" << host << identifier << m_lastsessionid;
+    stateChanged(&c, true);
+}
+
+void plugin::session_change(int sessionid, bool running) {
+    QMap<int, ExternalClient>::const_iterator i = m_clients.find(sessionid);
+    if (i == m_clients.end())
+        return;
+
+    // Session finished, remove from m_clients
+    if (!running) {
+        ServiceData sc = ServiceData::createModelRemoveItem("remote.connection.state");
+        sc.setData("host",i->host);
+        sc.setData("identifier",i->identifier);
+	qDebug() << "Session finished" << i->sessionid;
+        changeProperty(sc.getData());
+        m_clients.remove(sessionid);
     }
 }
