@@ -49,9 +49,9 @@ function propertiesWebsocket() {
 	}
 }
 
-function escapeInputForJson(string)
+function escapeInputForJson(text)
 {
-
+      if (text == null) return null;
 	var _escapeable = /["\\\x00-\x1f\x7f-\x9f]/g;
 
 	var _meta = {
@@ -64,9 +64,9 @@ function escapeInputForJson(string)
 		'\\': '\\\\'
 	};
 
-	if (string.match(_escapeable))
+	if (text.match(_escapeable))
 	{
-		return string.replace(_escapeable, function (a) 
+		return text.replace(_escapeable, function (a) 
 		{
 			var c = _meta[a];
 			if (typeof c === 'string') return c;
@@ -74,13 +74,13 @@ function escapeInputForJson(string)
 			return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
 		});
 	}
-	return string;
+	return text;
 };
 
 //$.mobile.pushStateEnabled = false;
 $db = $.couch.db("roomcontrol");
 propertiesWebsocketInstance = new propertiesWebsocket();
 
-$(function() {
-	propertiesWebsocketInstance.reconnect();
-});
+// $(function() {
+// 	propertiesWebsocketInstance.reconnect();
+// });

@@ -1,21 +1,8 @@
 function collectionsO() { 
 	that = this;
-	this.collid = null;
-	this.serviceid = null;
-	this.services = null;
+	this.collid = localStorage.getItem('collid');
 	this.collections = null;
-	
-	this.currentcollection = function() {
-		if (!this.collections || !this.collid)
-			return null;
-		return this.collections[this.collid];
-	}
-	
-	this.currentservice = function() {
-		if (!this.services || !this.serviceid)
-			return null;
-		return this.services[this.serviceid];
-	}
+	this.callbackOnCollection = {};
 	
 	this.addcollection = function(name) {
 		$db.saveDoc({"type_": "collection","categories": [],"enabled": true,"name": name}, {  
@@ -60,63 +47,94 @@ function collectionsO() {
 	this.execcollection = function() {
 		if (!this.collid)
 			return this;
-		propertiesWebsocketInstance.write({"plugin_":"CollectionController", "type_":"execute", "member_":"collection.execute", "collectionid":this.collid});
+		//propertiesWebsocketInstance.write({"plugin_":"CollectionController", "type_":"execute", "member_":"collection.execute", "collectionid":this.collid});
 		return this;
 	}
 
-	this.refreshCollections = function() {
-		$db.view("roomcontrol/collections", {  
+	this.getCollections = function(callback) {
+		if (that.collections == 1)
+			return;
+		
+		// set to 1 to ignore all further requests
+		that.collections = 1;
+		
+		$db.view("_server/collections", {  
 			success: function(data) {  
 				that.collections = {};
 				for (var index in data.rows) {  
 					var row = data.rows[index];
 					if (row.value === null)
 						continue;
-					that.collections[row.key] = row.value;
+					that.collections[row.id] = row.value;
+					console.log("collection found", row);
+					if (that.callbackOnCollection[row.key]) {
+						// call each callback that is registered to this id
+						for ( var i=0, len=that.callbackOnCollection[row.key].length; i<len; ++i ){
+							// call callback
+							that.callbackOnCollection[row.key][i](row.value);
+						}
+						// remove all callbacks of this id
+						delete that.callbackOnCollection[row.key];
+					}
 				}
-				$(that).trigger("collectionsReady");
-		}});
+				if (typeof callback == "function")
+					callback(that.collections);
+			},
+			error: function(event) {
+				that.collections = null;
+			}
+		});
 		return this;
 	}
 
-	this.refreshServices = function() {
-		var c = this.currentcollection();
-		if (!c)
+	/**
+	 * Callback function will be called with all services of the collection with id == collid
+	 */
+	this.getServices = function(callback, collid) {
+		if (typeof callback != "function")
 			return;
 		
-		$db.view("roomcontrol/services", {  
-			key: c._id,
+		$db.view("_server/services", {  
+			key: collid,
 			success: function(data) {  
-				that.services = {};
-				console.log(data, c);
+				var services = {};
 				for (var index in data.rows) {  
 					var row = data.rows[index];
+					console.log("service found", row);
 					if (row.value === null)
 						continue;
-					that.services[row.key] = row.value;
+					services[row.id] = row.value;
 				}
-				$(that).trigger("servicesReady");
+				callback(services, collid);
 			}
 		});
 	}
 	
-	this.updateCurrentCollectionAndService = function( e, data ) {
-		var $_GET = {};
+	/**
+	 * Callback function will be called as soon as the collection with id == collid has been loaded
+	 */
+	this.registerCollectionListener = function(callback, collid) {
+		if (typeof callback != "function")
+			return;
 		
-		window.location.search.replace(/\??(?:([^=]+)=([^&]*)&?)/g, function () {
-			function decode(s) {
-				return decodeURIComponent(s.split("+").join(" "));
-			}
-
-			$_GET[decode(arguments[1])] = decode(arguments[2]);
-		});
+		// if collection already available immediatelly call callback
+		if (that.collections != null && that.collections[collid]) {
+			callback(that.collections[collid]);
+		} else if (that.callbackOnCollection[collid]) { // there are already entries
+			that.callbackOnCollection[collid].push(callback);
+		} else
+			that.callbackOnCollection[collid] = [callback]
 		
-		that.collid = $_GET["collectionid"];
-		that.serviceid = $_GET["serviceid"];
-		console.log("page transition"+ ";" + $_GET["collectionid"], that);
+		// if no collections were requested so far, do this now
+		if (that.collections == null) {
+			that.getCollections();
+		}
 	}
 	
-	//this.updateCurrentCollectionAndService();
-	$(document).bind( "pagechange", this.updateCurrentCollectionAndService);
+	this.setCollection = function(collid) {
+	    localStorage.setItem('collid', collid);
+	    that.collid = collid;
+	    console.log("setCollid", collid, localStorage.getItem('collid'));
+	}
 };
 collections = new collectionsO();

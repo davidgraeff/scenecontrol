@@ -3,9 +3,9 @@
 	<head><title>Profile</title>
 		<meta charset=utf-8 />
 		<meta name="viewport" content="width=device-width, initial-scale=1"> 
-		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
-		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
-		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" />
+		<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"></script>
 		<script src="/_utils/script/jquery.couch.js"></script>
 		<script src="/roomcontrol/html_server/websocket.js"></script>
 		<script src="/roomcontrol/html_server/handlebars.1.0.0.beta.3.js"></script>
@@ -15,21 +15,20 @@
 
 		<div data-role="page" id="collectionpage_actions">
 			<div data-role="header">
-				<h1><span class="collectionname">Test Profil</span>: Aktionen</h1>
+				<h1><span class="collectionname">INVALID</span>: Aktionen</h1>
 			</div>
 			<div data-role="content">
 				<a href="#" onclick="collections.rmcollection();" data-role="button" data-icon="delete">Delete</a>
 				<a href="#" onclick="collections.execcollection();" data-role="button" data-icon="gear">Execute</a>
-				<a id="link_rename_collection" href="collection_name.html?collectionid=invalid" data-role="button" data-rel="dialog" data-icon="refresh">Rename</a>
+				<a id="link_rename_collection" href="collection_name.html" data-role="button" data-rel="dialog" data-icon="refresh">Rename</a>
 			</div>
 			<script>
-				$( 'collectionpage_actions' ).live( 'pageinit',function(event){
-// 					if (!collections.currentcollection)
-// 						window.location.href="collections.html";
-					
-					$("#link_rename_collection").attr("href", "collection_name.html?collectionid="+collections.currentcollection._id);
-					
-					$(".collectionname").text(collections.currentcollection.name);
+				function collectionLoaded(c) {
+					$(".collectionname").text(c.name);
+				}
+				
+				$( '#collectionpage_actions' ).live( 'pagebeforeshow', function (event) {
+					collections.registerCollectionListener(collectionLoaded, collections.collid);
 				});
 			</script>
 		</div>

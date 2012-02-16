@@ -3,9 +3,9 @@
 	<head><title>Profil umbennenen</title>
 		<meta charset=utf-8 />
 		<meta name="viewport" content="width=device-width, initial-scale=1"> 
-		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.css" />
-		<script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
-		<script src="http://code.jquery.com/mobile/1.0rc2/jquery.mobile-1.0rc2.min.js"></script>
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.css" />
+		<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.0.1/jquery.mobile-1.0.1.min.js"></script>
 		<script src="/_utils/script/jquery.couch.js"></script>
 		<script src="/roomcontrol/html_server/websocket.js"></script>
 		<script src="/roomcontrol/html_server/handlebars.1.0.0.beta.3.js"></script>
@@ -15,7 +15,7 @@
 
 		<div data-role="page" id="collection_name_page">
 			<div data-role="header">
-				<h1>Neues Profil</h1>
+				<h1 id="collection_name_title">INVALID</h1>
 				<a id="link_collection_name" href="#" data-rel="dialog" data-role="button" data-theme="a" data-icon="save" >Speichern</a>
 			</div>
 			<div data-role="content">
@@ -25,38 +25,46 @@
 				</div>
 			</div>
 			<script>
-				$( '#collection_name_page' ).live( 'pageinit',function(event){
-					var c = collections.currentcollection();
-					if (c)
+				function collectionLoaded(c) {
+					if (c) {
 						$("#collection_name").val(c.name);
-					else
+						$("#collection_name_title").text("Namen ändern");
+					} else {
 						$("#collection_name").val('');
-					
-					$("#link_collection_name").click(function() {
-						var newtext = escapeInputForJson( $("#collection_add_name").val() );
-						if (newtext == null || newtext.length < 2) {
-							$("#collection_name").effect("highlight", {}, 3000);
-							return false;
-						}
-						
-						$("#collection_name").val(newtext+"*");
-
-						var c = collections.currentcollection();
-						if (c) {
-							c.name = newtext;
-							collections.editcollection(c).one("edit_result", function(event, result) {
-								if (result) $("#collection_name_page").dialog('close');
-							});
-						} else
-							collections.addcollection(newtext).one("add_result", function(event, result) {
-								if (result) $("#collection_name_page").dialog('close');
-							});
-					});
-					
+						$("#collection_name_title").text("Neues Profil");
+					}
+				}
+				
+				$( '#collection_name_page' ).live( 'pagebeforeshow', function (event) {
+					collections.registerCollectionListener(collectionLoaded, collections.collid);
+				});
+				
+				$( '#collection_name_page' ).live( 'pageshow',function(event){
 					setTimeout(function(){
 						$("#collection_name").focus();
-					},0);
+					},10);
+				});
+				
+				$("#link_collection_name").click(function() {
+					var collnameobj = $("#collection_name");
+					var newtext = escapeInputForJson( collnameobj.val() );
+					if (newtext == null || newtext.length < 2) {
+						collnameobj.effect("highlight", {}, 3000);
+						return false;
+					}
 					
+					collnameobj.val(newtext+"*");
+
+					var c = collections.currentcollection();
+					if (c) {
+						c.name = newtext;
+						collections.editcollection(c).one("edit_result", function(event, result) {
+							if (result) $("#collection_name_page").dialog('close');
+						});
+					} else
+						collections.addcollection(newtext).one("add_result", function(event, result) {
+							if (result) $("#collection_name_page").dialog('close');
+						});
 				});
 			</script>
 		</div>

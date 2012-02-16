@@ -28,30 +28,30 @@
 				<h2>Eigenschaften (live)</h2>
 				<ul id="properties" data-role="listview" ></ul>
 				<script>
-				$(function() {
-					$(propertiesWebsocketInstance).bind('onopen', function() {
-						isOpen();
-					});
-					$(propertiesWebsocketInstance).bind('onproperty', function(event, data) {
-						var newdiv = document.createElement('li');
-						newdiv.innerHTML = data;
-						var someParentObject = document.getElementById("properties");
-						someParentObject.insertBefore(newdiv,someParentObject.firstChild);
-						$(someParentObject).listview('refresh');
-					});
-					$(propertiesWebsocketInstance).bind('onclose', function() {
-						document.getElementById("status").style.backgroundColor = "#ff4040";
-						document.getElementById("status").textContent = " websocket connection CLOSED ";
-					});
-					
-					function isOpen() {
-						document.getElementById("status").style.backgroundColor = "#40ff40";
-						document.getElementById("status").textContent = " websocket connection opened " + propertiesWebsocketInstance.url;
-						requestall();
-					}
-					if (propertiesWebsocketInstance.connected)
-						isOpen();
-				});
+// 				$(function() {
+// 					$(propertiesWebsocketInstance).bind('onopen', function() {
+// 						isOpen();
+// 					});
+// 					$(propertiesWebsocketInstance).bind('onproperty', function(event, data) {
+// 						var newdiv = document.createElement('li');
+// 						newdiv.innerHTML = data;
+// 						var someParentObject = document.getElementById("properties");
+// 						someParentObject.insertBefore(newdiv,someParentObject.firstChild);
+// 						$(someParentObject).listview('refresh');
+// 					});
+// 					$(propertiesWebsocketInstance).bind('onclose', function() {
+// 						document.getElementById("status").style.backgroundColor = "#ff4040";
+// 						document.getElementById("status").textContent = " websocket connection CLOSED ";
+// 					});
+// 					
+// 					function isOpen() {
+// 						document.getElementById("status").style.backgroundColor = "#40ff40";
+// 						document.getElementById("status").textContent = " websocket connection opened " + propertiesWebsocketInstance.url;
+// 						requestall();
+// 					}
+// 					if (propertiesWebsocketInstance.connected)
+// 						isOpen();
+// 				});
 				function requestall() {
 					document.getElementById("properties").textContent = "";
 					propertiesWebsocketInstance.requestall();
