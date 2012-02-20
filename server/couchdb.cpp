@@ -416,7 +416,7 @@ int CouchDB::installPluginData(const QString& pluginid) {
             }
             // Add plugin id before inserting into database
             jsonData[QLatin1String("plugin_")] = pluginid;
-            const QByteArray dataToSend = JSON::stringify(jsonData);
+            const QByteArray dataToSend = JSON::stringify(jsonData).toUtf8();
             // Document ID: Consist of filename without extension + "{pluginid}".
             // "()" are replaced by "/".
             const QString docid = QFileInfo(files[i]).baseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
@@ -603,7 +603,7 @@ void CouchDB::changePluginConfiguration(const QString& pluginid, const QString& 
 
     // 3) send to couchdb
     {
-        const QByteArray dataToSend = JSON::stringify(data);
+        const QByteArray dataToSend = JSON::stringify(data).toUtf8();
         QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
         request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
         request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());

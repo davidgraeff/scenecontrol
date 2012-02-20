@@ -48,7 +48,7 @@ void plugin::play() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doplay";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 
 }
 void plugin::pause() {
@@ -65,7 +65,7 @@ void plugin::pause() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "dopause";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::stop() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -81,7 +81,7 @@ void plugin::stop() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "dostop";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::next() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -97,7 +97,7 @@ void plugin::next() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "donext";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::prev() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -113,7 +113,7 @@ void plugin::prev() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doprev";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::FastForward() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -130,7 +130,7 @@ void plugin::FastForward() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doforward";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::Rewind() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -147,7 +147,7 @@ void plugin::Rewind() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "dorewind";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 
 void plugin::select() {
@@ -163,7 +163,7 @@ void plugin::select() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doselect";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::down() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -178,7 +178,7 @@ void plugin::down() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "dodown";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::up() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -193,7 +193,7 @@ void plugin::up() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doup";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::left() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -208,7 +208,7 @@ void plugin::left() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doleft";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::right() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -223,7 +223,7 @@ void plugin::right() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doright";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::home() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -238,7 +238,7 @@ void plugin::home() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "dohome";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 void plugin::back() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
@@ -253,7 +253,7 @@ void plugin::back() {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "doback";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 
 void plugin::setVolume(int v) {
@@ -270,7 +270,7 @@ void plugin::setVolume(int v) {
     data[QLatin1String("params")] = params;
     data[QLatin1String("id")] = "setVolume";
 
-    m_socket.write(JSON::stringify(data));
+    m_socket.write(JSON::stringify(data).toUtf8());
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
