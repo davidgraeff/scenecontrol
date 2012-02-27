@@ -56,7 +56,7 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
 }
 
-bool plugin::isLedValue( const QByteArray& channel, int lower, int upper ) {
+bool plugin::isLedValue( const QString& channel, int lower, int upper ) {
     const int v = getLed ( channel );
     if ( v>upper ) return false;
     if ( v<lower ) return false;
@@ -92,17 +92,17 @@ void plugin::ledChanged(QString channel, int value) {
     sendDataToPlugin("leds", datamap);
 }
 
-int plugin::getLed ( const QByteArray& channel ) const {
+int plugin::getLed ( const QString& channel ) const {
     return m_leds.value ( channel ).value;
 }
 
-void plugin::toggleLed ( const QByteArray& channel, int fade ) {
+void plugin::toggleLed ( const QString& channel, int fade ) {
     if ( !m_leds.contains(channel) ) return;
     const unsigned int newvalue = 255 - m_leds[channel].value;
     setLed ( channel, newvalue, fade );
 }
 
-void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, int fade ) {
+void plugin::setLedExponential ( const QString& channel, int multiplikator, int fade ) {
     if ( !m_leds.contains(channel) ) return;
     unsigned int v = m_leds[channel].value;
     if ( multiplikator>100 ) {
@@ -122,7 +122,7 @@ void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, i
     setLed ( channel, v, fade );
 }
 
-void plugin::setLedRelative ( const QByteArray& channel, int value, int fade ) {
+void plugin::setLedRelative ( const QString& channel, int value, int fade ) {
     if (! m_leds.contains(channel) ) return;
     setLed ( channel,  value + m_leds[channel].value, fade );
 }
@@ -132,7 +132,7 @@ int plugin::countChannels() {
     return m_channels;
 }
 
-void plugin::setLed ( const QByteArray& channel, int value, int fade ) {
+void plugin::setLed ( const QString& channel, int value, int fade ) {
     if ( !m_socket ) return;
     if ( !m_leds.contains(channel) ) return;
     ledchannel* l = &(m_leds[channel]);

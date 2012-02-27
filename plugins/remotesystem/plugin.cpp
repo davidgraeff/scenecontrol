@@ -32,8 +32,6 @@ int main(int argc, char* argv[]) {
 plugin::plugin() {
     m_allowedmembers << QLatin1String("volume_relative");
     m_allowedmembers << QLatin1String("volume_absolute");
-    m_allowedmembers << QLatin1String("volume_up");
-    m_allowedmembers << QLatin1String("volume_down");
     m_allowedmembers << QLatin1String("display_off");
     m_allowedmembers << QLatin1String("display_on");
     m_allowedmembers << QLatin1String("mute");
@@ -97,7 +95,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
     }
 }
 
-void plugin::registerclient(const QByteArray& host, const QByteArray& identifier) {
+void plugin::registerclient(const QString& host, const QString& identifier) {
     qDebug() << "Session registered" << host << identifier << m_lastsessionid;
     if (m_lastsessionid == -1) {
         return;

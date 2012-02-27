@@ -89,12 +89,12 @@ public Q_SLOTS:
     int getCurtain();
     bool isCurtainInPosition( int lower, int upper );
 
-    void setLed ( const QByteArray& channel, int value, int fade );
-    void setLedExponential ( const QByteArray& channel, int multiplikator, int fade );
-    void setLedRelative ( const QByteArray& channel, int value, int fade );
-    void toggleLed ( const QByteArray& channel, int fade );
-    int getLed( const QByteArray& channel ) const;
-    bool isLedValue( const QByteArray& channel, int lower, int upper );
+    void setLed ( const QString& channel, int value, int fade );
+    void setLedExponential ( const QString& channel, int multiplikator, int fade );
+    void setLedRelative ( const QString& channel, int value, int fade );
+    void toggleLed ( const QString& channel, int fade );
+    int getLed( const QString& channel ) const;
+    bool isLedValue( const QString& channel, int lower, int upper );
     int countLeds();
 private Q_SLOTS:
     void readyRead();

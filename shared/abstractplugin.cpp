@@ -247,7 +247,7 @@ void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
     sendDataToPlugin(COMSERVERSTRING, modifieddata);
 }
 
-void AbstractPlugin::eventTriggered(const QByteArray& eventid, const QByteArray& dest_collectionId) {
+void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_collectionId) {
     QVariantMap modifieddata;
     ServiceData::setMethod(modifieddata, "eventTriggered");
     ServiceData::setPluginid(modifieddata, PLUGIN_ID);

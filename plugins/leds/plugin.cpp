@@ -45,7 +45,7 @@ void plugin::clear() {
 
 void plugin::clear(const QByteArray& plugin_) {
     // Remove all leds referenced by "plugin_id"
-    QMutableMapIterator<QByteArray, iochannel> i(m_ios);
+    QMutableMapIterator<QString, iochannel> i(m_ios);
     while (i.hasNext()) {
         i.next();
         if (i.value().plugin_id == plugin_) {
@@ -61,7 +61,7 @@ void plugin::initialize() {
     m_ios.clear();
 }
 
-bool plugin::isLedValue ( const QByteArray& channel, int lower, int upper )  {
+bool plugin::isLedValue ( const QString& channel, int lower, int upper )  {
     const int v = getLed ( channel );
     if ( v>upper ) return false;
     if ( v<lower ) return false;
@@ -70,7 +70,7 @@ bool plugin::isLedValue ( const QByteArray& channel, int lower, int upper )  {
 
 void plugin::requestProperties(int sessionid) {
     changeProperty(ServiceData::createModelReset("leds", "channel").getData(), sessionid);
-    QMap<QByteArray, plugin::iochannel>::iterator i = m_ios.begin();
+    QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for (;i!=m_ios.end();++i) {
         const plugin::iochannel& io = i.value();
         ServiceData sc = ServiceData::createModelChangeItem("leds");
@@ -82,14 +82,14 @@ void plugin::requestProperties(int sessionid) {
     }
 }
 
-int plugin::getLed(const QByteArray& channel) const
+int plugin::getLed(const QString& channel) const
 {
     if (!m_ios.contains(channel)) return false;
     return m_ios[channel].value;
 }
 
 
-void plugin::moodlight(const QByteArray& channel, bool moodlight) {
+void plugin::moodlight(const QString& channel, bool moodlight) {
     if ( !m_ios.contains(channel) ) return;
     m_ios[channel].moodlight = moodlight;
     if (moodlight) {
@@ -98,7 +98,7 @@ void plugin::moodlight(const QByteArray& channel, bool moodlight) {
     }
 }
 
-void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, int fade ) {
+void plugin::setLedExponential ( const QString& channel, int multiplikator, int fade ) {
     if ( !m_ios.contains(channel) ) return;
     unsigned int v = m_ios[channel].value;
     if ( multiplikator>100 ) {
@@ -118,12 +118,12 @@ void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, i
     setLed ( channel, v, fade );
 }
 
-void plugin::setLedRelative ( const QByteArray& channel, int value, int fade ) {
+void plugin::setLedRelative ( const QString& channel, int value, int fade ) {
     if (! m_ios.contains(channel) ) return;
     setLed ( channel,  value + m_ios[channel].value, fade );
 }
 
-void plugin::setLed ( const QByteArray& channel, int value, int fade )
+void plugin::setLed ( const QString& channel, int value, int fade )
 {
     if (!m_ios.contains(channel)) return;
     iochannel& p = m_ios[channel];
@@ -138,7 +138,7 @@ void plugin::setLed ( const QByteArray& channel, int value, int fade )
     sendDataToPlugin(p.plugin_id, datamap);
 }
 
-void plugin::setLedName ( const QByteArray& channel, const QString& name, bool updateDatabase )
+void plugin::setLedName ( const QString& channel, const QString& name, bool updateDatabase )
 {
     if ( !m_ios.contains(channel) ) return;
     if (name.isNull()) return;
@@ -161,11 +161,11 @@ void plugin::setLedName ( const QByteArray& channel, const QString& name, bool u
         settings[QLatin1String("channel")] = channel;
         settings[QLatin1String("name")] = name;
         settings[QLatin1String("isname")] = true;
-        changeConfig("channelname_" + channel,settings);
+        changeConfig("channelname_" + channel.toUtf8(),settings);
     }
 }
 
-void plugin::toggleLed ( const QByteArray& channel, int fade )
+void plugin::toggleLed ( const QString& channel, int fade )
 {
     if (!m_ios.contains(channel)) return;
     setLed ( channel, (m_ios[channel].value==0?255:0), fade );
@@ -175,13 +175,13 @@ int plugin::countLeds() {
     return m_ios.size();
 }
 
-QString plugin::getLedName(const QByteArray& channel) {
+QString plugin::getLedName(const QString& channel) {
     if (!m_ios.contains(channel)) return QString();
     return m_ios[channel].name;
 }
 
 void plugin::moodlightTimeout() {
-    QMap<QByteArray,iochannel>::iterator i = m_ios.begin();
+    QMap<QString,iochannel>::iterator i = m_ios.begin();
     int c = 0;
     for (;i != m_ios.end();++i) {
         if (!i.value().moodlight) continue;
@@ -211,7 +211,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
     Q_UNUSED(data);
 }
 
-void plugin::subpluginChange(const QByteArray& plugin_, const QByteArray& channel, int value, const QByteArray& name) {
+void plugin::subpluginChange(const QByteArray& plugin_, const QString& channel, int value, const QString& name) {
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];
@@ -221,7 +221,7 @@ void plugin::subpluginChange(const QByteArray& plugin_, const QByteArray& channe
     io.channel = channel;
     io.value = value;
     if (!before)
-        io.name = name.size()?QString::fromUtf8(name) : m_namecache.value(io.channel);
+        io.name = name.size()?name : m_namecache.value(io.channel);
     if (io.name.isEmpty()) {
         io.name = QLatin1String("Channel ") + QString::number(m_ios.size());
     }

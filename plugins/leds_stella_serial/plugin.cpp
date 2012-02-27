@@ -206,18 +206,18 @@ int plugin::getCurtain() {
     return m_curtain_value;
 }
 
-bool plugin::isLedValue( const QByteArray& channel, int lower, int upper ) {
+bool plugin::isLedValue( const QString& channel, int lower, int upper ) {
     const int v = getLed ( channel );
     if ( v>upper ) return false;
     if ( v<lower ) return false;
     return true;
 }
 
-int plugin::getLed( const QByteArray& channel ) const {
+int plugin::getLed( const QString& channel ) const {
     return m_leds.value ( channel ).value;
 }
 
-void plugin::setLed ( const QByteArray& channel, int value, int fade ) {
+void plugin::setLed ( const QString& channel, int value, int fade ) {
     if ( !m_serial ) return;
     if ( !m_leds.contains(channel) ) return;
     value = qBound ( 0, value, 255 );
@@ -245,13 +245,13 @@ void plugin::setLed ( const QByteArray& channel, int value, int fade ) {
     m_serial->write ( t1, sizeof ( t1 ) );
 }
 
-void plugin::toggleLed ( const QByteArray& channel, int fade )
+void plugin::toggleLed ( const QString& channel, int fade )
 {
     if (!m_leds.contains(channel)) return;
     setLed ( channel, (m_leds[channel].value==0?255:0), fade );
 }
 
-void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, int fade ) {
+void plugin::setLedExponential ( const QString& channel, int multiplikator, int fade ) {
     if ( !m_leds.contains(channel) ) return;
     unsigned int v = m_leds[channel].value;
     if ( multiplikator>100 ) {
@@ -271,7 +271,7 @@ void plugin::setLedExponential ( const QByteArray& channel, int multiplikator, i
     setLed ( channel, v, fade );
 }
 
-void plugin::setLedRelative ( const QByteArray& channel, int value, int fade ) {
+void plugin::setLedRelative ( const QString& channel, int value, int fade ) {
     if (! m_leds.contains(channel) )
         return;
     value += m_leds[channel].value;

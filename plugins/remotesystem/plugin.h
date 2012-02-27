@@ -27,8 +27,8 @@
 
 class ExternalClient {
 public:
-    QByteArray host;
-    QByteArray identifier;
+    QString host;
+    QString identifier;
     int sessionid;
 };
 
@@ -50,5 +50,5 @@ private:
     QVariantMap stateChanged(const ExternalClient* client, bool propagate);
     virtual void session_change(int sessionid, bool running);
 private Q_SLOTS:
-    void registerclient(const QByteArray& host, const QByteArray& identifier);
+    void registerclient(const QString& host, const QString& identifier);
 };

@@ -43,10 +43,10 @@ void ActionController::serverJSON(const QVariantMap &data)
     } else if (method == "previousmedia") {
         input.ki.wVk = VK_MEDIA_PREV_TRACK;
         SendInput(1,&input,sizeof(input));
-    } else if (method == "volume_up") {
+    } else if (method == "volume_relative" && data.value(QLatin1String("volume")).toInt()>0) {
         input.ki.wVk = VK_VOLUME_UP;
         SendInput(1,&input,sizeof(input));
-    } else if (method == "volume_down") {
+    } else if (method == "volume_relative" && data.value(QLatin1String("volume")).toInt()<0) {
         input.ki.wVk = VK_VOLUME_DOWN;
         SendInput(1,&input,sizeof(input));
     }

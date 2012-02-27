@@ -73,7 +73,7 @@ public:
     bool sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     void changeConfig(const QByteArray& key, const QVariantMap& data);
     void changeProperty(const QVariantMap& data, int sessionid = -1);
-    void eventTriggered(const QByteArray& eventid, const QByteArray& dest_collectionId);
+    void eventTriggered(const QString& eventid, const QString& dest_collectionId);
 private Q_SLOTS:
     void readyReadCommunication();
     void newConnectionCommunication ();

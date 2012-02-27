@@ -100,7 +100,7 @@ public:
     static QString collectionid(const QVariantMap& data) {
         return data.value(QLatin1String("collection_")).toString();
     }
-    static void setCollectionid(QVariantMap& data, const QByteArray& collectionid) {
+    static void setCollectionid(QVariantMap& data, const QString& collectionid) {
         data[QLatin1String("collection_")] = collectionid;
     }
 

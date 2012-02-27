@@ -38,27 +38,27 @@ private Q_SLOTS:
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
     void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     // Call this method to update <channel, value>-pairs and clear(your_plugin_id) to clear
-    void subpluginChange(const QByteArray& plugin_, const QByteArray& channel, int value, const QByteArray& name);
+    void subpluginChange(const QByteArray& plugin_, const QString& channel, int value, const QString& name);
 
     // Get, Set Names
-    QString getLedName ( const QByteArray& channel );
-    void setLedName ( const QByteArray& channel, const QString& name, bool updateDatabase = true );
+    QString getLedName ( const QString& channel );
+    void setLedName ( const QString& channel, const QString& name, bool updateDatabase = true );
     // Get, Set Values
-    void setLed ( const QByteArray& channel, int value, int fade );
-    void setLedExponential ( const QByteArray& channel, int multiplikator, int fade );
-    void setLedRelative ( const QByteArray& channel, int value, int fade );
-    void toggleLed ( const QByteArray& channel, int fade );
-    int getLed( const QByteArray& channel ) const;
-    bool isLedValue( const QByteArray& channel, int lower, int upper );
+    void setLed ( const QString& channel, int value, int fade );
+    void setLedExponential ( const QString& channel, int multiplikator, int fade );
+    void setLedRelative ( const QString& channel, int value, int fade );
+    void toggleLed ( const QString& channel, int fade );
+    int getLed( const QString& channel ) const;
+    bool isLedValue( const QString& channel, int lower, int upper );
     int countLeds();
-    void moodlight(const QByteArray& channel, bool moodlight);
+    void moodlight(const QString& channel, bool moodlight);
 
     void moodlightTimeout();
 private:
     struct iochannel {
         int value;
         QString name;
-        QByteArray channel;
+        QString channel;
         QByteArray plugin_id;
         bool moodlight;
         int fadeType;
@@ -68,8 +68,8 @@ private:
             value = -1;
         }
     };
-    QMap<QByteArray,iochannel> m_ios;
-    QMap<QByteArray, QString> m_namecache;
+    QMap<QString,iochannel> m_ios;
+    QMap<QString, QString> m_namecache;
 
     QTimer m_moodlightTimer;
 };

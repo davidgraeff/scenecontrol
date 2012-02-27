@@ -81,21 +81,22 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         m_repeatInit = data[QLatin1String("repeat_init")].toInt();
 }
 
-void plugin::inputevent ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& inputdevice, const QByteArray& kernelkeyname, bool repeat) {
+void plugin::inputevent ( const QString& _id, const QString& collection_, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
+	QByteArray __id = _id.toAscii();
     // Add to input events list
     EventInputStructure s;
-    s.collectionuid = collection_;
-    s.inputdevice = inputdevice;
-    s.kernelkeyname = kernelkeyname;
+    s.collectionuid = collection_.toAscii();
+    s.inputdevice = inputdevice.toAscii();
+    s.kernelkeyname = kernelkeyname.toAscii();
     s.repeat = repeat;
-    m_events.insert(_id, s);
+    m_events.insert(__id, s);
 
     // If device for this event already exists, register key
-    InputDevice* inputdeviceObj = m_devices.value ( inputdevice );
+    InputDevice* inputdeviceObj = m_devices.value ( inputdevice.toAscii() );
     if ( !inputdeviceObj )
         return;
-    m_devices_by_eventsids.insert(_id, inputdeviceObj);
-    inputdeviceObj->registerKey ( _id, collection_, kernelkeyname, repeat );
+    m_devices_by_eventsids.insert(__id, inputdeviceObj);
+    inputdeviceObj->registerKey ( __id, collection_, s.kernelkeyname, repeat );
     qDebug() << "inputevent" << inputdevice << inputdeviceObj;
 }
 
