@@ -39,8 +39,8 @@ public:
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 public Q_SLOTS:
     void eventmode ( const QByteArray& _id, const QByteArray& collection_, const QByteArray& mode);
-    void modeChange(const QByteArray& mode);
-    bool isMode(const QByteArray& mode);
+    void modeChange (const QByteArray& mode);
+    bool isMode (const QByteArray& mode);
 private:
     QByteArray m_mode;
     // mode -> (eventid, [collectionids])
