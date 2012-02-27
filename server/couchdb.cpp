@@ -280,7 +280,7 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
 
     if ( r->error() != QNetworkReply::NoError) {
         qWarning()<<"CouchDB: Get settings failed for" << pluginid << r->error() << r->errorString();
-
+		return;
     }
 
     QVariantMap data = JSON::parse ( r->readAll() ).toMap();
@@ -296,13 +296,13 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
             connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
             eventLoop.exec();
             if ( r->error() != QNetworkReply::NoError ) {
-                qWarning()<<"CouchDB: Get settings failed for" << pluginid;
+                qWarning()<<"CouchDB: Get settings failed for" << pluginid << r->error() << r->errorString();
                 delete r;
                 return;
             }
             QVariantMap data = JSON::parse ( r->readAll() ).toMap();
             if ( data.isEmpty() || !data.contains ( QLatin1String ( "rows" ) ) ) {
-                qWarning()<<"CouchDB: Get settings failed for" << pluginid;
+                qWarning()<<"CouchDB: Get settings failed for" << pluginid << data;
                 return;
             }
             list = data.value ( QLatin1String ( "rows" ) ).toList();

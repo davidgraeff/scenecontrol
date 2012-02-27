@@ -86,9 +86,9 @@ void plugin::ledChanged(QString channel, int value) {
     QVariantMap datamap;
     ServiceData::setMethod(datamap,"subpluginChange");
     ServiceData::setPluginid(datamap, PLUGIN_ID);
-    datamap[QLatin1String("channel")] = channel.toUtf8();
+    datamap[QLatin1String("channel")] = channel;
     datamap[QLatin1String("value")] = value;
-    datamap[QLatin1String("name")] = QByteArray();
+    datamap[QLatin1String("name")] = QString();
     sendDataToPlugin("leds", datamap);
 }
 
