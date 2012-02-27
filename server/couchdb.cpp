@@ -64,7 +64,7 @@ bool CouchDB::connectToDatabase() {
             }
         } else if (r->error() != QNetworkReply::NoError) {
             // Network error: no error recovery possible
-            qWarning() << "CouchDB: Network error" << r->error();
+            qWarning() << "CouchDB: Network error" << r->errorString();
             return false;
         }
     }
@@ -106,7 +106,7 @@ void CouchDB::requestEvents(const QString& plugin_id)
     eventLoop.exec();
     if (r->error() != QNetworkReply::NoError) {
         // Database events could not be read: no error recovery possible
-        qWarning() << "CouchDB: " << r->readAll() << request.url();
+        qWarning() << "CouchDB: " << r->readAll() << request.url() << r->errorString();
         return;
     }
 
@@ -138,7 +138,7 @@ void CouchDB::replyEventsChange() {
     if ( r->error() != QNetworkReply::NoError ) {
         ++m_eventsChangeFailCounter;
         if (m_eventsChangeFailCounter > 5) {
-            qWarning() << "CouchDB: replyEventsChange" << r->url();
+            qWarning() << "CouchDB: replyEventsChange" << r->url() << r->errorString();
         } else {
             QTimer::singleShot(1000, this, SLOT(startChangeListenerEvents()));
         }
