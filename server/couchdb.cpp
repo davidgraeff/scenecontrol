@@ -106,7 +106,7 @@ void CouchDB::requestEvents(const QString& plugin_id)
     eventLoop.exec();
     if (r->error() != QNetworkReply::NoError) {
         // Database events could not be read: no error recovery possible
-        qWarning() << "CouchDB: " << r->readAll() << request.url() << r->errorString();
+        qWarning() << "CouchDB: Get events failed for" << plugin_id << r->error() << r->errorString();
         return;
     }
 
@@ -279,7 +279,7 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
     eventLoop.exec();
 
     if ( r->error() != QNetworkReply::NoError) {
-        qWarning()<<"CouchDB: Get settings failed for" << pluginid;
+        qWarning()<<"CouchDB: Get settings failed for" << pluginid << r->error() << r->errorString();
 
     }
 
