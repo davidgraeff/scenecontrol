@@ -36,7 +36,7 @@ public:
     /**
      * Connect to couchdb (synchronous)
      */
-    bool connectToDatabase(const QString& couchdburl);
+    bool connectToDatabase();
     /**
      * Request all events (synchronous)
      * Is called 
@@ -45,16 +45,18 @@ public:
     void startChangeListenerSettings();
     void startChangeListenerEvents();
 
-    void requestDataOfCollection(const QString& collecion_id);
+    void requestDataOfCollection(const QString& collection_id);
     void requestPluginSettings(const QString& pluginid, bool tryToInstall = true);
+    void changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value);
+    void extractJSONFromCouchDB(const QString& path);
 private:
     Database ();
     int m_last_changes_seq_nr;
     int m_settingsChangeFailCounter;
     int m_eventsChangeFailCounter;
     bool checkFailure(QNetworkReply*);
-    QString couchdbAbsoluteUrl(const QString& relativeUrl = QString());
-    QString m_serveraddress;
+
+    int installPluginData(const QString& pluginid);
 private Q_SLOTS:
     // Called if events on the database changed and fetches those events
     void replyEventsChange();

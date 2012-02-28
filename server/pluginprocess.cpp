@@ -1,7 +1,7 @@
 #include "pluginprocess.h"
 #include <shared/pluginservicehelper.h>
 #include "plugincontroller.h"
-#include "couchdb.h"
+#include "database.h"
 #include "socket.h"
 #include "collectioncontroller.h"
 #include <QElapsedTimer>
@@ -53,8 +53,8 @@ void PluginCommunication::readyRead()
             m_controller->addPlugin(id, this);
             // request configuration
             initialize();
-            CouchDB::instance()->requestPluginSettings(id);
-            CouchDB::instance()->requestEvents(id);
+            Database::instance()->requestPluginSettings(id);
+            Database::instance()->requestEvents(id);
         } else if (method == "methodresponse") {
             emit qtSlotResponse(variantdata.value(QLatin1String("response_")),
                                 variantdata.value(QLatin1String("responseid_")).toByteArray(), id);
@@ -65,7 +65,7 @@ void PluginCommunication::readyRead()
                 continue;
             }
             // store new configuration value in database
-            CouchDB::instance()->changePluginConfiguration(id, key, variantdata);
+            Database::instance()->changePluginConfiguration(id, key, variantdata);
         } else if (method == "changeProperty") {
             // Get session id and remove id from QVariantMap
             const int sessionid = ServiceData::sessionid(variantdata);

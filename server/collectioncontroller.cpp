@@ -10,7 +10,7 @@
 
 #include "shared/pluginservicehelper.h"
 #include "collectioncontroller.h"
-#include "couchdb.h"
+#include "database.h"
 #include "pluginprocess.h"
 
 RunningCollection::RunningCollection(const QList< QVariantMap >& actions, const QList< QVariantMap >& conditions, const QString& collectionid):
@@ -130,7 +130,7 @@ CollectionController::CollectionController () {}
 CollectionController::~CollectionController() {}
 
 void CollectionController::requestExecutionByCollectionId ( const QString& collectionid ) {
-    CouchDB::instance()->requestDataOfCollection(collectionid);
+    Database::instance()->requestDataOfCollection(collectionid);
 }
 
 void CollectionController::requestExecution(const QVariantMap& data, int sessionid) {

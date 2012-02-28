@@ -16,30 +16,30 @@
 
 #define __FUNCTION__ __FUNCTION__
 
-static CouchDB* couchdbInstance = 0;
+static Database* databaseInstance = 0;
 
 
-CouchDB::CouchDB () : m_last_changes_seq_nr ( 0 ), m_settingsChangeFailCounter(0), m_eventsChangeFailCounter(0) {
+Database::CouchDB () : m_last_changes_seq_nr ( 0 ), m_settingsChangeFailCounter(0), m_eventsChangeFailCounter(0) {
 }
 
-CouchDB::~CouchDB() {
+Database::~CouchDB() {
 }
 
 
-QString CouchDB::couchdbAbsoluteUrl(const QString& relativeUrl) {
-    return m_couchdburl + QLatin1String("/") + relativeUrl;
+QString Database::couchdbAbsoluteUrl(const QString& relativeUrl) {
+    return m_serveraddress + QLatin1String("/") + relativeUrl;
 }
 
-CouchDB* CouchDB::instance()
+Database* Database::instance()
 {
-    if (couchdbInstance == 0)
-        couchdbInstance = new CouchDB();
+    if (databaseInstance == 0)
+        databaseInstance = new Database();
 
-    return couchdbInstance;
+    return databaseInstance;
 }
 
-bool CouchDB::connectToDatabase(const QString &couchdburl) {
-    m_couchdburl = couchdburl;
+bool Database::connectToDatabase(const QString &couchdburl) {
+    m_serveraddress = couchdburl;
     QEventLoop eventLoop;
     QNetworkReply *r;
 
@@ -79,11 +79,11 @@ bool CouchDB::connectToDatabase(const QString &couchdburl) {
         m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
     }
 
-    emit couchDB_ready();
+    emit ready();
     return true;
 }
 
-void CouchDB::requestEvents(const QString& plugin_id)
+void Database::requestEvents(const QString& plugin_id)
 {
     QEventLoop eventLoop;
     QNetworkRequest request ( couchdbAbsoluteUrl("_design/_server/_view/events?key=\"%1\"#%1" ).arg ( plugin_id ) );
@@ -113,13 +113,13 @@ void CouchDB::requestEvents(const QString& plugin_id)
                 qWarning() <<"CouchDB: Received event without collection:"<<ServiceData::pluginid ( data ) << ServiceData::id ( data );
                 continue;
             }
-            emit couchDB_Event_add ( ServiceData::id(data), data );
+            emit Event_add ( ServiceData::id(data), data );
         }
     }
 }
 
 
-void CouchDB::replyEventsChange() {
+void Database::replyEventsChange() {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     if ( r->error() != QNetworkReply::NoError ) {
         ++m_eventsChangeFailCounter;
@@ -147,7 +147,7 @@ void CouchDB::replyEventsChange() {
                 m_last_changes_seq_nr = seq;
 
             if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
-                emit couchDB_Event_remove(ServiceData::idChangeSeq ( data ));
+                emit Event_remove(ServiceData::idChangeSeq ( data ));
                 continue;
             }
 
@@ -175,11 +175,11 @@ void CouchDB::replyEventsChange() {
             qWarning() <<"CouchDB: Received event without collection:"<<ServiceData::pluginid ( document ) << ServiceData::id ( document );
             continue;
         }
-        emit couchDB_Event_add ( ServiceData::id(document), document );
+        emit Event_add ( ServiceData::id(document), document );
     }
 }
 
-void CouchDB::startChangeListenerEvents()
+void Database::startChangeListenerEvents()
 {
     QNetworkRequest request ( couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/events&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
     request.setRawHeader ( "Connection","keep-alive" );
@@ -188,7 +188,7 @@ void CouchDB::startChangeListenerEvents()
     //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-void CouchDB::startChangeListenerSettings()
+void Database::startChangeListenerSettings()
 {
     QNetworkRequest request ( couchdbAbsoluteUrl("_changes?feed=continuous&since=%1&filter=_server/settings&heartbeat=5000" ).arg ( m_last_changes_seq_nr ) );
     request.setRawHeader ( "Connection","keep-alive" );
@@ -197,28 +197,28 @@ void CouchDB::startChangeListenerSettings()
     //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-bool CouchDB::checkFailure(QNetworkReply* r)
+bool Database::checkFailure(QNetworkReply* r)
 {
     if ( r->error() != QNetworkReply::NoError ) {
         qWarning() << "CouchDB: Response error:" << r->url();
-        emit couchDB_failed(r->url().toString());
+        emit failed(r->url().toString());
         return true;
     }
     return false;
 }
 
-void CouchDB::errorWithRecovery(QNetworkReply::NetworkError e) {
+void Database::errorWithRecovery(QNetworkReply::NetworkError e) {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     qWarning() << "CouchDB: Network error:" << e << r->url().toString();
 }
 
-void CouchDB::errorFatal(QNetworkReply::NetworkError e) {
+void Database::errorFatal(QNetworkReply::NetworkError e) {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     qWarning() << "CouchDB: Fatal Network error:" << e << r->url().toString();
-    emit couchDB_failed(r->url().toString());
+    emit failed(r->url().toString());
 }
 
-void CouchDB::replyDataOfCollection()
+void Database::replyDataOfCollection()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     r->deleteLater();
@@ -238,11 +238,11 @@ void CouchDB::replyDataOfCollection()
             else if ( ServiceData::checkType ( data, ServiceData::TypeAction ))
                 actionsList.append(data);
         }
-        emit couchDB_dataOfCollection( actionsList, conditionList, r->url().fragment() );
+        emit dataOfCollection( actionsList, conditionList, r->url().fragment() );
     }
 }
 
-void CouchDB::requestDataOfCollection(const QString& collecion_id)
+void Database::requestDataOfCollection(const QString& collecion_id)
 {
     if (collecion_id.isEmpty())
         return;
@@ -253,7 +253,7 @@ void CouchDB::requestDataOfCollection(const QString& collecion_id)
     connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
+void Database::requestPluginSettings(const QString& pluginid, bool tryToInstall)
 {
     if (pluginid.isEmpty())
         return;
@@ -284,7 +284,7 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
             data.remove(QLatin1String("plugin_"));
             const QString key = data.take(QLatin1String("key_")).toString();
             if (data.size())
-                emit couchDB_settings ( pluginid, key, data );
+                emit settings ( pluginid, key, data );
         }
     } else {
         qWarning() << "CouchDB: Get settings failed for" << pluginid << data;
@@ -293,7 +293,7 @@ void CouchDB::requestPluginSettings(const QString& pluginid, bool tryToInstall)
     delete r;
 }
 
-void CouchDB::replyPluginSettingsChange()
+void Database::replyPluginSettingsChange()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     if ( r->error() != QNetworkReply::NoError ) {
@@ -346,11 +346,11 @@ void CouchDB::replyPluginSettingsChange()
         document.remove(QLatin1String("type_"));
         document.remove(QLatin1String("plugin_"));
         const QString key = data.take(QLatin1String("key_")).toString();
-        emit couchDB_settings ( ServiceData::pluginid(document), key, document );
+        emit settings ( ServiceData::pluginid(document), key, document );
     }
 }
 
-void CouchDB::errorNoSettings()
+void Database::errorNoSettings()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     r->deleteLater();

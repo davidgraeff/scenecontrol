@@ -29,7 +29,7 @@
 #include <QDebug>
 #include "socket.h"
 #include "collectioncontroller.h"
-#include "couchdb.h"
+#include "database.h"
 #include "paths.h"
 
 bool exitByConsoleCommand = false;
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
         printf("%s - %s\n%s [CMDs]\n"
                "--no-restart: Do not restart after exit\n"
                "--no-event-loop: Shutdown after initialisation\n"
-               "--extract PATH: Extract JSON Data from couchDB and save them to PATH\n"
+               "--extract PATH: Extract all documents from database and store them in PATH\n"
                "--no-autoload-plugins Only start the server and no plugin processes\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     setup::writeLastStarttime();
 
     // Set up the database connection. All events, actions, configurations are hold within a couchdb.
-    CouchDB* couchdb = CouchDB::instance();
+    Database* couchdb = Database::instance();
 
     // CollectionController: Starts, stops collections
     // and hold references to running collections.
@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
     // connect objects
     plugins->connect(couchdb, SIGNAL(couchDB_Event_add(QString,QVariantMap)), plugins,  SLOT(couchDB_Event_add(QString,QVariantMap)));
     plugins->connect(couchdb, SIGNAL(couchDB_Event_remove(QString)), plugins, SLOT(couchDB_Event_remove(QString)));
-    plugins->connect(couchdb, SIGNAL(couchDB_failed(QString)), plugins, SLOT(couchDB_failed(QString)));
-    plugins->connect(couchdb, SIGNAL(couchDB_settings(QString,QString,QVariantMap)), plugins, SLOT(couchDB_settings(QString,QString,QVariantMap)));
+    plugins->connect(couchdb, SIGNAL(failed(QString)), plugins, SLOT(couchDB_failed(QString)));
+    plugins->connect(couchdb, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(couchDB_settings(QString,QString,QVariantMap)));
     collectioncontroller->connect(socket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
     collectioncontroller->connect(couchdb, SIGNAL(couchDB_dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
 

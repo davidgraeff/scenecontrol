@@ -9,7 +9,7 @@
 #include "paths.h"
 #include <shared/pluginservicehelper.h>
 #include "collectioncontroller.h"
-#include "couchdb.h"
+#include "database.h"
 #include "plugincontroller.h"
 #include "socket.h"
 #include "pluginprocess.h"
