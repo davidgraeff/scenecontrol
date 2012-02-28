@@ -60,9 +60,9 @@ private:
 private Q_SLOTS:
     void newConnection();
 public Q_SLOTS:
-    void couchDB_Event_add(const QString& id, const QVariantMap& event_data);
-    void couchDB_Event_remove(const QString& id);
-    void couchDB_failed(const QString& url);
-    void couchDB_settings(const QString& pluginid, const QString& key, const QVariantMap& data);
+    void Event_add(const QString& id, const QVariantMap& event_data);
+    void Event_remove(const QString& id);
+    void failed(const QString& url);
+    void settings(const QString& pluginid, const QString& key, const QVariantMap& data);
 };
 #undef PLUGIN_ID

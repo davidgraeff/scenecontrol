@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
+	"member_":"setValue", "name":"Vorhang setzten",
+	"parameters": {
+		"value":{"name":"Wert", "type":"integer", "min":0, "max":100, "value":0}
+	}
+}

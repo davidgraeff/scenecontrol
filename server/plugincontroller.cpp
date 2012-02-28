@@ -76,7 +76,7 @@ PluginCommunication* PluginController::getPlugin(const QString& pluginid) {
     return m_plugins.value(pluginid);
 }
 
-void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& event_data) {
+void PluginController::Event_add(const QString& id, const QVariantMap& event_data) {
     PluginCommunication* plugin = getPlugin ( ServiceData::pluginid ( event_data ) );
     if ( !plugin ) {
         qWarning() <<"Plugins: Cannot register event. No plugin found:"<<ServiceData::pluginid ( event_data ) << id;
@@ -89,7 +89,7 @@ void PluginController::couchDB_Event_add(const QString& id, const QVariantMap& e
     m_registeredevents.insert(id, plugin);
 }
 
-void PluginController::couchDB_Event_remove(const QString& id) {
+void PluginController::Event_remove(const QString& id) {
     PluginCommunication* executeplugin = m_registeredevents.take ( id );
     if ( executeplugin ) {
         qDebug() << "Plugins: unregister event" << id << executeplugin;
@@ -97,12 +97,12 @@ void PluginController::couchDB_Event_remove(const QString& id) {
     }
 }
 
-void PluginController::couchDB_failed(const QString& url) {
+void PluginController::failed(const QString& url) {
     Q_UNUSED(url);
     QCoreApplication::exit(1);
 }
 
-void PluginController::couchDB_settings(const QString& pluginid, const QString& key, const QVariantMap& data) {
+void PluginController::settings(const QString& pluginid, const QString& key, const QVariantMap& data) {
     PluginCommunication* p = getPlugin(pluginid);
     if (!p) {
         qWarning() << "Plugins: Configuration for unknown plugin" << pluginid;

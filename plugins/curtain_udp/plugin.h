@@ -55,10 +55,10 @@ private Q_SLOTS:
     void readyRead();
     void resendConnectSequence();
 public Q_SLOTS:
-    void setCurtain ( int value );
-    void syncCurtain();
-    void setCurtainRelative ( int value );
-    int getCurtain() const;
-    int getCurtainMax() const;
-    bool isCurtainValue(int lower, int upper );
+    void setValue ( int value );
+    void sync();
+    void setRelative ( int value );
+    int getValue() const;
+    int getMax() const;
+    bool isValue(int lower, int upper );
 };

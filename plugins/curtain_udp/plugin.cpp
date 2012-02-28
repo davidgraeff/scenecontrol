@@ -53,8 +53,8 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         connectToServer ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
 }
 
-bool plugin::isCurtainValue(  int lower, int upper ) {
-    const int v = getCurtain ( );
+bool plugin::isValue(  int lower, int upper ) {
+    const int v = getValue ( );
     if ( v>upper ) return false;
     if ( v<lower ) return false;
     return true;
@@ -72,26 +72,26 @@ void plugin::curtainChanged(int sessionid) {
     changeProperty(sc.getData(), sessionid);
 }
 
-int plugin::getCurtain (  ) const {
+int plugin::getValue (  ) const {
     return m_curtainvalue;
 }
 
-int plugin::getCurtainMax() const
+int plugin::getMax() const
 {
     return m_curtainmax;
 }
 
 
-void plugin::syncCurtain () {
+void plugin::sync () {
     uint8_t data = 254;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
-void plugin::setCurtainRelative (  int value ) {
-    setCurtain ( value + m_curtainvalue );
+void plugin::setRelative (  int value ) {
+    setValue ( value + m_curtainvalue );
 }
 
-void plugin::setCurtain (  int value ) {
+void plugin::setValue (  int value ) {
     if ( !m_socket ) return;
 
     value = qBound ( 0, value, m_curtainmax );

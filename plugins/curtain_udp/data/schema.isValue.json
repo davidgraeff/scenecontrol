@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"condition",
+	"member_":"isValue", "name":"Ist Vorhang?",
+	"parameters": {
+		"value":{"name":"Wert", "type":"integer", "min":0, "max":100, "value":0}
+	}
+}

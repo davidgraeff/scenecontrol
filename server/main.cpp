@@ -107,12 +107,12 @@ int main(int argc, char *argv[])
     PluginController* plugins = PluginController::instance();
 
     // connect objects
-    plugins->connect(couchdb, SIGNAL(couchDB_Event_add(QString,QVariantMap)), plugins,  SLOT(couchDB_Event_add(QString,QVariantMap)));
-    plugins->connect(couchdb, SIGNAL(couchDB_Event_remove(QString)), plugins, SLOT(couchDB_Event_remove(QString)));
-    plugins->connect(couchdb, SIGNAL(failed(QString)), plugins, SLOT(couchDB_failed(QString)));
+    plugins->connect(couchdb, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
+    plugins->connect(couchdb, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
+    plugins->connect(couchdb, SIGNAL(failed(QString)), plugins, SLOT(failed(QString)));
     plugins->connect(couchdb, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(couchDB_settings(QString,QString,QVariantMap)));
     collectioncontroller->connect(socket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
-    collectioncontroller->connect(couchdb, SIGNAL(couchDB_dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
+    collectioncontroller->connect(couchdb, SIGNAL(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
 
     int exitcode = 0;
     exitcode |= couchdb->connectToDatabase()?0:-2;
