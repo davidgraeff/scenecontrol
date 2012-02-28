@@ -63,6 +63,7 @@ public:
 private:
     PluginController* m_plugincontroller;
     QMap<QString, RunningCollection*> m_runningCollections;
+	QMap<QString, RunningCollection*> m_cachedCollections;
     void updateListOfRunningCollections();
 public Q_SLOTS:
     void requestExecutionByCollectionId ( const QString& collectionid );
