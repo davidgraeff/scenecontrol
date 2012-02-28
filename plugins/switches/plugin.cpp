@@ -151,7 +151,7 @@ void plugin::cacheToDevice()
     QSet<iochannel*>::const_iterator it = m_cache.constBegin();
     QVariantMap datamap;
     for (;it != m_cache.constEnd(); ++it) {
-        ServiceData::setMethod(datamap,"switchChanged");
+        ServiceData::setMethod(datamap,"setSwitch");
         datamap[QLatin1String("channel")] = (*it)->channel;
         datamap[QLatin1String("value")] = (*it)->value;
         sendDataToPlugin((*it)->plugin_id, datamap);

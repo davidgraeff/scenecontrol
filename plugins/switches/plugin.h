@@ -53,7 +53,7 @@ private Q_SLOTS:
     void cacheToDevice();
 private:
     struct iochannel {
-        int value;
+        bool value;
         QString name;
 		QString channel;
         QByteArray plugin_id;
