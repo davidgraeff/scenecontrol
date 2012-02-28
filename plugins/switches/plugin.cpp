@@ -165,7 +165,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
     Q_UNUSED(data);
 }
 
-void plugin::subpluginChange(const QByteArray& plugin_, const QByteArray& channel, int value, const QString& name) {
+void plugin::subpluginChange(const QByteArray& plugin_, const QString& channel, int value, const QString& name) {
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];

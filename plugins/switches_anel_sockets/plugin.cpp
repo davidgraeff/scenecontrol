@@ -75,7 +75,7 @@ void plugin::readyRead() {
         const int pin = i-6;
         if (!(activated & (1 << pin))) continue;
         const QList<QByteArray> data = cmd[i].split(',');
-        const QByteArray channelid = data[0];
+        const QString channelid = QString::fromUtf8(data[0]);
         const int value = data[1].toInt();
 
 //        const bool alreadyinside = m_mapChannelToHost.contains(channelid);
