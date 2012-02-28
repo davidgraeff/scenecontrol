@@ -110,13 +110,13 @@ void plugin::readyRead() {
     }
 }
 
-bool plugin::getSwitch( const QByteArray& channel ) const
+bool plugin::getSwitch( const QString& channel ) const
 {
     if (!m_ios.contains(channel)) return false;
     return m_ios[channel].value;
 }
 
-void plugin::setSwitch ( const QByteArray& channel, bool value )
+void plugin::setSwitch ( const QString& channel, bool value )
 {
     if (!m_mapChannelToHost.contains(channel)) return;
     QPair<QHostAddress,uint> p = m_mapChannelToHost[channel];
@@ -134,13 +134,13 @@ void plugin::setSwitch ( const QByteArray& channel, bool value )
     changeProperty(sc.getData(), -1);
 }
 
-void plugin::toggleSwitch ( const QByteArray& channel )
+void plugin::toggleSwitch ( const QString& channel )
 {
     if (!m_ios.contains(channel)) return;
     setSwitch ( channel, !m_ios[channel].value );
 }
 
-bool plugin::isSwitchOn( const QByteArray& channel, bool value ) {
+bool plugin::isSwitchOn( const QString& channel, bool value ) {
     return ( getSwitch ( channel ) == value );
 }
 
@@ -190,7 +190,7 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
 
 void plugin::requestProperties(int sessionid) {
     changeProperty(ServiceData::createModelReset("anel.io", "channel").getData(), sessionid);
-    QMap<QByteArray, plugin::iochannel>::iterator i = m_ios.begin();
+    QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for (;i!=m_ios.end();++i) {
         const plugin::iochannel str = i.value();
         ServiceData sc = ServiceData::createModelChangeItem("anel.io");

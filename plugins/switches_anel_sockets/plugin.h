@@ -39,14 +39,14 @@ public:
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
 public Q_SLOTS:
-    void setSwitch ( const QByteArray& channel, bool value);
-    void toggleSwitch ( const QByteArray& channel );
-    bool getSwitch( const QByteArray& channel ) const;
-    bool isSwitchOn( const QByteArray& channel, bool value );
+    void setSwitch ( const QString& channel, bool value);
+    void toggleSwitch ( const QString& channel );
+    bool getSwitch( const QString& channel ) const;
+    bool isSwitchOn( const QString& channel, bool value );
     int countSwitchs();
     void connectToIOs(int portSend, int portListen, const QString& user, const QString& pwd);
 private:
-    QMap< QByteArray, QPair<QHostAddress,uint> > m_mapChannelToHost;
+    QMap< QString, QPair<QHostAddress,uint> > m_mapChannelToHost;
     int m_sendPort;
     QString m_user;
     QString m_pwd;
@@ -62,7 +62,7 @@ private:
             value = -1;
         }
     };
-    QMap<QByteArray,iochannel> m_ios;
+    QMap<QString,iochannel> m_ios;
 private Q_SLOTS:
     void readyRead();
     void cacheToDevice();
