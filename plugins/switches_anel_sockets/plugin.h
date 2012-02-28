@@ -57,7 +57,7 @@ private:
     QMap<QString, unsigned char> m_cache;
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     struct iochannel {
-        int value;
+        bool value;
         iochannel() {
             value = -1;
         }

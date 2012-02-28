@@ -76,7 +76,7 @@ void plugin::readyRead() {
         if (!(activated & (1 << pin))) continue;
         const QList<QByteArray> data = cmd[i].split(',');
         const QString channelid = QString::fromUtf8(data[0]);
-        const int value = data[1].toInt();
+        const bool value = data[1].toInt();
 
 //        const bool alreadyinside = m_mapChannelToHost.contains(channelid);
         m_mapChannelToHost[channelid] = QPair<QHostAddress,uint>(host,pin);
@@ -127,11 +127,6 @@ void plugin::setSwitch ( const QString& channel, bool value )
         m_cache[p.first.toString()] &= (unsigned char)~(1 << p.second);
 
     if (!m_cacheTimer.isActive()) m_cacheTimer.start();
-
-    ServiceData sc = ServiceData::createModelChangeItem("anel.io");
-    sc.setData("channel", channel);
-    sc.setData("value", value);
-    changeProperty(sc.getData(), -1);
 }
 
 void plugin::toggleSwitch ( const QString& channel )
