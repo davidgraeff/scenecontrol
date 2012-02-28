@@ -2,12 +2,12 @@
 BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x01\x00\x00\x00\x16\x00r\x00o\x00o\x00m\x00c\x00o\x00n\x00t\x00r\x00o\x00l)
 
 [CMake]
-BuildDirs[$e]=$HOME/Entwicklung/build/roomcontrol
+BuildDirs[$e]=$HOME/roomcontrol/build
 CMakeDir=/usr/share/cmake-2.8/Modules
 Current CMake Binary=file:///usr/bin/cmake
-CurrentBuildDir=file:///home/david/Entwicklung/build/roomcontrol
+CurrentBuildDir=file:///home/david/roomcontrol/build
 CurrentBuildType=RelWithDebInfo
-CurrentInstallDir=file:///usr/
+CurrentInstallDir=file:///usr
 Extra Arguments=
 ProjectRootRelative=./
 

@@ -1,4 +1,4 @@
-#include "database.h"
+  #include "database.h"
 
 #include "paths.h"
 #include "config.h"
@@ -253,6 +253,8 @@ void Database::replyDataOfCollection()
                 actionsList.append(data);
         }
         emit dataOfCollection( actionsList, conditionList, r->url().fragment() );
+    } else {
+		qWarning() << "No actions, conditions found" << r->url().fragment();
     }
 }
 
@@ -399,7 +401,7 @@ int Database::installPluginData(const QString& pluginid) {
 
     QEventLoop eventLoop;
     const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files|QDir::NoDotAndDotDot);
-    qDebug() << "Database: Install" << pluginid << "with" << files.size() << "json files";
+    qDebug() << "Database: Install" << pluginid << "with" << files.size() << "json file(s)";
     for (int i=0;i<files.size();++i) {
         QFile file(dir.absoluteFilePath(files[i]));
         file.open(QIODevice::ReadOnly);
@@ -430,8 +432,13 @@ int Database::installPluginData(const QString& pluginid) {
         if (rf->error() == QNetworkReply::NoError) {
             qDebug() << "\tInstalled" << docid << ", entries:" << jsonData.size();
             ++count;
+        } else if (rf->error() == 299) {
+			qDebug() << "\tAlready installed" << docid;
+			++count;
+        } else if (rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
+			qWarning() << "\tInstallation failed. Upload forbidden. " << docid << file.size() << "Bytes";
         } else {
-            qWarning() << "\tInstallation failed (name, file size, entries, error):" << docid << file.size() << jsonData.size() << rf->error();
+            qWarning() << "\tInstallation failed: " << docid << file.size() << "Bytes" << rf->errorString() << rf->error();
         }
         delete rf;
     }
