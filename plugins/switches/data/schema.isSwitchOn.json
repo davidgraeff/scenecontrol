@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"condition",
+	"member_":"isSwitchOn", "name":"Ist Schalter auf Wert?",
+	"parameters": {
+		"value":{"name":"Wert", "type":"boolean"}
+	}
+}

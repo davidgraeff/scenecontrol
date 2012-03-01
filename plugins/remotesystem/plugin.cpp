@@ -30,20 +30,18 @@ int main(int argc, char* argv[]) {
 }
 
 plugin::plugin() {
-    m_allowedmembers << QLatin1String("volume_relative");
-    m_allowedmembers << QLatin1String("volume_absolute");
-    m_allowedmembers << QLatin1String("display_off");
-    m_allowedmembers << QLatin1String("display_on");
-    m_allowedmembers << QLatin1String("mute");
-    m_allowedmembers << QLatin1String("unmute");
-    m_allowedmembers << QLatin1String("togglemute");
+    m_allowedmembers << QLatin1String("volume.relative"); 	//volume: int
+    m_allowedmembers << QLatin1String("volume.absolute"); 	//volume: int
+    m_allowedmembers << QLatin1String("display"); 			//power(enum): off, on, toggle
+    m_allowedmembers << QLatin1String("mute");    			//mute(enum): off, on, toggle
     m_allowedmembers << QLatin1String("standby");
-    m_allowedmembers << QLatin1String("startmedia");
-    m_allowedmembers << QLatin1String("stopmedia");
-    m_allowedmembers << QLatin1String("nextmedia");
-    m_allowedmembers << QLatin1String("previousmedia");
-    m_allowedmembers << QLatin1String("nextplaylistmedia");
-    m_allowedmembers << QLatin1String("previousplaylistmedia");
+    m_allowedmembers << QLatin1String("media.start");
+	m_allowedmembers << QLatin1String("media.playpause");
+    m_allowedmembers << QLatin1String("media.stop");
+    m_allowedmembers << QLatin1String("media.next");
+    m_allowedmembers << QLatin1String("media.previous");
+    m_allowedmembers << QLatin1String("media.playlist.next");
+    m_allowedmembers << QLatin1String("media.playlist.previous");
 }
 
 plugin::~plugin() {

@@ -35,8 +35,8 @@ plugin::plugin() {}
 
 plugin::~plugin() {}
 
-void plugin::wol ( const QByteArray& mac) {
-    QList<QByteArray> parts = mac.split ( ':' );
+void plugin::wol ( const QString& mac) {
+    QList<QByteArray> parts = mac.toAscii().split ( ':' );
     if ( parts.size() !=6 ) return;
     QByteArray macdecoded;
     for ( int i=0;i<6;++i )

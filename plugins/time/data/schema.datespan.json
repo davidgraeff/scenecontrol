@@ -1,0 +1,9 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"condition",
+	"member_":"datespan", "name":"Datum?",
+	"parameters": {
+		"current":{"name":"Vergleichsdatum", "type":"date", "value":"", "placeholder":"01.01.2012"},
+		"lower":{"name":"Mindest Datum", "type":"date", "value":"", "placeholder":"01.01.2012"},
+		"upper":{"name":"Maximaler Datum", "type":"date", "value":"", "placeholder":"02.01.2012"}
+	}
+}

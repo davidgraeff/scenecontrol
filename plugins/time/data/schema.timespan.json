@@ -1,0 +1,9 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"condition",
+	"member_":"timespan", "name":"Zeit?",
+	"parameters": {
+		"current":{"name":"Vergleichszeit", "type":"time"},
+		"lower":{"name":"Mindest Zeitpunkt", "type":"time"},
+		"upper":{"name":"Maximaler Zeitpunkt", "type":"time"}
+	}
+}

@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
+	"member_":"projector_sanyo_video", "name":"Videostumm",
+	"parameters": {
+		"mute":{"name":"Videostumm", "type":"boolean"}
+	}
+}

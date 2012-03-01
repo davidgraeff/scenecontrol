@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
+	"member_":"modeChange", "name":"Modus setzen",
+	"parameters": {
+		"mode":{"name":"Modus", "type":"string", "value":""}
+	}
+}

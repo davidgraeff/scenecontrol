@@ -52,6 +52,7 @@ public Q_SLOTS:
     void back();
     // volume
     void setVolume(int v);
+	void setVolumeRelative(int v);
 private Q_SLOTS:
     void readyRead();
     void hostconnected();

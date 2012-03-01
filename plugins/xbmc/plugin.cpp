@@ -273,6 +273,24 @@ void plugin::setVolume(int v) {
     m_socket.write(JSON::stringify(data).toUtf8());
 }
 
+void plugin::setVolumeRelative(int v)
+{
+    if (m_socket.state()!=QTcpSocket::ConnectedState) {
+        if (m_host.isEmpty())
+            return;
+        m_socket.connectToHost(m_host, m_port);
+    }
+    QVariantMap data;
+    data[QLatin1String("jsonrpc")] = "2.0";
+    data[QLatin1String("method")] = "Application.SetVolume";
+    QVariantMap params;
+    params[QLatin1String("volume")] = v;
+    data[QLatin1String("params")] = params;
+    data[QLatin1String("id")] = "setVolume";
+
+    m_socket.write(JSON::stringify(data).toUtf8());
+}
+
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
     Q_UNUSED(plugin_id);
     Q_UNUSED(data);

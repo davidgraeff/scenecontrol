@@ -31,6 +31,6 @@ public:
     virtual void requestProperties(int sessionid);
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 public Q_SLOTS:
-    virtual void wol ( const QByteArray& mac);
+    virtual void wol ( const QString& mac);
 private:
 };

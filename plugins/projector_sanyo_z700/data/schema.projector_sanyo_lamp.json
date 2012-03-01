@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
+	"member_":"projector_sanyo_lamp", "name":"Lampe",
+	"parameters": {
+		"eco":{"name":"Eco", "type":"boolean"}
+	}
+}

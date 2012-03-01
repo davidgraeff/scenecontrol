@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"event",
+	"member_":"eventmode", "name":"Bei Moduswechsel",
+	"parameters": {
+		"mode":{"name":"Modus", "type":"string", "value":""}
+	}
+}

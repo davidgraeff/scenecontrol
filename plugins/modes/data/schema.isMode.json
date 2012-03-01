@@ -1,0 +1,7 @@
+{
+	"plugin_":"AUTO", "type_":"schema", "targettype":"condition",
+	"member_":"isMode", "name":"Modus?",
+	"parameters": {
+		"mode":{"name":"Modus", "type":"string", "value":""}
+	}
+}
