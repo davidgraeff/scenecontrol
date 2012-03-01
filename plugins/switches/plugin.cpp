@@ -132,7 +132,7 @@ QString plugin::getSwitchName(const QString& channel) {
     return m_ios[channel].name;
 }
 
-// Get names from couchdb settings
+// Get names from database
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     Q_UNUSED(configid);
     if (data.contains(QLatin1String("isname")) && data.contains(QLatin1String("channel")) && data.contains(QLatin1String("name"))) {

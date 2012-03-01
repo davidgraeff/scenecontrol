@@ -12,5 +12,3 @@ IF (DEBFOUND)
 ELSE()
 	MESSAGE("Not building: ${PROJECT_NAME}")
 ENDIF()
-#add_subdirectory(windowsclient)
-

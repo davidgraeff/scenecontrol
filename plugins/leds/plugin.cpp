@@ -193,7 +193,7 @@ void plugin::moodlightTimeout() {
     if (!c) m_moodlightTimer.stop();
 }
 
-// Get names from couchdb settings
+// Get names from database
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     Q_UNUSED(configid);
     if (data.contains(QLatin1String("isname")) && data.contains(QLatin1String("channel")) && data.contains(QLatin1String("name"))) {

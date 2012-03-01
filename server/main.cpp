@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     setup::writeLastStarttime();
 
     // Set up the database connection. All events, actions, configurations are hold within a couchdb.
-    Database* couchdb = Database::instance();
+    Database* database = Database::instance();
 
     // CollectionController: Starts, stops collections
     // and hold references to running collections.
@@ -108,15 +108,15 @@ int main(int argc, char *argv[])
     PluginController* plugins = PluginController::instance();
 
     // connect objects
-    plugins->connect(couchdb, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
-    plugins->connect(couchdb, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
-    plugins->connect(couchdb, SIGNAL(failed(QString)), plugins, SLOT(failed(QString)));
-    plugins->connect(couchdb, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(settings(QString,QString,QVariantMap)));
+    plugins->connect(database, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
+    plugins->connect(database, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
+    plugins->connect(database, SIGNAL(failed(QString)), plugins, SLOT(failed(QString)));
+    plugins->connect(database, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(settings(QString,QString,QVariantMap)));
     collectioncontroller->connect(socket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
-    collectioncontroller->connect(couchdb, SIGNAL(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
+    collectioncontroller->connect(database, SIGNAL(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
 
     int exitcode = 0;
-    exitcode |= couchdb->connectToDatabase()?0:-2;
+    exitcode |= database->connectToDatabase()?0:-2;
 
     // Export json documents from database
     {
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
             QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
             if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
                 path = QDir::currentPath();
-            couchdb->exportAsJSON(path);
+            database->exportAsJSON(path);
         }
     }
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
             QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
             if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
                 path = QDir::currentPath();
-            couchdb->importFromJSON(path);
+            database->importFromJSON(path);
         }
     }
     
@@ -145,8 +145,8 @@ int main(int argc, char *argv[])
         if (!cmdargs.contains("--no-autoload-plugins"))
             plugins->startplugins();
         // start change listeners
-        couchdb->startChangeListenerEvents();
-        couchdb->startChangeListenerSettings();
+        database->startChangeListenerEvents();
+        database->startChangeListenerSettings();
         exitcode = qapp.exec();
     }
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     delete socket;
     delete collectioncontroller;
     delete plugins;
-    delete couchdb;
+    delete database;
 
     // close log file. only console log is possible from here on
     logclose();
