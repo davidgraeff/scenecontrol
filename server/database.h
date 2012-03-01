@@ -49,7 +49,8 @@ public:
     void requestDataOfCollection(const QString& collection_id);
     void requestPluginSettings(const QString& pluginid);
     void changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value);
-    void extractAllDocumentsAsJSON(const QString& path);
+    void exportAsJSON(const QString& path);
+	void importFromJSON(const QString& path);
 private:
     Database ();
     int m_last_changes_seq_nr;

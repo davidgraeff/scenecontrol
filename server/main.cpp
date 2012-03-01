@@ -46,15 +46,16 @@ static void catch_int(int )
 int main(int argc, char *argv[])
 {
     // commandline arguments
-    QSet<QByteArray> cmdargs;
-    for (int i=0;i<argc;++i) cmdargs.insert(QByteArray(argv[i]));
+    QList<QByteArray> cmdargs;
+    for (int i=0;i<argc;++i) cmdargs.append(QByteArray(argv[i]));
 
     // help text
     if (cmdargs.contains("--help")) {
         printf("%s - %s\n%s [CMDs]\n"
                "--no-restart: Do not restart after exit\n"
                "--no-event-loop: Shutdown after initialisation\n"
-               "--extract: Extract all documents from database and store them in the working directory\n"
+               "--export [PATH]: Export all documents from the database and store them in PATH or the working directory\n"
+               "--import [PATH]: Import all documents from PATH or the working directory and store them in the database\n"
                "--no-autoload-plugins: Only start the server and no plugin processes\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
@@ -117,14 +118,33 @@ int main(int argc, char *argv[])
     int exitcode = 0;
     exitcode |= couchdb->connectToDatabase()?0:-2;
 
-    // Only extract json data from couchdb
-    if (cmdargs.contains("--extract"))
-        couchdb->extractAllDocumentsAsJSON(QDir::currentPath());
-    else if (!exitcode && !cmdargs.contains("--no-event-loop")) {
+    // Export json documents from database
+    {
+        int index = cmdargs.indexOf("--export");
+        if (index!=-1) {
+            QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
+            if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
+                path = QDir::currentPath();
+            couchdb->exportAsJSON(path);
+        }
+    }
+
+    // Import json documents from database
+    {
+        int index = cmdargs.indexOf("--import");
+        if (index!=-1) {
+            QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
+            if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
+                path = QDir::currentPath();
+            couchdb->importFromJSON(path);
+        }
+    }
+    
+    if (!exitcode && !cmdargs.contains("--no-event-loop")) {
         // Start plugin processes
         if (!cmdargs.contains("--no-autoload-plugins"))
             plugins->startplugins();
-	// start change listeners
+        // start change listeners
         couchdb->startChangeListenerEvents();
         couchdb->startChangeListenerSettings();
         exitcode = qapp.exec();

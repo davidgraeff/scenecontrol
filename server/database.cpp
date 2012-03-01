@@ -399,8 +399,7 @@ bool Database::verifyPluginData(const QString& pluginid) {
         jsonData[QLatin1String("plugin_")] = pluginid;
         const QByteArray dataToSend = JSON::stringify(jsonData).toUtf8();
         // Document ID: Consist of filename without extension + "{pluginid}".
-        // "()" are replaced by "/".
-        const QString docid = QFileInfo(files[i]).completeBaseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
+        const QString docid = QFileInfo(files[i]).completeBaseName() + pluginid;
         QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
         request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
         request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
@@ -423,16 +422,15 @@ bool Database::verifyPluginData(const QString& pluginid) {
     return true;
 }
 
-void Database::extractAllDocumentsAsJSON(const QString& path)
+void Database::exportAsJSON(const QString& path)
 {
-    qDebug() << "Database: Extract JSON Files to" << path;
     QEventLoop eventLoop;
     QNetworkRequest request ( setup::couchdbAbsoluteUrl("_all_docs") );
     QNetworkReply *r = get ( request );
     connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
     eventLoop.exec();
     if (r->error() != QNetworkReply::NoError) {
-        qWarning() << "Database: Failed to extract JSON Files";
+        qWarning() << "Database: Failed to export JSON Files";
         return;
     }
 
@@ -450,6 +448,8 @@ void Database::extractAllDocumentsAsJSON(const QString& path)
         qWarning() << "Database: Field rows not found";
         return;
     }
+
+    qDebug() << "Database: Export JSON Documents to" << path;
 
     QVariantList list = jsonData.value ( QLatin1String ( "rows" ) ).toList();
     for ( int i=0;i<list.size();++i ) {
@@ -490,6 +490,70 @@ void Database::extractAllDocumentsAsJSON(const QString& path)
         f.close();
         delete r;
     }
+}
+
+void Database::importFromJSON(const QString& path)
+{
+    QDir dir(path);
+    if (!dir.exists()) {
+        qWarning()<<"Database: failed to change to " << dir.absolutePath();
+        return;
+    }
+
+    qDebug() << "Database: Import JSON Documents from" << path;
+
+    QEventLoop eventLoop;
+    const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files|QDir::NoDotAndDotDot);
+    for (int i=0;i<files.size();++i) {
+        QFile file(dir.absoluteFilePath(files[i]));
+        file.open(QIODevice::ReadOnly);
+        if (file.size() > 1024*10) {
+            qWarning() << "\tFile to big!" << files[i] << file.size();
+            continue;
+        }
+        bool error=false;
+        QTextStream stream( &file );
+        QVariantMap jsonData = JSON::parseValue(stream, error).toMap();
+        if (error) {
+            qWarning() << "\tNot a json file although json file extension!";
+            continue;
+        }
+        // check for neccessary values before inserting into database
+        if (!jsonData.contains(QLatin1String("plugin_")) ||
+			jsonData[QLatin1String("plugin_")].toByteArray()=="AUTO") {
+			qWarning() << "\tNo entry for plugin or plugin=AUTO. JSON Document not valid!";
+            continue;
+		}
+        
+        const QByteArray dataToSend = JSON::stringify(jsonData).toUtf8();
+        // Document ID: Consist of filename without extension
+        const QString docid = QFileInfo(files[i]).completeBaseName();
+        QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
+        request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
+        request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
+        QNetworkReply* rf = put(request, dataToSend);
+        connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        eventLoop.exec();
+        file.close();
+        if (rf->error() == QNetworkReply::NoError) {
+            qDebug() << "\tImport" << docid << ", entries:" << jsonData.size();
+        } else if (rf->error() == 299) {
+			//qDebug() << "\tAlready installed" << pluginid << docid;
+        } else if (rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
+			qWarning() << "\tImport failed. Upload forbidden. " << docid << file.size() << "Bytes";
+        } else {
+            qWarning() << "\tImport failed: " << docid << file.size() << "Bytes" << rf->errorString() << rf->error();
+        }
+        delete rf;
+    }
+
+    // recursivly go into all subdirectories
+    const QStringList dirs = dir.entryList(QDir::Dirs|QDir::NoDotAndDotDot);
+	for (int i=0;i<dirs.size();++i) {
+		dir.cd(dirs[i]);
+		importFromJSON(dir.absolutePath());
+		dir.cdUp();
+	}
 }
 
 void Database::changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value) {
