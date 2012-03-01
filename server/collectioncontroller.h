@@ -42,6 +42,7 @@ private:
         dataWithPlugin(QPointer<PluginCommunication> p, QVariantMap m) : plugin(p), data(m) {}
     };
     QMultiMap<int, dataWithPlugin> m_timetable;
+	QMultiMap<int, dataWithPlugin> m_runningtimetable;
     QList<dataWithPlugin> m_conditions;
     int m_conditionok;
 private Q_SLOTS:

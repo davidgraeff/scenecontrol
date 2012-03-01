@@ -53,6 +53,8 @@ RunningCollection::RunningCollection(const QList< QVariantMap >& actions, const 
 
 void RunningCollection::start()
 {
+	m_lasttime = 0;
+	m_runningtimetable = m_timetable;
     m_conditionok = 0;
     // Check conditions
     for (int i=0; i < m_conditions.size(); ++i) {
@@ -60,8 +62,8 @@ void RunningCollection::start()
     }
     if (m_conditions.isEmpty()) {
         timeoutNextAction();
-    }
-    qDebug() << m_collectionid << __FUNCTION__ << m_conditionok << m_conditions.size();
+	} else
+		qDebug() <<"Start with cond" << m_collectionid << "Ok:" << m_conditionok << "size:" << m_conditions.size();
 }
 
 void RunningCollection::qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid) {
@@ -88,12 +90,12 @@ void RunningCollection::conditionResponse(bool timeout)
 
 void RunningCollection::timeoutNextAction()
 {
-    QMap<int, dataWithPlugin>::const_iterator lowerBound = m_timetable.lowerBound(m_lasttime);
-    if (lowerBound == m_timetable.constEnd()) {
+    QMap<int, dataWithPlugin>::const_iterator lowerBound = m_runningtimetable.lowerBound(m_lasttime);
+    if (lowerBound == m_runningtimetable.constEnd()) {
         emit runningCollectionFinished(m_collectionid);
         return;
     }
-    QMap<int, dataWithPlugin>::const_iterator upperBound = m_timetable.upperBound(m_lasttime);
+    QMap<int, dataWithPlugin>::const_iterator upperBound = m_runningtimetable.upperBound(m_lasttime);
 
 
     while (lowerBound != upperBound) {
@@ -105,11 +107,11 @@ void RunningCollection::timeoutNextAction()
 
     // remove all entries belonging to this time slot
     m_lasttime = lowerBound.key();
-    m_timetable.remove(lowerBound.key());
+    m_runningtimetable.remove(lowerBound.key());
 
     // restart timer for next time slot
-    lowerBound = m_timetable.lowerBound(m_lasttime);
-    if (lowerBound == m_timetable.constEnd()) {
+    lowerBound = m_runningtimetable.lowerBound(m_lasttime);
+    if (lowerBound == m_runningtimetable.constEnd()) {
         emit runningCollectionFinished(m_collectionid);
         return;
     }
@@ -130,12 +132,12 @@ CollectionController::CollectionController () {}
 CollectionController::~CollectionController() {}
 
 void CollectionController::requestExecutionByCollectionId ( const QString& collectionid ) {
-// 	if (m_cachedCollections.contains(collectionid)) {
-// 		RunningCollection* run = m_cachedCollections.take(collectionid);
-// 		m_runningCollections.insert(collectionid, run);
-// 		updateListOfRunningCollections();
-// 		run->start();
-// 	} else 
+	if (m_cachedCollections.contains(collectionid)) {
+		RunningCollection* run = m_cachedCollections.take(collectionid);
+		m_runningCollections.insert(collectionid, run);
+		updateListOfRunningCollections();
+		run->start();
+	} else 
 		Database::instance()->requestDataOfCollection(collectionid);
 }
 
@@ -160,12 +162,12 @@ void CollectionController::runningCollectionFinished(const QString& collectionid
 {
     RunningCollection* run = m_runningCollections.take(collectionid);
     if (run) {
-// 		if (m_cachedCollections.size()>2) {
-// 			qDeleteAll(m_cachedCollections);
-// 			m_cachedCollections.clear();
-// 		}
-// 		m_cachedCollections.insert(collectionid, run);
-        run->deleteLater();
+		if (m_cachedCollections.size()>2) {
+			qDeleteAll(m_cachedCollections);
+			m_cachedCollections.clear();
+		}
+		m_cachedCollections.insert(collectionid, run);
+//         run->deleteLater();
 	}
     updateListOfRunningCollections();
 }
