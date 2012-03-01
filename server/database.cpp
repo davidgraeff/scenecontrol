@@ -291,7 +291,7 @@ void Database::requestPluginSettings(const QString& pluginid, bool tryToInstall)
         if (list.isEmpty()) {
             if (!tryToInstall)
                 return;
-            // settings not found, try to install initial plugin values to the couchdb
+            // settings not found, try to install initial plugin values to the database
             installPluginData(pluginid);
             delete r;
             r = get ( request );
@@ -421,7 +421,7 @@ int Database::installPluginData(const QString& pluginid) {
         const QByteArray dataToSend = JSON::stringify(jsonData).toUtf8();
         // Document ID: Consist of filename without extension + "{pluginid}".
         // "()" are replaced by "/".
-        const QString docid = QFileInfo(files[i]).baseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
+        const QString docid = QFileInfo(files[i]).completeBaseName().replace(QLatin1String("()"), QLatin1String("/")) + pluginid;
         QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
         request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
         request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
@@ -446,7 +446,7 @@ int Database::installPluginData(const QString& pluginid) {
     return count;
 }
 
-void Database::extractJSONFromCouchDB(const QString& path)
+void Database::extractAllDocumentsAsJSON(const QString& path)
 {
     qDebug() << "Database: Extract JSON Files to" << path;
     QEventLoop eventLoop;
@@ -546,7 +546,7 @@ void Database::changePluginConfiguration(const QString& pluginid, const QString&
         data[QLatin1String("_id")] = docid;
     }
 
-    // 3) send to couchdb
+    // 3) send to database
     {
         const QByteArray dataToSend = JSON::stringify(data).toUtf8();
         QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );

@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
         printf("%s - %s\n%s [CMDs]\n"
                "--no-restart: Do not restart after exit\n"
                "--no-event-loop: Shutdown after initialisation\n"
-               "--extract PATH: Extract all documents from database and store them in PATH\n"
-               "--no-autoload-plugins Only start the server and no plugin processes\n"
+               "--extract: Extract all documents from database and store them in the working directory\n"
+               "--no-autoload-plugins: Only start the server and no plugin processes\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
                ROOM_SERVICENAME, ABOUT_VERSION, argv[0]);
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 
     // Only extract json data from couchdb
     if (cmdargs.contains("--extract"))
-        couchdb->extractJSONFromCouchDB(QDir::currentPath());
+        couchdb->extractAllDocumentsAsJSON(QDir::currentPath());
     else if (!exitcode && !cmdargs.contains("--no-event-loop")) {
         // Start plugin processes
         if (!cmdargs.contains("--no-autoload-plugins"))

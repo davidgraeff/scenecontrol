@@ -29,12 +29,12 @@ class Database: public QNetworkAccessManager {
     Q_OBJECT
 public:
   /**
-   * CouchDB is a singleton object
+   * Database is a singleton object
    */
     static Database* instance();
     virtual ~Database();
     /**
-     * Connect to couchdb (synchronous)
+     * Connect to database (synchronous)
      */
     bool connectToDatabase();
     /**
@@ -48,7 +48,7 @@ public:
     void requestDataOfCollection(const QString& collection_id);
     void requestPluginSettings(const QString& pluginid, bool tryToInstall = true);
     void changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value);
-    void extractJSONFromCouchDB(const QString& path);
+    void extractAllDocumentsAsJSON(const QString& path);
 private:
     Database ();
     int m_last_changes_seq_nr;
@@ -60,9 +60,9 @@ private:
 private Q_SLOTS:
     // Called if events on the database changed and fetches those events
     void replyEventsChange();
-    // Called if plugin settings on the database changed and fetches those settings. Will fire the signal couchDB_settings
+    // Called if plugin settings on the database changed and fetches those settings. Will fire the signal settings
     void replyPluginSettingsChange();
-    // Fetches all conditions and actions of a collection. Will fire the signal couchDB_actionsOfCollection
+    // Fetches all conditions and actions of a collection. Will fire the signal ctionsOfCollection
     void replyDataOfCollection();
     void errorWithRecovery(QNetworkReply::NetworkError);
     void errorFatal(QNetworkReply::NetworkError);
@@ -70,7 +70,7 @@ private Q_SLOTS:
 Q_SIGNALS:
     // Fail signals
     void failed(const QString& url);
-    void couchDB_no_settings_found(const QString& pluginid);
+    void no_settings_found(const QString& pluginid);
     // Change signals
     void settings(const QString& pluginid, const QString& key, const QVariantMap& data);
     void Event_add(const QString& id, const QVariantMap& event_data);
