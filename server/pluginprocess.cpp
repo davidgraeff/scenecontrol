@@ -53,6 +53,7 @@ void PluginCommunication::readyRead()
             m_controller->addPlugin(id, this);
             // request configuration
             initialize();
+			Database::instance()->verifyPluginData(id);
             Database::instance()->requestPluginSettings(id);
             Database::instance()->requestEvents(id);
         } else if (method == "methodresponse") {

@@ -45,8 +45,9 @@ public:
     void startChangeListenerSettings();
     void startChangeListenerEvents();
 
+    bool verifyPluginData(const QString& pluginid);
     void requestDataOfCollection(const QString& collection_id);
-    void requestPluginSettings(const QString& pluginid, bool tryToInstall = true);
+    void requestPluginSettings(const QString& pluginid);
     void changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value);
     void extractAllDocumentsAsJSON(const QString& path);
 private:
@@ -56,7 +57,6 @@ private:
     int m_eventsChangeFailCounter;
     bool checkFailure(QNetworkReply*);
 
-    int installPluginData(const QString& pluginid);
 private Q_SLOTS:
     // Called if events on the database changed and fetches those events
     void replyEventsChange();

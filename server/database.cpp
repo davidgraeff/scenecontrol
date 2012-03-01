@@ -85,10 +85,8 @@ bool Database::connectToDatabase() {
         }
 
         int doccount = data.value(QLatin1String("doc_count")).toInt();
-        if (!doccount && !installPluginData(QLatin1String("_server"))) {
-            // Initial data could not be installed
-            qWarning() << "Database: doc_count = 0";
-            return false;
+        if (!doccount) {
+            qWarning() << "Database: Empty";
         }
         m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
     }
@@ -269,7 +267,7 @@ void Database::requestDataOfCollection(const QString& collecion_id)
     connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-void Database::requestPluginSettings(const QString& pluginid, bool tryToInstall)
+void Database::requestPluginSettings(const QString& pluginid)
 {
     if (pluginid.isEmpty())
         return;
@@ -288,39 +286,22 @@ void Database::requestPluginSettings(const QString& pluginid, bool tryToInstall)
     QVariantMap data = JSON::parse ( r->readAll() ).toMap();
     if ( !data.isEmpty() && data.contains ( QLatin1String ( "rows" ) ) ) {
         QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
-        if (list.isEmpty()) {
-            if (!tryToInstall)
-                return;
-            // settings not found, try to install initial plugin values to the database
-            installPluginData(pluginid);
-            delete r;
-            r = get ( request );
-            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-            eventLoop.exec();
-            if ( r->error() != QNetworkReply::NoError ) {
-                qWarning()<<"Database: Get settings failed for" << pluginid << r->error() << r->errorString();
-                delete r;
-                return;
-            }
-            QVariantMap data = JSON::parse ( r->readAll() ).toMap();
-            if ( data.isEmpty() || !data.contains ( QLatin1String ( "rows" ) ) ) {
-                qWarning()<<"Database: Get settings failed for" << pluginid << data;
-                return;
-            }
-            list = data.value ( QLatin1String ( "rows" ) ).toList();
-        }
-        foreach(const QVariant& v, list) {
-            data = v.toMap().value(QLatin1String ( "value" )).toMap();
-            data.remove(QLatin1String("_id"));
-            data.remove(QLatin1String("_rev"));
-            data.remove(QLatin1String("type_"));
-            data.remove(QLatin1String("plugin_"));
-            const QString key = data.take(QLatin1String("key_")).toString();
-            if (data.size())
-                emit settings ( pluginid, key, data );
+        if (list.size()) {
+			foreach(const QVariant& v, list) {
+				data = v.toMap().value(QLatin1String ( "value" )).toMap();
+				data.remove(QLatin1String("_id"));
+				data.remove(QLatin1String("_rev"));
+				data.remove(QLatin1String("type_"));
+				data.remove(QLatin1String("plugin_"));
+				const QString key = data.take(QLatin1String("key_")).toString();
+				if (data.size())
+					emit settings ( pluginid, key, data );
+			}
+		} else {
+			qDebug()<<"Database:" << pluginid << "has no configuration!";
         }
     } else {
-        qWarning() << "Database: Get settings failed for" << pluginid << data;
+        qWarning() << "Database:" << pluginid << "configuration fetch failed" << data;
     }
 
     delete r;
@@ -391,17 +372,15 @@ void Database::errorNoSettings()
 }
 
 
-int Database::installPluginData(const QString& pluginid) {
-    int count = 0;
+bool Database::verifyPluginData(const QString& pluginid) {
     QDir dir = setup::pluginCouchDBDir();
     if (!dir.cd(pluginid)) {
         qWarning()<<"Database: failed to change to " << dir.absolutePath() << pluginid;
-        return 0;
+        return false;
     }
 
     QEventLoop eventLoop;
     const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files|QDir::NoDotAndDotDot);
-    qDebug() << "Database: Install" << pluginid << "with" << files.size() << "json file(s)";
     for (int i=0;i<files.size();++i) {
         QFile file(dir.absoluteFilePath(files[i]));
         file.open(QIODevice::ReadOnly);
@@ -430,20 +409,18 @@ int Database::installPluginData(const QString& pluginid) {
         eventLoop.exec();
         file.close();
         if (rf->error() == QNetworkReply::NoError) {
-            qDebug() << "\tInstalled" << docid << ", entries:" << jsonData.size();
-            ++count;
+            qDebug() << "\tInstalled" << pluginid << docid << ", entries:" << jsonData.size();
         } else if (rf->error() == 299) {
-			qDebug() << "\tAlready installed" << docid;
-			++count;
+			//qDebug() << "\tAlready installed" << pluginid << docid;
         } else if (rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
-			qWarning() << "\tInstallation failed. Upload forbidden. " << docid << file.size() << "Bytes";
+			qWarning() << "\tInstallation failed. Upload forbidden. " << pluginid << docid << file.size() << "Bytes";
         } else {
-            qWarning() << "\tInstallation failed: " << docid << file.size() << "Bytes" << rf->errorString() << rf->error();
+            qWarning() << "\tInstallation failed: " << pluginid << docid << file.size() << "Bytes" << rf->errorString() << rf->error();
         }
         delete rf;
     }
 
-    return count;
+    return true;
 }
 
 void Database::extractAllDocumentsAsJSON(const QString& path)
