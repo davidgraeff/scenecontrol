@@ -2,6 +2,7 @@
 	"plugin_":"AUTO", "type_":"schema", "targettype":"condition",
 	"member_":"isSwitchOn", "name":"Ist Schalter auf Wert?",
 	"parameters": {
+		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"switches","indexproperty":"channel","textproperty":"name", "value":""},
 		"value":{"name":"Wert", "type":"boolean"}
 	}
 }
