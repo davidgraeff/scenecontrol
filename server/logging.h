@@ -1,6 +1,6 @@
 /*
     RoomControlServer. Home automation for controlling sockets, leds and music.
-    Copyright (C) 2010  David Gräff
+    Copyright (C) 2012  David Gräff
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,6 +1,6 @@
 /*
     RoomControlServer. Home automation for controlling sockets, leds and music.
-    Copyright (C) 2010  David Gräff
+    Copyright (C) 2012  David Gräff
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,15 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-	Purpose: Load plugins, load description xmls, route services and properties
+	Purpose: Network ssl socket for
+	(1) listening to plugin property changes
+	(2) request	plugin action execution or collection execution
+	(3) registering as remotesystem client (plugin: remotesystem)
 */
 
 #pragma once
-#include <QObject>
-#include <QMap>
 #include <QVariantMap>
-#include <QSet>
-#include <QSocketNotifier>
 #include <QSslSocket>
 #include <QTcpServer>
 

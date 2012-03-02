@@ -1,6 +1,6 @@
 /*
     RoomControlServer. Home automation for controlling sockets, leds and music.
-    Copyright (C) 2010  David Gräff
+    Copyright (C) 2012  David Gräff
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,20 +17,21 @@
 
 */
 
-#include <signal.h>    /* signal name macros, and the signal() prototype */
-#include <QCoreApplication>
-#include <QProcess>
-#include <QSettings>
 #include "config.h"
-#include <qtextcodec.h>
 #include "logging.h"
-#include <stdio.h>
 #include "plugincontroller.h"
-#include <QDebug>
 #include "socket.h"
 #include "collectioncontroller.h"
 #include "database.h"
 #include "paths.h"
+
+#include <stdio.h>
+#include <signal.h>    /* signal name macros, and the signal() prototype */
+#include <qtextcodec.h>
+#include <QCoreApplication>
+#include <QProcess>
+#include <QSettings>
+#include <QDebug>
 
 bool exitByConsoleCommand = false;
 
@@ -97,7 +98,7 @@ int main(int argc, char *argv[])
     // Write last start time to the log
     setup::writeLastStarttime();
 
-    // Set up the database connection. All events, actions, configurations are hold within a couchdb.
+    // Set up the database connection. All events, actions, configurations are hold within a database
     Database* database = Database::instance();
 
     // CollectionController: Starts, stops collections
@@ -110,7 +111,6 @@ int main(int argc, char *argv[])
     // connect objects
     plugins->connect(database, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
     plugins->connect(database, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
-    plugins->connect(database, SIGNAL(failed(QString)), plugins, SLOT(failed(QString)));
     plugins->connect(database, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(settings(QString,QString,QVariantMap)));
     collectioncontroller->connect(socket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
     collectioncontroller->connect(database, SIGNAL(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     int exitcode = 0;
     exitcode |= database->connectToDatabase()?0:-2;
 
-    // Export json documents from database
+    // Export json documents from database if requested
     {
         int index = cmdargs.indexOf("--export");
         if (index!=-1) {
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Import json documents from database
+    // Import json documents from database if requested
     {
         int index = cmdargs.indexOf("--import");
         if (index!=-1) {
@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
         }
     }
     
+    // Start event loop (if --no-event-loop is not set)
     if (!exitcode && !cmdargs.contains("--no-event-loop")) {
         // Start plugin processes
         if (!cmdargs.contains("--no-autoload-plugins"))
@@ -170,7 +171,12 @@ int main(int argc, char *argv[])
             int retry = 0;
             for (int i=0;i<argc;++i) {
                 QString arg = QString::fromAscii(argv[i]);
-                if (arg.startsWith(QLatin1String("--restart-try="))) retry = arg.mid(strlen("--restart-try=")).toInt();
+                if (arg.startsWith(QLatin1String("--restart-try=")))
+					retry = arg.mid(strlen("--restart-try=")).toInt();
+            }
+            if (retry > 3) {
+				qWarning() << "Retry maximum reached";
+				return exitcode;
             }
             QString cmd = QString::fromAscii(argv[0]) + QLatin1String(" --restart-try=") + QString::number(retry);
             QProcess::startDetached(cmd);

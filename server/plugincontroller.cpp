@@ -97,11 +97,6 @@ void PluginController::Event_remove(const QString& id) {
     }
 }
 
-void PluginController::failed(const QString& url) {
-    Q_UNUSED(url);
-    QCoreApplication::exit(1);
-}
-
 void PluginController::settings(const QString& pluginid, const QString& key, const QVariantMap& data) {
     PluginCommunication* p = getPlugin(pluginid);
     if (!p) {
@@ -180,10 +175,3 @@ void PluginController::removeProcess(PluginProcess* process) {
     m_pluginprocesses.remove(process);
     process->deleteLater();
 }
-
-// void PluginController::execute(const QVariantMap& data ) {
-//     if ( ServiceData::isMethod(data, "requestProperties" ) ) {
-//         Socket::instance()->sendToClient(allProperties(sessionid), sessionid);
-//     }
-// }
-

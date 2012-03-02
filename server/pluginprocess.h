@@ -1,13 +1,17 @@
 #pragma once
 
-#include <QObject>
 #include <QProcess>
 #include <QLocalSocket>
 #include <QVariantMap>
-#include <QTimer>
 
 class PluginController;
 
+/**
+ * Every plugin process that is started via the server (and not running before
+ * or started externally) is tracked via this PluginProcess class.
+ * This is mostly done to allow the server to terminate all started sub processes
+ * if the server itself is going to shutdown.
+ */
 class PluginProcess:  public QObject {
     Q_OBJECT
 public:
@@ -19,14 +23,21 @@ private:
     QString m_filename;
     bool m_aboutToFree;
 private Q_SLOTS:
-    // After a process got started it has 3 seconds to establish a communication socket
-    // otherwise the process will get killed by the server and removed from the pending
-    // processes of PluginController
+    /** After a process got started it has 7 seconds to establish a communication socket
+     * otherwise the process will get killed by the server and removed from the pending
+     * processes of PluginController
+	 */
     void startTimeout();
 public slots:
     void finished(int exitCode, QProcess::ExitStatus exitStatus);
 };
 
+/**
+ * Every plugin need to establish a communication channel otherwise the corresponding
+ * plugin process will be killed. The PluginCommunication object serves as a proxy
+ * to the abstractPlugin plugin base class. Events, conditions and actions are
+ * delivered via the callQtSlot method.
+ */
 class PluginCommunication: public QObject {
     Q_OBJECT
 public:
@@ -36,7 +47,7 @@ public:
     QLocalSocket* getSocket();
     QString id;
     void setVersion(const QString& version) ;
-    //// proxy methods: they send a request to the plugin process ////
+    /// proxy methods: they send a request to the plugin process ////
     /// Proxy Method: Initialize plugin
     void initialize();
     /// Proxy Method: Clear all ressources
@@ -62,9 +73,10 @@ private:
 private Q_SLOTS:
     void readyRead();
     void stateChanged(QLocalSocket::LocalSocketState state);
-    // After a process got started it has 3 seconds to establish a communication socket
-    // otherwise the process will get killed by the server and removed from the pending
-    // processes of PluginController
+    /** After a process got started it has 7 seconds to establish a communication socket
+	 * otherwise the process will get killed by the server and removed from the pending
+	 * processes of PluginController
+	 */
     void startTimeout();
 Q_SIGNALS:
     void qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid);

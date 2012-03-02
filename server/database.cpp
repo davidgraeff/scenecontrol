@@ -197,7 +197,6 @@ void Database::startChangeListenerEvents()
     request.setRawHeader ( "Connection","keep-alive" );
     QNetworkReply *r = get ( request );
     connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange()) );
-    //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
 void Database::startChangeListenerSettings()
@@ -206,35 +205,22 @@ void Database::startChangeListenerSettings()
     request.setRawHeader ( "Connection","keep-alive" );
     QNetworkReply *r = get ( request );
     connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
-    //connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-bool Database::checkFailure(QNetworkReply* r)
+bool Database::checkFailure(QNetworkReply* r, const QByteArray& msg)
 {
     if ( r->error() != QNetworkReply::NoError ) {
-        qWarning() << "Database: Response error:" << r->url();
-        emit failed(r->url().toString());
+        qWarning() << "Database: Response error:" << r->error() << r->url().toString() << msg;
         return true;
     }
     return false;
-}
-
-void Database::errorWithRecovery(QNetworkReply::NetworkError e) {
-    QNetworkReply *r = ( QNetworkReply* ) sender();
-    qWarning() << "Database: Network error:" << e << r->url().toString();
-}
-
-void Database::errorFatal(QNetworkReply::NetworkError e) {
-    QNetworkReply *r = ( QNetworkReply* ) sender();
-    qWarning() << "Database: Fatal Network error:" << e << r->url().toString();
-    emit failed(r->url().toString());
 }
 
 void Database::replyDataOfCollection()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
     r->deleteLater();
-    if (checkFailure(r))
+    if (checkFailure(r, "No data for collection"+r->url().fragment().toUtf8()))
         return;
 
     QVariantMap data = JSON::parse( r->readAll() ).toMap();
@@ -264,10 +250,9 @@ void Database::requestDataOfCollection(const QString& collecion_id)
 
     QNetworkReply* r = get ( request );
     connect ( r, SIGNAL ( finished() ), SLOT ( replyDataOfCollection()) );
-    connect ( r, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(errorWithRecovery(QNetworkReply::NetworkError)) );
 }
 
-void Database::requestPluginSettings(const QString& pluginid)
+void Database::requestPluginConfiguration(const QString& pluginid)
 {
     if (pluginid.isEmpty())
         return;
@@ -278,10 +263,8 @@ void Database::requestPluginSettings(const QString& pluginid)
     connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
     eventLoop.exec();
 
-    if ( r->error() != QNetworkReply::NoError) {
-        qWarning()<<"Database: Get settings failed for" << pluginid << r->error() << r->errorString();
+    if (checkFailure(r, "Configuration for"+pluginid.toUtf8()))
         return;
-    }
 
     QVariantMap data = JSON::parse ( r->readAll() ).toMap();
     if ( !data.isEmpty() && data.contains ( QLatin1String ( "rows" ) ) ) {
@@ -315,7 +298,7 @@ void Database::replyPluginSettingsChange()
         if (m_settingsChangeFailCounter > 5) {
             qWarning() << "Database: replyPluginSettingsChange" << r->url();
         } else {
-            QTimer::singleShot(1000, this, SLOT(replyPluginSettingsChange()));
+            QTimer::singleShot(1000, this, SLOT(startChangeListenerSettings()));
         }
         delete r;
         return;
@@ -363,14 +346,6 @@ void Database::replyPluginSettingsChange()
         emit settings ( ServiceData::pluginid(document), key, document );
     }
 }
-
-void Database::errorNoSettings()
-{
-    QNetworkReply *r = ( QNetworkReply* ) sender();
-    r->deleteLater();
-//     emit no_settings_found(r->url().fragment());
-}
-
 
 bool Database::verifyPluginData(const QString& pluginid) {
     QDir dir = setup::pluginCouchDBDir();

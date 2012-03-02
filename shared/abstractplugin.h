@@ -1,6 +1,6 @@
 /*
     RoomControlServer. Home automation for controlling sockets, leds and music.
-    Copyright (C) 2010  David Gräff
+    Copyright (C) 2012  David Gräff
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+    Purpose: AbstractPlugin serves as the base class for all plugins.
+    See documentation/plugin.* source code for an example usage.
 */
 
 #pragma once
@@ -26,11 +28,12 @@
 #include <QSet>
 #include <QVariant>
 
-
+/// Always define a PLUGIN_ID for this compilation unit
 #ifndef PLUGIN_ID
 #error Define PLUGIN_ID before including this header!
 #endif
 
+/// The name of the server communication socket
 #define COMSERVERSTRING "server"
 
 #include "shared/pluginservicehelper.h"

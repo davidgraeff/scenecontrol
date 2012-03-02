@@ -6,6 +6,7 @@
 #include "collectioncontroller.h"
 #include <QElapsedTimer>
 #include <QThread>
+#include <QTimer>
 
 PluginCommunication::PluginCommunication(PluginController* controller, QLocalSocket* socket) : m_controller(controller) {
     m_pluginCommunication=socket;
@@ -53,8 +54,8 @@ void PluginCommunication::readyRead()
             m_controller->addPlugin(id, this);
             // request configuration
             initialize();
-			Database::instance()->verifyPluginData(id);
-            Database::instance()->requestPluginSettings(id);
+            Database::instance()->verifyPluginData(id);
+            Database::instance()->requestPluginConfiguration(id);
             Database::instance()->requestEvents(id);
         } else if (method == "methodresponse") {
             emit qtSlotResponse(variantdata.value(QLatin1String("response_")),
