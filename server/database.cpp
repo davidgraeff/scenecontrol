@@ -310,7 +310,7 @@ void Database::replyPluginSettingsChange()
         const QByteArray line = r->readLine();
         if ( line.size() <= 1 ) continue;
         QVariantMap data = JSON::parse(line ).toMap();
-        if ( !data.isEmpty() || !data.contains ( QLatin1String ( "seq" ) ) )
+        if ( data.isEmpty() || !data.contains ( QLatin1String ( "seq" ) ) )
             continue;
 
         const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();

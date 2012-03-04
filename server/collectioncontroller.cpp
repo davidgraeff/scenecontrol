@@ -25,20 +25,23 @@ CollectionController::CollectionController () {}
 CollectionController::~CollectionController() {}
 
 void CollectionController::requestExecutionByCollectionId ( const QString& collectionid ) {
-	if (m_cachedCollections.contains(collectionid)) {
-		RunningCollection* run = m_cachedCollections.take(collectionid);
-		m_runningCollections.insert(collectionid, run);
-		updateListOfRunningCollections();
-		run->start();
-	} else 
-		Database::instance()->requestDataOfCollection(collectionid);
+    if (m_cachedCollections.contains(collectionid)) {
+        RunningCollection* run = m_cachedCollections.take(collectionid);
+        m_runningCollections.insert(collectionid, run);
+        updateListOfRunningCollections();
+        run->start();
+    } else
+        Database::instance()->requestDataOfCollection(collectionid);
 }
 
 void CollectionController::requestExecution(const QVariantMap& data, int sessionid) {
     if ( !ServiceData::checkType ( data, ServiceData::TypeExecution )) return;
     // Special case: all properties are requested, handle this immediatelly.
-    if (ServiceData::pluginid(data)==QLatin1String("server") && ServiceData::isMethod(data, "requestAllProperties") && sessionid != -1) {
-        PluginController::instance()->requestAllProperties(sessionid);
+    if (ServiceData::pluginid(data)==QLatin1String("server") && sessionid != -1) {
+        if (ServiceData::isMethod(data, "requestAllProperties"))
+            PluginController::instance()->requestAllProperties(sessionid);
+        else if (ServiceData::isMethod(data, "runcollection"))
+            requestExecutionByCollectionId(ServiceData::collectionid(data));
         return;
     }
     // Look for a plugin that fits "data"
@@ -55,13 +58,13 @@ void CollectionController::runningCollectionFinished(const QString& collectionid
 {
     RunningCollection* run = m_runningCollections.take(collectionid);
     if (run) {
-		if (m_cachedCollections.size()>2) {
-			qDeleteAll(m_cachedCollections);
-			m_cachedCollections.clear();
-		}
-		m_cachedCollections.insert(collectionid, run);
+        if (m_cachedCollections.size()>2) {
+            qDeleteAll(m_cachedCollections);
+            m_cachedCollections.clear();
+        }
+        m_cachedCollections.insert(collectionid, run);
 //         run->deleteLater();
-	}
+    }
     updateListOfRunningCollections();
 }
 
