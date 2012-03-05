@@ -161,8 +161,10 @@ void AbstractPlugin::readyReadCommunication()
             QByteArray responseid = variantdata.value(QLatin1String("responseid_")).toByteArray();
             responseData[QLatin1String("responseid_")] = responseid;
             responseData[QLatin1String("response_")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
-            if (responseid.size())
+            if (responseid.size()) {
                 writeToSocket(socket, responseData);
+				qDebug() << "WRITE RESPONSE" << responseData[QLatin1String("response_")];
+			}
         }
     }
 }
@@ -293,7 +295,9 @@ int AbstractPlugin::invokeHelperMakeArgumentList(int methodID, const QVariantMap
 
 #define QX_ARG(i) ((numParams>i)?QGenericArgument(p ## i .typeName(), p ## i .constData()):QGenericArgument())
 QVariant AbstractPlugin::invokeSlot(const QByteArray& methodname, int numParams, const char* returntype, QVariant p0, QVariant p1, QVariant p2, QVariant p3, QVariant p4, QVariant p5, QVariant p6, QVariant p7, QVariant p8) {
+	Q_UNUSED(returntype);
     QVariant result;
-    QMetaObject::invokeMethod(this, methodname, QGenericReturnArgument(returntype,result.data()), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
+    //QMetaObject::invokeMethod(this, methodname, QGenericReturnArgument(returntype,result.data()), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
+	QMetaObject::invokeMethod(this, methodname, Q_RETURN_ARG(QVariant, result), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
     return result;
 }

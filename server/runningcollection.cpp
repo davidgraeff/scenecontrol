@@ -49,6 +49,7 @@ void RunningCollection::start()
     m_conditionok = 0;
     // Check conditions
     for (int i=0; i < m_conditions.size(); ++i) {
+		m_conditions[i].data.insert(QLatin1String("responseid_"), ServiceData::id(m_conditions[i].data));
         m_conditions[i].plugin->callQtSlot ( m_conditions[i].data, QByteArray::number(i) );
     }
     if (m_conditions.isEmpty()) {
@@ -58,7 +59,7 @@ void RunningCollection::start()
 }
 
 void RunningCollection::qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid) {
-    qDebug() << m_collectionid << __FUNCTION__ << m_conditionok;
+    qDebug() << __FUNCTION__ << m_collectionid << m_conditionok << responseid << response;
     Q_UNUSED(responseid);
     if (!response.canConvert(QVariant::Bool)) {
         qWarning() << "Condition check failed. Return value not a boolean" << pluginid << response;
