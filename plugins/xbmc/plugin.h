@@ -41,7 +41,7 @@ public Q_SLOTS:
     void next();
     void prev();
     void FastForward();
-    void Rewind();
+    void rewind();
     // gui control
     void select();
     void down();

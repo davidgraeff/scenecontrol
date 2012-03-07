@@ -59,14 +59,12 @@ void RunningCollection::start()
 }
 
 void RunningCollection::qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid) {
-    qDebug() << __FUNCTION__ << m_collectionid << m_conditionok << responseid << response;
-    Q_UNUSED(responseid);
     if (!response.canConvert(QVariant::Bool)) {
-        qWarning() << "Condition check failed. Return value not a boolean" << pluginid << response;
+        qWarning() << "Condition failed." << responseid << pluginid << "Not a boolean response" << response;
         return;
     }
     if (!response.toBool()) {
-        qDebug() << "Condition false. Not executing" << m_collectionid;
+        qDebug() << "Not executing" << m_collectionid << "; Condition" << responseid << "false";
         return;
     }
     ++m_conditionok;

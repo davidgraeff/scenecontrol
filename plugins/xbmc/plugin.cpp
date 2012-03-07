@@ -132,7 +132,7 @@ void plugin::FastForward() {
 
     m_socket.write(JSON::stringify(data).toUtf8());
 }
-void plugin::Rewind() {
+void plugin::rewind() {
     if (m_socket.state()!=QTcpSocket::ConnectedState) {
         if (m_host.isEmpty())
             return;
