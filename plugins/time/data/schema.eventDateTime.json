@@ -1,6 +1,6 @@
 {
 	"plugin_":"AUTO", "type_":"schema", "targettype":"event",
-	"member_":"eventmode", "name":"Alarmzeitpunkt",
+	"member_":"eventDateTime", "name":"Alarmzeitpunkt",
 	"parameters": {
 		"date":{"name":"Datum", "type":"date"},
 		"time":{"name":"Zeit", "type":"time"}
