@@ -5,7 +5,7 @@
 
 
 RunningCollection::RunningCollection(const QList< QVariantMap >& actions, const QList< QVariantMap >& conditions, const QString& collectionid):
-        QObject(), m_collectionid(collectionid), m_lasttime(0)
+        QObject(), m_collectionid(collectionid), m_lasttime(0), m_conditionok(0)
 {
     // Add all actions ("actions" list contains (key,value) pairs. The value is the actuall action data)
     // into "m_timetable" depending on their start delay.
@@ -44,6 +44,11 @@ RunningCollection::RunningCollection(const QList< QVariantMap >& actions, const 
 
 void RunningCollection::start()
 {
+	// only evaluate condition once if last check was ok
+	if (m_conditionok == m_conditions.size()) {
+		timeoutNextAction();
+		return;
+	}
 	m_lasttime = 0;
 	m_runningtimetable = m_timetable;
     m_conditionok = 0;
@@ -73,9 +78,11 @@ void RunningCollection::qtSlotResponse(const QVariant& response, const QByteArra
 
 void RunningCollection::conditionResponse(bool timeout)
 {
-    if (timeout || m_conditionok>=m_conditions.size())
+    if (timeout || m_conditionok>=m_conditions.size()) {
         // Start executing
         timeoutNextAction();
+		m_conditionok = m_conditions.size();
+	}
 }
 
 void RunningCollection::timeoutNextAction()
