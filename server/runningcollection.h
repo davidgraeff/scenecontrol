@@ -37,6 +37,7 @@ class RunningCollection: public QObject {
 public:
     RunningCollection(const QList<QVariantMap>& actions, const QList<QVariantMap>& conditions, const QString& collectionid);
     void start();
+	QString id() const;
 private:
     struct dataWithPlugin {
         QPointer<PluginCommunication> plugin;

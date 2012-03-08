@@ -25,8 +25,14 @@ CollectionController::CollectionController () {}
 CollectionController::~CollectionController() {}
 
 void CollectionController::requestExecutionByCollectionId ( const QString& collectionid ) {
-    if (m_cachedCollections.contains(collectionid)) {
-        RunningCollection* run = m_cachedCollections.take(collectionid);
+    int foundIndex=-1;
+    for (int i=0;i<m_cachedCollections.size();++i)
+        if (m_cachedCollections[i]->id() == collectionid) {
+            foundIndex = i;
+            break;
+        }
+    if (foundIndex!=-1) {
+        RunningCollection* run = m_cachedCollections[foundIndex];
         m_runningCollections.insert(collectionid, run);
         updateListOfRunningCollections();
         run->start();
@@ -57,13 +63,12 @@ void CollectionController::requestExecution(const QVariantMap& data, int session
 void CollectionController::runningCollectionFinished(const QString& collectionid)
 {
     RunningCollection* run = m_runningCollections.take(collectionid);
-    if (run) {
-        if (m_cachedCollections.size()>2) {
-            qDeleteAll(m_cachedCollections);
-            m_cachedCollections.clear();
+    if (run && !m_cachedCollections.contains(run)) {
+        if (m_cachedCollections.size()>1) {
+            delete m_cachedCollections.first();
+            m_cachedCollections.pop_front();
         }
-        m_cachedCollections.insert(collectionid, run);
-//         run->deleteLater();
+        m_cachedCollections.push_back(run);
     }
     updateListOfRunningCollections();
 }

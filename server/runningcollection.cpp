@@ -114,3 +114,8 @@ void RunningCollection::timeoutNextAction()
     }
     m_timer.start(lowerBound.key() - m_lasttime);
 }
+
+QString RunningCollection::id() const
+{
+	return m_collectionid;
+}
