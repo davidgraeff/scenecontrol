@@ -44,13 +44,13 @@ RunningCollection::RunningCollection(const QList< QVariantMap >& actions, const 
 
 void RunningCollection::start()
 {
+	m_runningtimetable = m_timetable;
+	m_lasttime = 0;
 	// only evaluate condition once if last check was ok
 	if (m_conditionok == m_conditions.size()) {
 		timeoutNextAction();
 		return;
 	}
-	m_lasttime = 0;
-	m_runningtimetable = m_timetable;
     m_conditionok = 0;
     // Check conditions
     for (int i=0; i < m_conditions.size(); ++i) {
