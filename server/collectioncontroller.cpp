@@ -48,6 +48,12 @@ void CollectionController::requestExecution(const QVariantMap& data, int session
             PluginController::instance()->requestAllProperties(sessionid);
         else if (ServiceData::isMethod(data, "runcollection"))
             requestExecutionByCollectionId(ServiceData::collectionid(data));
+        else if (ServiceData::isMethod(data, "version")) {
+            ServiceData s = ServiceData::createNotification("version");
+            s.setData("version", QLatin1String(ABOUT_VERSION));
+            s.setPluginid("server");
+            Socket::instance()->propagateProperty(s.getData(), sessionid);
+        }
         return;
     }
     // Look for a plugin that fits "data"

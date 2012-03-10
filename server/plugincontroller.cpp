@@ -143,7 +143,7 @@ void PluginController::requestAllProperties(int sessionid) {
     ServiceData s = ServiceData::createNotification("plugins");
     s.setData("plugins", pluginlist);
     s.setPluginid("PluginController");
-    Socket::instance()->propagateProperty(s.getData());
+    Socket::instance()->propagateProperty(s.getData(), sessionid);
 }
 
 void PluginController::unloadPlugin(const QString& id) {
