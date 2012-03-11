@@ -321,7 +321,7 @@ void InputDevice::eventData() {
 
         const EventKey* event = *it;
 
-        // If received key is the same as last key, the event is not repeatable and
+        // If received key is the same as last key && the event is not repeatable &&
         // a sensible amount of time to the last received key is not exceeded: abort
         if (m_stopRepeatTimer.isActive() && !event->repeat && kernelkeyname == m_lastkey) {
             // Restart timer to filter out all ongoing events for this key (if repeat==false)
@@ -339,7 +339,7 @@ void InputDevice::eventData() {
         {
             QMap<QString, QString>::const_iterator i = event->ServiceUidToCollectionUid.constBegin();
             for (;i!=event->ServiceUidToCollectionUid.constEnd();++i) {
-                m_plugin->eventTriggered ( i.key().toAscii(), i.value().toAscii() );
+                m_plugin->eventTriggered ( i.key(), i.value() );
             }
         }
     }

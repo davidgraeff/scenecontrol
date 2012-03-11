@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         return 0;
     }
     if (cmdargs.contains("--version")) {
-        printf("%s\n", ABOUT_VERSION);
+        printf("%s\n%s\n", ABOUT_VERSION, ABOUT_LASTCOMMITDATE);
         return 0;
     }
 
