@@ -123,6 +123,9 @@
  */
 #define FILTER_TIME	80 /* msec */
 #define REPEAT_DELAY	500 /* msec */
+#define FUNCTION_NAME(name) #name
+#define FILTER_TIME_STR  FUNCTION_NAME(FILTER_TIME)
+#define REPEAT_DELAY_STR  FUNCTION_NAME(FILTER_TIME)
 
 static unsigned long channel_mask;
 module_param(channel_mask, ulong, 0644);
@@ -138,11 +141,11 @@ MODULE_PARM_DESC(keychange, "Enable support for Keychange remotes");
 
 static int repeat_filter = FILTER_TIME;
 module_param(repeat_filter, int, 0644);
-MODULE_PARM_DESC(repeat_filter, "Repeat filter time, default = " FILTER_TIME " msec");
+MODULE_PARM_DESC(repeat_filter, "Repeat filter time, default = " FILTER_TIME_STR " msec");
 
 static int repeat_delay = REPEAT_DELAY;
 module_param(repeat_delay, int, 0644);
-MODULE_PARM_DESC(repeat_delay, "Delay before sending repeats, default = " REPEAT_DELAY " msec");
+MODULE_PARM_DESC(repeat_delay, "Delay before sending repeats, default = " REPEAT_DELAY_STR " msec");
 
 #define dbginfo(dev, format, arg...) do { if (debug) dev_info(dev , format , ## arg); } while (0)
 #undef err
