@@ -4,8 +4,6 @@
 #include <QPluginLoader>
 #include <QUuid>
 #include <QDebug>
-#include <qjson/serializer.h>
-#include <qjson/parser.h>
 #include "paths.h"
 #include <shared/pluginservicehelper.h>
 #include "collectioncontroller.h"
