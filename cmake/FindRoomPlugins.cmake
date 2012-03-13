@@ -7,10 +7,8 @@ ENDIF()
 
 # project name
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-message(STATUS "Configure Plugin: ${targetname}")
+message(STATUS "Plugin: ${targetname}")
 project(${targetname}_plugin)
-
-find_package(Qt4 4.7.0 COMPONENTS QtCore REQUIRED)
 
 # get_filename_component(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 # #set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")

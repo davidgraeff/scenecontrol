@@ -493,8 +493,15 @@ void Database::importFromJSON(const QString& path)
             qWarning() << "\tNot a json file although json file extension!";
             continue;
         }
+        
+        //TODO REMOVE
+        if (!jsonData.contains(QLatin1String("plugin_"))) {
+			jsonData.insert(QLatin1String("plugin_"), QLatin1String("server"));
+        }
+        
         // check for neccessary values before inserting into database
         if (!jsonData.contains(QLatin1String("plugin_")) ||
+			!jsonData.contains(QLatin1String("_id")) ||
 			jsonData[QLatin1String("plugin_")].toByteArray()=="AUTO") {
 			qWarning() << "\tNo entry for plugin or plugin=AUTO. JSON Document not valid!";
             continue;
@@ -502,7 +509,7 @@ void Database::importFromJSON(const QString& path)
         
         const QByteArray dataToSend = JSON::stringify(jsonData).toUtf8();
         // Document ID: Consist of filename without extension
-        const QString docid = QFileInfo(files[i]).completeBaseName();
+        const QString docid = jsonData.value(QLatin1String("_id")).toString(); //QFileInfo(files[i]).completeBaseName();
         QNetworkRequest request( setup::couchdbAbsoluteUrl( docid ) );
         request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
         request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());

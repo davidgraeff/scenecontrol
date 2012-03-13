@@ -7,7 +7,6 @@ ENDIF()
 
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" "/usr/share/apps/cmake/modules/")
 
-#find_package(QJSON QUIET)
 find_package(OpenSSL QUIET)
 
 project(roomcontrolserver)

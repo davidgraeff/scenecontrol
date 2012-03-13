@@ -1,0 +1,29 @@
+Beschreibung:
+-------------
+In diesem Ordner befinden sich Programme, die nicht für den Einsatz des Servers erforderlich sind.
+
+ati_remote_kernelmodul_patched:
+-------------------------------
+Ein Plugin für den Server erlaubt unter Linux die Verwendung von standard Eingabegeräten als Ereignisauslöser.
+Leider ist das ati_remote Kernelmodul für den Einsatz der günstigen X10 Funkempfänger/Fernbedienungssets nicht
+fehlerfrei. In diesem Ordner findet sich ein gepatchter Treiber, der mit
+> make
+> make install
+> make unload
+> make load
+installiert werden kann, sofern die Kernel header installiert sind. Unter Ubuntu etwa linux-headers.
+
+modify_registry_path:
+---------------------
+Für den Windows NSIS Installer. Das Programm wird gebaut und im Installer unter Windows genutzt um den
+Installationspfad in die Registry zu schreiben. Der Server liest diesen Wert aus, um etwa den Installationsort
+der Pluginprozesse finden zu können.
+
+startonboot:
+------------
+Für verschiedene Betriebssysteme enthaltene Programme um den Server beim Systemstart mit zu starten.
+
+ethersex:
+---------
+Eine trunk Kopie des Projektes ethersex, welches als firmware für verschiedene eingebette Systeme (Led-, Rollosteuerung)
+eingesetzt wird.

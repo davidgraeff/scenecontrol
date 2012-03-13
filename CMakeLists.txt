@@ -1,14 +1,9 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 PROJECT(roomcontrol_suite)
+
 SET(PRODUCTID ${PROJECT_NAME})
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-
-# set default build type
-IF (NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE release)
-  SET(CMAKE_CONFIGURATION_TYPES RelWithDebInfo release Debug)
-ENDIF (NOT CMAKE_BUILD_TYPE)
-
+INCLUDE(InstallMacros)
 
 # Distribution via cpack. Set variables
 INCLUDE(InstallRequiredSystemLibraries)
@@ -32,16 +27,10 @@ SET(CPACK_STRIP_FILES 1)
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
+SET(CPACK_PROJECT_WEBURL "http://davidgraeff.github.com/roomcontrol/")
 
-IF(WIN32 AND NOT UNIX)
-  SET(CPACK_NSIS_INSTALLED_ICON_NAME "${CMAKE_CURRENT_SOURCE_DIR}/clients/roomeditor/images\\\\app.ico")
-  SET(CPACK_NSIS_MUI_ICON "${CPACK_NSIS_INSTALLED_ICON_NAME}")
-  SET(CPACK_NSIS_MUI_UNIICON "${CPACK_NSIS_INSTALLED_ICON_NAME}")
-  SET(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
-  SET(CPACK_NSIS_HELP_LINK "http://davidgraeff.github.com/roomcontrol/")
-  SET(CPACK_NSIS_URL_INFO_ABOUT "http://davidgraeff.github.com/roomcontrol/")
-  SET(CPACK_NSIS_MODIFY_PATH OFF)
-ENDIF(WIN32 AND NOT UNIX)
+INCLUDE(nsis_installer)
+
 SET(CPACK_PACKAGE_EXECUTABLES "" CACHE INTERNAL "")
 
 set (ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -73,39 +62,16 @@ ELSE()
 	MESSAGE(STATUS "Exact version: ${LASTCOMMITDATE} ${COMMITHASH}")
 ENDIF()
 
-# prepare configuration file
-SET(ROOM_BASEPATH "${CMAKE_INSTALL_PREFIX}")
-SET(ROOM_COUCHDBPATH "${DATAPATH}/couchdb")
-SET(ROOM_CERTPATH "${DATAPATH}/cert")
-SET(ROOM_VERSION "${CPACK_PACKAGE_VERSION}")
-SET(ROOM_PATHNAME "${PRODUCTID}")
-SET(CONFIG_SERVER_LISTENPORT "3101" CACHE INT "Server Websocket Listenport")
-SET(CONFIG_SERVER_COUCHDB "http://localhost:5984/roomcontrol" CACHE STRING "CouchDB Server, Port and database")
-SET(CONFIG_SERVER_LOGTOCONSOLE TRUE CACHE BOOL "Server Log to Console")
-IF (CONFIG_SERVER_LOGTOCONSOLE)
-	SET(CONFIG_SERVER_LOGTOCONSOLE 1)
-ELSE()
-	SET(CONFIG_SERVER_LOGTOCONSOLE 0)
-ENDIF()
-SET(CONFIG_SERVER_LOGFILE "roomcontrolserver.log" CACHE STRING "Server Logfile. Set to empty for no file logging")
-SET(CONFIG_RESTART_ON_CLOSE TRUE CACHE BOOL "Server restart on close (prevent with --norestart as command line argument)")
-IF (CONFIG_RESTART_ON_CLOSE)
-	SET(CONFIG_RESTART_ON_CLOSE 1)
-ELSE()
-	SET(CONFIG_RESTART_ON_CLOSE 0)
-ENDIF()
-configure_file(config.h.in config.h @ONLY)
+INCLUDE(configfile)
 
-# Find Qt and Qxt (Json parsing, rpc)
-find_package(Qt4 4.7.0 COMPONENTS QtCore QtNetwork REQUIRED)
-#SET(QXT_USE_QXTCORE TRUE)
-#SET(QXT_USE_QXTGUI FALSE)
-#find_package(Qxt REQUIRED)
+# Find Qt
+find_package(Qt4 4.7.2 COMPONENTS QtCore QtNetwork REQUIRED)
 
 # add directories
 add_subdirectory(server)
 add_subdirectory(plugins)
 add_subdirectory(clients)
+add_subdirectory(tools/startonboot)
 
 # modify registry path after installation
 IF(WIN32)
