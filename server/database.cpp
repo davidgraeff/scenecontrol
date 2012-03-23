@@ -52,6 +52,7 @@ bool Database::connectToDatabase() {
             if (r->error() != QNetworkReply::NoError) {
                 // Database could not be created: no error recovery possible
                 qWarning() << "Database: Database not found and could not be created!";
+            	r->deleteLater();
                 return false;
             }
             r = get ( request );
@@ -60,17 +61,20 @@ bool Database::connectToDatabase() {
             if (r->error() != QNetworkReply::NoError) {
                 // Database created but could not be read: no error recovery possible
                 qWarning() << "Database: Successfull created database but can not read it out!";
+            	r->deleteLater();
                 return false;
             }
         } else if (r->error() != QNetworkReply::NoError) {
             // Network error: no error recovery possible
             qWarning() << "Database: Network error" << r->errorString();
+            r->deleteLater();
             return false;
         }
     }
 
     { // try to parse database information
         QByteArray rawdata = r->readAll();
+        r->deleteLater();
         QVariantMap data = JSON::parse ( rawdata ).toMap();
         if (data.isEmpty()) {
             // Response is not json: no error recovery possible
@@ -100,6 +104,7 @@ void Database::requestEvents(const QString& plugin_id)
     QEventLoop eventLoop;
     QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/events?key=\"%1\"#%1" ).arg ( plugin_id ) );
     QNetworkReply *r = get ( request );
+    r->deleteLater();
     connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
     eventLoop.exec();
     if (r->error() != QNetworkReply::NoError) {
@@ -133,6 +138,7 @@ void Database::requestEvents(const QString& plugin_id)
 
 void Database::replyEventsChange() {
     QNetworkReply *r = ( QNetworkReply* ) sender();
+    r->deleteLater();
     if ( r->error() != QNetworkReply::NoError ) {
         ++m_eventsChangeFailCounter;
         if (m_eventsChangeFailCounter > 5) {
@@ -171,12 +177,12 @@ void Database::replyEventsChange() {
         QNetworkRequest request ( setup::couchdbAbsoluteUrl(docid));
 
         QNetworkReply* r = get ( request );
+	r->deleteLater();
         QEventLoop eventLoop;
         connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
         eventLoop.exec();
 
         QVariantMap document = JSON::parse(r->readAll() ).toMap();
-
         if (!ServiceData::checkType(document, ServiceData::TypeEvent)) {
             qWarning() << "Event changed but is not of type event" << document;
             continue;
@@ -259,6 +265,7 @@ void Database::requestPluginConfiguration(const QString& pluginid)
     QNetworkRequest request ( setup::couchdbAbsoluteUrl("_design/_server/_view/settings?key=\"%1\"" ).arg(pluginid));
 
     QNetworkReply* r = get ( request );
+    r->deleteLater();
     QEventLoop eventLoop;
     connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
     eventLoop.exec();
@@ -286,13 +293,12 @@ void Database::requestPluginConfiguration(const QString& pluginid)
     } else {
         qWarning() << "Database:" << pluginid << "configuration fetch failed" << data;
     }
-
-    delete r;
 }
 
 void Database::replyPluginSettingsChange()
 {
     QNetworkReply *r = ( QNetworkReply* ) sender();
+    r->deleteLater();
     if ( r->error() != QNetworkReply::NoError ) {
         ++m_settingsChangeFailCounter;
         if (m_settingsChangeFailCounter > 5) {
@@ -300,7 +306,6 @@ void Database::replyPluginSettingsChange()
         } else {
             QTimer::singleShot(1000, this, SLOT(startChangeListenerSettings()));
         }
-        delete r;
         return;
     }
 
