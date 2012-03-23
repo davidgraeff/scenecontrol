@@ -9,67 +9,79 @@ Unterstützte Plattformen:
 - Windows ab Vista (Qt4;OpenSSL;Windows API: CryptProtectData, CryptUnprotectData, LogonUser)
 - Linux ab 2.6.22 (Qt4;OpenSSL;pam)
 
-Unter Linux können die Plugins als eigene Prozesse laufen und kommunizieren über dbus
-mit dem Serverprozess um eine höhere Ausfallsicherheit auch bei fehlerhaften Plugins
-zu gewährleisten.
-
 Mitgelieferte Plugins:
 ----------------------
-Anel sockets: Steuert Steckdosenleisten von der Firma anel (http://www.anel-elektronik.de/).
-Cardreader PCSC: Reagiert auf das Ein/Ausstecken von Karten bei PCSC Kompatiblen Kartenlesegeräten.
-Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
-Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
-MPD: Steuert den Music Player Daemon.
-Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
-Pulseaudio (linux only): Steuert Lautstärkekanäle des Pulseaudio daemons.
-RemoteSystem: Ermöglicht gewisse Steuerbefehle an alle Computer im selben Subnetzwerk, welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
-Roomcontrol_Leds: Steuert den, über ein RS232 Anschluss angebundenen, Atmega µController mit der in tools/firmware/leds programmierten Software um Leuchtdioden anzusteuern.
-Time: Bietet feste aber auch periodische Zeitereignisse an.
-WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.
-XBMC: Steuert das XBox Media Center.
+Generische Plugins:
+* Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
+* Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
+* Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
+* Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
+* Time: Bietet feste und periodische Zeitereignisse an.
+* WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.
+
+Softwareabhängige Plugins:
+* MPD: Steuert den Music Player Daemon.
+* XBMC: Steuert das XBox Media Center.
+* Pulseaudio (linux only): Steuert Lautstärkekanäle des Pulseaudio daemons.
+
+Hardwareabhängige Plugins:
+* Anel sockets: Steuert Steckdosenleisten von der Firma anel (http://www.anel-elektronik.de/).
+* Cardreader PCSC: Reagiert auf das Ein/Ausstecken von Karten bei PCSC Kompatiblen Kartenlesegeräten.
+* Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
+
+Plugins für mitgelieferte Tools:
+* RemoteSystem: Ermöglicht gewisse Steuerbefehle an alle Computer im selben Subnetzwerk, welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
+* Roomcontrol_Leds_serial: Steuert den, über ein RS232 Anschluss angebundenen, Atmega µController mit der in tools/firmware/leds programmierten Software um Leuchtdioden anzusteuern.
+* Roomcontrol_Leds_udp: Steuert den Atmega µController mit der in tools/firmware/leds programmierten Software um Leuchtdioden anzusteuern.
+* Roomcontrol_curtain: Steuert ein Rolle über ein  Atmega µController per udp.
 
 Architektur:
 ------------
-Es gibt den ausführenden Kern des Systems, im weiteren Server genannt.
+Kernprozess:
+Der ausführende Kernprozess "roomcontrolserver" wird im weiteren Server genannt.
+Der Server startet alle bekannten Pluginprozesse und ist für das Empfangen und Verteilen
+von Nachrichten zwischen Plugins und dem Server zuständig. Er baut zudem eine Verbindung zur Datenhaltung
+auf und fordert alle Ereignisdaten an und registriert diese bei den zuständigen Plugins. Sofern ein Ereignis
+entsprechend der Ereignisdaten eintritt, wird der Server informiert. Dieser lädt aus der Datenhaltung die mit dem
+Ereignisdaten verbundenen Profile und damit wiederum verbundene Bedingungsdaten und Aktionsdaten.
+Wenn alle Plugins, die betroffen sind, die Bedingungen anhand der Bedinungsdaten evaluiert haben und
+positive Rückmeldungen gemeldet haben, werden die Aktionsdaten an die zuständigen Plugins gesendet zur Ausführung.
 
-Webclients können sich über https mit dem Server verbinden. Es wird eine
+Über einen TCP Port i.d.R. Port 3101 können per JSON
+Kodierte Nachrichten an den Prozess abgesetzt werden um Pluginaktionen etwa direkt auszuführen oder Profile manuell
+zu starten.
+Der Server selber bietet keine Session/Sicherheitsverwaltung oder andere Steuerungsmöglichkeiten an,
+diese Funktionalitäten können mit zusätzlichen Proxy Prozessen abgedeckt werden.
+
+Websocketsproxy + SessionProxy:
+Über den Websocketsproxy können sich über https Wenclients mit dem Server verbinden. Es wird eine
 Authentifizierung gegenüber den auf dem Betriebssystem vorhandenen Benutzern
-durchgeführt. Zugriffsrechte werden durch Gruppenmitgliedschaften des
+durchgeführt, sofern auch der SessionProxy aktiv ist. Zugriffsrechte werden dann durch Gruppenmitgliedschaften des
 angegeben Benutzers geregelt.
 
-Es gibt Plugins, welche den Server um Funktionalität ergänzen und Webclients
-eigene Seiten zur Ansteuerung der Plugin Funktionen zur Verfügung stellen können.
+Plugins:
+Plugins sind eigene Prozesse, welche selbstständig eine Kommunikationsverbindung zum Server aufbauen müssen.
+Über QDataStream kodierte Nachrichten kann mit anderen Plugins oder dem Server kommuniziert werden.
+Plugins können Eigenschaften (properties) besitzen und auf Eigenschaftsänderungen des Servers oder anderer Plugins
+reagieren. 
 
-Plugins können Eigenschaften (properties) besitzen. Wenn ein Plugin Eigenschaften
-ändert, werden alle interessierten Plugins (Plugin<-->Plugin Kommunikation) und alle
-Webclients darüber informiert. Webclients können über Eigenschaften Modelle für MVC
-generieren. Eigenschaften können gegenüber Webclients über eingeschränkten Zugriff verfügen,
-dies wird über Gruppenmitgliedschaften des angegeben Benutzers geregelt.
+Datenspeicherung:
+Welches Ereignis, unter welchen Bedinungen welche Aktion auslöst wird in einer Datenbank vorgehalten. Für diesen
+Zweck wird die Dokumentenbasierte Datenbank MongoDB verwendet. Über MongoDB Werkzeuge kann der Datenbestand regelmäßig
+gesichert, redundant vorgehalten oder verfielfältigt werden.
+JSon ist das Speicherformat für Ereignisdaten, Bedingungsdaten, Aktionsdaten und Profilen.
 
-Plugins bieten desweiteren Ereignisse, Bedingungen und Aktionen an. Ein Ereignis kann das
-Eintreten eines gewissen Zeitpunktes sein, eine Bedingung könnte den aktuellen Steckdosenzustand meinen,
+Ereignisse, Bedingungen und Aktionen:
+Ein Ereignis kann das Eintreten eines gewissen Zeitpunktes sein,
+eine Bedingung könnte den aktuellen Steckdosenzustand meinen,
 eine Aktion löst eine Veränderung aus etwa das Ändern der Lichwerte von Leuchtdioden.
 
+Profile:
 Ereignisse, Bedingungen und Aktionen machen erst Sinn, sobald diese zusammengefasst werden können.
 Dies geschieht durch Profile (Collections). Sobald ein Ereignis in einem Profil eintritt,
 werden die Bedingungen geprüft und dann ggfs. die im Profil definierten Aktionen,
 evtl. mit eingestellter zeitlicher Verzögerung, ausgeführt.
 
-Einige Serverklassen registrieren sich ebenfalls als Plugins (etwa die Backups Klasse)
-und bieten ebenfalls Eigenschaften, Ereignisse, Bedingungen und Aktionen an.
-
-Welche Eigenschaften, Ereignisse, Bedingungen und Aktionen von einem Plugin definiert werden,
-ist in einer plugin.xml Datei dokumentiert, welche auch für die Verifikation von JSon Strings
-genutzt wird. JSon ist das Speicherformat für Ereignisse, Bedingungen, Aktionen und Profilen
-und wird zur Übertragung derselben und zusätzlich auch Ereignissen zu Webclients genutzt.
-
-Webclients werden nach dem Verbinden und Authentifizieren mit allen Objekten
-(Events, Conditions, Actions, Properties) synchronisiert und über das Eigenschaften
-System ist die ständige Konsistenz mit dem Server sichergestellt. Der Zielbrowser muss
-Server-send-events für das pushen von Eigenschaften unterstützen.
-
-Webclients können Sofortaktionen (immediately to-be-executed actions) auslösen. Etwa das Einschalten
-einer Steckdose. Sofortaktionen müssen vorher nicht als Aktionen im Server gespeichert worden sein.
 
 Anwendungsgebiete:
 ------------------
@@ -80,13 +92,18 @@ Anwendungsgebiete:
 
 Clients:
 --------
-Ein Webclient in Html5/CSS3/JS Technologie bedient Desktops und Smartphones mit Maus und Touchbedienung. Der Webclient ist
-auf neuere Webkit Browser mit WebSocket (Version hybi-10) Unterstützung (Apple iOS 4+, Android 3+, Chrome 14+, Firefox 7+, Opera 11+) ausgelegt.
+Es befinden sich in QML/qt4 geschriebene Clientprogramme im Ordner clients/.
 
 Benötigte Bibliotheken für den Server ohne Plugins:
----------------------------------------------------
+---------------------------------------------------#
+Kernprozess:
 Name          Ubuntu Paket          Beschreibung
 Qt4           libqt4-dev            Qt4 Framework
+
+SessionProxy:
+Name          Ubuntu Paket          Beschreibung
 PAM           libpam0g-dev          Benutzerauthentifizierung
-QJSon         libqjson0-dev         Qt Json Bibliothek
+
+Websocketsproxy:
+Name          Ubuntu Paket          Beschreibung
 libwebsockets ----                  Websocket Bibliothek  (http://git.warmcat.com/cgi-bin/cgit/libwebsockets/) / LGPL 2.1
