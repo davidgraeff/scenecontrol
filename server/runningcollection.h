@@ -35,7 +35,7 @@ class PluginCommunication;
 class RunningCollection: public QObject {
     Q_OBJECT
 public:
-    RunningCollection(const QList<QVariantMap>& actions, const QList<QVariantMap>& conditions, const QString& collectionid);
+    RunningCollection(const QString& collectionid, const QList< QVariantMap >& services);
     void start();
 	QString id() const;
 private:

@@ -1,23 +1,21 @@
 
 #include "paths.h"
 #include "config.h"
-#include <QDebug>
 #include "collectioncontroller.h"
-#include "database.h"
-#include <shared/pluginservicehelper.h>
-#include "plugincontroller.h"
-#include "pluginprocess.h"
 #include "socket.h"
 #include "runningcollection.h"
+#include "shared/pluginservicehelper.h"
+#include "shared/database.h"
+#include <QDebug>
 #define __FUNCTION__ __FUNCTION__
 
-static CollectionController* collectioncontroller_instance = 0;
+static CollectionController* ExecuteRequest_instance = 0;
 
 CollectionController* CollectionController::instance() {
-    if (!collectioncontroller_instance) {
-        collectioncontroller_instance = new CollectionController();
+    if (!ExecuteRequest_instance) {
+        ExecuteRequest_instance = new CollectionController();
     }
-    return collectioncontroller_instance;
+    return ExecuteRequest_instance;
 }
 
 CollectionController::CollectionController () {}
@@ -40,32 +38,6 @@ void CollectionController::requestExecutionByCollectionId ( const QString& colle
         Database::instance()->requestDataOfCollection(collectionid);
 }
 
-void CollectionController::requestExecution(const QVariantMap& data, int sessionid) {
-    if ( !ServiceData::checkType ( data, ServiceData::TypeExecution )) return;
-    // Special case: all properties are requested, handle this immediatelly.
-    if (ServiceData::pluginid(data)==QLatin1String("server") && sessionid != -1) {
-        if (ServiceData::isMethod(data, "requestAllProperties"))
-            PluginController::instance()->requestAllProperties(sessionid);
-        else if (ServiceData::isMethod(data, "runcollection"))
-            requestExecutionByCollectionId(ServiceData::collectionid(data));
-        else if (ServiceData::isMethod(data, "version")) {
-            ServiceData s = ServiceData::createNotification("version");
-            s.setData("version", QLatin1String(ABOUT_VERSION));
-            s.setPluginid("server");
-            Socket::instance()->propagateProperty(s.getData(), sessionid);
-        }
-        return;
-    }
-    // Look for a plugin that fits "data"
-    PluginCommunication* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( data ) );
-    if ( !plugin ) {
-        qWarning() <<"Cannot execute service. No plugin found:"<<data << sessionid;
-        return;
-    }
-
-    plugin->callQtSlot ( data, QByteArray(), sessionid );
-}
-
 void CollectionController::runningCollectionFinished(const QString& collectionid)
 {
     RunningCollection* run = m_runningCollections.take(collectionid);
@@ -79,10 +51,10 @@ void CollectionController::runningCollectionFinished(const QString& collectionid
     updateListOfRunningCollections();
 }
 
-void CollectionController::dataOfCollection(const QList< QVariantMap >& actions, const QList< QVariantMap >& conditions, const QString& collectionid)
+void CollectionController::dataOfCollection(const QString& collectionid, const QList< QVariantMap >& services)
 {
     delete m_runningCollections.take(collectionid);
-    RunningCollection* run = new RunningCollection(actions, conditions, collectionid);
+    RunningCollection* run = new RunningCollection(collectionid, services);
     connect(run, SIGNAL(runningCollectionFinished(QString)), SLOT(runningCollectionFinished(QString)));
     m_runningCollections.insert(collectionid, run);
     updateListOfRunningCollections();

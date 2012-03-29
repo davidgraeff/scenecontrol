@@ -22,7 +22,7 @@
 #include "plugincontroller.h"
 #include "socket.h"
 #include "collectioncontroller.h"
-#include "database.h"
+#include "shared/database.h"
 #include "paths.h"
 
 #include <stdio.h>
@@ -32,6 +32,7 @@
 #include <QProcess>
 #include <QSettings>
 #include <QDebug>
+#include "executerequest.h"
 
 bool exitByConsoleCommand = false;
 
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
                "--no-autoload-plugins: Only start the server and no plugin processes\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
-               ROOM_SERVICENAME, ABOUT_VERSION, argv[0]);
+               ABOUT_SERVICENAME, ABOUT_VERSION, argv[0]);
         return 0;
     }
     if (cmdargs.contains("--version")) {
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
 
     // Qt Application; choose language codec
     QCoreApplication qapp(argc, argv);
-    qapp.setApplicationName(QLatin1String(ROOM_SERVICENAME));
+    qapp.setApplicationName(QLatin1String(ABOUT_SERVICENAME));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
     qapp.setOrganizationName(QLatin1String(ABOUT_ORGANIZATIONID));
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
@@ -108,15 +109,18 @@ int main(int argc, char *argv[])
     // PluginController: Start plugin processes and set up sockets for communication
     PluginController* plugins = PluginController::instance();
 
+	// ExecuteRequest: SIngleton to execute requests
+	ExecuteRequest* executeRequests = ExecuteRequest::instance();
+	
     // connect objects
-    plugins->connect(database, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
-    plugins->connect(database, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
-    plugins->connect(database, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(settings(QString,QString,QVariantMap)));
-    collectioncontroller->connect(socket, SIGNAL(requestExecution(QVariantMap,int)), collectioncontroller, SLOT(requestExecution(QVariantMap,int)));
-    collectioncontroller->connect(database, SIGNAL(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)), collectioncontroller, SLOT(dataOfCollection(QList<QVariantMap>,QList<QVariantMap>,QString)));
+    QObject::connect(database, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
+    QObject::connect(database, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
+    QObject::connect(database, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(settings(QString,QString,QVariantMap)));
+    QObject::connect(database, SIGNAL(dataOfCollection(QString,QList<QVariantMap>)), collectioncontroller, SLOT(dataOfCollection(QString,QList<QVariantMap>)));
+    QObject::connect(socket, SIGNAL(requestExecution(QVariantMap,int)), executeRequests, SLOT(requestExecution(QVariantMap,int)));
 
     int exitcode = 0;
-    exitcode |= database->connectToDatabase()?0:-2;
+    exitcode |= database->connectToDatabase(QLatin1String(ROOM_DATABASE))?0:-2;
 
     // Export json documents from database if requested
     {

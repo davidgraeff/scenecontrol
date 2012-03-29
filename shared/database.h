@@ -32,17 +32,24 @@
 
 class Database: public QNetworkAccessManager {
     Q_OBJECT
+    Q_PROPERTY(int state READ state NOTIFY stateChanged)
 public:
     /**
      * Database is a singleton object
      */
     static Database* instance();
     virtual ~Database();
+	QString databaseAddress() const;
+public Q_SLOTS:
     /**
      * Connect to database (synchronous)
      * Return true if the connection could be established
      */
-    bool connectToDatabase();
+    bool connectToDatabase(const QString& serverHostname);
+	/**
+	 * Remove all listeners and disconnect from database
+	 */
+	void disconnectFromHost();
     /**
      * Request all events (synchronous)
      * Event_add and Event_remove signals are triggered in reaction
@@ -51,7 +58,7 @@ public:
     /**
      * Install missing json documents for the given plugin (synchronous)
      */
-    bool verifyPluginData(const QString& pluginid);
+    bool verifyPluginData(const QString& pluginid, const QString& databaseImportPath);
     /**
      * Request all conditions and actions of a collection (asynchronous)
      * dataOfCollection signal is triggered in reaction
@@ -75,7 +82,32 @@ public:
      * Import all json documents from the given path recursively (synchronous)
      */
     void importFromJSON(const QString& path);
-public Q_SLOTS:
+   /**
+	 * Start listening to changed documents
+	 * If the database does not respond 5 times in sequal the application loop will be quit.
+     * doc_changed and doc_removed signals are triggered in reaction if a change occured
+     */
+    void startChangeListener();
+    /**
+     * Request all collections (asynchronous)
+     * doc_changed signal is triggered in reaction
+     */
+    void requestCollections();
+    /**
+     * Request all schemas (asynchronous)
+     * doc_changed signal is triggered in reaction
+     */
+    void requestSchemas();
+	/// Remove a document
+    void requestRemove(const QString& id, QString rev);
+	/// Will generate a new document with a new id
+	void requestAdd(const QVariantMap& data, QString docid=QString());
+	/**
+	 * Change document given by data.
+	 * data have to contain a field "_id" && "_rev"
+	 * if fetchNewestRevision is set, the document will be requested and the newest rev will be used
+	 */
+	void requestChange(const QVariantMap& data, bool fetchNewestRevision=false);
     /**
 	 * Start listening to configuration changes (change+remove)
 	 * If the database does not respond 5 times in sequal the application loop will be quit.
@@ -90,6 +122,9 @@ public Q_SLOTS:
     void startChangeListenerEvents();
 private:
     Database ();
+	QString couchdbAbsoluteUrl(const QString& relativeUrl = QString());
+    QString m_serveraddress;
+	
     int m_last_changes_seq_nr;
     /// Keep track of the failures. If > 5 exit application because database is down.
     int m_settingsChangeFailCounter;
@@ -97,6 +132,11 @@ private:
     int m_eventsChangeFailCounter;
     /// Check for the return value of the NetworkReply. Output error message+msg if an error occured.
     bool checkFailure(QNetworkReply* r, const QByteArray& msg=QByteArray());
+	/// Reply object for the listener
+	QNetworkReply* m_listenerReply;
+	/// current state
+	int m_state;
+	int state() {return m_state;}
 
 private Q_SLOTS:
     /// Called if events on the database changed. Fetch all those events
@@ -110,6 +150,11 @@ private Q_SLOTS:
      * dataOfCollection signal is triggered in reaction
 	 */
     void replyDataOfCollection();
+    /** Called if a document in the database changed
+	 * Fetch the new document. doc_changed and doc_removed signals are triggered in reaction
+	 */
+    void replyChange();
+    void replyView();
 Q_SIGNALS:
     /// A configuration either changed or was actively requested
     void settings(const QString& pluginid, const QString& key, const QVariantMap& data);
@@ -119,7 +164,11 @@ Q_SIGNALS:
 	/// has been called before
     void Event_remove(const QString& id);
 	/// dataOfCollection is triggered if requestDataOfCollection has been called before
-    void dataOfCollection ( const QList<QVariantMap>& actions, const QList<QVariantMap>& conditions, const QString& collectionid);
-    /// Database connection is ready
-    void ready();
+    void dataOfCollection (const QString& collectionid, const QList<QVariantMap>& services);
+	/// A document changed: only triggered if startChangeListener has been called
+    void doc_changed(const QString& id, const QVariantMap& data);
+	/// A document has been removed: only triggered if startChangeListener has been called
+    void doc_removed(const QString& id);
+	/// Connection state changed
+	void stateChanged();
 };

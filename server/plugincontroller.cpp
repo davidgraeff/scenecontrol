@@ -5,9 +5,9 @@
 #include <QUuid>
 #include <QDebug>
 #include "paths.h"
-#include <shared/pluginservicehelper.h>
 #include "collectioncontroller.h"
-#include "database.h"
+#include "shared/pluginservicehelper.h"
+#include "shared/database.h"
 #include "plugincontroller.h"
 #include "socket.h"
 #include "pluginprocess.h"

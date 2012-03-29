@@ -22,6 +22,12 @@ QDir pluginDir() {
     return dir;
 }
 
+QDir baseDir() {
+    QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
+    return dir;
+}
+
+
 QString certificateFile(const QString& file) {
     QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
     dir.cd(QLatin1String(ROOM_CERTPATH));
@@ -30,23 +36,6 @@ QString certificateFile(const QString& file) {
 
 QString certificateFile(const char* file) {
     return certificateFile(QString::fromUtf8(file));
-}
-
-QDir pluginCouchDBDir() {
-    QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
-    if (!dir.cd(QLatin1String(ROOM_COUCHDBPATH)))
-        qWarning() << "pluginCouchDBDir path change failed";
-    return dir;
-}
-
-QString couchdbAbsoluteUrl(const char* relativeUrl) {
-    QString basepath = settings.value(QLatin1String("couchdb"), QLatin1String(ROOM_COUCHDB)).toString();
-    return basepath + QLatin1String("/") + QString::fromUtf8 ( relativeUrl );
-}
-
-QString couchdbAbsoluteUrl(const QString& relativeUrl) {
-    QString basepath = settings.value(QLatin1String("couchdb"), QLatin1String(ROOM_COUCHDB)).toString();
-    return basepath + QLatin1String("/") + relativeUrl;
 }
 
 };

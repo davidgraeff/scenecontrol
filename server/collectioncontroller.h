@@ -60,12 +60,6 @@ public Q_SLOTS:
 	 */
     void requestExecutionByCollectionId ( const QString& collectionid );
 	/**
-	 * Request execution of the document given by data. If no session id is known use -1.
-	 * This slot is used to called by the network controller where a session id is always
-	 * available.
-	 */
-    void requestExecution ( const QVariantMap& data, int sessionid );
-	/**
 	 * runningCollectionFinished is called by a RunningCollection after all actions have
 	 * been executed. The collection will be taken out of m_runningCollections and cached
 	 * as appropriate.
@@ -76,5 +70,5 @@ public Q_SLOTS:
 	 * dataOfCollection is used to be called by the database and is an indirect reaction to
 	 * a call to requestExecutionByCollectionId before.
 	 */
-    void dataOfCollection ( const QList<QVariantMap>& actions, const QList<QVariantMap>& conditions, const QString& collectionid);
+    void dataOfCollection (const QString& collectionid, const QList<QVariantMap>& services);
 };

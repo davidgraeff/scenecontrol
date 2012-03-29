@@ -1,12 +1,15 @@
 #include "pluginprocess.h"
-#include <shared/pluginservicehelper.h>
 #include "plugincontroller.h"
-#include "database.h"
+#include "shared/pluginservicehelper.h"
+#include "shared/database.h"
 #include "socket.h"
 #include "collectioncontroller.h"
 #include <QElapsedTimer>
 #include <QThread>
 #include <QTimer>
+#include <QDir>
+#include "paths.h"
+#include "config.h"
 
 PluginCommunication::PluginCommunication(PluginController* controller, QLocalSocket* socket) : m_controller(controller) {
     m_pluginCommunication=socket;
@@ -54,7 +57,12 @@ void PluginCommunication::readyRead()
             m_controller->addPlugin(id, this);
             // request configuration
             initialize();
-            Database::instance()->verifyPluginData(id);
+
+            QDir dir(setup::baseDir());
+            if (!dir.cd(QLatin1String(ROOM_DATABASEIMPORTPATH)))
+                qWarning() << "Server: Database initial import path not found!";
+            else
+                Database::instance()->verifyPluginData(id, dir.absolutePath());
             Database::instance()->requestPluginConfiguration(id);
             Database::instance()->requestEvents(id);
         } else if (method == "methodresponse") {
