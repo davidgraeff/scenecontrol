@@ -47,6 +47,10 @@ void PluginCommunication::readyRead()
         const QByteArray method = ServiceData::method(variantdata);
         //qDebug() << "Data from" << id << variantdata;
         if (method == "pluginid") {
+			if (id.size()) {
+				qWarning() << "Server: Plugin did already send its id!";
+				return;
+			}
             id = ServiceData::pluginid(variantdata);
             if (id.isEmpty()) {
                 qWarning() << "Server: Plugin did not send pluginid!";
@@ -55,16 +59,12 @@ void PluginCommunication::readyRead()
             }
             // Add to normal plugins
             m_controller->addPlugin(id, this);
-            // request configuration
+			// initialize plugin
             initialize();
-
-            QDir dir(setup::baseDir());
-            if (!dir.cd(QLatin1String(ROOM_DATABASEIMPORTPATH)))
-                qWarning() << "Server: Database initial import path not found!";
-            else
-                Database::instance()->verifyPluginData(id, dir.absolutePath());
-            Database::instance()->requestPluginConfiguration(id);
-            Database::instance()->requestEvents(id);
+            // if the state of the database changed, try to (re)fetch all relevant documents
+            connect(Database::instance(), SIGNAL(stateChanged()), SLOT(databaseStateChanged()));
+            // fetch all relevant documents now
+            databaseStateChanged();
         } else if (method == "methodresponse") {
             emit qtSlotResponse(variantdata.value(QLatin1String("response_")),
                                 variantdata.value(QLatin1String("responseid_")).toByteArray(), id);
@@ -205,6 +205,24 @@ bool PluginCommunication::writeToPlugin(const QVariantMap& data) {
     return true;
 }
 
+QLocalSocket* PluginCommunication::getSocket() {
+    return m_pluginCommunication;
+}
+
+void PluginCommunication::databaseStateChanged() {
+	Database* b = Database::instance();
+	if (b->state()==Database::ConnectedState) {
+		QDir dir(setup::baseDir());
+		if (!dir.cd(QLatin1String(ROOM_DATABASEIMPORTPATH)))
+			qWarning() << "Server: Database initial import path not found!";
+		else
+			b->verifyPluginData(id, dir.absolutePath());
+		b->requestPluginConfiguration(id);
+		b->requestEvents(id);
+	} else if (b->state()==Database::DisconnectedState) {
+		clear();
+	}
+}
 
 
 
@@ -250,7 +268,4 @@ void PluginProcess::startTimeout() {
         m_pluginProcess.waitForFinished();
     }
     m_controller->removeProcess(this);
-}
-QLocalSocket* PluginCommunication::getSocket() {
-    return m_pluginCommunication;
 }

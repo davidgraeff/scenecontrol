@@ -29,6 +29,7 @@
 #include <QNetworkAccessManager>
 #include <QVariantMap>
 #include <QNetworkReply>
+#include <QTimer>
 
 class Database: public QNetworkAccessManager {
     Q_OBJECT
@@ -40,12 +41,25 @@ public:
     static Database* instance();
     virtual ~Database();
 	QString databaseAddress() const;
+	enum ConnectStateEnum {
+		DisconnectedState = 0,
+		ConnectingState = 1,
+		ConnectedState = 2,
+		ConnectedButNotInialized = 3
+	};
+	ConnectStateEnum state() {return m_state;}
+
 public Q_SLOTS:
     /**
      * Connect to database (synchronous)
      * Return true if the connection could be established
      */
-    bool connectToDatabase(const QString& serverHostname);
+    ConnectStateEnum connectToDatabase(const QString& serverHostname, bool reconnectOnFailure);
+	/**
+	 * Initialize database: Create the database and install the minimal set of necessary documents
+	 */
+	ConnectStateEnum initalizeDatabase();
+	
 	/**
 	 * Remove all listeners and disconnect from database
 	 */
@@ -135,10 +149,12 @@ private:
 	/// Reply object for the listener
 	QNetworkReply* m_listenerReply;
 	/// current state
-	int m_state;
-	int state() {return m_state;}
-
+	ConnectStateEnum m_state;
+    bool m_reconnectOnFailure;
+	void changeState(ConnectStateEnum newstate);
+	QTimer m_reconnectTimer;
 private Q_SLOTS:
+	ConnectStateEnum reconnectToDatabase();
     /// Called if events on the database changed. Fetch all those events
     void replyEventsChange();
     /// Called if plugin configuration in the database changed.

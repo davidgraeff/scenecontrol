@@ -35,8 +35,10 @@ void ExecuteRequest::requestExecution(const QVariantMap& data, int sessionid) {
         else if (ServiceData::isMethod(data, "runcollection"))
             CollectionController::instance()->requestExecutionByCollectionId(ServiceData::collectionid(data));
         else if (ServiceData::isMethod(data, "database")) {
+			Database* b = Database::instance();
             ServiceData s = ServiceData::createNotification("database");
-            s.setData("database", Database::instance()->databaseAddress());
+            s.setData("database", b->databaseAddress());
+			s.setData("state", b->state());
             s.setPluginid("server");
             Socket::instance()->propagateProperty(s.getData(), sessionid);
 		} else if (ServiceData::isMethod(data, "version")) {

@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
     signal(SIGTERM, catch_int);
 
     // Qt Application; choose language codec
+    int exitcode = 0;
     QCoreApplication qapp(argc, argv);
     qapp.setApplicationName(QLatin1String(ABOUT_SERVICENAME));
     qapp.setApplicationVersion(QLatin1String(ABOUT_VERSION));
@@ -109,7 +110,7 @@ int main(int argc, char *argv[])
     // PluginController: Start plugin processes and set up sockets for communication
     PluginController* plugins = PluginController::instance();
 
-	// ExecuteRequest: SIngleton to execute requests
+	// ExecuteRequest: Singleton to execute requests
 	ExecuteRequest* executeRequests = ExecuteRequest::instance();
 	
     // connect objects
@@ -119,33 +120,30 @@ int main(int argc, char *argv[])
     QObject::connect(database, SIGNAL(dataOfCollection(QString,QList<QVariantMap>)), collectioncontroller, SLOT(dataOfCollection(QString,QList<QVariantMap>)));
     QObject::connect(socket, SIGNAL(requestExecution(QVariantMap,int)), executeRequests, SLOT(requestExecution(QVariantMap,int)));
 
-    int exitcode = 0;
-    exitcode |= database->connectToDatabase(QLatin1String(ROOM_DATABASE))?0:-2;
+	// connect to the database
+    database->connectToDatabase(QLatin1String(ROOM_DATABASE), true);
 
-    // Export json documents from database if requested
-    {
-        int index = cmdargs.indexOf("--export");
-        if (index!=-1) {
-            QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
-            if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
-                path = QDir::currentPath();
-            database->exportAsJSON(path);
-        }
-    }
-
-    // Import json documents from database if requested
-    {
-        int index = cmdargs.indexOf("--import");
-        if (index!=-1) {
-            QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
-            if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
-                path = QDir::currentPath();
-            database->importFromJSON(path);
-        }
-    }
-    
-    // Start event loop (if --no-event-loop is not set)
-    if (!exitcode && !cmdargs.contains("--no-event-loop")) {
+	if (cmdargs.contains("--export")) { // Export json documents from database
+		if (database->state() != Database::ConnectedState) {
+			qWarning() << "Server: Cannot export. No connection to the database!";
+		} else {
+			int index = cmdargs.indexOf("--export");
+			QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
+			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
+				path = QDir::currentPath();
+			database->exportAsJSON(path);
+		}
+	} else if (cmdargs.contains("--import")) { // Import json documents from database
+		if (database->state() != Database::ConnectedState) {
+			qWarning() << "Server: Cannot import. No connection to the database!";
+		} else {
+			int index = cmdargs.indexOf("--import");
+			QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
+			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
+				path = QDir::currentPath();
+			database->importFromJSON(path);
+		}
+	} else if (!cmdargs.contains("--no-event-loop")) { // Start event loop
         // Start plugin processes
         if (!cmdargs.contains("--no-autoload-plugins"))
             plugins->startplugins();

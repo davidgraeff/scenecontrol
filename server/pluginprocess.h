@@ -78,6 +78,8 @@ private Q_SLOTS:
 	 * processes of PluginController
 	 */
     void startTimeout();
+public Q_SLOTS:
+	void databaseStateChanged();
 Q_SIGNALS:
     void qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid);
 };
