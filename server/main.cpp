@@ -54,10 +54,9 @@ int main(int argc, char *argv[])
     // help text
     if (cmdargs.contains("--help")) {
         printf("%s - %s\n%s [CMDs]\n"
-               "--no-restart: Do not restart after exit\n"
-               "--no-event-loop: Shutdown after initialisation\n"
                "--export [PATH]: Export all documents from the database and store them in PATH or the working directory\n"
                "--import [PATH]: Import all documents from PATH or the working directory and store them in the database\n"
+               "--no-event-loop: Shutdown after initialisation\n"
                "--no-autoload-plugins: Only start the server and no plugin processes\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
@@ -155,35 +154,13 @@ int main(int argc, char *argv[])
 
     qDebug() << "Shutdown...";
     delete socket;
+    delete database;
     delete collectioncontroller;
     delete plugins;
-    delete database;
+	delete executeRequests;
 
     // close log file. only console log is possible from here on
     logclose();
-
-    // restart program
-    if (ROOM_RESTART_ON_CLOSE) {
-        if (exitByConsoleCommand) {
-            qDebug() << "Shutdown: Console shutdown. No restart allowed!";
-        } else if (cmdargs.contains("--no-restart")) {
-            qDebug() << "Shutdown: Start another instance not allowed!";
-        } else if (exitcode == 0) {
-            qDebug() << "Shutdown: Start another instance";
-            int retry = 0;
-            for (int i=0;i<argc;++i) {
-                QString arg = QString::fromAscii(argv[i]);
-                if (arg.startsWith(QLatin1String("--restart-try=")))
-					retry = arg.mid(strlen("--restart-try=")).toInt();
-            }
-            if (retry > 3) {
-				qWarning() << "Retry maximum reached";
-				return exitcode;
-            }
-            QString cmd = QString::fromAscii(argv[0]) + QLatin1String(" --restart-try=") + QString::number(retry);
-            QProcess::startDetached(cmd);
-        }
-    }
 
     return exitcode;
 }
