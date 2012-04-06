@@ -1,0 +1,12 @@
+This project is intended to be an alternate build system for MongoDB c++ client database
+
+This will clone the mongo respoistory from github. Will patch it for cmake build on linux and windows. 
+
+Other dependencies include 
+	boost development
+	libpcre  
+
+Copyright Kitware Inc. 
+License BSD
+
+

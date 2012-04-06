@@ -64,10 +64,14 @@ ENDIF()
 
 INCLUDE(configfile)
 
-# Find Qt
+# Find Qt and boost for the mongodb c++ client api
 find_package(Qt4 4.7.2 COMPONENTS QtCore QtNetwork REQUIRED)
+find_package(Boost COMPONENTS system thread signals) 
+link_directories ( ${Boost_LIBRARY_DIRS} )
+include_directories ( ${Boost_INCLUDE_DIRS} )
 
 # add directories
+add_subdirectory(shared/mongoclient)
 add_subdirectory(server)
 add_subdirectory(plugins)
 add_subdirectory(clients)

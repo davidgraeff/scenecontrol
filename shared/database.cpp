@@ -15,6 +15,7 @@
 #include <QHostInfo>
 #include <shared/pluginservicehelper.h>
 #include <shared/json.h>
+#include "mongo/client/dbclient.h"
 #define __FUNCTION__ __FUNCTION__
 
 static Database* databaseInstance = 0;
@@ -65,8 +66,8 @@ QString Database::couchdbAbsoluteUrl(const QString &relativeUrl)
 Database::ConnectStateEnum Database::connectToDatabase(const QString& serverHostname, bool reconnectOnFailure) {
     m_serveraddress = serverHostname;
     m_serveraddress = m_serveraddress.replace(QLatin1String("localhost"), QHostInfo::localHostName());
-    changeState(ConnectingState);
     m_reconnectOnFailure = reconnectOnFailure;
+    changeState(ConnectingState);
     return reconnectToDatabase();
 }
 

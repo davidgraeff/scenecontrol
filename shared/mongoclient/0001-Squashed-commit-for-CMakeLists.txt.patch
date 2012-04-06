@@ -1,0 +1,119 @@
+From 10f3f56acbac79b7ad5333a87e2159efef404877 Mon Sep 17 00:00:00 2001
+From: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date: Wed, 20 Apr 2011 19:18:54 -0400
+Subject: [PATCH] Squashed commit for CMakeLists.txt:
+
+commit 324ace0d4e270cfbe40dfb8355f0c4c6c1a05cc8
+Merge: f0cf6d2 960515d
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 19:13:45 2011 -0400
+
+    Merge branch 'dj_patch' of github.com:dhandeo/mongo into dj_patch
+
+    Conflicts:
+    	CMakeLists.txt
+
+commit 960515d3f75cde05c89a45e9ef8eab90b97df575
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 19:04:17 2011 -0400
+
+    Modified for 32 bit windows
+    and failing there
+
+commit f0cf6d2f41914c3c272afa2c20d5abfb04339729
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 16:46:34 2011 -0400
+
+    Fixed from linux
+
+commit b0eb990fd43b0b48ccc1762b0591d0cddaa6d14a
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 15:04:39 2011 -0400
+
+    Fix for message
+
+commit a9643d5f8e720690c60586bcd9a9d2eec4b5439a
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 14:58:50 2011 -0400
+
+    Added code for windows build
+
+commit 2a85767b425f150fca7626c128628a8b767a4bd0
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 13:38:55 2011 -0400
+
+    Fixed typo causing error
+
+commit e876ca92310d484e74693d82e2fff22ed280cd47
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 12:55:39 2011 -0400
+
+    Cleaned up the source code
+
+commit f820f77bbdf7f731e672879c03df3d448b645975
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 12:53:54 2011 -0400
+
+    Working static build on linux
+
+commit 99142dbced865d1f4c6247978f5938dec0ec9b9f
+Author: Dhanannjay Deo <dhanannjay.deo@kitware.com>
+Date:   Wed Apr 20 12:31:09 2011 -0400
+
+    Adding a cmakelists file for client
+---
+ CMakeLists.txt   |   42 ++++++++++++++++++++++++++++++++++++++++++
+ util/message.cpp |    2 +-
+ 2 files changed, 43 insertions(+), 1 deletions(-)
+ create mode 100644 CMakeLists.txt
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..da427fc
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,42 @@
++cmake_minimum_required(VERSION 2.8.4)
++
++#Find boost libraries
++find_path(BOOST_INCLUDE_DIRECTORIES
++	NAMES boost/any.hpp
++	PATHS
++	 	# Add your favorite boost location here
++		c:/boost
++		c:/boost/include
++		"c:/Program Files/boost"
++		"c:/Program Files/boost/include"
++		NO_DEFAULT_PATH
++	)
++
++INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/mongo/ ${CMAKE_CURRENT_SOURCE_DIR}/src/)
++INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
++
++if(WIN32)
++	INCLUDE_DIRECTORIES("${BOOST_INCLUDE_DIRECTORIES}")
++	if(CMAKE_CL_64)
++		LINK_DIRECTORIES("${BOOST_INCLUDE_DIRECTORIES}/lib64")
++	else(CMAKE_CL_64)
++		LINK_DIRECTORIES("${BOOST_INCLUDE_DIRECTORIES}/lib")
++	endif(CMAKE_CL_64)
++	
++    	ADD_DEFINITIONS("/DUNICODE /D_UNICODE")
++endif(WIN32)
++
++INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/pcre-7.4")
++
++ADD_LIBRARY(mongoclient STATIC
++	# single source file 
++	${CMAKE_CURRENT_SOURCE_DIR}/src/mongo/client/mongo_client_lib.cpp
++	)
++
++if(WIN32)
++    TARGET_LINK_LIBRARIES(mongoclient
++      ws2_32.lib
++      psapi.lib
++      )
++endif(WIN32)
++
+1.7.1
+
