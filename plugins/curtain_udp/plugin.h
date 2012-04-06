@@ -44,19 +44,31 @@ private:
     void curtainChanged(int sessionid=-1);
     int m_curtainvalue;
     int m_curtainmax;
-    int m_curtainButtons;
+    int m_curtainState;
     // udp
     int m_sendPort;
     QUdpSocket *m_socket;
     int m_connectTime;
     QTimer m_connectTimer;
+    enum udpcurtain_packet_command {
+        udpcurtain_cmd_stop = 250,
+        udpcurtain_cmd_start_direction_calibration = 251,
+        udpcurtain_cmd_start_direction_calibration_inverted = 252,
+        udpcurtain_cmd_direction_ok = 253,
+        udpcurtain_cmd_limitsensor_calibration = 254,
+        udpcurtain_cmd_request_data = 255
+    };
 private Q_SLOTS:
     // LIGHTS //
     void readyRead();
     void resendConnectSequence();
 public Q_SLOTS:
     void setValue ( int value );
-    void sync();
+    void limitsensor_calibration();
+	void direction_ok();
+	void start_direction_calibration();
+	void start_direction_calibration_inverted();
+	void stop();
     void setRelative ( int value );
     int getValue() const;
     int getMax() const;

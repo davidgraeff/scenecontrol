@@ -21,6 +21,34 @@
 #include "plugin.h"
 #include <QCoreApplication>
 
+enum stateenum {
+    // idle
+    IdleState,
+    // moving
+    FastDownState,
+    UpState,
+    FastUpState,
+    // calibration
+    NeedDirectionCalibrationState,
+    RotarySensorNotWorkingState,
+    CalibrateUpPositionState,
+	UpPositionNotFoundState,
+};
+
+const char* translateStateEnum(stateenum i) {
+	switch (i) {
+		case IdleState: return "IdleState";
+		case FastDownState: return "FastDownState";
+		case UpState: return "UpState";
+		case FastUpState: return "FastUpState";
+		case NeedDirectionCalibrationState: return "NeedDirectionCalibrationState";
+		case RotarySensorNotWorkingState: return "RotarySensorNotWorkingState";
+		case CalibrateUpPositionState: return "CalibrateUpPositionState";
+		case UpPositionNotFoundState: return "UpPositionNotFoundState";
+		default: return "";
+	}
+}
+
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
     plugin p;
@@ -41,7 +69,7 @@ void plugin::clear() {
     m_connectTimer.stop();
     m_curtainvalue = -1;
     m_curtainmax = -1;
-    m_curtainButtons = -1;
+    m_curtainState = -1;
     curtainChanged();
 }
 
@@ -68,7 +96,10 @@ void plugin::curtainChanged(int sessionid) {
     ServiceData sc = ServiceData::createNotification("curtain.value");
     if (m_curtainvalue != -1) sc.setData("value", m_curtainvalue);
     if (m_curtainmax != -1) sc.setData("max", m_curtainmax);
-    if (m_curtainButtons != -1) sc.setData("buttons", m_curtainButtons);
+    if (m_curtainState != -1) {
+		sc.setData("state", m_curtainState);
+		sc.setData("statetext", translateStateEnum((stateenum)m_curtainState));
+	}
     changeProperty(sc.getData(), sessionid);
 }
 
@@ -82,8 +113,32 @@ int plugin::getMax() const
 }
 
 
-void plugin::sync () {
-    uint8_t data = 254;
+void plugin::limitsensor_calibration () {
+    uint8_t data = udpcurtain_cmd_limitsensor_calibration;
+    m_socket->write ( (char*)&data, sizeof ( data ) );
+}
+
+void plugin::direction_ok()
+{
+    uint8_t data = udpcurtain_cmd_direction_ok;
+    m_socket->write ( (char*)&data, sizeof ( data ) );
+}
+
+void plugin::start_direction_calibration()
+{
+    uint8_t data = udpcurtain_cmd_start_direction_calibration;
+    m_socket->write ( (char*)&data, sizeof ( data ) );
+}
+
+void plugin::start_direction_calibration_inverted()
+{
+    uint8_t data = udpcurtain_cmd_start_direction_calibration_inverted;
+    m_socket->write ( (char*)&data, sizeof ( data ) );
+}
+
+void plugin::stop()
+{
+    uint8_t data = udpcurtain_cmd_stop;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
@@ -113,7 +168,7 @@ void plugin::readyRead() {
             if (bytes.startsWith("curtain"))  {
                 m_curtainvalue = bytes[7];
                 m_curtainmax = bytes[8];
-		m_curtainButtons = bytes[9];
+                m_curtainState = bytes[9];
                 curtainChanged();
                 bytes = bytes.mid(10);
             } else {
@@ -142,7 +197,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
 
 void plugin::resendConnectSequence() {
     // request all channel values
-    uint8_t data = 255;
+    uint8_t data = udpcurtain_cmd_request_data;
     m_socket->write ( (char*)&data, sizeof ( data ) );
     m_socket->flush();
     m_connectTime *= 2;
