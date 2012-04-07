@@ -57,7 +57,7 @@ Working Directory=file:///home/david/Entwicklung/build/roomcontrol/clients/colle
 isExecutable=false
 
 [MakeBuilder]
-Default Make Environment Profile=0
+Default Make Environment Profile=
 Install As Root=true
 Number Of Jobs=4
 Su Command=1

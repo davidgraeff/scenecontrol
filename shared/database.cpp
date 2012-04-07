@@ -13,9 +13,9 @@
 #include <QStringList>
 #include <QDir>
 #include <QHostInfo>
+#include <err.h>
 #include <shared/pluginservicehelper.h>
 #include <shared/json.h>
-#include "mongo/client/dbclient.h"
 #define __FUNCTION__ __FUNCTION__
 
 static Database* databaseInstance = 0;
@@ -72,6 +72,13 @@ Database::ConnectStateEnum Database::connectToDatabase(const QString& serverHost
 }
 
 Database::ConnectStateEnum Database::reconnectToDatabase() {
+	m_mongodb.setSoTimeout(5);
+	std::string errormsg;
+	bool connected = m_mongodb.connect(mongo::HostAndPort(QUrl(m_serveraddress).host().toStdString(), -1), errormsg);
+	if (!connected) {
+		qWarning() << "Database: Connection failed" << QString::fromStdString(errormsg);
+	}
+	
     QEventLoop eventLoop;
     QNetworkReply *r;
 

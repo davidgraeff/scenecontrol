@@ -30,6 +30,7 @@
 #include <QVariantMap>
 #include <QNetworkReply>
 #include <QTimer>
+#include "mongo/client/dbclient.h"
 
 class Database: public QNetworkAccessManager {
     Q_OBJECT
@@ -153,6 +154,8 @@ private:
     bool m_reconnectOnFailure;
 	void changeState(ConnectStateEnum newstate);
 	QTimer m_reconnectTimer;
+	
+	mongo::DBClientConnection m_mongodb;
 private Q_SLOTS:
 	ConnectStateEnum reconnectToDatabase();
     /// Called if events on the database changed. Fetch all those events
