@@ -19,10 +19,11 @@
 
 #include "config.h"
 #include "logging.h"
-#include "plugincontroller.h"
+#include "plugins/plugincontroller.h"
+#include "execute/collectioncontroller.h"
+#include "execute/executerequest.h"
+#include "libdatabase/database.h"
 #include "socket.h"
-#include "collectioncontroller.h"
-#include "shared/database.h"
 #include "paths.h"
 
 #include <stdio.h>
@@ -32,7 +33,6 @@
 #include <QProcess>
 #include <QSettings>
 #include <QDebug>
-#include "executerequest.h"
 
 bool exitByConsoleCommand = false;
 

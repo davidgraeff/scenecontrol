@@ -20,7 +20,7 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/abstractplugin.h"
+#include "_sharedsrc/abstractplugin.h"
 
 /**
  * Minimal example plugin. You always should inherit AbstractPlugin for getting

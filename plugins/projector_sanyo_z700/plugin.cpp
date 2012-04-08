@@ -20,7 +20,7 @@
 
 #include "plugin.h"
 #include <qfile.h>
-#include <shared/qxtserialdevice/qxtserialdevice.h>
+#include "_sharedsrc/qxtserialdevice/qxtserialdevice.h"
 
 #include <QCoreApplication>
 

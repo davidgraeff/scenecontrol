@@ -18,20 +18,27 @@ ELSE()
 ENDIF()
 
 IF (BUILD_SERVER)
-	include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/.. ${CMAKE_BINARY_DIR} ${MONGOCLIENT_INCLUDE_DIRECTORIES} )
+	include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+	${MONGOCLIENT_INCLUDE_DIRECTORIES} ${ROOTDIR} )
 	#message("mongo include: ${MONGOCLIENT_INCLUDE_DIRECTORIES}")
 	#LWS_OPENSSL_SUPPORT: for libwebsocket to support wss (ws secured with ssl)
 	#LWS_OPENSSL_CLIENT_CERTS: for libwebsocket; client certificate directory (=empty for server)
 	ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS})
 
-	file(GLOB SRCS_H *.h)
-	file(GLOB SRCS *.cpp)
+	file(GLOB SRCS_Hm *.h)
+	file(GLOB SRCSm *.cpp)
+	file(GLOB SRCS_He execute/*.h)
+	file(GLOB SRCSe execute/*.cpp)
+	file(GLOB SRCS_Hp plugins/*.h)
+	file(GLOB SRCSp plugins/*.cpp)
+	SET(SRCS_H ${SRCS_Hm} ${SRCS_Hp} ${SRCS_He} ${SRCS_DATABASE_H})
+	SET(SRCS ${SRCSm} ${SRCSp} ${SRCSe} ${SRCS_DATABASE})
 
-	QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${SRCS_H} "${SHAREDDIR}/database.h")
+	QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${SRCS_H})
 	#QT4_ADD_RESOURCES(RoomControlServer_RC ../res.qrc)
 
 	link_directories(${MONGOCLIENT_LIBRARY_DIRECTORIES})
-	add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} "${SHAREDDIR}/pluginservicehelper.cpp" "${SHAREDDIR}/database.cpp" "${SHAREDDIR}/json.cpp" "${SHAREDDIR}/bson.cpp")
+	add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS})
 
 	target_link_libraries(${PROJECT_NAME}
 	${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}

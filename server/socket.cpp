@@ -3,9 +3,9 @@
 #include "config.h"
 #include <QDebug>
 #include <QSslKey>
-#include <shared/json.h>
-#include "plugincontroller.h"
-#include "pluginprocess.h"
+#include "libdatabase/json.h"
+#include "plugins/plugincontroller.h"
+#include "plugins/plugincommunication.h"
 //openssl req -x509 -new -out server.crt -keyout server.key -days 365
 
 #define __FUNCTION__ __FUNCTION__

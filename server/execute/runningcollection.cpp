@@ -1,7 +1,7 @@
 #include "runningcollection.h"
-#include "plugincontroller.h"
-#include <shared/pluginservicehelper.h>
-#include "pluginprocess.h"
+#include "plugins/plugincontroller.h"
+#include "plugins/plugincommunication.h"
+#include "libdatabase/servicedata.h"
 
 
 RunningCollection::RunningCollection(const QString& collectionid, const QList< QVariantMap >& services):

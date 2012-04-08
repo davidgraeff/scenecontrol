@@ -1,11 +1,11 @@
-#include "executerequest.h"
-#include <shared/pluginservicehelper.h>
-#include "plugincontroller.h"
+#include "execute/executerequest.h"
+#include "execute/collectioncontroller.h"
+#include "plugins/plugincontroller.h"
+#include "plugins/plugincommunication.h"
+#include "libdatabase/servicedata.h"
+#include "libdatabase/database.h"
 #include "socket.h"
 #include "config.h"
-#include "collectioncontroller.h"
-#include "pluginprocess.h"
-#include <shared/database.h>
 
 static ExecuteRequest* ExecuteRequest_instance = 0;
 
@@ -28,7 +28,7 @@ ExecuteRequest::~ExecuteRequest()
 
 void ExecuteRequest::requestExecution(const QVariantMap& data, int sessionid) {
     if ( !ServiceData::checkType ( data, ServiceData::TypeExecution )) return;
-    // Special case: all properties are requested, handle this immediatelly.
+    // Special case: a method of the server process should be executed. handle this immediatelly
     if (ServiceData::pluginid(data)==QLatin1String("server") && sessionid != -1) {
         if (ServiceData::isMethod(data, "requestAllProperties"))
             PluginController::instance()->requestAllProperties(sessionid);

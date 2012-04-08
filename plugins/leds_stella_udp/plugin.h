@@ -18,7 +18,7 @@
  */
 
 #pragma once
-#include "shared/abstractplugin.h"
+#include "_sharedsrc/abstractplugin.h"
 #include <QStringList>
 #include <QObject>
 #include <QMap>

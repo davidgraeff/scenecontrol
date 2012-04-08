@@ -1,17 +1,19 @@
+#include "plugins/plugincontroller.h"
+#include "plugins/plugincommunication.h"
+#include "plugins/pluginprocess.h"
+#include "execute/collectioncontroller.h"
+#include "libdatabase/servicedata.h"
+#include "libdatabase/database.h"
+#include "libdatabase/json.h"
+#include "socket.h"
+#include "paths.h"
+
 #include <QCoreApplication>
 #include <QSettings>
 #include <QDateTime>
 #include <QPluginLoader>
 #include <QUuid>
 #include <QDebug>
-#include "paths.h"
-#include "collectioncontroller.h"
-#include "shared/pluginservicehelper.h"
-#include "shared/database.h"
-#include "plugincontroller.h"
-#include "socket.h"
-#include "pluginprocess.h"
-#include <shared/json.h>
 #include <QElapsedTimer>
 
 #define __FUNCTION__ __FUNCTION__

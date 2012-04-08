@@ -1,4 +1,4 @@
-#include "pluginservicehelper.h"
+#include "servicedata.h"
 
 
 ServiceData ServiceData::createModelRemoveItem ( const char* id ) {

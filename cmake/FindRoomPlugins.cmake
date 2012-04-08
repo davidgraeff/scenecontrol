@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 2.8)
-
 #Only allow this file to be included by the root cmake file
 IF (NOT DEFINED PRODUCTID)
 	RETURN()
@@ -10,27 +9,24 @@ get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 message(STATUS "Plugin: ${targetname}")
 project(${targetname}_plugin)
 
-# get_filename_component(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
-# #set(ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
-# set(SHAREDDIR "${ROOTDIR}/shared")
-# set(PLUGINDIR "${ROOTDIR}/plugins")
+LIST(APPEND Shared_SRCS_H "${SHAREDPLUGINDIR}/abstractplugin.h")
+LIST(APPEND Shared_SRCS "${SHAREDPLUGINDIR}/plugineventmap.cpp" "${SHAREDPLUGINDIR}/abstractplugin.cpp"
+"${ROOTDIR}/libdatabase/json.cpp" "${ROOTDIR}/libdatabase/servicedata.cpp")
 
-LIST(APPEND Shared_SRCS_H "${SHAREDDIR}/abstractplugin.h")
-LIST(APPEND Shared_SRCS "${SHAREDDIR}/plugineventmap.cpp" "${SHAREDDIR}/abstractplugin.cpp" "${SHAREDDIR}/pluginservicehelper.cpp" "${SHAREDDIR}/json.cpp")
+file(GLOB SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+file(GLOB SRCS_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-file(GLOB SRCS_SERVER "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-file(GLOB SRCS_SERVER_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-
-include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${ROOTDIR} ${PLUGINDIR})
+include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
+${ROOTDIR} ${PLUGINSDIR})
 
 # rs232
 if (DEFINED USE_SERIALPORT)
-	LIST(APPEND SRCS_SERVER_H ${SHAREDDIR}/qxtserialdevice/qxtserialdevice.h ${SHAREDDIR}/qxtserialdevice/qxtserialdevice_p.h)
-	LIST(APPEND SRCS_SERVER ${SHAREDDIR}/qxtserialdevice/qxtserialdevice.cpp)
+	LIST(APPEND SRCS_H ${SHAREDPLUGINDIR}/qxtserialdevice/qxtserialdevice.h ${SHAREDPLUGINDIR}/qxtserialdevice/qxtserialdevice_p.h)
+	LIST(APPEND SRCS ${SHAREDPLUGINDIR}/qxtserialdevice/qxtserialdevice.cpp)
 	IF (WIN32)
-		#LIST(APPEND SRCS_SERVER ${SHAREDDIR}/qxtserialdevice/win_qxtserialdevice.cpp)
+		#LIST(APPEND SRCS ${SHAREDPLUGINDIR}/qxtserialdevice/win_qxtserialdevice.cpp)
 	ELSE()
-		LIST(APPEND SRCS_SERVER ${SHAREDDIR}/qxtserialdevice/qxtserialdevice_unix.cpp)
+		LIST(APPEND SRCS ${SHAREDPLUGINDIR}/qxtserialdevice/qxtserialdevice_unix.cpp)
 	ENDIF()
 endif()
 
@@ -39,8 +35,8 @@ ADD_DEFINITIONS(-DPLUGIN_ID="${targetname}" -D_GNU_SOURCE -Wall -W -DQT_NO_CAST_
 
 
 macro(build_server_lib)
-	QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_SERVER_H} ${Shared_SRCS_H} ${ADD_H})
-	add_executable(${PROJECT_NAME} ${SRCS_SERVER} ${Shared_SRCS} ${SRCS_MOCS_SERVER} ${ADD_CPP})
+	QT4_WRAP_CPP(SRCS_MOCS_SERVER ${SRCS_H} ${Shared_SRCS_H} ${ADD_H})
+	add_executable(${PROJECT_NAME} ${SRCS} ${Shared_SRCS} ${SRCS_MOCS_SERVER} ${ADD_CPP})
 	GET_TARGET_PROPERTY(BINARY_NAME ${PROJECT_NAME} OUTPUT_NAME)
 endmacro(build_server_lib)
 

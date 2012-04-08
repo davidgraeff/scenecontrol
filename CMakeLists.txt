@@ -34,7 +34,7 @@ INCLUDE(nsis_installer)
 SET(CPACK_PACKAGE_EXECUTABLES "" CACHE INTERNAL "")
 
 set (ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set (SHAREDDIR "${ROOTDIR}/shared")
+set (SHAREDPLUGINDIR "${ROOTDIR}/plugins/_sharedsrc")
 
 # install path of libs
 IF(WIN32)
@@ -80,7 +80,8 @@ link_directories ( ${Boost_LIBRARY_DIRS} )
 include_directories ( ${Boost_INCLUDE_DIRS} )
 
 # add directories
-add_subdirectory(shared/mongoclient)
+add_subdirectory(cmake/mongoclientextern)
+add_subdirectory(libdatabase)
 add_subdirectory(server)
 add_subdirectory(plugins)
 add_subdirectory(clients)

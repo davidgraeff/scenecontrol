@@ -21,7 +21,7 @@
 #include <QObject>
 #include <QStringList>
 #include <QHostAddress>
-#include "shared/abstractplugin.h"
+#include "_sharedsrc/abstractplugin.h"
 #include <QUdpSocket>
 #include <QTimer>
 

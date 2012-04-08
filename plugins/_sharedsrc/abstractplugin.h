@@ -36,7 +36,7 @@
 /// The name of the server communication socket
 #define COMSERVERSTRING "server"
 
-#include "shared/pluginservicehelper.h"
+#include "libdatabase/servicedata.h"
 
 /**
  * Use this as your plugin base class. You have to define PLUGIN_ID before

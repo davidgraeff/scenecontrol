@@ -4,8 +4,8 @@
 #include "collectioncontroller.h"
 #include "socket.h"
 #include "runningcollection.h"
-#include "shared/pluginservicehelper.h"
-#include "shared/database.h"
+#include "libdatabase/servicedata.h"
+#include "libdatabase/database.h"
 #include <QDebug>
 #define __FUNCTION__ __FUNCTION__
 

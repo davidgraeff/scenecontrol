@@ -5,10 +5,9 @@
 #include <QDateTime>
 #include <mongo/client/dbclient.h>
 
-class BJSON {
-public:
-	static mongo::BSONObj toBson(const QVariantMap &obj);
-	static QVariantMap fromBson(mongo::BSONObj bson);
+namespace BJSON {
+	mongo::BSONObj toBson(const QVariantMap &obj);
+	QVariantMap fromBson(mongo::BSONObj bson);
 };
 
 #endif // BSON_H

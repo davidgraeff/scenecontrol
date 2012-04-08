@@ -20,10 +20,10 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/abstractplugin.h"
-#include "shared/pluginservicehelper.h"
+#include "_sharedsrc/abstractplugin.h"
+#include "_sharedsrc/plugineventmap.h"
+#include "libdatabase/servicedata.h"
 #include <QSet>
-#include <shared/plugineventmap.h>
 
 class plugin : public AbstractPlugin
 {

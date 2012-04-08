@@ -25,7 +25,7 @@
 #include <QTimer>
 #include <QVariantMap>
 #include <stdint.h>
-#include "shared/abstractplugin.h"
+#include "_sharedsrc/abstractplugin.h"
 #include <shared/qxtserialdevice/qxtserialdevice.h>
 
 

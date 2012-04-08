@@ -4,7 +4,7 @@
 #define PLUGIN_ID "fake_from_pluginservicehelper.cpp"
 #endif
 
-#include "pluginservicehelper.h"
+#include "libdatabase/servicedata.h"
 
 #include <QVariantMap>
 #include <QString>
