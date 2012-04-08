@@ -29,7 +29,7 @@ private Q_SLOTS:
 	 */
     void startTimeout();
 public slots:
-    void finished(int exitCode, QProcess::ExitStatus exitStatus);
+    void finished();
 };
 
 /**
@@ -72,7 +72,7 @@ private:
     bool writeToPlugin(const QVariantMap& data);
 private Q_SLOTS:
     void readyRead();
-    void stateChanged(QLocalSocket::LocalSocketState state);
+    void stateChanged();
     /** After a process got started it has 7 seconds to establish a communication socket
 	 * otherwise the process will get killed by the server and removed from the pending
 	 * processes of PluginController

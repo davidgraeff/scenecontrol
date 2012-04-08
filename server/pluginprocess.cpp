@@ -14,7 +14,8 @@
 PluginCommunication::PluginCommunication(PluginController* controller, QLocalSocket* socket) : m_controller(controller) {
     m_pluginCommunication=socket;
     connect(m_pluginCommunication, SIGNAL(readyRead()), SLOT(readyRead()));
-    connect(m_pluginCommunication, SIGNAL(stateChanged(QLocalSocket::LocalSocketState)), SLOT(stateChanged(QLocalSocket::LocalSocketState)));
+	qRegisterMetaType<QLocalSocket::LocalSocketState>("QLocalSocket::LocalSocketState");
+    connect(m_pluginCommunication, SIGNAL(stateChanged(QLocalSocket::LocalSocketState)), SLOT(stateChanged()), Qt::DirectConnection);
     // Request plugin id
     QVariantMap data;
     ServiceData::setMethod(data, "pluginid");
@@ -174,7 +175,8 @@ void PluginCommunication::callQtSlot(const QVariantMap& methodAndArguments, cons
     writeToPlugin(modified);
 }
 
-void PluginCommunication::stateChanged(QLocalSocket::LocalSocketState state) {
+void PluginCommunication::stateChanged() {
+	QLocalSocket::LocalSocketState state = m_pluginCommunication->state();
     if (state==QLocalSocket::ConnectedState)
         return;
 
@@ -195,7 +197,7 @@ bool PluginCommunication::writeToPlugin(const QVariantMap& data) {
     // check state. Sometimes write calls are one after each other and the
     // event system does not get a chance to check the socket state in between
     if (m_pluginCommunication->state()!=QLocalSocket::ConnectedState) {
-        stateChanged(m_pluginCommunication->state());
+        stateChanged();
         return false;
     }
     // write data
@@ -233,7 +235,8 @@ void PluginCommunication::databaseStateChanged() {
 PluginProcess::PluginProcess(PluginController* controller, const QString& filename)
         : m_controller(controller), m_filename(filename), m_aboutToFree(false) {
     m_pluginProcess.setProcessChannelMode(QProcess::ForwardedChannels);
-    connect(&m_pluginProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(finished(int,QProcess::ExitStatus)));
+	qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
+    connect(&m_pluginProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(finished()));
     m_pluginProcess.start(filename);
     if (m_pluginProcess.waitForStarted())
         qDebug() << "Started plugin process" << filename;
@@ -246,19 +249,21 @@ PluginProcess::PluginProcess(PluginController* controller, const QString& filena
 PluginProcess::~PluginProcess() {
     m_aboutToFree = true;
     if (m_pluginProcess.state()==QProcess::Running) {
-        qDebug() << "Server: Terminate plugin" << m_filename << m_pluginProcess.pid();
         m_pluginProcess.terminate();
-        m_pluginProcess.waitForFinished();
     }
+    m_pluginProcess.waitForFinished();
 }
 
-void PluginProcess::finished(int exitCode, QProcess::ExitStatus exitStatus) {
+void PluginProcess::finished() {
+	int exitCode = m_pluginProcess.exitCode();
+	QProcess::ExitStatus exitStatus = m_pluginProcess.exitStatus();
     if (exitStatus==QProcess::CrashExit && exitCode != 0)
         qWarning() << "Server: Plugin crashed" << m_filename << m_pluginProcess.pid();
     else
         qDebug() << "Server: Plugin finished" << m_filename << m_pluginProcess.pid();
     if (!m_aboutToFree)
-        m_controller->removeProcess(this);
+	this->deleteLater();
+    m_controller->removeProcess(this);
 }
 
 void PluginProcess::startTimeout() {

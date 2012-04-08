@@ -42,7 +42,8 @@ static void catch_int(int )
     signal(SIGTERM, 0);
     exitByConsoleCommand = true;
     printf("\n");
-    QCoreApplication::exit(0);
+	PluginController* plugins = PluginController::instance();
+	plugins->waitForPluginsAndExit();
 }
 
 int main(int argc, char *argv[])
@@ -150,17 +151,18 @@ int main(int argc, char *argv[])
         database->startChangeListenerEvents();
         database->startChangeListenerSettings();
         exitcode = qapp.exec();
+		// one last event processing to free all deleteLater objects
+		qapp.processEvents();
     }
 
-    qDebug() << "Shutdown...";
-    delete socket;
+	delete plugins;
+	delete socket;
     delete database;
     delete collectioncontroller;
-    delete plugins;
 	delete executeRequests;
 
     // close log file. only console log is possible from here on
     logclose();
-
+	qDebug() << "Shutdown complete. Exitcode:" << exitcode;
     return exitcode;
 }

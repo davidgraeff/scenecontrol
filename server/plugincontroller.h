@@ -44,6 +44,10 @@ public:
     static PluginController* instance();
     virtual ~PluginController();
 	/**
+	 * Wait for all plugin processes to get finished or killed and exit the server
+	 */
+	void waitForPluginsAndExit();
+	/**
 	 * Start all applications in a well-known path. If those processes do not
 	 * establish a communication channel to the server within a given time bound
 	 * kill those processes again.
@@ -91,6 +95,7 @@ private:
     int m_index;
 	/// Local server socket for plugins
     QLocalServer m_comserver;
+	bool m_exitIfNoPluginProcess;
 private Q_SLOTS:
     void newConnection();
 public Q_SLOTS:

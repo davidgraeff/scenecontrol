@@ -31,7 +31,7 @@ IF (BUILD_SERVER)
 	#QT4_ADD_RESOURCES(RoomControlServer_RC ../res.qrc)
 
 	link_directories(${MONGOCLIENT_LIBRARY_DIRECTORIES})
-	add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} "${SHAREDDIR}/pluginservicehelper.cpp" "${SHAREDDIR}/database.cpp" "${SHAREDDIR}/json.cpp")
+	add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} "${SHAREDDIR}/pluginservicehelper.cpp" "${SHAREDDIR}/database.cpp" "${SHAREDDIR}/json.cpp" "${SHAREDDIR}/bson.cpp")
 
 	target_link_libraries(${PROJECT_NAME}
 	${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}

@@ -46,6 +46,7 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data)
     Q_UNUSED(configid);
     if (data.contains(QLatin1String("serialport"))) {
         delete m_serial;
+		m_serial = 0;
         const QString device = data[QLatin1String("serialport")].toString();
         if ( !QFile::exists ( device ) ) {
             qWarning() << pluginid() << "device not found" << device;
@@ -56,11 +57,11 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data)
         m_serial->setPortSettings ( QxtSerialDevice::FlowOff | QxtSerialDevice::ParityNone
                                     | QxtSerialDevice::Stop1 | QxtSerialDevice::Bit8);
 
-        connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
         if ( !m_serial->open ( QIODevice::ReadWrite ) ) {
             qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
         } else {
-            qDebug() << pluginid() << "connected to"<<device;
+			connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
+			qDebug() << pluginid() << "connected to"<<device;
         }
     }
 }

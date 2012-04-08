@@ -16,13 +16,15 @@
 #include <err.h>
 #include <shared/pluginservicehelper.h>
 #include <shared/json.h>
+#include <shared/bson.h>
 #define __FUNCTION__ __FUNCTION__
 
-static Database* databaseInstance = 0;
+static Database *databaseInstance = 0;
 
-Database::Database () : m_last_changes_seq_nr ( 0 ), m_settingsChangeFailCounter(0), m_eventsChangeFailCounter(0), m_listenerReply(0), m_state(DisconnectedState) {
+Database::Database() : m_last_changes_seq_nr(0), m_settingsChangeFailCounter(0), m_eventsChangeFailCounter(0), m_listenerReply(0), m_state(DisconnectedState)
+{
     m_reconnectTimer.setInterval(5000);
-	m_reconnectTimer.setSingleShot(true);
+    m_reconnectTimer.setSingleShot(true);
     connect(&m_reconnectTimer, SIGNAL(timeout()), SLOT(reconnectToDatabase()));
 }
 
@@ -35,25 +37,27 @@ void Database::disconnectFromHost()
 {
     delete m_listenerReply;
     m_listenerReply = 0;
-	m_reconnectTimer.stop();
+    m_reconnectTimer.stop();
 }
-Database* Database::instance()
+Database *Database::instance()
 {
-    if (databaseInstance == 0)
+    if(databaseInstance == 0)
         databaseInstance = new Database();
 
     return databaseInstance;
 }
 
 
-QString Database::databaseAddress() const {
+QString Database::databaseAddress() const
+{
     return m_serveraddress;
 }
 
-void Database::changeState(ConnectStateEnum newstate) {
+void Database::changeState(ConnectStateEnum newstate)
+{
     m_state = newstate;
     emit stateChanged();
-    if (newstate == DisconnectedState && m_reconnectOnFailure) {
+    if(newstate == DisconnectedState && m_reconnectOnFailure) {
         m_reconnectTimer.start();
     }
 }
@@ -63,7 +67,8 @@ QString Database::couchdbAbsoluteUrl(const QString &relativeUrl)
     return m_serveraddress + QLatin1String("/") + relativeUrl;
 }
 
-Database::ConnectStateEnum Database::connectToDatabase(const QString& serverHostname, bool reconnectOnFailure) {
+Database::ConnectStateEnum Database::connectToDatabase(const QString &serverHostname, bool reconnectOnFailure)
+{
     m_serveraddress = serverHostname;
     m_serveraddress = m_serveraddress.replace(QLatin1String("localhost"), QHostInfo::localHostName());
     m_reconnectOnFailure = reconnectOnFailure;
@@ -71,26 +76,28 @@ Database::ConnectStateEnum Database::connectToDatabase(const QString& serverHost
     return reconnectToDatabase();
 }
 
-Database::ConnectStateEnum Database::reconnectToDatabase() {
-	m_mongodb.setSoTimeout(5);
-	std::string errormsg;
-	bool connected = m_mongodb.connect(mongo::HostAndPort(QUrl(m_serveraddress).host().toStdString(), -1), errormsg);
-	if (!connected) {
-		qWarning() << "Database: Connection failed" << QString::fromStdString(errormsg);
-	}
-	
+Database::ConnectStateEnum Database::reconnectToDatabase()
+{
+    m_mongodb.setSoTimeout(5);
+    std::string errormsg;
+    bool connected = m_mongodb.connect(mongo::HostAndPort(QUrl(m_serveraddress).host().toStdString(), -1), errormsg);
+    if(!connected) {
+        qWarning() << "Database: Connection failed" << QString::fromStdString(errormsg);
+    }
+
     QEventLoop eventLoop;
     QNetworkReply *r;
 
-    { // Connect to database
+    {
+        // Connect to database
         qDebug() << "Database:" << couchdbAbsoluteUrl();
-        QNetworkRequest request ( couchdbAbsoluteUrl() );
-        r = get ( request );
-        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        QNetworkRequest request(couchdbAbsoluteUrl());
+        r = get(request);
+        connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
-        if (r->error() == QNetworkReply::ContentNotFoundError) {
+        if(r->error() == QNetworkReply::ContentNotFoundError) {
             changeState(ConnectedButNotInialized);
-        } else if (r->error() != QNetworkReply::NoError) {
+        } else if(r->error() != QNetworkReply::NoError) {
             changeState(DisconnectedState);
             // Network error: no error recovery possible
             qWarning() << "Database: Network error" << r->errorString();
@@ -99,18 +106,19 @@ Database::ConnectStateEnum Database::reconnectToDatabase() {
         }
     }
 
-    { // try to parse database information
+    {
+        // try to parse database information
         QByteArray rawdata = r->readAll();
         r->deleteLater();
-        QVariantMap data = JSON::parse ( rawdata ).toMap();
-        if (data.isEmpty()) {
+        QVariantMap data = JSON::parse(rawdata).toMap();
+        if(data.isEmpty()) {
             changeState(DisconnectedState);
             // Response is not json: no error recovery possible
             qWarning() << "Database: Json parser:" << rawdata;
             return m_state;
         }
 
-        if ( !data.contains ( QLatin1String ( "db_name" ) ) || !data.contains ( QLatin1String ( "doc_count" ) ) ) {
+        if(!data.contains(QLatin1String("db_name")) || !data.contains(QLatin1String("doc_count"))) {
             changeState(DisconnectedState);
             // Response is not expected without db_name: no error recovery possible
             qWarning() << "Database: db_name or doc_count not found";
@@ -118,10 +126,10 @@ Database::ConnectStateEnum Database::reconnectToDatabase() {
         }
 
         int doccount = data.value(QLatin1String("doc_count")).toInt();
-        if (!doccount) {
+        if(!doccount) {
             qWarning() << "Database: Empty";
         }
-        m_last_changes_seq_nr = data.value ( QLatin1String ( "update_seq" ),0 ).toInt();
+        m_last_changes_seq_nr = data.value(QLatin1String("update_seq"), 0).toInt();
     }
 
     changeState(ConnectedState);
@@ -133,36 +141,37 @@ Database::ConnectStateEnum Database::initalizeDatabase()
     QEventLoop eventLoop;
     QNetworkReply *r;
 
-    { // Connect to database (try to create it if not available)
+    {
+        // Connect to database (try to create it if not available)
         qDebug() << "Database:" << couchdbAbsoluteUrl();
-        QNetworkRequest request ( couchdbAbsoluteUrl() );
-        r = get ( request );
-        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        QNetworkRequest request(couchdbAbsoluteUrl());
+        r = get(request);
+        connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
-        if (r->error() == QNetworkReply::ContentNotFoundError) {
+        if(r->error() == QNetworkReply::ContentNotFoundError) {
             // Create database by using HTTP PUT
             r = put(request, "");
-            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
             eventLoop.exec();
 
-            if (r->error() != QNetworkReply::NoError) {
+            if(r->error() != QNetworkReply::NoError) {
                 changeState(DisconnectedState);
                 // Database could not be created: no error recovery possible
                 qWarning() << "Database: Database not found and could not be created!";
                 r->deleteLater();
                 return m_state;
             }
-            r = get ( request );
-            connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+            r = get(request);
+            connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
             eventLoop.exec();
-            if (r->error() != QNetworkReply::NoError) {
+            if(r->error() != QNetworkReply::NoError) {
                 changeState(DisconnectedState);
                 // Database created but could not be read: no error recovery possible
                 qWarning() << "Database: Successfull created database but can not read it out!";
                 r->deleteLater();
                 return m_state;
             }
-        } else if (r->error() != QNetworkReply::NoError) {
+        } else if(r->error() != QNetworkReply::NoError) {
             changeState(DisconnectedState);
             // Network error: no error recovery possible
             qWarning() << "Database: Network error" << r->errorString();
@@ -181,49 +190,50 @@ void Database::startChangeListener()
     connect(m_listenerReply, SIGNAL(readyRead()), SLOT(replyChange()));
 }
 
-void Database::requestEvents(const QString& plugin_id)
+void Database::requestEvents(const QString &plugin_id)
 {
     QEventLoop eventLoop;
-    QNetworkRequest request ( couchdbAbsoluteUrl(QLatin1String("_design/_server/_view/events?key=\"%1\"#%1")).arg ( plugin_id ) );
-    QNetworkReply *r = get ( request );
+    QNetworkRequest request(couchdbAbsoluteUrl(QLatin1String("_design/_server/_view/events?key=\"%1\"#%1")).arg(plugin_id));
+    QNetworkReply *r = get(request);
     r->deleteLater();
-    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
     eventLoop.exec();
-    if (r->error() != QNetworkReply::NoError) {
+    if(r->error() != QNetworkReply::NoError) {
         // Database events could not be read: no error recovery possible
         qWarning() << "Database: Get events failed for" << plugin_id << r->error() << r->errorString();
         return;
     }
 
     QByteArray rawdata = r->readAll();
-    QVariantMap data = JSON::parse ( rawdata ).toMap();
-    if (data.isEmpty()) {
+    QVariantMap data = JSON::parse(rawdata).toMap();
+    if(data.isEmpty()) {
         // Response is not json: no error recovery possible
         qWarning() << "Database: Json parser:" << rawdata;
         return;
     }
-    if (data.contains ( QLatin1String ( "rows" ) )) {
-        QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
-        for ( int i=0;i<list.size();++i ) {
-            data = list[i].toMap().value ( QLatin1String ( "value" ) ).toMap();
+    if(data.contains(QLatin1String("rows"))) {
+        QVariantList list = data.value(QLatin1String("rows")).toList();
+        for(int i = 0; i < list.size(); ++i) {
+            data = list[i].toMap().value(QLatin1String("value")).toMap();
             data.remove(QLatin1String("_rev"));
             data.remove(QLatin1String("type_"));
-            if ( ServiceData::collectionid ( data ).isEmpty() ) {
-                qWarning() <<"Database: Received event without collection:"<<ServiceData::pluginid ( data ) << ServiceData::id ( data );
+            if(ServiceData::collectionid(data).isEmpty()) {
+                qWarning() << "Database: Received event without collection:" << ServiceData::pluginid(data) << ServiceData::id(data);
                 continue;
             }
-            emit Event_add ( ServiceData::id(data), data );
+            emit Event_add(ServiceData::id(data), data);
         }
     }
 }
 
 
-void Database::replyEventsChange() {
-    QNetworkReply *r = ( QNetworkReply* ) sender();
+void Database::replyEventsChange()
+{
+    QNetworkReply *r = (QNetworkReply *) sender();
     r->deleteLater();
-    if ( r->error() != QNetworkReply::NoError ) {
+    if(r->error() != QNetworkReply::NoError) {
         ++m_eventsChangeFailCounter;
-        if (m_eventsChangeFailCounter > 5) {
+        if(m_eventsChangeFailCounter > 5) {
             qWarning() << "Database: replyEventsChange" << r->url() << r->errorString();
         } else {
             QTimer::singleShot(1000, this, SLOT(startChangeListenerEvents()));
@@ -234,74 +244,75 @@ void Database::replyEventsChange() {
 
     m_eventsChangeFailCounter = 0;
 
-    while ( r->canReadLine() ) {
+    while(r->canReadLine()) {
         QString docid;
-        { // one line = one changed event; evaluate and extract docid
+        {
+            // one line = one changed event; evaluate and extract docid
             const QByteArray line = r->readLine();
-            if ( line.size() <= 1 ) continue;
-            QVariantMap data = JSON::parse ( line ).toMap();
-            if ( data.isEmpty() || !data.contains ( QLatin1String ( "seq" ) ) )
+            if(line.size() <= 1) continue;
+            QVariantMap data = JSON::parse(line).toMap();
+            if(data.isEmpty() || !data.contains(QLatin1String("seq")))
                 continue;
-            const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
-            if ( seq > m_last_changes_seq_nr )
+            const int seq = data.value(QLatin1String("seq")).toInt();
+            if(seq > m_last_changes_seq_nr)
                 m_last_changes_seq_nr = seq;
 
-            if ( data.contains ( QLatin1String ( "deleted" ) ) ) {
-                emit Event_remove(ServiceData::idChangeSeq ( data ));
+            if(data.contains(QLatin1String("deleted"))) {
+                emit Event_remove(ServiceData::idChangeSeq(data));
                 continue;
             }
 
 
-            docid = ServiceData::idChangeSeq ( data );
+            docid = ServiceData::idChangeSeq(data);
         }
 
         // request document that is mentioned in the changes feed
-        QNetworkRequest request ( couchdbAbsoluteUrl(docid));
+        QNetworkRequest request(couchdbAbsoluteUrl(docid));
 
-        QNetworkReply* r = get ( request );
+        QNetworkReply *r = get(request);
         r->deleteLater();
         QEventLoop eventLoop;
-        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
 
-        QVariantMap document = JSON::parse(r->readAll() ).toMap();
-        if (!ServiceData::checkType(document, ServiceData::TypeEvent)) {
+        QVariantMap document = JSON::parse(r->readAll()).toMap();
+        if(!ServiceData::checkType(document, ServiceData::TypeEvent)) {
             qWarning() << "Event changed but is not of type event" << document;
             continue;
         }
         document.remove(QLatin1String("_rev"));
         document.remove(QLatin1String("type_"));
-        if ( ServiceData::collectionid ( document ).isEmpty() ) {
-            qWarning() <<"Database: Received event without collection:"<<ServiceData::pluginid ( document ) << ServiceData::id ( document );
+        if(ServiceData::collectionid(document).isEmpty()) {
+            qWarning() << "Database: Received event without collection:" << ServiceData::pluginid(document) << ServiceData::id(document);
             continue;
         }
-        emit Event_add ( ServiceData::id(document), document );
+        emit Event_add(ServiceData::id(document), document);
     }
 }
 
 void Database::startChangeListenerEvents()
 {
-    QNetworkRequest request ( couchdbAbsoluteUrl(QLatin1String("_changes?feed=continuous&since=%1&filter=_server/events&heartbeat=5000")).arg ( m_last_changes_seq_nr ) );
-    request.setRawHeader ( "Connection","keep-alive" );
-    QNetworkReply *r = get ( request );
-    connect ( r, SIGNAL ( readyRead() ), SLOT ( replyEventsChange()) );
+    QNetworkRequest request(couchdbAbsoluteUrl(QLatin1String("_changes?feed=continuous&since=%1&filter=_server/events&heartbeat=5000")).arg(m_last_changes_seq_nr));
+    request.setRawHeader("Connection", "keep-alive");
+    QNetworkReply *r = get(request);
+    connect(r, SIGNAL(readyRead()), SLOT(replyEventsChange()));
 }
 
 void Database::startChangeListenerSettings()
 {
-    QNetworkRequest request ( couchdbAbsoluteUrl(QLatin1String("_changes?feed=continuous&since=%1&filter=_server/settings&heartbeat=5000")).arg ( m_last_changes_seq_nr ) );
-    request.setRawHeader ( "Connection","keep-alive" );
-    QNetworkReply *r = get ( request );
-    connect ( r, SIGNAL ( readyRead() ), SLOT ( replyPluginSettingsChange() ) );
+    QNetworkRequest request(couchdbAbsoluteUrl(QLatin1String("_changes?feed=continuous&since=%1&filter=_server/settings&heartbeat=5000")).arg(m_last_changes_seq_nr));
+    request.setRawHeader("Connection", "keep-alive");
+    QNetworkReply *r = get(request);
+    connect(r, SIGNAL(readyRead()), SLOT(replyPluginSettingsChange()));
 }
 
 bool Database::checkFailure(QNetworkReply *r, const QByteArray &msg)
 {
-    if (m_state != 2) {
+    if(m_state != 2) {
         r->deleteLater();
         return true;
     }
-    if (r->error() != QNetworkReply::NoError) {
+    if(r->error() != QNetworkReply::NoError) {
         qWarning() << "Database: Response error:" << r->error() << r->url().toString() << msg;
         r->deleteLater();
         m_state = DisconnectedState;
@@ -313,16 +324,16 @@ bool Database::checkFailure(QNetworkReply *r, const QByteArray &msg)
 
 void Database::replyDataOfCollection()
 {
-    QNetworkReply *r = ( QNetworkReply* ) sender();
+    QNetworkReply *r = (QNetworkReply *) sender();
     r->deleteLater();
-    if (checkFailure(r, "No data for collection"+r->url().fragment().toUtf8()))
+    if(checkFailure(r, "No data for collection" + r->url().fragment().toUtf8()))
         return;
 
-    QVariantMap data = JSON::parse( r->readAll() ).toMap();
-    if ( !data.isEmpty() && data.contains ( QLatin1String ( "rows" ) ) ) {
+    QVariantMap data = JSON::parse(r->readAll()).toMap();
+    if(!data.isEmpty() && data.contains(QLatin1String("rows"))) {
         QVariantList list = data.value(QLatin1String("rows")).toList();
         QList<QVariantMap> servicelist;
-        for (int i = 0; i < list.size(); ++i) {
+        for(int i = 0; i < list.size(); ++i) {
             servicelist.append(list.value(i).toMap().value(QLatin1String("value")).toMap());
         }
         emit dataOfCollection(r->url().fragment(), servicelist);
@@ -331,47 +342,47 @@ void Database::replyDataOfCollection()
     }
 }
 
-void Database::requestDataOfCollection(const QString& collecion_id)
+void Database::requestDataOfCollection(const QString &collecion_id)
 {
-    if (collecion_id.isEmpty())
+    if(collecion_id.isEmpty())
         return;
-    QNetworkRequest request ( couchdbAbsoluteUrl(QLatin1String("_design/_server/_view/services?key=\"%1\"#%1")).arg ( collecion_id ) );
+    QNetworkRequest request(couchdbAbsoluteUrl(QLatin1String("_design/_server/_view/services?key=\"%1\"#%1")).arg(collecion_id));
 
-    QNetworkReply* r = get ( request );
-    connect ( r, SIGNAL ( finished() ), SLOT ( replyDataOfCollection()) );
+    QNetworkReply *r = get(request);
+    connect(r, SIGNAL(finished()), SLOT(replyDataOfCollection()));
 }
 
-void Database::requestPluginConfiguration(const QString& pluginid)
+void Database::requestPluginConfiguration(const QString &pluginid)
 {
-    if (pluginid.isEmpty())
+    if(pluginid.isEmpty())
         return;
-    QNetworkRequest request ( couchdbAbsoluteUrl(QLatin1String("_design/_server/_view/settings?key=\"%1\"")).arg(pluginid));
+    QNetworkRequest request(couchdbAbsoluteUrl(QLatin1String("_design/_server/_view/settings?key=\"%1\"")).arg(pluginid));
 
-    QNetworkReply* r = get ( request );
+    QNetworkReply *r = get(request);
     r->deleteLater();
     QEventLoop eventLoop;
-    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
     eventLoop.exec();
 
-    if (checkFailure(r, "Configuration for"+pluginid.toUtf8()))
+    if(checkFailure(r, "Configuration for" + pluginid.toUtf8()))
         return;
 
-    QVariantMap data = JSON::parse ( r->readAll() ).toMap();
-    if ( !data.isEmpty() && data.contains ( QLatin1String ( "rows" ) ) ) {
-        QVariantList list = data.value ( QLatin1String ( "rows" ) ).toList();
-        if (list.size()) {
-            foreach(const QVariant& v, list) {
-                data = v.toMap().value(QLatin1String ( "value" )).toMap();
+    QVariantMap data = JSON::parse(r->readAll()).toMap();
+    if(!data.isEmpty() && data.contains(QLatin1String("rows"))) {
+        QVariantList list = data.value(QLatin1String("rows")).toList();
+        if(list.size()) {
+            foreach(const QVariant & v, list) {
+                data = v.toMap().value(QLatin1String("value")).toMap();
                 data.remove(QLatin1String("_id"));
                 data.remove(QLatin1String("_rev"));
                 data.remove(QLatin1String("type_"));
                 data.remove(QLatin1String("plugin_"));
                 const QString key = data.take(QLatin1String("key_")).toString();
-                if (data.size())
-                    emit settings ( pluginid, key, data );
+                if(data.size())
+                    emit settings(pluginid, key, data);
             }
         } else {
-            qDebug()<<"Database:" << pluginid << "has no configuration!";
+            qDebug() << "Database:" << pluginid << "has no configuration!";
         }
     } else {
         qWarning() << "Database:" << pluginid << "configuration fetch failed" << data;
@@ -380,11 +391,11 @@ void Database::requestPluginConfiguration(const QString& pluginid)
 
 void Database::replyPluginSettingsChange()
 {
-    QNetworkReply *r = ( QNetworkReply* ) sender();
+    QNetworkReply *r = (QNetworkReply *) sender();
     r->deleteLater();
-    if ( r->error() != QNetworkReply::NoError ) {
+    if(r->error() != QNetworkReply::NoError) {
         ++m_settingsChangeFailCounter;
-        if (m_settingsChangeFailCounter > 5) {
+        if(m_settingsChangeFailCounter > 5) {
             qWarning() << "Database: replyPluginSettingsChange" << r->url();
         } else {
             QTimer::singleShot(1000, this, SLOT(startChangeListenerSettings()));
@@ -394,34 +405,34 @@ void Database::replyPluginSettingsChange()
 
     m_settingsChangeFailCounter = 0;
 
-    while ( r->canReadLine() ) {
+    while(r->canReadLine()) {
         const QByteArray line = r->readLine();
-        if ( line.size() <= 1 ) continue;
-        QVariantMap data = JSON::parse(line ).toMap();
-        if ( data.isEmpty() || !data.contains ( QLatin1String ( "seq" ) ) )
+        if(line.size() <= 1) continue;
+        QVariantMap data = JSON::parse(line).toMap();
+        if(data.isEmpty() || !data.contains(QLatin1String("seq")))
             continue;
 
-        const int seq = data.value ( QLatin1String ( "seq" ) ).toInt();
+        const int seq = data.value(QLatin1String("seq")).toInt();
 
-        if ( seq > m_last_changes_seq_nr )
+        if(seq > m_last_changes_seq_nr)
             m_last_changes_seq_nr = seq;
 
-        if ( data.contains ( QLatin1String ( "deleted" ) ) )
+        if(data.contains(QLatin1String("deleted")))
             continue;
 
-        const QString docid = ServiceData::idChangeSeq ( data );
+        const QString docid = ServiceData::idChangeSeq(data);
 
         // request document that is mentioned in the changes feed
-        QNetworkRequest request ( couchdbAbsoluteUrl(docid));
+        QNetworkRequest request(couchdbAbsoluteUrl(docid));
 
-        QNetworkReply* r = get ( request );
+        QNetworkReply *r = get(request);
         QEventLoop eventLoop;
-        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
 
-        QVariantMap document = JSON::parse(r->readAll() ).toMap();
+        QVariantMap document = JSON::parse(r->readAll()).toMap();
 
-        if (!ServiceData::checkType(document, ServiceData::TypeConfiguration)) {
+        if(!ServiceData::checkType(document, ServiceData::TypeConfiguration)) {
             qWarning() << "Configuration changed but is not of type configuration" << document;
             continue;
         }
@@ -431,30 +442,31 @@ void Database::replyPluginSettingsChange()
         document.remove(QLatin1String("type_"));
         document.remove(QLatin1String("plugin_"));
         const QString key = data.take(QLatin1String("key_")).toString();
-        emit settings ( ServiceData::pluginid(document), key, document );
+        emit settings(ServiceData::pluginid(document), key, document);
     }
 }
 
-bool Database::verifyPluginData(const QString& pluginid, const QString& databaseImportPath) {
+bool Database::verifyPluginData(const QString &pluginid, const QString &databaseImportPath)
+{
     QDir dir(databaseImportPath);
-    if (!dir.cd(pluginid)) {
-        qWarning()<<"Database: failed to change to " << dir.absolutePath() << pluginid;
+    if(!dir.cd(pluginid)) {
+        qWarning() << "Database: failed to change to " << dir.absolutePath() << pluginid;
         return false;
     }
 
     QEventLoop eventLoop;
-    const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files|QDir::NoDotAndDotDot);
-    for (int i=0;i<files.size();++i) {
+    const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
+    for(int i = 0; i < files.size(); ++i) {
         QFile file(dir.absoluteFilePath(files[i]));
         file.open(QIODevice::ReadOnly);
-        if (file.size() > 1024*10) {
+        if(file.size() > 1024 * 10) {
             qWarning() << "\tFile to big!" << files[i] << file.size();
             continue;
         }
-        bool error=false;
-        QTextStream stream( &file );
+        bool error = false;
+        QTextStream stream(&file);
         QVariantMap jsonData = JSON::parseValue(stream, error).toMap();
-        if (error) {
+        if(error) {
             qWarning() << "\tNot a json file although json file extension!";
             continue;
         }
@@ -463,18 +475,18 @@ bool Database::verifyPluginData(const QString& pluginid, const QString& database
         const QByteArray dataToSend = JSON::stringify(jsonData).toUtf8();
         // Document ID: Consist of filename without extension + "{pluginid}".
         const QString docid = QFileInfo(files[i]).completeBaseName() + pluginid;
-        QNetworkRequest request( couchdbAbsoluteUrl( docid ) );
+        QNetworkRequest request(couchdbAbsoluteUrl(docid));
         request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
         request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
-        QNetworkReply* rf = put(request, dataToSend);
-        connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        QNetworkReply *rf = put(request, dataToSend);
+        connect(rf, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
         file.close();
-        if (rf->error() == QNetworkReply::NoError) {
+        if(rf->error() == QNetworkReply::NoError) {
             qDebug() << "\tInstalled" << pluginid << docid << ", entries:" << jsonData.size();
-        } else if (rf->error() == 299) {
+        } else if(rf->error() == 299) {
             //qDebug() << "\tAlready installed" << pluginid << docid;
-        } else if (rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
+        } else if(rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
             qWarning() << "\tInstallation failed. Upload forbidden. " << pluginid << docid << file.size() << "Bytes";
         } else {
             qWarning() << "\tInstallation failed: " << pluginid << docid << file.size() << "Bytes" << rf->errorString() << rf->error();
@@ -485,28 +497,28 @@ bool Database::verifyPluginData(const QString& pluginid, const QString& database
     return true;
 }
 
-void Database::exportAsJSON(const QString& path)
+void Database::exportAsJSON(const QString &path)
 {
     QEventLoop eventLoop;
-    QNetworkRequest request ( couchdbAbsoluteUrl(QLatin1String("_all_docs")) );
-    QNetworkReply *r = get ( request );
-    connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    QNetworkRequest request(couchdbAbsoluteUrl(QLatin1String("_all_docs")));
+    QNetworkReply *r = get(request);
+    connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
     eventLoop.exec();
-    if (r->error() != QNetworkReply::NoError) {
+    if(r->error() != QNetworkReply::NoError) {
         qWarning() << "Database: Failed to export JSON Files";
         return;
     }
 
     QByteArray rawdata = r->readAll();
     delete r;
-    QVariantMap jsonData = JSON::parse ( rawdata ).toMap();
-    if (jsonData.isEmpty()) {
+    QVariantMap jsonData = JSON::parse(rawdata).toMap();
+    if(jsonData.isEmpty()) {
         // Response is not json: no error recovery possible
         qWarning() << "Database: Json parser:" << rawdata;
         return;
     }
 
-    if (!jsonData.contains ( QLatin1String ( "rows" ) )) {
+    if(!jsonData.contains(QLatin1String("rows"))) {
         // Response is not json: no error recovery possible
         qWarning() << "Database: Field rows not found";
         return;
@@ -514,133 +526,126 @@ void Database::exportAsJSON(const QString& path)
 
     qDebug() << "Database: Export JSON Documents to" << path;
 
-    QVariantList list = jsonData.value ( QLatin1String ( "rows" ) ).toList();
-    for ( int i=0;i<list.size();++i ) {
-        const QString id = list[i].toMap().value ( QLatin1String ( "id" ) ).toString();
-        QNetworkRequest request ( couchdbAbsoluteUrl(id) );
-        QNetworkReply *r = get ( request );
-        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+    QVariantList list = jsonData.value(QLatin1String("rows")).toList();
+    for(int i = 0; i < list.size(); ++i) {
+        const QString id = list[i].toMap().value(QLatin1String("id")).toString();
+        QNetworkRequest request(couchdbAbsoluteUrl(id));
+        QNetworkReply *r = get(request);
+        connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
-        if (r->error() != QNetworkReply::NoError) {
+        if(r->error() != QNetworkReply::NoError) {
             qWarning() << "Database: Extraction failed" << id;
             continue;
         }
 
         const QByteArray rawdata = r->readAll();
-        QVariantMap jsonData = JSON::parse ( rawdata ).toMap();
-        if (jsonData.isEmpty()) {
+        QVariantMap jsonData = JSON::parse(rawdata).toMap();
+        if(jsonData.isEmpty()) {
             qWarning() << "Database: Extraction failed (JSON!)" << id;
             continue;
         }
         QDir dir(path);
-        if (jsonData.contains(QLatin1String("plugin_"))) {
+        if(jsonData.contains(QLatin1String("plugin_"))) {
             const QString pluginid = jsonData.value(QLatin1String("plugin_")).toString();
-            if (!dir.cd(pluginid) && (!dir.mkdir(pluginid) || !dir.cd(pluginid))) {
+            if(!dir.cd(pluginid) && (!dir.mkdir(pluginid) || !dir.cd(pluginid))) {
                 qWarning() << "Database: Failed to create subdir" << pluginid << dir;
                 continue;
             }
-        } else if (jsonData.value(QLatin1String("type_")).toString() == QLatin1String("collection")) {
+        } else if(jsonData.value(QLatin1String("type_")).toString() == QLatin1String("collection")) {
             const QString pluginid = QLatin1String("collections");
-            if (!dir.cd(pluginid) && (!dir.mkdir(pluginid) || !dir.cd(pluginid))) {
+            if(!dir.cd(pluginid) && (!dir.mkdir(pluginid) || !dir.cd(pluginid))) {
                 qWarning() << "Database: Failed to create subdir" << pluginid << dir;
                 continue;
             }
         }
 
-        QFile f(dir.absoluteFilePath(jsonData.value(QLatin1String("type_")).toString()+id+QLatin1String(".json")));
-        f.open(QIODevice::WriteOnly|QIODevice::Truncate);
+        QFile f(dir.absoluteFilePath(jsonData.value(QLatin1String("type_")).toString() + id + QLatin1String(".json")));
+        f.open(QIODevice::WriteOnly | QIODevice::Truncate);
         f.write(rawdata);
         f.close();
         delete r;
     }
 }
 
-void Database::importFromJSON(const QString& path)
+void Database::importFromJSON(const QString &path)
 {
     QDir dir(path);
-    if (!dir.exists()) {
-        qWarning()<<"Database: failed to change to " << dir.absolutePath();
+    if(!dir.exists()) {
+        qWarning() << "Database: failed to change to " << dir.absolutePath();
         return;
     }
 
     qDebug() << "Database: Import JSON Documents from" << path;
 
     QEventLoop eventLoop;
-    const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files|QDir::NoDotAndDotDot);
-    for (int i=0;i<files.size();++i) {
+    const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
+    for(int i = 0; i < files.size(); ++i) {
         QFile file(dir.absoluteFilePath(files[i]));
         file.open(QIODevice::ReadOnly);
-        if (file.size() > 1024*10) {
+        if(file.size() > 1024 * 10) {
             qWarning() << "\tFile to big!" << files[i] << file.size();
             continue;
         }
-        bool error=false;
-        QTextStream stream( &file );
+        bool error = false;
+        QTextStream stream(&file);
         QVariantMap jsonData = JSON::parseValue(stream, error).toMap();
-        if (error) {
+        if(error) {
             qWarning() << "\tNot a json file although json file extension!";
             continue;
         }
 
         //TODO REMOVE
-        if (!jsonData.contains(QLatin1String("plugin_"))) {
+        if(!jsonData.contains(QLatin1String("plugin_"))) {
             jsonData.insert(QLatin1String("plugin_"), QLatin1String("server"));
         }
+        if(!jsonData.contains(QLatin1String("instanceid_")) && jsonData.value(QLatin1String("type_")) != QLatin1String("collection")) {
+            jsonData.insert(QLatin1String("instanceid_"), QLatin1String("0"));
+        }
+        jsonData.remove(QLatin1String("_rev"));
 
         // check for neccessary values before inserting into database
-        if (!jsonData.contains(QLatin1String("plugin_")) ||
+        if(!jsonData.contains(QLatin1String("plugin_")) || !jsonData.contains(QLatin1String("type_")) ||
                 !jsonData.contains(QLatin1String("_id")) ||
-                jsonData[QLatin1String("plugin_")].toByteArray()=="AUTO") {
+                jsonData[QLatin1String("plugin_")].toByteArray() == "AUTO") {
             qWarning() << "\tNo entry for plugin or plugin=AUTO. JSON Document not valid!";
             continue;
         }
 
-        const QByteArray dataToSend = JSON::stringify(jsonData).toUtf8();
-        // Document ID: Consist of filename without extension
-        const QString docid = jsonData.value(QLatin1String("_id")).toString(); //QFileInfo(files[i]).completeBaseName();
-        QNetworkRequest request( couchdbAbsoluteUrl( docid ) );
-        request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
-        request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
-        QNetworkReply* rf = put(request, dataToSend);
-        connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
-        eventLoop.exec();
-        file.close();
-        if (rf->error() == QNetworkReply::NoError) {
-            qDebug() << "\tImport" << docid << ", entries:" << jsonData.size();
-        } else if (rf->error() == 299) {
-            //qDebug() << "\tAlready installed" << pluginid << docid;
-        } else if (rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
-            qWarning() << "\tImport failed. Upload forbidden. " << docid << file.size() << "Bytes";
-        } else {
-            qWarning() << "\tImport failed: " << docid << file.size() << "Bytes" << rf->errorString() << rf->error();
-        }
-        delete rf;
+        const mongo::BSONObj dataToSend = BJSON::toBson(jsonData);
+		const mongo::BSONObj query = BSON("_id" << dataToSend.getStringField("_id"));
+        const std::string dbid = "roomcontrol." + jsonData.value(QLatin1String("type_")).toString().toStdString();
+        m_mongodb.update(dbid, query, dataToSend, true, false);
+		if (jsonData.contains(QLatin1String("collection_")))
+			m_mongodb.ensureIndex(dbid, mongo::fromjson("{collection_:1}"));
+		if (jsonData.contains(QLatin1String("plugin_")))
+			m_mongodb.ensureIndex(dbid, mongo::fromjson("{plugin_:1}"));
     }
 
     // recursivly go into all subdirectories
-    const QStringList dirs = dir.entryList(QDir::Dirs|QDir::NoDotAndDotDot);
-    for (int i=0;i<dirs.size();++i) {
+    const QStringList dirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+    for(int i = 0; i < dirs.size(); ++i) {
         dir.cd(dirs[i]);
         importFromJSON(dir.absolutePath());
         dir.cdUp();
     }
 }
 
-void Database::changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value) {
+void Database::changePluginConfiguration(const QString &pluginid, const QString &key, const QVariantMap &value)
+{
     QVariantMap data;
     QEventLoop eventLoop;
     const QString docid = QLatin1String("configplugin_") + pluginid + QLatin1String("_") + key;
     // 1) try to get old settings document
     {
-        QNetworkRequest request ( couchdbAbsoluteUrl(docid) );
-        QNetworkReply *r = get ( request );
-        connect ( r, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        QNetworkRequest request(couchdbAbsoluteUrl(docid));
+        QNetworkReply *r = get(request);
+        connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
-        if (r->error() == QNetworkReply::NoError) {
+        if(r->error() == QNetworkReply::NoError) {
             QByteArray rawdata = r->readAll();
             delete r;
-            data = JSON::parse ( rawdata ).toMap();
-            if (!data.isEmpty()) {
+            data = JSON::parse(rawdata).toMap();
+            if(!data.isEmpty()) {
                 // Response is not json: no error recovery possible
                 qWarning() << "Database: Json parser:" << rawdata;
                 return;
@@ -652,7 +657,7 @@ void Database::changePluginConfiguration(const QString& pluginid, const QString&
     {
         const QString rev = data.value(QLatin1String("_rev")).toString();
         data = value;
-        if (rev.size())
+        if(rev.size())
             data[QLatin1String("_rev")] = rev;
         data[QLatin1String("_id")] = docid;
     }
@@ -660,11 +665,11 @@ void Database::changePluginConfiguration(const QString& pluginid, const QString&
     // 3) send to database
     {
         const QByteArray dataToSend = JSON::stringify(data).toUtf8();
-        QNetworkRequest request( couchdbAbsoluteUrl( docid ) );
+        QNetworkRequest request(couchdbAbsoluteUrl(docid));
         request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
         request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
-        QNetworkReply* rf = put(request, dataToSend);
-        connect ( rf, SIGNAL ( finished() ), &eventLoop, SLOT ( quit() ) );
+        QNetworkReply *rf = put(request, dataToSend);
+        connect(rf, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
         rf->deleteLater();
     }
@@ -672,26 +677,26 @@ void Database::changePluginConfiguration(const QString& pluginid, const QString&
 
 void Database::replyChange()
 {
-    if (checkFailure(m_listenerReply, "replyChange failed")) {
+    if(checkFailure(m_listenerReply, "replyChange failed")) {
         m_listenerReply = 0;
         return;
     }
 
-    while (m_listenerReply->canReadLine()) {
+    while(m_listenerReply->canReadLine()) {
         const QByteArray line = m_listenerReply->readLine();
-        if (line.size() <= 1) continue;
+        if(line.size() <= 1) continue;
         QVariantMap data = JSON::parse(line).toMap();
-        if (data.isEmpty() || !data.contains(QLatin1String("seq")))
+        if(data.isEmpty() || !data.contains(QLatin1String("seq")))
             continue;
 
         const int seq = data.value(QLatin1String("seq")).toInt();
 
-        if (seq > m_last_changes_seq_nr)
+        if(seq > m_last_changes_seq_nr)
             m_last_changes_seq_nr = seq;
 
         const QString docid = ServiceData::idChangeSeq(data);
 
-        if (data.contains(QLatin1String("deleted"))) {
+        if(data.contains(QLatin1String("deleted"))) {
             emit doc_removed(docid);
             continue;
         }
@@ -727,19 +732,19 @@ void Database::requestCollections()
 void Database::replyView()
 {
     QNetworkReply *r = (QNetworkReply *) sender();
-    if (checkFailure(r, "replyView failed"))
+    if(checkFailure(r, "replyView failed"))
         return;
 
     QByteArray rawdata = r->readAll();
     QVariantMap data = JSON::parse(rawdata).toMap();
-    if (data.isEmpty()) {
+    if(data.isEmpty()) {
         // Response is not json: no error recovery possible
         qWarning() << "Database: Json parser:" << rawdata;
         return;
     }
-    if (data.contains(QLatin1String("rows"))) {
+    if(data.contains(QLatin1String("rows"))) {
         QVariantList list = data.value(QLatin1String("rows")).toList();
-        for (int i = 0; i < list.size(); ++i) {
+        for(int i = 0; i < list.size(); ++i) {
             const QVariantMap listitem = list[i].toMap();
             const QVariantMap document = listitem.value(QLatin1String("value")).toMap();
             //data.remove(QLatin1String("_rev"));
@@ -750,7 +755,7 @@ void Database::replyView()
 
 void Database::requestRemove(const QString &id, QString rev)
 {
-    if (rev.isEmpty()) { // request document to get the revision
+    if(rev.isEmpty()) {  // request document to get the revision
         QNetworkRequest request(couchdbAbsoluteUrl(QString(QLatin1String("%1")).arg(id)));
         QNetworkReply *r = get(request);
         QEventLoop eventLoop;
@@ -759,38 +764,40 @@ void Database::requestRemove(const QString &id, QString rev)
 
         QVariantMap document = JSON::parse(r->readAll()).toMap();
         rev = document.value(QLatin1String("_rev")).toString();
-        if (rev.isEmpty()) {
+        if(rev.isEmpty()) {
             qWarning() << "Remove document failed: not found!" << r->errorString();
             delete r;
             return;
         }
         delete r;
     }
-    { // remove document
+    {
+        // remove document
         QNetworkRequest request(couchdbAbsoluteUrl(QString(QLatin1String("%1?rev=%2")).arg(id).arg(rev)));
 
         QNetworkReply *r = deleteResource(request);
         QEventLoop eventLoop;
         connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
-        if (r->error() != QNetworkReply::NoError) {
+        if(r->error() != QNetworkReply::NoError) {
             qWarning() << "Remove document failed!" << r->errorString();
         }
         delete r;
     }
-    { // remove children
+    {
+        // remove children
         QNetworkRequest request(couchdbAbsoluteUrl(QLatin1String("_design/_server/_view/services?key=\"%1\"#%1")).arg(id));
         QNetworkReply *r = get(request);
         QEventLoop eventLoop;
         connect(r, SIGNAL(finished()), &eventLoop, SLOT(quit()));
         eventLoop.exec();
         QVariantMap data = JSON::parse(r->readAll()).toMap();
-        if (r->error() != QNetworkReply::NoError || data.isEmpty() || !data.contains(QLatin1String("rows"))) {
+        if(r->error() != QNetworkReply::NoError || data.isEmpty() || !data.contains(QLatin1String("rows"))) {
             qWarning() << "Children fetch failed!" << r->errorString();
         } else {
             QVariantList list = data.value(QLatin1String("rows")).toList();
             QList<QVariantMap> servicelist;
-            for (int i = 0; i < list.size(); ++i) {
+            for(int i = 0; i < list.size(); ++i) {
                 QVariantMap service = list.value(i).toMap().value(QLatin1String("value")).toMap();
                 requestRemove(ServiceData::id(service), service.value(QLatin1String("_rev")).toString());
             }
@@ -801,7 +808,7 @@ void Database::requestRemove(const QString &id, QString rev)
 
 void Database::requestAdd(const QVariantMap &data, QString docid)
 {
-    if (docid.isEmpty())
+    if(docid.isEmpty())
         docid = data.value(QLatin1String("_id")).toString();
 
     const QByteArray dataToSend = JSON::stringify(data).toUtf8();
@@ -810,18 +817,18 @@ void Database::requestAdd(const QVariantMap &data, QString docid)
     request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
     request.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend.size());
     QNetworkReply *rf;
-    if (docid.size())
+    if(docid.size())
         rf = put(request, dataToSend);
     else
         rf = post(request, dataToSend);
     QEventLoop eventLoop;
     connect(rf, SIGNAL(finished()), &eventLoop, SLOT(quit()));
     eventLoop.exec();
-    if (rf->error() == QNetworkReply::NoError) {
+    if(rf->error() == QNetworkReply::NoError) {
         //qDebug() << "\tAdd" << docid << ", entries:" << data.size() << rf->readAll();
-    } else if (rf->error() == 299) {
+    } else if(rf->error() == 299) {
         qDebug() << "\tAlready addded" << docid;
-    } else if (rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
+    } else if(rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
         qWarning() << "\tAdd failed. Upload forbidden. " << docid;
     } else {
         qWarning() << "\tAdd failed: " << docid << rf->errorString() << rf->error();
@@ -833,7 +840,7 @@ void Database::requestChange(const QVariantMap &data, bool fetchNewestRevision)
 {
     const QString docid = data.value(QLatin1String("_id")).toString();
     QString rev = data.value(QLatin1String("_rev")).toString();
-    if (fetchNewestRevision) {
+    if(fetchNewestRevision) {
         QNetworkRequest request(couchdbAbsoluteUrl(QString(QLatin1String("%1")).arg(docid)));
         QNetworkReply *r = get(request);
         QEventLoop eventLoop;
@@ -842,14 +849,14 @@ void Database::requestChange(const QVariantMap &data, bool fetchNewestRevision)
 
         QVariantMap document = JSON::parse(r->readAll()).toMap();
         rev = document.value(QLatin1String("_rev")).toString();
-        if (rev.isEmpty()) {
+        if(rev.isEmpty()) {
             qWarning() << "Remove document failed: not found!" << r->errorString();
             delete r;
             return;
         }
         delete r;
     }
-    if (docid.isEmpty() || rev.isEmpty()) {
+    if(docid.isEmpty() || rev.isEmpty()) {
         qWarning() << "Database: requestChange failed:" << data;
         return;
     }
@@ -863,11 +870,11 @@ void Database::requestChange(const QVariantMap &data, bool fetchNewestRevision)
     QEventLoop eventLoop;
     connect(rf, SIGNAL(finished()), &eventLoop, SLOT(quit()));
     eventLoop.exec();
-    if (rf->error() == QNetworkReply::NoError) {
+    if(rf->error() == QNetworkReply::NoError) {
         //qDebug() << "\tChange" << docid << ", entries:" << data.size() << rf->readAll();
-    } else if (rf->error() == 299) {
+    } else if(rf->error() == 299) {
         qDebug() << "\tAlready Change" << docid;
-    } else if (rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
+    } else if(rf->error() == QNetworkReply::ContentOperationNotPermittedError) {
         qWarning() << "\tChange failed. Upload forbidden. " << docid;
     } else {
         qWarning() << "\tChange failed: " << docid << rf->errorString() << rf->error();

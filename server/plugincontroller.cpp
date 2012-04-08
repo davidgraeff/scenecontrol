@@ -27,19 +27,33 @@ PluginController* PluginController::instance() {
     return plugincontroller_instance;
 }
 
-PluginController::PluginController () {
+PluginController::PluginController () : m_exitIfNoPluginProcess(false) {
     connect(&m_comserver, SIGNAL(newConnection()), SLOT(newConnection()));
 }
 
 PluginController::~PluginController()
 {
-    QMap<QString,PluginCommunication*>::iterator i = m_registeredevents.begin();
-    for (;i!=m_registeredevents.end();++i) {
-        PluginCommunication* executeplugin = i.value();
-        executeplugin->unregister_event ( i.key() );
-    }
-    qDeleteAll(m_plugins);
-    qDeleteAll(m_pluginprocesses);
+	waitForPluginsAndExit();
+}
+
+void PluginController::waitForPluginsAndExit()
+{
+	qDebug() << "Shutdown...";
+	m_exitIfNoPluginProcess = true;
+	// Unregister all events
+	QMap<QString,PluginCommunication*>::iterator i = m_registeredevents.begin();
+	for (;i!=m_registeredevents.end();++i) {
+		PluginCommunication* executeplugin = i.value();
+		executeplugin->unregister_event ( i.key() );
+	}
+	// Delete all plugin communication objects
+	qDeleteAll(m_plugins);
+	// Delete all plugin processes
+	qDeleteAll(m_pluginprocesses);
+	
+	// Exit if no plugin processes are loaded
+	if (m_pluginprocesses.isEmpty())
+		QCoreApplication::exit(0);
 }
 
 void PluginController::newConnection()
@@ -172,4 +186,7 @@ void PluginController::addPlugin(const QString& id, PluginCommunication* pluginp
 void PluginController::removeProcess(PluginProcess* process) {
     m_pluginprocesses.remove(process);
     process->deleteLater();
+	// Exit if no plugin processes are loaded
+	if (m_pluginprocesses.isEmpty() && m_exitIfNoPluginProcess)
+		QCoreApplication::exit(0);
 }
