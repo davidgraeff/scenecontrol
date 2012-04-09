@@ -1,9 +1,10 @@
 #!/bin/sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ $# -ne 1 ]
 then
 # start screen and connect to it
-screen -RmS server  /usr/bin/roomcontrolserver
+screen -RmS server  $DIR/roomcontrolserver
 else
 # start screen detachted
-screen -dmS server  /usr/bin/roomcontrolserver
+screen -dmS server  $DIR/roomcontrolserver
 fi
