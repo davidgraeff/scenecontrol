@@ -101,5 +101,5 @@ private Q_SLOTS:
 public Q_SLOTS:
     void Event_add(const QString& id, const QVariantMap& event_data);
     void Event_remove(const QString& id);
-    void settings(const QString& pluginid, const QString& key, const QVariantMap& data);
+    void settings(const QString& pluginid, const QVariantMap& data);
 };

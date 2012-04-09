@@ -19,11 +19,17 @@ PluginProcess::PluginProcess(PluginController* controller, const QString& filena
 }
 
 PluginProcess::~PluginProcess() {
+
+	m_pluginProcess.kill();
+    m_pluginProcess.waitForFinished();
+}
+
+void PluginProcess::finishProcess()
+{
     m_aboutToFree = true;
     if (m_pluginProcess.state()==QProcess::Running) {
         m_pluginProcess.terminate();
     }
-    m_pluginProcess.waitForFinished();
 }
 
 void PluginProcess::finished() {

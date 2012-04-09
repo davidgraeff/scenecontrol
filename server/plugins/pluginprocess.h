@@ -17,6 +17,7 @@ class PluginProcess:  public QObject {
 public:
     PluginProcess(PluginController* controller, const QString& filename);
     ~PluginProcess();
+	void finishProcess();
 private:
     PluginController* m_controller;
     QProcess m_pluginProcess;

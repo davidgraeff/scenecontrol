@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     // connect objects
     QObject::connect(database, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
     QObject::connect(database, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
-    QObject::connect(database, SIGNAL(settings(QString,QString,QVariantMap)), plugins, SLOT(settings(QString,QString,QVariantMap)));
+    QObject::connect(database, SIGNAL(settings(QString,QVariantMap)), plugins, SLOT(settings(QString,QVariantMap)));
     QObject::connect(database, SIGNAL(dataOfCollection(QString,QList<QVariantMap>)), collectioncontroller, SLOT(dataOfCollection(QString,QList<QVariantMap>)));
     QObject::connect(socket, SIGNAL(requestExecution(QVariantMap,int)), executeRequests, SLOT(requestExecution(QVariantMap,int)));
 
@@ -147,9 +147,9 @@ int main(int argc, char *argv[])
         // Start plugin processes
         if (!cmdargs.contains("--no-autoload-plugins"))
             plugins->startplugins();
-        // start change listeners
-        database->startChangeListenerEvents();
-        database->startChangeListenerSettings();
+        //TODO start change listeners
+//         database->startChangeListenerEvents();
+//         database->startChangeListenerSettings();
         exitcode = qapp.exec();
 		// one last event processing to free all deleteLater objects
 		qapp.processEvents();

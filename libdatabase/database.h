@@ -26,15 +26,14 @@
 */
 
 #pragma once
-#include <QNetworkAccessManager>
 #include <QVariantMap>
-#include <QNetworkReply>
 #include <QTimer>
 #include "mongo/client/dbclient.h"
 
-class Database: public QNetworkAccessManager {
+class Database: public QObject {
     Q_OBJECT
     Q_PROPERTY(int state READ state NOTIFY stateChanged)
+	friend class DatabaseInstall;
 public:
     /**
      * Database is a singleton object
@@ -56,39 +55,37 @@ public Q_SLOTS:
      * Return true if the connection could be established
      */
     ConnectStateEnum connectToDatabase(const QString& serverHostname, bool reconnectOnFailure);
-	/**
-	 * Initialize database: Create the database and install the minimal set of necessary documents
-	 */
-	ConnectStateEnum initalizeDatabase();
-	
+
 	/**
 	 * Remove all listeners and disconnect from database
 	 */
 	void disconnectFromHost();
+	
     /**
-     * Request all events (synchronous)
+     * Request all events (asynchronous)
      * Event_add and Event_remove signals are triggered in reaction
      */
     void requestEvents(const QString& plugin_id);
-    /**
-     * Install missing json documents for the given plugin (synchronous)
-     */
-    bool verifyPluginData(const QString& pluginid, const QString& databaseImportPath);
+	
     /**
      * Request all conditions and actions of a collection (asynchronous)
      * dataOfCollection signal is triggered in reaction
      */
     void requestDataOfCollection(const QString& collection_id);
+	
     /**
-     * Request all configurations of a given plugin (synchronous)
+     * Request all configurations of a given plugin (asynchronous)
      * settings signal is triggered in reaction
      */
     void requestPluginConfiguration(const QString& pluginid);
+	
     /**
      * Change configurations of a given plugin (synchronous)
      * settings signal is triggered in reaction if startChangeListenerSettings has been called before
+	 * \param category An arbitrary non empty word describing the configuration category of the values
      */
-    void changePluginConfiguration(const QString& pluginid, const QString& key, const QVariantMap& value);
+    void changePluginConfiguration(const QString& pluginid, const QByteArray& category, const QVariantMap& value);
+	
     /**
      * Export all json documents to the given path (synchronous)
      */
@@ -97,58 +94,31 @@ public Q_SLOTS:
      * Import all json documents from the given path recursively (synchronous)
      */
     void importFromJSON(const QString& path);
-   /**
-	 * Start listening to changed documents
-	 * If the database does not respond 5 times in sequal the application loop will be quit.
-     * doc_changed and doc_removed signals are triggered in reaction if a change occured
-     */
-    void startChangeListener();
+
     /**
      * Request all collections (asynchronous)
      * doc_changed signal is triggered in reaction
      */
     void requestCollections();
+	
     /**
      * Request all schemas (asynchronous)
      * doc_changed signal is triggered in reaction
      */
     void requestSchemas();
+	
 	/// Remove a document
-    void requestRemove(const QString& id, QString rev);
-	/// Will generate a new document with a new id
-	void requestAdd(const QVariantMap& data, QString docid=QString());
+    void removeDocument(const QString &type, const QString& id);
+
 	/**
-	 * Change document given by data.
-	 * data have to contain a field "_id" && "_rev"
-	 * if fetchNewestRevision is set, the document will be requested and the newest rev will be used
+	 * Change or insert document given by data.
+	 * data have to contain a field "_id" if insertWithNewID is not true
 	 */
-	void requestChange(const QVariantMap& data, bool fetchNewestRevision=false);
-    /**
-	 * Start listening to configuration changes (change+remove)
-	 * If the database does not respond 5 times in sequal the application loop will be quit.
-     * settings signal is triggered in reaction if a change occured
-     */
-    void startChangeListenerSettings();
-    /**
-	 * Start listening to event document changes (change+remove)
-	 * If the database does not respond 5 times in sequal the application loop will be quit.
-     * Event_add and Event_remove signals are triggered in reaction if a change occured
-     */
-    void startChangeListenerEvents();
+	void changeDocument(const QVariantMap& data, bool insertWithNewID = false);
 private:
     Database ();
 	QString couchdbAbsoluteUrl(const QString& relativeUrl = QString());
     QString m_serveraddress;
-	
-    int m_last_changes_seq_nr;
-    /// Keep track of the failures. If > 5 exit application because database is down.
-    int m_settingsChangeFailCounter;
-    /// Keep track of the failures. If > 5 exit application because database is down.
-    int m_eventsChangeFailCounter;
-    /// Check for the return value of the NetworkReply. Output error message+msg if an error occured.
-    bool checkFailure(QNetworkReply* r, const QByteArray& msg=QByteArray());
-	/// Reply object for the listener
-	QNetworkReply* m_listenerReply;
 	/// current state
 	ConnectStateEnum m_state;
     bool m_reconnectOnFailure;
@@ -158,25 +128,9 @@ private:
 	mongo::DBClientConnection m_mongodb;
 private Q_SLOTS:
 	ConnectStateEnum reconnectToDatabase();
-    /// Called if events on the database changed. Fetch all those events
-    void replyEventsChange();
-    /// Called if plugin configuration in the database changed.
-    /// Fetch those new configurations. settings signal is triggered in reaction
-    void replyPluginSettingsChange();
-    /**
-	 * The caller requested a list of all conditions and actions of a collection.
-     * Now fetch all those condition and action documents.
-     * dataOfCollection signal is triggered in reaction
-	 */
-    void replyDataOfCollection();
-    /** Called if a document in the database changed
-	 * Fetch the new document. doc_changed and doc_removed signals are triggered in reaction
-	 */
-    void replyChange();
-    void replyView();
 Q_SIGNALS:
     /// A configuration either changed or was actively requested
-    void settings(const QString& pluginid, const QString& key, const QVariantMap& data);
+    void settings(const QString& pluginid, const QVariantMap& data);
 	/// An event document changed or requestEvents was called before
     void Event_add(const QString& id, const QVariantMap& event_data);
 	/// An event document has been removed. This is only triggered if startChangeListenerEvents

@@ -11,11 +11,13 @@
 #include <QThread>
 #include <QTimer>
 #include <QDir>
+#include <libdatabase/database_install.h>
 
 PluginCommunication::PluginCommunication(PluginController* controller, QLocalSocket* socket) : m_controller(controller) {
     m_pluginCommunication=socket;
     connect(m_pluginCommunication, SIGNAL(readyRead()), SLOT(readyRead()));
 	qRegisterMetaType<QLocalSocket::LocalSocketState>("QLocalSocket::LocalSocketState");
+	qRegisterMetaType<QAbstractSocket::SocketState>("QAbstractSocket::SocketState");
     connect(m_pluginCommunication, SIGNAL(stateChanged(QLocalSocket::LocalSocketState)), SLOT(stateChanged()), Qt::DirectConnection);
     // Request plugin id
     QVariantMap data;
@@ -71,13 +73,13 @@ void PluginCommunication::readyRead()
             emit qtSlotResponse(variantdata.value(QLatin1String("response_")),
                                 variantdata.value(QLatin1String("responseid_")).toByteArray(), id);
         } else if (method == "changeConfig") {
-            const QString key = ServiceData::configurationkey(variantdata);
-            if (key.isEmpty()) {
+            const QByteArray configcategory = ServiceData::configurationkey(variantdata).toAscii();
+            if (configcategory.isEmpty()) {
                 qWarning() << "Server: Request changeConfig for" << id <<"but no key provided";
                 continue;
             }
             // store new configuration value in database
-            Database::instance()->changePluginConfiguration(id, key, variantdata);
+            Database::instance()->changePluginConfiguration(id, configcategory, variantdata);
         } else if (method == "changeProperty") {
             // Get session id and remove id from QVariantMap
             const int sessionid = ServiceData::sessionid(variantdata);
@@ -219,7 +221,7 @@ void PluginCommunication::databaseStateChanged() {
 		if (!dir.cd(QLatin1String(ROOM_DATABASEIMPORTPATH)))
 			qWarning() << "Server: Database initial import path not found!";
 		else
-			b->verifyPluginData(id, dir.absolutePath());
+			DatabaseInstall().verifyPluginData(id, dir.absolutePath());
 		b->requestPluginConfiguration(id);
 		b->requestEvents(id);
 	} else if (b->state()==Database::DisconnectedState) {

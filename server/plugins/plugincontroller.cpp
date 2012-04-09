@@ -36,6 +36,8 @@ PluginController::PluginController () : m_exitIfNoPluginProcess(false) {
 PluginController::~PluginController()
 {
 	waitForPluginsAndExit();
+	// Delete all plugin processes
+	qDeleteAll(m_pluginprocesses);
 }
 
 void PluginController::waitForPluginsAndExit()
@@ -48,10 +50,15 @@ void PluginController::waitForPluginsAndExit()
 		PluginCommunication* executeplugin = i.value();
 		executeplugin->unregister_event ( i.key() );
 	}
+	m_registeredevents.clear();
 	// Delete all plugin communication objects
 	qDeleteAll(m_plugins);
-	// Delete all plugin processes
-	qDeleteAll(m_pluginprocesses);
+	m_plugins.clear();
+	QSet<PluginProcess*>::iterator i2 = m_pluginprocesses.begin();
+	while (m_pluginprocesses.end()!= i2) {
+		(*i2)->finishProcess();
+		++i2;
+	}
 	
 	// Exit if no plugin processes are loaded
 	if (m_pluginprocesses.isEmpty())
@@ -111,7 +118,7 @@ void PluginController::Event_remove(const QString& id) {
     }
 }
 
-void PluginController::settings(const QString& pluginid, const QString& key, const QVariantMap& data) {
+void PluginController::settings(const QString& pluginid, const QVariantMap& data) {
     PluginCommunication* p = getPlugin(pluginid);
     if (!p) {
         qWarning() << "Plugins: Configuration for unknown plugin" << pluginid;
@@ -119,7 +126,7 @@ void PluginController::settings(const QString& pluginid, const QString& key, con
     } else {
         //qDebug() << "Plugins:" << data.size() << "Config" << key << "for plugin" << pluginid << "loaded";
     }
-    p->configChanged(key.toAscii(), data);
+    p->configChanged(data.value(QLatin1String("key_")).toString().toAscii(), data);
 }
 
 bool PluginController::startplugins() {

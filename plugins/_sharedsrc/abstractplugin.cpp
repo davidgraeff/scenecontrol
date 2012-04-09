@@ -11,11 +11,14 @@
 
 #define MAGICSTRING "roomcontrol_"
 
+int killSignalUntilKill = 1;
+
 static void catch_int(int )
 {
     signal(SIGINT, 0);
     signal(SIGTERM, 0);
-    QCoreApplication::exit(0);
+	if (--killSignalUntilKill == 0)
+		QCoreApplication::exit(0);
 }
 
 void roomMessageOutput(QtMsgType type, const char *msg)
@@ -231,20 +234,18 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& plugin_id) {
     return socket;
 }
 
-void AbstractPlugin::changeConfig(const QByteArray& key, const QVariantMap& data) {
-    QVariantMap modifieddata;
+void AbstractPlugin::changeConfig(const QByteArray& category, const QVariantMap& data) {
+    QVariantMap modifieddata = data;
     ServiceData::setMethod(modifieddata, "changeConfig");
     ServiceData::setPluginid(modifieddata, PLUGIN_ID);
-    ServiceData::setConfigurationkey(modifieddata, key);
-    ServiceData::setValue(modifieddata, data);
+    ServiceData::setConfigurationkey(modifieddata, category);
     sendDataToPlugin(COMSERVERSTRING, modifieddata);
 }
 
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
-    QVariantMap modifieddata;
+    QVariantMap modifieddata = data;
     ServiceData::setMethod(modifieddata, "changeProperty");
     ServiceData::setPluginid(modifieddata, PLUGIN_ID);
-    ServiceData::setValue(modifieddata, data);
     ServiceData::setSessionID(modifieddata, sessionid);
     sendDataToPlugin(COMSERVERSTRING, modifieddata);
 }
