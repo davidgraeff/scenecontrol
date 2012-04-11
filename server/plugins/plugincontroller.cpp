@@ -150,6 +150,8 @@ void PluginController::Event_remove(const QString& id) {
 }
 
 void PluginController::scanPlugins() {
+	if (Database::instance()->state()!=Database::ConnectedState)
+		return;
     const QDir plugindir = setup::pluginDir();
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     if (pluginfiles.empty()) {

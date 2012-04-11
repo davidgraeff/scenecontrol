@@ -51,10 +51,17 @@ Name=collectioneditor
 Type=Native Application
 
 [Launch][Launch Configuration 2][Data]
+Arguments=
 Configured from ProjectItem=roomcontrol,clients,collectioneditor,collectioneditor
-Project Target=roomcontrol,clients,collectioneditor,collectioneditor
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x00)
+Dependency Action=Nothing
+EnvironmentGroup=default
+Executable=file:///home/david/roomcontrol/build/clients/collectioneditor/collectioneditor
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=
+Use External Terminal=false
 Working Directory=file:///home/david/Entwicklung/build/roomcontrol/clients/collectioneditor/
-isExecutable=false
+isExecutable=true
 
 [MakeBuilder]
 Default Make Environment Profile=

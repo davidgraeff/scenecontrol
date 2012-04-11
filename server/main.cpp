@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
                "--export [PATH]: Export all documents from the database and store them in PATH or the working directory\n"
                "--import [PATH]: Import all documents from PATH or the working directory and store them in the database\n"
                "--no-event-loop: Shutdown after initialisation\n"
-               "--no-autoload-plugins: Only start the server and no plugin processes\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
                ABOUT_SERVICENAME, ABOUT_VERSION, argv[0]);
@@ -145,9 +144,6 @@ int main(int argc, char *argv[])
 			database->importFromJSON(path);
 		}
 	} else if (!cmdargs.contains("--no-event-loop") && plugins->valid()) { // Start event loop
-        // Start plugin processes
-        if (!cmdargs.contains("--no-autoload-plugins"))
-            plugins->scanPlugins();
         //TODO start change listeners
 //         database->startChangeListenerEvents();
 //         database->startChangeListenerSettings();
