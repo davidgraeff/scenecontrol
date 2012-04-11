@@ -9,7 +9,6 @@
 #include "socket.h"
 #include "execute/collectioncontroller.h"
 #include "paths.h"
-#include "config.h"
 
 #include <QElapsedTimer>
 #include <QThread>

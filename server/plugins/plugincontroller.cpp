@@ -6,7 +6,6 @@
 #include "libdatabase/json.h"
 #include "socket.h"
 #include "paths.h"
-#include "config.h"
 
 #include <QCoreApplication>
 #include <QSettings>
@@ -159,8 +158,8 @@ void PluginController::scanPlugins() {
         return;
     }
 
-    QDir importdir(setup::baseDir());
-    bool tryToInstallImportFiles = importdir.cd(QLatin1String(ROOM_DATABASEIMPORTPATH));
+    bool tryToInstallImportFiles;
+    QDir importdir(setup::dbimportDir(&tryToInstallImportFiles));
     if (!tryToInstallImportFiles)
         qWarning() << "Server: Database initial import path not found!";
 

@@ -10,6 +10,7 @@ QString certificateFile(const QString& file);
 QString certificateFile(const char* file);
 
 // Dirs
-QDir pluginDir();
+QDir pluginDir(bool* found = 0);
+QDir dbimportDir(bool* found = 0);
 QDir baseDir();
 };

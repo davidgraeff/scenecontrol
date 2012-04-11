@@ -1,6 +1,5 @@
 
 #include "paths.h"
-#include "config.h"
 #include "collectioncontroller.h"
 #include "socket.h"
 #include "runningcollection.h"
