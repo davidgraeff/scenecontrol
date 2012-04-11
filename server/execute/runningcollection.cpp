@@ -1,7 +1,7 @@
 #include "runningcollection.h"
 #include "plugins/plugincontroller.h"
-#include "plugins/plugincommunication.h"
 #include "libdatabase/servicedata.h"
+#include <plugins/pluginprocess.h>
 
 
 RunningCollection::RunningCollection(const QString& collectionid, const QList< QVariantMap >& services):
@@ -15,7 +15,8 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< Q
         if (ServiceData::checkType(servicesdata, ServiceData::TypeAction)) {
             const int delay = servicesdata.value(QLatin1String("delay_"), 0).toInt();
             // Get the right plugin process
-            PluginCommunication* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( servicesdata ) );
+            PluginProcess* plugin = PluginController::instance()->getPlugin (
+				ServiceData::pluginid ( servicesdata ), ServiceData::instanceid ( servicesdata ) );
             if ( !plugin ) {
                 qWarning() <<"No plugin for action found:"<<servicesdata;
                 continue;
@@ -24,15 +25,16 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< Q
             m_timetable.insert (delay, dataWithPlugin(plugin, servicesdata));
         } else if (ServiceData::checkType(servicesdata, ServiceData::TypeCondition)) { // condition
             // Get the right plugin process
-            PluginCommunication* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( servicesdata ) );
+            PluginProcess* plugin = PluginController::instance()->getPlugin (
+				ServiceData::pluginid ( servicesdata ), ServiceData::instanceid ( servicesdata ) );
             if ( !plugin ) {
                 qWarning() <<"No plugin for condition found:"<<servicesdata;
                 continue;
             }
 
             m_conditions.append (dataWithPlugin(plugin, servicesdata));
-            connect(plugin,SIGNAL(qtSlotResponse(QVariant,QByteArray,QString)),
-                    SLOT(qtSlotResponse(QVariant,QByteArray,QString)));
+            connect(plugin,SIGNAL(qtSlotResponse(QVariant,QByteArray,QString,QString)),
+                    SLOT(qtSlotResponse(QVariant,QByteArray,QString,QString)));
 
         }
     }
@@ -63,9 +65,9 @@ void RunningCollection::start()
         qDebug() <<"Start with cond" << m_collectionid << "Ok:" << m_conditionok << "size:" << m_conditions.size();
 }
 
-void RunningCollection::qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid) {
+void RunningCollection::qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid, const QString& instanceid) {
     if (!response.canConvert(QVariant::Bool)) {
-        qWarning() << "Condition failed." << responseid << pluginid << "Not a boolean response" << response;
+        qWarning() << "Condition failed." << responseid << pluginid << instanceid << "Not a boolean response" << response;
         return;
     }
     if (!response.toBool()) {

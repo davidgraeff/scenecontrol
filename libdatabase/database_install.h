@@ -9,5 +9,5 @@ public:
     /**
      * Install missing json documents for the given plugin (synchronous)
      */
-    bool verifyPluginData(const QString& pluginid, const QString& databaseImportPath);
+    bool installPlugindataIfMissing(const QString& pluginid, const QString& databaseImportPath);
 };

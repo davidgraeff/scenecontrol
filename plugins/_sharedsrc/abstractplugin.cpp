@@ -8,17 +8,16 @@
 #include <stdlib.h>
 #include <QElapsedTimer>
 #include <signal.h>    /* signal name macros, and the signal() prototype */
+#include <QProcessEnvironment>
 
 #define MAGICSTRING "roomcontrol_"
-
-int killSignalUntilKill = 1;
 
 static void catch_int(int )
 {
     signal(SIGINT, 0);
     signal(SIGTERM, 0);
-	if (--killSignalUntilKill == 0)
-		QCoreApplication::exit(0);
+    if (!QProcessEnvironment().contains(QLatin1String("CHILDOFSERVER=1")))
+        QCoreApplication::exit(0);
 }
 
 void roomMessageOutput(QtMsgType type, const char *msg)
@@ -44,14 +43,21 @@ void roomMessageOutput(QtMsgType type, const char *msg)
     }
 }
 
-AbstractPlugin::AbstractPlugin() : m_lastsessionid(-1)
+AbstractPlugin::AbstractPlugin(const QString& instanceid) : m_lastsessionid(-1), m_instanceid(instanceid)
 {
     qInstallMsgHandler(roomMessageOutput);
     connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
 
-    //set up signal handlers to exit on CTRL+C and if server sends terminate signal
+    //set up signal handlers to exit on 2x CTRL+C
     signal(SIGINT, catch_int);
     signal(SIGTERM, catch_int);
+}
+
+AbstractPlugin::~AbstractPlugin()
+{
+	close();
+	qDeleteAll(m_connectionsByID);
+	m_connectionsByID.clear();
 }
 
 bool AbstractPlugin::createCommunicationSockets()
@@ -228,7 +234,11 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& plugin_id) {
         // connection established: add to map, send welcome string with current plugin id
         m_connectionsByID[plugin_id] = socket;
         m_connectionsBySocket[socket] = plugin_id;
-        socket->write(PLUGIN_ID "\n");
+        QVariantMap dataout;
+        ServiceData::setMethod(dataout, "identifyplugin");
+        ServiceData::setPluginid(dataout, PLUGIN_ID);
+		ServiceData::setInstanceid(dataout, m_instanceid);
+        writeToSocket(socket, dataout);
         socket->waitForBytesWritten();
     }
     return socket;
@@ -299,8 +309,8 @@ QVariant AbstractPlugin::invokeSlot(const QByteArray& methodname, int numParams,
     Q_UNUSED(returntype);
     QVariant result(QVariant::nameToType(returntype));
     bool ok = QMetaObject::invokeMethod(this, methodname, QGenericReturnArgument(returntype,result.data()), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
-	if (!ok) {
-		qWarning() << __FUNCTION__ << "failed";
-	}
+    if (!ok) {
+        qWarning() << __FUNCTION__ << "failed";
+    }
     return result;
 }

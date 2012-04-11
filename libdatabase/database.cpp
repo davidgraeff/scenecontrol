@@ -84,10 +84,10 @@ Database::ConnectStateEnum Database::reconnectToDatabase()
     return m_state;
 }
 
-void Database::requestEvents(const QString &plugin_id)
+void Database::requestEvents(const QString& plugin_id, const QString& instanceid)
 {
     std::auto_ptr<mongo::DBClientCursor> cursor =
-        m_mongodb.query("roomcontrol.event", BSON("plugin_" << plugin_id.toStdString()));
+        m_mongodb.query( "roomcontrol.event", BSON("plugin_" << plugin_id.toStdString() << "instanceid_" << instanceid.toStdString()) );
     while ( cursor->more() ) {
         QVariantMap jsonData = BJSON::fromBson(cursor->next());
         jsonData.remove(QLatin1String("type_"));
@@ -143,18 +143,19 @@ void Database::requestPluginConfiguration(const QString &pluginid)
         QVariantMap jsonData = BJSON::fromBson(cursor->next());
         jsonData.remove(QLatin1String("type_"));
         jsonData.remove(QLatin1String("plugin_"));
-        emit settings(pluginid, jsonData);
+        emit pluginConfiguration(pluginid, jsonData);
     }
 }
 
-void Database::changePluginConfiguration(const QString& pluginid, const QByteArray& category, const QVariantMap& value)
+void Database::changePluginConfiguration(const QString& pluginid, const QString& instanceid, const QByteArray& category, const QVariantMap& value)
 {
-    if (value.isEmpty() || pluginid.isEmpty() || category.isEmpty())
+    if (value.isEmpty() || instanceid.isEmpty() || pluginid.isEmpty() || category.isEmpty())
         return;
 
     QVariantMap jsonData = value;
-    jsonData[QLatin1String("_id")] = pluginid.toAscii()+"_"+category;
-    jsonData[QLatin1String("plugin_")] = pluginid;
+    ServiceData::setPluginid(jsonData, pluginid.toAscii());
+    ServiceData::setInstanceid(jsonData, instanceid);
+    jsonData[QLatin1String("_id")] = pluginid.toAscii()+"_"+instanceid.toAscii()+"_"+category;
     const mongo::BSONObj dataToSend = BJSON::toBson(jsonData);
     const mongo::BSONObj query = BSON("_id" << dataToSend.getStringField("_id"));
     const std::string dbid = "roomcontrol.configuration";
@@ -196,11 +197,11 @@ void Database::removeDocument(const QString &type, const QString &id)
     }
 }
 
-void Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
+bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
 {
     if (!data.contains(QLatin1String("type_"))) {
         qWarning() << "changeDocument: can not add/change document without type_";
-        return;
+        return false;
     }
 
     QVariantMap jsonData = data;
@@ -212,7 +213,7 @@ void Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
                                              replace(QLatin1String("-"),QString());
         else {
             qWarning() << "changeDocument: can not change document without _id";
-            return;
+            return false;
         }
     }
 
@@ -220,10 +221,33 @@ void Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
     const mongo::BSONObj query = BSON("_id" << jsonData[QLatin1String("_id")].toString().toStdString());
     const std::string dbid = "roomcontrol."+ServiceData::type(jsonData).toStdString();
     m_mongodb.update(dbid, query, dataToSend, true, false);
-    if (jsonData.contains(QLatin1String("plugin_")))
+	
+	std::string lasterror = m_mongodb.getLastError();
+	if (lasterror.size()!=0) {
+		return false;
+	}
+	
+    if (jsonData.contains(QLatin1String("plugin_")) && jsonData.contains(QLatin1String("instanceid_")))
+        m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1,\"instanceid_\":1}"));
+    else if (jsonData.contains(QLatin1String("plugin_")))
         m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1}"));
     if (jsonData.contains(QLatin1String("collection_")))
         m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"collection_\":1}"));
+	
+	return true;
+}
+
+bool Database::contains(const QString& type, const QString& id)
+{
+    const mongo::BSONObj query = BSON("_id" << id.toStdString());
+    const std::string dbid = "roomcontrol."+type.toStdString();
+    std::auto_ptr<mongo::DBClientCursor> cursor =
+        m_mongodb.query(dbid, query, 1);
+    if (cursor.get()==0) {
+        qWarning()<<"Database: Query failed!" << type << id;
+        return false;
+    }
+    return cursor->itcount();
 }
 
 void Database::exportAsJSON(const QString& path)

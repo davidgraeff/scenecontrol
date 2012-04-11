@@ -27,7 +27,7 @@ class plugin : public AbstractPlugin
 {
     Q_OBJECT
 public:
-    plugin();
+    plugin(const QString& instanceid);
     virtual ~plugin();
 
 private Q_SLOTS:

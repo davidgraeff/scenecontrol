@@ -14,7 +14,7 @@ DatabaseInstall::DatabaseInstall(QObject* parent): QObject(parent)
 
 }
 
-bool DatabaseInstall::verifyPluginData(const QString &pluginid, const QString &databaseImportPath)
+bool DatabaseInstall::installPlugindataIfMissing(const QString &pluginid, const QString &databaseImportPath)
 {
     if (Database::instance()->state()!=Database::ConnectedState)
         return false;
@@ -51,26 +51,12 @@ bool DatabaseInstall::verifyPluginData(const QString &pluginid, const QString &d
         if (!jsonData.contains(QLatin1String("_id")))
             jsonData[QLatin1String("_id")] = (QString)(QFileInfo(files[i]).completeBaseName() + pluginid);
 
-        const mongo::BSONObj dataToSend = BJSON::toBson(jsonData);
-        const mongo::BSONObj query = BSON("_id" << dataToSend.getStringField("_id"));
-        const std::string dbid = "roomcontrol."+ServiceData::type(jsonData).toStdString();
-        std::auto_ptr<mongo::DBClientCursor> cursor =
-            Database::instance()->m_mongodb.query(dbid, query, 1);
-        if (cursor.get()==0) {
-            qWarning()<<"Database Install: Query failed!" << pluginid << jsonData[QLatin1String("_id")].toString();
-            continue;
-        }
-        if (cursor->itcount()) {
-            // Already in database
-            continue;
-        }
-        Database::instance()->m_mongodb.insert(dbid, dataToSend);
-        std::string lasterror = Database::instance()->m_mongodb.getLastError();
-        if (lasterror.size()!=0) {
-            qDebug() << "\tFailed to install" << pluginid << jsonData[QLatin1String("_id")].toString() << ", entries:" << jsonData.size();
+		if (Database::instance()->contains(ServiceData::type(jsonData), ServiceData::id(jsonData)))
+			continue;
+        if (!Database::instance()->changeDocument(jsonData)) {
+            qDebug() << "\tFailed to install" << pluginid << ServiceData::id(jsonData) << ", entries:" << jsonData.size();
 			continue;
         }
-        Database::instance()->m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1}"));
     }
 
     return true;

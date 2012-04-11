@@ -71,7 +71,8 @@ public:
      * Use this in your plugin main method.
      */
     bool createCommunicationSockets();
-    AbstractPlugin();
+    AbstractPlugin(const QString& instanceid);
+    virtual ~AbstractPlugin();
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) = 0;
     bool sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     void changeConfig(const QByteArray& category, const QVariantMap& data);
@@ -90,6 +91,7 @@ private:
     QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
     QSet<QLocalSocket*> m_pendingConnections;
     QLocalSocket* getClientConnection(const QByteArray& plugin_id);
+	QString m_instanceid;
     void writeToSocket(QLocalSocket* socket, const QVariantMap& data);
     int invokeHelperGetMethodId(const QByteArray& methodName);
     int invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output);
@@ -101,7 +103,10 @@ public Q_SLOTS:
     QString pluginid() {
         return QLatin1String(PLUGIN_ID);
     }
-
+    QString instanceid() {
+        return m_instanceid;
+    }
+    
     /**
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the
      * network is initiated.

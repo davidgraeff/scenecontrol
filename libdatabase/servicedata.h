@@ -80,6 +80,13 @@ public:
     static QString id(const QVariantMap& data) {
         return data[QLatin1String("_id")].toString();
     }
+    static QString instanceid(const QVariantMap& data) {
+        return data[QLatin1String("instanceid_")].toString();
+    }
+    static void setInstanceid(QVariantMap& data, const QString& instanceid) {
+        data[QLatin1String("instanceid_")] = instanceid;
+    }
+    
     static QString string(const QVariantMap& data, const char* key) {
         return data[QString::fromAscii(key)].toString();
     }
@@ -130,21 +137,20 @@ public:
         TypeModelItem,
         TypeConfiguration
     };
-    Q_DECLARE_FLAGS(checkTypeEnums, checkTypeEnum)
 
-    static bool checkType(const QVariantMap& data, checkTypeEnums t) {
-        checkTypeEnum ct = TypeUnknown;
-        const QByteArray type = data[QLatin1String("type_")].toByteArray();
-        if (type == "action") ct = TypeAction;
-        else if (type == "condition") ct = TypeCondition;
-        else if (type == "event") ct = TypeEvent;
-        else if (type == "collection") ct = TypeCollection;
-        else if (type == "execute") ct = TypeExecution;
-        else if (type == "remove") ct = TypeRemove;
-        else if (type == "notification") ct = TypeNotification;
-        else if (type == "model") ct = TypeModelItem;
-        else if (type == "configuration") ct = TypeConfiguration;
-        return t.testFlag(ct);
+    static bool checkType(const QVariantMap& data, checkTypeEnum t) {
+        const QByteArray type = data.value(QLatin1String("type_")).toByteArray();
+        return (
+			(type == "action" && t==TypeAction) ||
+			(type == "condition" && t==TypeCondition) ||
+			(type == "event" && t==TypeEvent) ||
+			(type == "collection" && t==TypeCollection) ||
+			(type == "execute" && t==TypeExecution) ||
+			(type == "remove" && t==TypeRemove) ||
+			(type == "notification" && t==TypeNotification) ||
+			(type == "model" && t==TypeModelItem) ||
+			(type == "configuration" && t==TypeConfiguration)
+		);
     }
 
     static bool isNegatedCondition(const QVariantMap& data) {
@@ -196,4 +202,3 @@ public:
         data[QLatin1String("isrespons_")] = true;
     }
 };
-Q_DECLARE_OPERATORS_FOR_FLAGS(ServiceData::checkTypeEnums)

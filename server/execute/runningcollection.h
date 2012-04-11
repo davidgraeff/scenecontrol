@@ -25,7 +25,7 @@
 #include <QTimer>
 #include <QPointer>
 
-class PluginCommunication;
+class PluginProcess;
 
 /**
  * RunningCollection contains all action and condition documents to a given collection id.
@@ -40,9 +40,9 @@ public:
 	QString id() const;
 private:
     struct dataWithPlugin {
-        QPointer<PluginCommunication> plugin;
+        QPointer<PluginProcess> plugin;
         QVariantMap data;
-        dataWithPlugin(QPointer<PluginCommunication> p, QVariantMap m) : plugin(p), data(m) {}
+        dataWithPlugin(QPointer<PluginProcess> p, QVariantMap m) : plugin(p), data(m) {}
     };
     QString m_collectionid;
     QTimer m_timer;
@@ -54,7 +54,7 @@ private:
 private Q_SLOTS:
     void timeoutNextAction();
     void conditionResponse(bool timeout = false);
-    void qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid);
+    void qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid, const QString& instanceid);
 Q_SIGNALS:
     void runningCollectionFinished (const QString& collectionid);
 };

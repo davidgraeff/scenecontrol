@@ -12,6 +12,7 @@ install:
 	install udev/40-atiremote.rules /etc/udev/rules.d/
 	install modprobe.d/atiremote.conf /etc/modprobe.d/
 	install ati_remote.ko /lib/modules/$(KVERSION)/kernel/drivers/input/misc/
+	depmod
 	service udev reload
 unload:
 	rmmod ati_remote

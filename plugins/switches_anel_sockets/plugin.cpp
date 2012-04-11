@@ -31,14 +31,19 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    plugin p;
+    if (argc<2) {
+		qWarning()<<"No instanceid provided!";
+		return 1;
+	}
+    plugin p(QString::fromAscii(argv[1]));
     if(!p.createCommunicationSockets())
         return -1;
     return app.exec();
 }
 
-plugin::plugin() : m_listenSocket(0)
+plugin::plugin(const QString& instanceid) : AbstractPlugin(instanceid), m_listenSocket(0)
 {
+	m_sendPort = 0;
     m_writesocket = new QUdpSocket(this);
     connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
     m_cacheTimer.setInterval(50);
@@ -55,9 +60,10 @@ void plugin::connectToIOs(int portSend, int portListen, const QString &user, con
     delete m_listenSocket;
     m_listenSocket = new QUdpSocket(this);
     connect(m_listenSocket, SIGNAL(readyRead()), SLOT(readyRead()));
-    m_listenSocket->bind(QHostAddress::Broadcast, portListen);
-
-    initialize();
+    if (!m_listenSocket->bind(QHostAddress::Broadcast, portListen)) {
+		qWarning()<<"Bind failed" << portListen;
+    } else 
+		initialize();
 }
 
 void plugin::readyRead()
@@ -101,7 +107,7 @@ void plugin::readyRead()
         const bool value = data[1].toInt();
         m_mapChannelToHost[channelid] = QPair<QHostAddress, uint>(host, pincounter);
 
-        if(m_ios[channelid].value == value)
+        if(m_ios.contains(channelid) && m_ios[channelid].value == value)
             continue;
 
         m_ios[channelid].value = value;
@@ -181,10 +187,14 @@ void plugin::cacheToDevice()
 
 void plugin::initialize()
 {
+	if (m_sendPort==0)
+		return;
+	
     clear();
     QByteArray str("wer da?");
     str.append(0x0D);
     str.append(0x0A);
+	qDebug() << "initialize" << m_sendPort << str;
     m_writesocket->writeDatagram(str, QHostAddress::Broadcast, m_sendPort);
 }
 

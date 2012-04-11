@@ -33,7 +33,6 @@
 class Database: public QObject {
     Q_OBJECT
     Q_PROPERTY(int state READ state NOTIFY stateChanged)
-	friend class DatabaseInstall;
 public:
     /**
      * Database is a singleton object
@@ -65,7 +64,7 @@ public Q_SLOTS:
      * Request all events (asynchronous)
      * Event_add and Event_remove signals are triggered in reaction
      */
-    void requestEvents(const QString& plugin_id);
+    void requestEvents(const QString& plugin_id, const QString& instanceid);
 	
     /**
      * Request all conditions and actions of a collection (asynchronous)
@@ -84,7 +83,7 @@ public Q_SLOTS:
      * settings signal is triggered in reaction if startChangeListenerSettings has been called before
 	 * \param category An arbitrary non empty word describing the configuration category of the values
      */
-    void changePluginConfiguration(const QString& pluginid, const QByteArray& category, const QVariantMap& value);
+    void changePluginConfiguration(const QString& pluginid, const QString& instanceid, const QByteArray& category, const QVariantMap& value);
 	
     /**
      * Export all json documents to the given path (synchronous)
@@ -114,10 +113,13 @@ public Q_SLOTS:
 	 * Change or insert document given by data.
 	 * data have to contain a field "_id" if insertWithNewID is not true
 	 */
-	void changeDocument(const QVariantMap& data, bool insertWithNewID = false);
+	bool changeDocument(const QVariantMap& data, bool insertWithNewID = false);
+	/**
+	 * Return true if document with type and id is already stored
+	 */
+	bool contains(const QString &type, const QString& id);
 private:
     Database ();
-	QString couchdbAbsoluteUrl(const QString& relativeUrl = QString());
     QString m_serveraddress;
 	/// current state
 	ConnectStateEnum m_state;
@@ -130,7 +132,7 @@ private Q_SLOTS:
 	ConnectStateEnum reconnectToDatabase();
 Q_SIGNALS:
     /// A configuration either changed or was actively requested
-    void settings(const QString& pluginid, const QVariantMap& data);
+    void pluginConfiguration(const QString& pluginid, const QVariantMap& data);
 	/// An event document changed or requestEvents was called before
     void Event_add(const QString& id, const QVariantMap& event_data);
 	/// An event document has been removed. This is only triggered if startChangeListenerEvents

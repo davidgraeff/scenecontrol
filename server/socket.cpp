@@ -5,7 +5,7 @@
 #include <QSslKey>
 #include "libdatabase/json.h"
 #include "plugins/plugincontroller.h"
-#include "plugins/plugincommunication.h"
+#include "plugins/pluginprocess.h"
 //openssl req -x509 -new -out server.crt -keyout server.key -days 365
 
 #define __FUNCTION__ __FUNCTION__
@@ -80,8 +80,8 @@ void Socket::incomingConnection(int socketDescriptor)
 
         // Notify plugins of new session
         PluginController* pc = PluginController::instance();
-        QMap<QString,PluginCommunication*>::iterator i = pc->getPluginIterator();
-        while (PluginCommunication* plugin = pc->nextPlugin(i)) {
+        QMap<QString,PluginProcess*>::iterator i = pc->getPluginIterator();
+        while (PluginProcess* plugin = pc->nextPlugin(i)) {
             plugin->session_change(socketDescriptor, true);
         }
     } else {
@@ -117,8 +117,8 @@ void Socket::socketDisconnected() {
 
     // Notify plugins of finished session
     PluginController* pc = PluginController::instance();
-    QMap<QString,PluginCommunication*>::iterator i = pc->getPluginIterator();
-    while (PluginCommunication* plugin = pc->nextPlugin(i)) {
+    QMap<QString,PluginProcess*>::iterator i = pc->getPluginIterator();
+    while (PluginProcess* plugin = pc->nextPlugin(i)) {
         plugin->session_change(socketDescriptor, false);
     }
 

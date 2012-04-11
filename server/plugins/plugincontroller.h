@@ -28,7 +28,6 @@
 #include <QLocalServer>
 
 class PluginProcess;
-class PluginCommunication;
 
 /**
  * Purpose: Start, stop plugin processes. Provide the server communication
@@ -44,41 +43,33 @@ public:
     static PluginController* instance();
     virtual ~PluginController();
 	/**
+	 * Return false if the QLocalServer is not in listen state
+	 */
+	bool valid();
+	/**
+	 * Scan plugin application directory and request configuration for all available
+	 * plugins.
+	 */
+	void scanPlugins();
+	/**
 	 * Wait for all plugin processes to get finished or killed and exit the server
 	 */
 	void waitForPluginsAndExit();
 	/**
-	 * Start all applications in a well-known path. If those processes do not
-	 * establish a communication channel to the server within a given time bound
-	 * kill those processes again.
-	 * Return false if the server socket can not be created (e.g. exist already)
+	 * A plugin process finished
 	 */
-    bool startplugins();
-	/**
-	 * Kill plugin process and unregister all events associated with this plugin
-	 */
-    void unloadPlugin(const QString& id);
-	/**
-	 * Plugin failed to establish a valid communication channel and will be killed.
-	 * Used to be called by the PluginCommunication helper object.
-	 */
-    void removePluginFromPending(PluginCommunication* pluginprocess);
-	/**
-	 * A plugin successfully established a valid communication channel
-	 */
-    void addPlugin(const QString& id, PluginCommunication* pluginprocess);
-    void removeProcess(PluginProcess* process);
+    void processFinished(PluginProcess* process);
 
 	/**
 	 * Return the plugin communication channel given by the plugin id
 	 */
-    PluginCommunication* getPlugin(const QString& pluginid);
+    PluginProcess* getPlugin(const QString& pluginid, const QString& instanceid);
 
 	/**
 	 * To iterate over all plugins use getPluginIterator and nextPlugin
 	 */
-    QMap<QString,PluginCommunication*>::iterator getPluginIterator();
-    PluginCommunication* nextPlugin(QMap<QString,PluginCommunication*>::iterator& index);
+    QMap<QString,PluginProcess*>::iterator getPluginIterator();
+    PluginProcess* nextPlugin(QMap<QString,PluginProcess*>::iterator& index);
 
 	/**
 	 * Request all properties from all known plugin processes
@@ -87,10 +78,9 @@ public:
     void requestAllProperties(int sessionid = -1);
 private:
     PluginController ();
-    QMap<QString,PluginCommunication*> m_plugins;
-    QMap<QLocalSocket*,PluginCommunication*> m_pendingplugins;
+    QMap<QString,PluginProcess*> m_plugins;
     QSet<PluginProcess*> m_pluginprocesses;
-    QMap<QString, PluginCommunication*> m_registeredevents;
+    QMap<QString, PluginProcess*> m_registeredevents;
 	/// For the plugin iterator methods
     int m_index;
 	/// Local server socket for plugins
@@ -99,7 +89,12 @@ private:
 private Q_SLOTS:
     void newConnection();
 public Q_SLOTS:
+	void databaseStateChanged();
     void Event_add(const QString& id, const QVariantMap& event_data);
     void Event_remove(const QString& id);
-    void settings(const QString& pluginid, const QVariantMap& data);
+	/**
+	 * Start a plugin instance. The @configuration map has to contain at least the field: instanceid_
+	 */
+    bool startPluginInstance(const QString& pluginid, const QVariantMap& configuration);
+
 };

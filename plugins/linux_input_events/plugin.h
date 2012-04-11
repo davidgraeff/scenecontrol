@@ -68,7 +68,7 @@ class plugin : public AbstractPlugin
     Q_OBJECT
     friend class InputDevice;
 public:
-    plugin();
+    plugin(const QString& instanceid);
     virtual ~plugin();
 
     virtual void initialize();
@@ -97,6 +97,7 @@ private:
     
     QMap<uint, QByteArray> m_keymapping;
     
+	int m_dontgrab; // if true: do not grab devices exclusivly
     int m_repeat; //NotUsed
     int m_repeatInit; //NotUsed
     ServiceData createServiceOfDevice(ManagedDevice* device);

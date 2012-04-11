@@ -31,7 +31,7 @@ class plugin : public AbstractPlugin
 
 
 public:
-    plugin();
+    plugin(const QString& instanceid);
     virtual ~plugin();
 
     virtual void requestProperties(int sessionid);

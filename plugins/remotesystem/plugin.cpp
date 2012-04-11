@@ -23,13 +23,17 @@
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
-    plugin p;
+    if (argc<2) {
+		qWarning()<<"No instanceid provided!";
+		return 1;
+	}
+    plugin p(QString::fromAscii(argv[1]));
     if (!p.createCommunicationSockets())
         return -1;
     return app.exec();
 }
 
-plugin::plugin() {
+plugin::plugin(const QString& instanceid) : AbstractPlugin(instanceid) {
     m_allowedmembers << QLatin1String("volume.relative"); 	//volume: int
     m_allowedmembers << QLatin1String("volume.absolute"); 	//volume: int
     m_allowedmembers << QLatin1String("display"); 			//power(enum): off, on, toggle

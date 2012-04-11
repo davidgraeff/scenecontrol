@@ -34,7 +34,7 @@ public:
     /**
      * Do not use the constructor, instead use override "initialize" for setting up your ressources.
      */
-    plugin();
+    plugin(const QString& instanceid);
     /**
     * Do not (only) clean up in the destructor. The server process may like to recycle the plugin
     * process. Use "clear" for cleaning up and "initialize" for setting up your ressources.

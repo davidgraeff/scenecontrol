@@ -31,7 +31,7 @@ class plugin : public AbstractPlugin
 {
     Q_OBJECT
 public:
-    plugin();
+    plugin(const QString& instanceid);
     virtual ~plugin();
 
     virtual void initialize();

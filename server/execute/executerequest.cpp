@@ -1,11 +1,11 @@
 #include "execute/executerequest.h"
 #include "execute/collectioncontroller.h"
 #include "plugins/plugincontroller.h"
-#include "plugins/plugincommunication.h"
 #include "libdatabase/servicedata.h"
 #include "libdatabase/database.h"
 #include "socket.h"
 #include "config.h"
+#include <plugins/pluginprocess.h>
 
 static ExecuteRequest* ExecuteRequest_instance = 0;
 
@@ -35,13 +35,13 @@ void ExecuteRequest::requestExecution(const QVariantMap& data, int sessionid) {
         else if (ServiceData::isMethod(data, "runcollection"))
             CollectionController::instance()->requestExecutionByCollectionId(ServiceData::collectionid(data));
         else if (ServiceData::isMethod(data, "database")) {
-			Database* b = Database::instance();
+            Database* b = Database::instance();
             ServiceData s = ServiceData::createNotification("database");
             s.setData("database", b->databaseAddress());
-			s.setData("state", b->state());
+            s.setData("state", b->state());
             s.setPluginid("server");
             Socket::instance()->propagateProperty(s.getData(), sessionid);
-		} else if (ServiceData::isMethod(data, "version")) {
+        } else if (ServiceData::isMethod(data, "version")) {
             ServiceData s = ServiceData::createNotification("version");
             s.setData("version", QLatin1String(ABOUT_VERSION));
             s.setPluginid("server");
@@ -50,11 +50,11 @@ void ExecuteRequest::requestExecution(const QVariantMap& data, int sessionid) {
         return;
     }
     // Look for a plugin that fits "data"
-    PluginCommunication* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( data ) );
+    PluginProcess* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( data ),
+                            ServiceData::instanceid( data ));
     if ( !plugin ) {
         qWarning() <<"Cannot execute service. No plugin found:"<<data << sessionid;
         return;
     }
-
     plugin->callQtSlot ( data, QByteArray(), sessionid );
 }

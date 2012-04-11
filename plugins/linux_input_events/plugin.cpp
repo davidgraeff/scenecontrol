@@ -24,6 +24,7 @@
 #include <string.h>
 #include <linux/input.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 #define KEY_RELEASE 0
 #define KEY_PRESS 1
@@ -38,13 +39,18 @@
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
-    plugin p;
+    if (argc<2) {
+		qWarning()<<"No instanceid provided!";
+		return 1;
+	}
+    plugin p(QString::fromAscii(argv[1]));
     if (!p.createCommunicationSockets())
         return -1;
     return app.exec();
 }
 
-plugin::plugin() {
+plugin::plugin(const QString& instanceid) : AbstractPlugin(instanceid) {
+	m_dontgrab = 0;
     m_repeat = 0;
     m_repeatInit = 0;
     m_devicelist = new ManagedDeviceList();
@@ -53,17 +59,15 @@ plugin::plugin() {
 }
 
 plugin::~plugin() {
-    qDebug() << "Free p1";
     clear();
-    qDebug() << "Free p2";
     delete m_devicelist;
-    qDebug() << "Free p3";
 }
 
 void plugin::clear() {
     m_keymapping.clear();
     qDeleteAll(m_devices);
     m_devices.clear();
+	m_events.clear();
 }
 
 void plugin::initialize() {
@@ -80,6 +84,8 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         m_repeat = data[QLatin1String("repeat")].toInt();
     if (data.contains(QLatin1String("repeat_init")))
         m_repeatInit = data[QLatin1String("repeat_init")].toInt();
+    if (data.contains(QLatin1String("dontgrab")))
+        m_dontgrab = data[QLatin1String("dontgrab")].toBool();
 }
 
 void plugin::inputevent ( const QString& _id, const QString& collection_, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
@@ -98,15 +104,15 @@ void plugin::inputevent ( const QString& _id, const QString& collection_, const 
         return;
     m_devices_by_eventsids.insert(__id, inputdeviceObj);
     inputdeviceObj->registerKey ( __id, collection_, s.kernelkeyname, repeat );
-    qDebug() << "inputevent" << inputdevice << inputdeviceObj;
+    qDebug() << "Register event" << kernelkeyname << inputdeviceObj->device()->devPath << __id;
 }
 
 void plugin::unregister_event ( const QString& eventid) {
-    const QByteArray eventID2 = eventid.toAscii();
-    m_events.remove(eventID2);
-    InputDevice* inputdevice = m_devices_by_eventsids.take ( eventID2 );
+    const QByteArray eventID = eventid.toAscii();
+    m_events.remove(eventID);
+    InputDevice* inputdevice = m_devices_by_eventsids.take ( eventID );
     if ( inputdevice )
-        inputdevice->unregisterKey (eventID2 );
+        inputdevice->unregisterKey (eventID );
 }
 
 void plugin::session_change ( int sessionid, bool running ) {
@@ -143,13 +149,15 @@ void plugin::deviceAdded ( ManagedDevice* device ) {
         if (i.value().inputdevice == device->udid)
             inputdevice->registerKey ( i.key(), i.value().collectionuid, i.value().kernelkeyname, i.value().repeat );
     }
-    qDebug() << "deviceAdded" << inputdevice << device->udid;
+    qDebug() << "Device added" << device->devPath;
 }
 
 void plugin::deviceRemoved ( ManagedDevice* device ) {
     ServiceData sc = ServiceData::createModelRemoveItem ( "inputdevice" );
     sc.setData ( "udid", device->udid );
     changeProperty ( sc.getData() );
+	
+	qDebug() << "Device removed" << device->devPath;
     delete m_devices.take ( device->udid );
 }
 
@@ -216,7 +224,7 @@ void InputDevice::disconnectDevice() {
 void InputDevice::connectDevice() {
     if ( m_device ) {
         // only reconnect to new device if a client is actually listening or events are registered
-        if ( m_sessionids.isEmpty() && m_keyToUids.isEmpty() ) return;
+        if ( (m_sessionids.isEmpty() && m_keyToUids.isEmpty()) || m_socketnotifier) return;
 
         ServiceData sc = ServiceData::createNotification ( "input.device.selected" );
         sc.setData ( "udid", m_device->udid );
@@ -228,7 +236,8 @@ void InputDevice::connectDevice() {
         } else {
             fd = open ( m_device->devPath, O_RDONLY|O_NDELAY );
             if ( fd!=-1 ) {
-                delete m_socketnotifier;
+				if (!m_plugin->m_dontgrab)
+					ioctl(fd, EVIOCGRAB, 1);
                 m_socketnotifier = new QSocketNotifier ( fd, QSocketNotifier::Read );
                 connect ( m_socketnotifier, SIGNAL ( activated ( int ) ), this, SLOT ( eventData() ) );
                 // success
@@ -267,22 +276,22 @@ void InputDevice::unregisterKey ( const QByteArray& uid ) {
 
 void InputDevice::registerKey ( QString uid, QString collectionuid, const QByteArray& key, bool repeat ) {
     EventKey* eventkey = m_keyToUids[key];
-    if (!eventkey) eventkey = new EventKey();
-    eventkey->ServiceUidToCollectionUid.insertMulti ( uid, collectionuid );
+    if (!eventkey)
+		eventkey = new EventKey();
+    eventkey->ServiceUidToCollectionUid.insert ( uid, collectionuid );
     eventkey->repeat = repeat;
     m_keyToUids[key] = eventkey;
     connectDevice();
 }
 
 void InputDevice::eventData() {
-    m_socketnotifier->setEnabled(false);
     static char readbuff[sizeof ( struct input_event ) ] = {0};
     static struct input_event* ev = ( struct input_event* ) readbuff;
     static unsigned int readbuffOffset = 0;
     __u16 lastkeyInLoop = 0;
-    while ( 1 ) {
+    forever {
         int ret = read ( fd, readbuff+readbuffOffset, sizeof ( struct input_event )-readbuffOffset );
-        if ( ret == -1 ) break;
+        if ( ret == -1 || ret == 0) break;
         readbuffOffset += ret;
         if ( readbuffOffset < sizeof ( struct input_event ) ) break;
         readbuffOffset = 0;
@@ -294,7 +303,7 @@ void InputDevice::eventData() {
         if (!ev->value == KEY_PRESS )
             continue;
 
-        // Multiple key events in one buffer read; ignore
+        // Multiple key events with the same key in one buffer; ignore
         if (lastkeyInLoop == ev->code)
             continue;
         lastkeyInLoop = ev->code;
@@ -344,7 +353,6 @@ void InputDevice::eventData() {
             }
         }
     }
-    m_socketnotifier->setEnabled(true);
 }
 
 void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
