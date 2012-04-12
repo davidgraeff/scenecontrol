@@ -118,24 +118,28 @@ int plugin::getMax() const
 
 
 void plugin::limitsensor_calibration () {
+	qDebug() << __FUNCTION__;
     uint8_t data = udpcurtain_cmd_limitsensor_calibration;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
 void plugin::direction_ok()
 {
+	qDebug() << __FUNCTION__;
     uint8_t data = udpcurtain_cmd_direction_ok;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
 void plugin::start_direction_calibration()
 {
+	qDebug() << __FUNCTION__;
     uint8_t data = udpcurtain_cmd_start_direction_calibration;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
 void plugin::start_direction_calibration_inverted()
 {
+	qDebug() << __FUNCTION__;
     uint8_t data = udpcurtain_cmd_start_direction_calibration_inverted;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
