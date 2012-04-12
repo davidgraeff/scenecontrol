@@ -12,12 +12,13 @@
 #include "servicedata.h"
 #include "json.h"
 #include "bson.h"
+#include "databaselistener.h"
 
 #define __FUNCTION__ __FUNCTION__
 
 static Database *databaseInstance = 0;
 
-Database::Database() :m_state(DisconnectedState)
+Database::Database() :m_state(DisconnectedState), m_listener(0)
 {
     m_reconnectTimer.setInterval(5000);
     m_reconnectTimer.setSingleShot(true);
@@ -31,6 +32,11 @@ Database::~Database()
 
 void Database::disconnectFromHost()
 {
+    if (m_listener) {
+        m_listener->abort();
+        delete m_listener;
+        m_listener = 0;
+    }
     m_reconnectTimer.stop();
 }
 
@@ -71,13 +77,47 @@ Database::ConnectStateEnum Database::reconnectToDatabase()
 {
     // Read/Write mongodb timeout
     m_mongodb.setSoTimeout(5);
-	try {
-		m_mongodb.connect(m_serveraddress.toStdString());
-		m_state = ConnectedState;
-	} catch(mongo::UserException&e) {
-		m_state = DisconnectedState;
-		qWarning() << "Database: Connection failed" << m_serveraddress << QString::fromStdString(e.toString());
-	}
+    try {
+        m_mongodb.connect(m_serveraddress.toStdString());
+        m_state = ConnectedState;
+        {
+            m_listener = new DatabaseListener(m_serveraddress, "local.oplog.rs");
+            connect(m_listener, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
+            connect(m_listener, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
+            m_listener->start();
+        }
+//         {
+//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.configuration");
+// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
+// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
+//             l->start();
+//             m_listener.append(l);
+//         }
+//         {
+//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.event");
+// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
+// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
+//             l->start();
+//             m_listener.append(l);
+//         }
+//         {
+//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.action");
+// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
+// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
+//             l->start();
+//             m_listener.append(l);
+//         }
+//         {
+//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.condition");
+// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
+// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
+//             l->start();
+//             m_listener.append(l);
+//         }
+    } catch (mongo::UserException&e) {
+        m_state = DisconnectedState;
+        qWarning() << "Database: Connection failed" << m_serveraddress << QString::fromStdString(e.toString());
+    }
     changeState(m_state);
     return m_state;
 }
@@ -223,8 +263,9 @@ bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
         }
     }
 
+    const QString docid = jsonData[QLatin1String("_id")].toString();
     const mongo::BSONObj dataToSend = BJSON::toBson(jsonData);
-    const mongo::BSONObj query = BSON("_id" << jsonData[QLatin1String("_id")].toString().toStdString());
+    const mongo::BSONObj query = BSON("_id" << docid.toStdString());
     const std::string dbid = "roomcontrol."+ServiceData::type(jsonData).toStdString();
     m_mongodb.update(dbid, query, dataToSend, true, false);
 
@@ -240,6 +281,7 @@ bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
     if (jsonData.contains(QLatin1String("collection_")))
         m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"collection_\":1}"));
 
+    emit doc_changed(docid, jsonData);
     return true;
 }
 

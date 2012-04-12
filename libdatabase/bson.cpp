@@ -21,6 +21,10 @@ QVariant fromBSonValue(mongo::BSONElement e) {
         return QString(QLatin1String("MongoCode[%1]")).arg(QString::fromAscii(e.codeWScopeCode()));
     case mongo::NumberInt:
         return e.numberInt();
+    case mongo::NumberLong:
+        return e.numberLong();
+    case mongo::Timestamp:
+        return QString::fromStdString(e.timestampTime().toString());
     case mongo::Object:
         return fromBson(e.Obj());
     case mongo::Array: {

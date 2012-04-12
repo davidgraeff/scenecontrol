@@ -44,6 +44,7 @@ static void catch_int(int )
     printf("\n");
 	PluginController* plugins = PluginController::instance();
 	plugins->waitForPluginsAndExit();
+	Database::instance()->disconnectFromHost();
 }
 
 int main(int argc, char *argv[])

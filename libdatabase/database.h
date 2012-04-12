@@ -30,6 +30,7 @@
 #include <QTimer>
 #include "mongo/client/dbclient.h"
 
+class DatabaseListener;
 class Database: public QObject {
     Q_OBJECT
     Q_PROPERTY(int state READ state NOTIFY stateChanged)
@@ -126,7 +127,7 @@ private:
     bool m_reconnectOnFailure;
 	void changeState(ConnectStateEnum newstate);
 	QTimer m_reconnectTimer;
-	
+	DatabaseListener* m_listener;
 	mongo::DBClientConnection m_mongodb;
 private Q_SLOTS:
 	ConnectStateEnum reconnectToDatabase();
