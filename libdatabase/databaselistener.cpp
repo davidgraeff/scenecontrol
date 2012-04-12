@@ -31,7 +31,7 @@ void DatabaseListener::run()
     mongo::Query query = mongo::Query().sort("$natural"); // { $natural : 1 } means in forward
     // capped collection insertion order
     while ( !m_abort ) {
-        auto_ptr<mongo::DBClientCursor> c;
+        std::auto_ptr<mongo::DBClientCursor> c;
         try {
             c = m_conn.query(m_ns, query, 0, 0, 0,
                              mongo::QueryOption_CursorTailable );
@@ -71,7 +71,7 @@ void DatabaseListener::run()
                 emit doc_removed(ServiceData::id(v));
                 qDebug() << "delete" << ServiceData::id(v);
             } else
-                cout << o.toString() << endl;
+                std::cout << o.toString() << endl;
         }
 
         // prepare to requery from where we left off
