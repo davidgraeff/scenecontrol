@@ -44,6 +44,8 @@ private:
     void curtainChanged(int sessionid=-1);
     int m_curtainvalue;
     int m_curtainmax;
+    int m_curtainSensorLimit;
+    int m_curtainSensorRotary;
     int m_curtainState;
     // udp
     int m_sendPort;
@@ -55,7 +57,7 @@ private:
         udpcurtain_cmd_start_direction_calibration = 251,
         udpcurtain_cmd_start_direction_calibration_inverted = 252,
         udpcurtain_cmd_direction_ok = 253,
-        udpcurtain_cmd_limitsensor_calibration = 254,
+        udpcurtain_cmd_request_debugdata = 254,
         udpcurtain_cmd_request_data = 255
     };
 private Q_SLOTS:
@@ -64,7 +66,7 @@ private Q_SLOTS:
     void resendConnectSequence();
 public Q_SLOTS:
     void setValue ( int value );
-    void limitsensor_calibration();
+    void request_debugdata();
 	void direction_ok();
 	void start_direction_calibration();
 	void start_direction_calibration_inverted();

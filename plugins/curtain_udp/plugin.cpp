@@ -32,29 +32,38 @@ enum stateenum {
     NeedDirectionCalibrationState,
     RotarySensorNotWorkingState,
     CalibrateUpPositionState,
-	UpPositionNotFoundState,
+    UpPositionNotFoundState,
 };
 
 const char* translateStateEnum(stateenum i) {
-	switch (i) {
-		case IdleState: return "IdleState";
-		case FastDownState: return "FastDownState";
-		case UpState: return "UpState";
-		case FastUpState: return "FastUpState";
-		case NeedDirectionCalibrationState: return "NeedDirectionCalibrationState";
-		case RotarySensorNotWorkingState: return "RotarySensorNotWorkingState";
-		case CalibrateUpPositionState: return "CalibrateUpPositionState";
-		case UpPositionNotFoundState: return "UpPositionNotFoundState";
-		default: return "";
-	}
+    switch (i) {
+    case IdleState:
+        return "IdleState";
+    case FastDownState:
+        return "FastDownState";
+    case UpState:
+        return "UpState";
+    case FastUpState:
+        return "FastUpState";
+    case NeedDirectionCalibrationState:
+        return "NeedDirectionCalibrationState";
+    case RotarySensorNotWorkingState:
+        return "RotarySensorNotWorkingState";
+    case CalibrateUpPositionState:
+        return "CalibrateUpPositionState";
+    case UpPositionNotFoundState:
+        return "UpPositionNotFoundState";
+    default:
+        return "";
+    }
 }
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
-	if (argc<2) {
-		qWarning()<<"No instanceid provided!";
-		return 1;
-	}
+    if (argc<2) {
+        qWarning()<<"No instanceid provided!";
+        return 1;
+    }
     plugin p(QString::fromAscii(argv[1]));
     if (!p.createCommunicationSockets())
         return -1;
@@ -74,6 +83,8 @@ void plugin::clear() {
     m_curtainvalue = -1;
     m_curtainmax = -1;
     m_curtainState = -1;
+    m_curtainSensorLimit = -1;
+    m_curtainSensorRotary = -1;
     curtainChanged();
 }
 
@@ -100,10 +111,12 @@ void plugin::curtainChanged(int sessionid) {
     ServiceData sc = ServiceData::createNotification("curtain.value");
     if (m_curtainvalue != -1) sc.setData("value", m_curtainvalue);
     if (m_curtainmax != -1) sc.setData("max", m_curtainmax);
+    if (m_curtainSensorLimit != -1) sc.setData("sensorlimit", m_curtainSensorLimit);
+    if (m_curtainSensorRotary != -1) sc.setData("sensorrotary", m_curtainSensorRotary);
     if (m_curtainState != -1) {
-		sc.setData("state", m_curtainState);
-		sc.setData("statetext", translateStateEnum((stateenum)m_curtainState));
-	}
+        sc.setData("state", m_curtainState);
+        sc.setData("statetext", translateStateEnum((stateenum)m_curtainState));
+    }
     changeProperty(sc.getData(), sessionid);
 }
 
@@ -117,29 +130,25 @@ int plugin::getMax() const
 }
 
 
-void plugin::limitsensor_calibration () {
-	qDebug() << __FUNCTION__;
-    uint8_t data = udpcurtain_cmd_limitsensor_calibration;
+void plugin::request_debugdata () {
+    uint8_t data = udpcurtain_cmd_request_debugdata;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
 void plugin::direction_ok()
 {
-	qDebug() << __FUNCTION__;
     uint8_t data = udpcurtain_cmd_direction_ok;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
 void plugin::start_direction_calibration()
 {
-	qDebug() << __FUNCTION__;
     uint8_t data = udpcurtain_cmd_start_direction_calibration;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
 
 void plugin::start_direction_calibration_inverted()
 {
-	qDebug() << __FUNCTION__;
     uint8_t data = udpcurtain_cmd_start_direction_calibration_inverted;
     m_socket->write ( (char*)&data, sizeof ( data ) );
 }
@@ -174,9 +183,14 @@ void plugin::readyRead() {
 
         while ( bytes.size() > 9 ) {
             if (bytes.startsWith("curtain"))  {
-                m_curtainvalue = bytes[7];
-                m_curtainmax = bytes[8];
-                m_curtainState = bytes[9];
+                if ((unsigned char)bytes[7] != 255) {
+                    m_curtainvalue = bytes[7];
+                    m_curtainmax   = bytes[8];
+                    m_curtainState = bytes[9];
+                } else { //debug output
+                    m_curtainSensorLimit  = bytes[8];
+                    m_curtainSensorRotary = bytes[9];
+                }
                 curtainChanged();
                 bytes = bytes.mid(10);
             } else {

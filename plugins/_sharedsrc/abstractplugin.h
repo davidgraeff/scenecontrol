@@ -94,6 +94,7 @@ private:
 	QString m_instanceid;
     void writeToSocket(QLocalSocket* socket, const QVariantMap& data);
     int invokeHelperGetMethodId(const QByteArray& methodName);
+	// Return -1 if parameters are not matching
     int invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output);
     QVariant invokeSlot(const QByteArray& methodname, int numParams, const char* returntype, QVariant p0, QVariant p1, QVariant p2, QVariant p3, QVariant p4, QVariant p5, QVariant p6, QVariant p7, QVariant p8);
 public Q_SLOTS:

@@ -112,7 +112,7 @@ void AbstractPlugin::readyReadCommunication()
 //         if (method.size())
 //             qDebug() << plugin_id << "calls method" << method;
 //         else
-//             qDebug() << "Received from" << plugin_id << variantdata;;
+//             qDebug() << "Received from" << plugin_id << variantdata;
 
         if (!method.size()) {
             dataFromPlugin(plugin_id, variantdata);
@@ -158,7 +158,8 @@ void AbstractPlugin::readyReadCommunication()
 
             QVector<QVariant> argumentsInOrder(9);
             int params;
-            if ((params = invokeHelperMakeArgumentList(methodId, variantdata, argumentsInOrder)) == 0) {
+            if ((params = invokeHelperMakeArgumentList(methodId, variantdata, argumentsInOrder)) == -1) {
+				qWarning() << "Arguments list incompatible!" << method << methodId << variantdata << argumentsInOrder;
                 responseData[QLatin1String("error")] = "Arguments list incompatible!";
                 writeToSocket(socket, responseData);
                 continue;
@@ -296,7 +297,7 @@ int AbstractPlugin::invokeHelperMakeArgumentList(int methodID, const QVariantMap
         // If not found abort
         if (paramPosition == inputData.end()) {
             qWarning() << "Method parameter missing!" << parameterNames[paramNameIndex] << inputData;
-            return 0;
+            return -1;
         } else { // Otherwise create a QVariant a copy that to the output QVector
             output[paramNameIndex] = paramPosition.value();
         }
