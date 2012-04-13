@@ -229,6 +229,30 @@ void Database::requestCollections()
     }
 }
 
+QVariantMap Database::checkTypes(const QVariantMap& data, const QVariantMap& types)
+{
+	QVariantMap result;
+    // convert types if neccessary (if qml send data for example)
+    QVariantMap::const_iterator i = data.begin();
+    for (;i!=data.end();++i) {
+		const QByteArray targettype = types.value(i.key()).toByteArray();
+		if (targettype.isEmpty()) {
+			result[i.key()] = i.value();
+			continue;
+		}
+		QVariant element = i.value();
+		if (!element.convert(QVariant::nameToType(targettype))) {
+			qWarning()<<"checkTypes: Conversion failed" << i.key() << "orig:" << i.value().typeName() << "dest:" << targettype;
+			continue;
+		}
+		result[i.key()] = element;
+    }
+    
+    if (result.size() < data.size())
+		return QVariantMap();
+    return result;
+}
+
 void Database::removeDocument(const QString &type, const QString &id)
 {
     if (type.isEmpty()||id.isEmpty())
@@ -243,7 +267,7 @@ void Database::removeDocument(const QString &type, const QString &id)
     }
 }
 
-bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
+bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID, const QVariantMap& types)
 {
     if (!data.contains(QLatin1String("type_"))) {
         qWarning() << "changeDocument: can not add/change document without type_";
@@ -261,6 +285,10 @@ bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID)
             qWarning() << "changeDocument: can not change document without _id";
             return false;
         }
+    }
+    
+    if (types.size()) {
+		jsonData = checkTypes(jsonData, types);
     }
 
     const QString docid = jsonData[QLatin1String("_id")].toString();

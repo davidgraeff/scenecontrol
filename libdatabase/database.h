@@ -114,11 +114,17 @@ public Q_SLOTS:
 	 * Change or insert document given by data.
 	 * data have to contain a field "_id" if insertWithNewID is not true
 	 */
-	bool changeDocument(const QVariantMap& data, bool insertWithNewID = false);
+	bool changeDocument(const QVariantMap& data, bool insertWithNewID = false, const QVariantMap& types = QVariantMap());
 	/**
 	 * Return true if document with type and id is already stored
 	 */
 	bool contains(const QString &type, const QString& id);
+	
+	/**
+	 * Check types of data by types
+	 * Return an empty result on error
+	 */
+	QVariantMap checkTypes(const QVariantMap& data, const QVariantMap& types);
 private:
     Database ();
     QString m_serveraddress;

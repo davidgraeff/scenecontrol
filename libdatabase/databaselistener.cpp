@@ -65,11 +65,12 @@ void DatabaseListener::run()
                 const QString id = ServiceData::id(o1);
                 if (id.size())
                     emit doc_changed(id,o1);
-                qDebug() << "update" << o1;
+				else
+					std::cout << "update" << o.toString() << endl;
             } else if (op=="d") {
                 QVariantMap v = BJSON::fromBson(o.getObjectField("o"));
                 emit doc_removed(ServiceData::id(v));
-                qDebug() << "delete" << ServiceData::id(v);
+                //qDebug() << "delete" << ServiceData::id(v);
             } else
                 std::cout << o.toString() << endl;
         }
