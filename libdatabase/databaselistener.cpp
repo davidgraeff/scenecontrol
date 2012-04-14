@@ -3,8 +3,8 @@
 #include "bson.h"
 #include "servicedata.h"
 
-DatabaseListener::DatabaseListener(const QString& serverHostname, const std::string ns, QObject* parent):
-        QThread(parent), m_ns(ns), m_abort(false)
+DatabaseListener::DatabaseListener(const QString& serverHostname, QObject* parent):
+        QThread(parent), m_abort(false)
 {
     m_conn.setSoTimeout(5);
     m_conn.connect(serverHostname.toStdString());
@@ -26,14 +26,18 @@ void DatabaseListener::run()
     if (m_conn.isFailed())
         return;
     // minKey is smaller than any other possible value
-    mongo::BSONElement lastId = mongo::minKey.firstElement();
-
+    mongo::BSONElement lastId;
+	
+	mongo::BSONObjBuilder b;
+	b.appendTimestamp("_id");
     mongo::Query query = mongo::Query().sort("$natural"); // { $natural : 1 } means in forward
+	query.minKey(b.done());
+
     // capped collection insertion order
     while ( !m_abort ) {
         std::auto_ptr<mongo::DBClientCursor> c;
         try {
-            c = m_conn.query(m_ns, query, 0, 0, 0,
+            c = m_conn.query("roomcontrol.listen", query, 0, 0, 0,
                              mongo::QueryOption_CursorTailable );
         } catch (mongo::UserException& e) {
             qWarning()<<"Exception" << QString::fromStdString(e.toString());
@@ -59,16 +63,14 @@ void DatabaseListener::run()
             lastId = o["_id"];
             std::string op = o.getStringField("op");
             if (op=="i" || op=="u") {
-                QVariantMap o2 = BJSON::fromBson(o.getObjectField("o2"));
-                QVariantMap o1 = BJSON::fromBson(o.getObjectField("o").getObjectField("$set"));
-                o1.unite(o2);
-                const QString id = ServiceData::id(o1);
+                const QVariantMap object = BJSON::fromBson(o.getObjectField("o"));
+                const QString id = ServiceData::id(object);
                 if (id.size())
-                    emit doc_changed(id,o1);
+                    emit doc_changed(id,object);
 				else
 					std::cout << "update" << o.toString() << endl;
             } else if (op=="d") {
-                QVariantMap v = BJSON::fromBson(o.getObjectField("o"));
+                const QVariantMap v = BJSON::fromBson(o.getObjectField("o"));
                 emit doc_removed(ServiceData::id(v));
                 //qDebug() << "delete" << ServiceData::id(v);
             } else
@@ -78,8 +80,9 @@ void DatabaseListener::run()
         // prepare to requery from where we left off
         if (m_abort)
             break;
+		
         try {
-            query = QUERY( "_id" << mongo::GT << lastId ).sort("$natural");
+            query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
         } catch (mongo::UserException& e) {
             qWarning()<<"Exception" << QString::fromStdString(e.toString());
             sleep(3);

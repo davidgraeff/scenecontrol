@@ -79,41 +79,14 @@ Database::ConnectStateEnum Database::reconnectToDatabase()
     m_mongodb.setSoTimeout(5);
     try {
         m_mongodb.connect(m_serveraddress.toStdString());
+        m_mongodb.createCollection("roomcontrol.listen", 0, true, 50, 0);
         m_state = ConnectedState;
         {
-            m_listener = new DatabaseListener(m_serveraddress, "local.oplog.rs");
+            m_listener = new DatabaseListener(m_serveraddress);
             connect(m_listener, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
             connect(m_listener, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
             m_listener->start();
         }
-//         {
-//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.configuration");
-// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
-// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
-//             l->start();
-//             m_listener.append(l);
-//         }
-//         {
-//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.event");
-// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
-// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
-//             l->start();
-//             m_listener.append(l);
-//         }
-//         {
-//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.action");
-// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
-// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
-//             l->start();
-//             m_listener.append(l);
-//         }
-//         {
-//             DatabaseListener* l = new DatabaseListener(m_serveraddress, "roomcontrol.condition");
-// 			connect(l, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
-// 			connect(l, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
-//             l->start();
-//             m_listener.append(l);
-//         }
     } catch (mongo::UserException&e) {
         m_state = DisconnectedState;
         qWarning() << "Database: Connection failed" << m_serveraddress << QString::fromStdString(e.toString());
@@ -207,6 +180,12 @@ void Database::changePluginConfiguration(const QString& pluginid, const QString&
     const std::string dbid = "roomcontrol.configuration";
     m_mongodb.update(dbid, query, dataToSend, true, false);
     m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1}"));
+    // update listen collection
+    mongo::BSONObjBuilder b;
+    b.appendTimestamp("_id");
+    b.append("op", "u");
+    b.append("o", dataToSend);
+    m_mongodb.insert("roomcontrol.listen", b.done());
 }
 
 void Database::requestSchemas()
@@ -231,25 +210,25 @@ void Database::requestCollections()
 
 QVariantMap Database::checkTypes(const QVariantMap& data, const QVariantMap& types)
 {
-	QVariantMap result;
+    QVariantMap result;
     // convert types if neccessary (if qml send data for example)
     QVariantMap::const_iterator i = data.begin();
     for (;i!=data.end();++i) {
-		const QByteArray targettype = types.value(i.key()).toByteArray();
-		if (targettype.isEmpty()) {
-			result[i.key()] = i.value();
-			continue;
-		}
-		QVariant element = i.value();
-		if (!element.convert(QVariant::nameToType(targettype))) {
-			qWarning()<<"checkTypes: Conversion failed" << i.key() << "orig:" << i.value().typeName() << "dest:" << targettype;
-			continue;
-		}
-		result[i.key()] = element;
+        const QByteArray targettype = types.value(i.key()).toByteArray();
+        if (targettype.isEmpty()) {
+            result[i.key()] = i.value();
+            continue;
+        }
+        QVariant element = i.value();
+        if (!element.convert(QVariant::nameToType(targettype))) {
+            qWarning()<<"checkTypes: Conversion failed" << i.key() << "orig:" << i.value().typeName() << "dest:" << targettype;
+            continue;
+        }
+        result[i.key()] = element;
     }
-    
+
     if (result.size() < data.size())
-		return QVariantMap();
+        return QVariantMap();
     return result;
 }
 
@@ -261,10 +240,32 @@ void Database::removeDocument(const QString &type, const QString &id)
     m_mongodb.remove("roomcontrol."+type.toStdString(), BSON("_id" << id.toStdString()));
     if (type == QLatin1String("collection")) {
         // if it is a collection, remove all actions, conditions, events belonging to it
-        m_mongodb.remove("roomcontrol.action", BSON("collection_" << id.toStdString()));
-        m_mongodb.remove("roomcontrol.event", BSON("collection_" << id.toStdString()));
-        m_mongodb.remove("roomcontrol.condition", BSON("collection_" << id.toStdString()));
+        // Do it in a per-element way to update the listen collection after every operation
+        std::auto_ptr<mongo::DBClientCursor> cursor;
+        cursor = m_mongodb.query("roomcontrol.action", BSON("collection_" << id.toStdString()));
+        while ( cursor->more() ) {
+            std::string elementid = cursor->next().getStringField("_id");
+            removeDocument(QLatin1String("action"), QString::fromStdString(elementid));
+        }
+        cursor = m_mongodb.query("roomcontrol.event", BSON("collection_" << id.toStdString()));
+        while ( cursor->more() ) {
+            std::string elementid = cursor->next().getStringField("_id");
+            removeDocument(QLatin1String("event"), QString::fromStdString(elementid));
+        }
+        cursor = m_mongodb.query("roomcontrol.condition", BSON("collection_" << id.toStdString()));
+        while ( cursor->more() ) {
+            std::string elementid = cursor->next().getStringField("_id");
+            removeDocument(QLatin1String("condition"), QString::fromStdString(elementid));
+        }
     }
+
+    // update listen collection
+    mongo::BSONObjBuilder b;
+    b.appendTimestamp("_id");
+    b.append("op", "d");
+    b.append("o", BSON("_id" << id.toStdString()));
+    m_mongodb.insert("roomcontrol.listen", b.done());
+
 }
 
 bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID, const QVariantMap& types)
@@ -286,9 +287,9 @@ bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID, con
             return false;
         }
     }
-    
+
     if (types.size()) {
-		jsonData = checkTypes(jsonData, types);
+        jsonData = checkTypes(jsonData, types);
     }
 
     const QString docid = jsonData[QLatin1String("_id")].toString();
@@ -302,6 +303,13 @@ bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID, con
         return false;
     }
 
+    // update listen collection
+    mongo::BSONObjBuilder b;
+    b.appendTimestamp("_id");
+    b.append("op", "u");
+    b.append("o", dataToSend);
+    m_mongodb.insert("roomcontrol.listen", b.done());
+	
     if (jsonData.contains(QLatin1String("plugin_")) && jsonData.contains(QLatin1String("instanceid_")))
         m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1,\"instanceid_\":1}"));
     else if (jsonData.contains(QLatin1String("plugin_")))

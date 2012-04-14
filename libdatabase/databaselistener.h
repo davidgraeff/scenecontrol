@@ -7,13 +7,12 @@ class DatabaseListener : public QThread
 {
 	Q_OBJECT
 public:
-    explicit DatabaseListener(const QString& serverHostname, const std::string ns, QObject* parent = 0);
+    explicit DatabaseListener(const QString& serverHostname, QObject* parent = 0);
     virtual ~DatabaseListener();
 	void abort();
 protected:
     virtual void run();
 private:
-	std::string m_ns;
 	mongo::DBClientConnection m_conn;
 	bool m_abort;
 Q_SIGNALS:
