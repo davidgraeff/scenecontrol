@@ -4,6 +4,9 @@ Eine Plugin orientierte Steuersoftware für die Raumautomatisierung. Plugins fü
 Steckdosen, Rollo, Led Beleuchtung, PulseAudio, Videoabspielprogramm,
 Beamersteuerung und Zeitbasierte Ereignisse sind vorhanden.
 
+Diese README gibt erste Hintergrundinformationen.
+Die Dokumentation befindet sich unter ambiente.dyndns.dk/roomcontrol/
+
 Unterstützte Plattformen:
 -------------------------
 - Windows ab Vista (Qt4;OpenSSL;Windows API: CryptProtectData, CryptUnprotectData, LogonUser)
@@ -14,10 +17,12 @@ Mitgelieferte Plugins:
 Generische Plugins:
 * Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
 * Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
-* Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
 * Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
 * Time: Bietet feste und periodische Zeitereignisse an.
 * WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.
+
+Generisches Plugins (Betriebssystemabhängig):
+* Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
 
 Softwareabhängige Plugins:
 * MPD: Steuert den Music Player Daemon.
@@ -30,27 +35,35 @@ Hardwareabhängige Plugins:
 * Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
 
 Plugins für mitgelieferte Tools:
-* RemoteSystem: Ermöglicht gewisse Steuerbefehle an alle Computer im selben Subnetzwerk, welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
-* Roomcontrol_Leds_serial: Steuert den, über ein RS232 Anschluss angebundenen, Atmega µController mit der in tools/firmware/leds programmierten Software um Leuchtdioden anzusteuern.
-* Roomcontrol_Leds_udp: Steuert den Atmega µController mit der in tools/firmware/leds programmierten Software um Leuchtdioden anzusteuern.
-* Roomcontrol_curtain: Steuert ein Rolle über ein  Atmega µController per udp.
+* RemoteSystem: Ermöglicht Steuerbefehle an alle Computer im selben Subnetzwerk,
+  welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
+* Roomcontrol_Leds_serial: Steuert den, über ein RS232 Anschluss angebundenen,
+  Atmega µController mit der Firmware unter tools/firmware/ethersex um Leuchtdioden anzusteuern.
+* Roomcontrol_Leds_udp: Steuert den, über UDP/IP angebundenen,
+  Atmega µController mit der Firmware unter tools/firmware/ethersex um Leuchtdioden anzusteuern.
+* Roomcontrol_curtain: Steuert den, über UDP/IP angebundenen,
+  Atmega µController mit der Firmware unter tools/firmware/ethersex um ein Rollo anzusteuern.
 
 Architektur:
 ------------
 Kernprozess:
 Der ausführende Kernprozess "roomcontrolserver" wird im weiteren Server genannt.
-Der Server startet alle bekannten Pluginprozesse und ist für das Empfangen und Verteilen
-von Nachrichten zwischen Plugins und dem Server zuständig. Er baut zudem eine Verbindung zur Datenhaltung
-auf und fordert alle Ereignisdaten an und registriert diese bei den zuständigen Plugins. Sofern ein Ereignis
-entsprechend der Ereignisdaten eintritt, wird der Server informiert. Dieser lädt aus der Datenhaltung die mit dem
-Ereignisdaten verbundenen Profile und damit wiederum verbundene Bedingungsdaten und Aktionsdaten.
-Wenn alle Plugins, die betroffen sind, die Bedingungen anhand der Bedinungsdaten evaluiert haben und
-positive Rückmeldungen gemeldet haben, werden die Aktionsdaten an die zuständigen Plugins gesendet zur Ausführung.
+Der Server baut nach dem Start eine Verbindung zur Datenhaltung auf und fordert alle Plugin Konfigurationen an.
+Eine Plugin Konfiguration enthält die benötigten Parameter um eine bestimmte Plugin Instanz
+erfolgreich starten zu können. Es können also jederzeit mehrfache Instanzen eines Plugins gestartet werden.
+Plugin Instanzen laufen in eigenen Prozessen und können untereinander oder mit dem Server kommunizieren.
 
-Über einen TCP Port i.d.R. Port 3101 können per JSON
-Kodierte Nachrichten an den Prozess abgesetzt werden um Pluginaktionen etwa direkt auszuführen oder Profile manuell
-zu starten.
-Der Server selber bietet keine Session/Sicherheitsverwaltung oder andere Steuerungsmöglichkeiten an,
+Sobald ein Pluginprozess angelaufen und eine Verbindung zum Server hergestellt worden ist, werden aus der Datenhaltung
+alle auf diese Plugin Instanz registrierten Ereignisse angefordert and an die Plugin Instanz weitergereicht.
+
+Sobald ein Ereignis entsprechend der Ereignisdaten eintritt, wird der Server informiert und lädt aus der Datenhaltung
+die mit dem Ereignisdaten verbundenen Profile und damit wiederum verbundene Bedingungsdaten und Aktionsdaten.
+
+Wenn alle betroffenen Plugin Instanzen die Bedingungen anhand der Bedinungsdaten mit positiver Rückmeldung
+evaluiert haben, werden die Aktionsdaten an die zuständigen Plugin Instanzen zur Ausführung gesendet.
+
+Über einen TCP Port i.d.R. Port 3101 können per JSON kodierte Nachrichten an den Prozess abgesetzt werden.
+Der Server selber bietet keine Session/Sicherheitsverwaltung an,
 diese Funktionalitäten können mit zusätzlichen Proxy Prozessen abgedeckt werden.
 
 Websocketsproxy + SessionProxy:
@@ -67,11 +80,10 @@ reagieren.
 
 Datenspeicherung:
 Welches Ereignis, unter welchen Bedinungen welche Aktion auslöst wird in einer Datenbank vorgehalten. Für diesen
-Zweck wird die Dokumentenbasierte Datenbank MongoDB verwendet. Über MongoDB Werkzeuge kann der Datenbestand regelmäßig
+Zweck wird die dokumentenbasierte Datenbank MongoDB verwendet. Über MongoDB Werkzeuge kann der Datenbestand regelmäßig
 gesichert, redundant vorgehalten oder verfielfältigt werden.
-JSon ist das Speicherformat für Ereignisdaten, Bedingungsdaten, Aktionsdaten und Profilen.
 
-Ereignisse, Bedingungen und Aktionen:
+Beispiel: Ereignisse, Bedingungen und Aktionen:
 Ein Ereignis kann das Eintreten eines gewissen Zeitpunktes sein,
 eine Bedingung könnte den aktuellen Steckdosenzustand meinen,
 eine Aktion löst eine Veränderung aus etwa das Ändern der Lichwerte von Leuchtdioden.
