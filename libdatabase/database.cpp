@@ -79,7 +79,7 @@ Database::ConnectStateEnum Database::reconnectToDatabase()
     m_mongodb.setSoTimeout(5);
     try {
         m_mongodb.connect(m_serveraddress.toStdString());
-        m_mongodb.createCollection("roomcontrol.listen", 0, true, 50, 0);
+        m_mongodb.createCollection("roomcontrol.listen", 50*500, true, 50, 0);
         m_state = ConnectedState;
         {
             m_listener = new DatabaseListener(m_serveraddress);

@@ -26,24 +26,17 @@ void DatabaseListener::run()
     if (m_conn.isFailed())
         return;
     // minKey is smaller than any other possible value
-    mongo::BSONElement lastId;
 	
 	mongo::BSONObjBuilder b;
-	b.appendTimestamp("_id");
-    mongo::Query query = mongo::Query().sort("$natural"); // { $natural : 1 } means in forward
-	query.minKey(b.done());
-
+	b.appendTimestamp("$gt");
+    mongo::BSONElement lastId = b.done().firstElement();
+	
+    mongo::Query query = mongo::Query(BSON("_id" << b.done())).sort("$natural"); // { $natural : 1 } means in forward
     // capped collection insertion order
     while ( !m_abort ) {
         std::auto_ptr<mongo::DBClientCursor> c;
-        try {
-            c = m_conn.query("roomcontrol.listen", query, 0, 0, 0,
-                             mongo::QueryOption_CursorTailable );
-        } catch (mongo::UserException& e) {
-            qWarning()<<"Exception" << QString::fromStdString(e.toString());
-            sleep(3);
-            continue;
-        }
+		c = m_conn.query("roomcontrol.listen", query, 0, 0, 0,
+							mongo::QueryOption_CursorTailable );
         if (c.get()==0) {
             qWarning()<<"Pointer empty!" << QString::fromStdString(m_conn.getLastError());
             sleep(3);
@@ -73,21 +66,16 @@ void DatabaseListener::run()
                 const QVariantMap v = BJSON::fromBson(o.getObjectField("o"));
                 emit doc_removed(ServiceData::id(v));
                 //qDebug() << "delete" << ServiceData::id(v);
-            } else
-                std::cout << o.toString() << endl;
+            }
+			std::cout << o.toString() << endl;
         }
 
         // prepare to requery from where we left off
         if (m_abort)
             break;
 		
-        try {
-            query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
-        } catch (mongo::UserException& e) {
-            qWarning()<<"Exception" << QString::fromStdString(e.toString());
-            sleep(3);
-            query = mongo::Query().sort("$natural");
-        }
+		query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
+		sleep(3);
     }
     exit();
 }
