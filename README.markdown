@@ -15,6 +15,7 @@ Unterstützte Plattformen:
 Mitgelieferte Plugins:
 ======================
 Generische Plugins:
+-------------------
 * Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
 * Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
 * Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
@@ -22,19 +23,23 @@ Generische Plugins:
 * WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.
 
 Generisches Plugins (Betriebssystemabhängig):
+---------------------------------------------
 * Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
 
 Softwareabhängige Plugins:
+--------------------------
 * MPD: Steuert den Music Player Daemon.
 * XBMC: Steuert das XBox Media Center.
 * Pulseaudio (linux only): Steuert Lautstärkekanäle des Pulseaudio daemons.
 
 Hardwareabhängige Plugins:
+--------------------------
 * Anel sockets: Steuert Steckdosenleisten von der Firma anel (http://www.anel-elektronik.de/).
 * Cardreader PCSC: Reagiert auf das Ein/Ausstecken von Karten bei PCSC Kompatiblen Kartenlesegeräten.
 * Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
 
 Plugins für mitgelieferte Tools:
+--------------------------------
 * RemoteSystem: Ermöglicht Steuerbefehle an alle Computer im selben Subnetzwerk,
   welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
 * Roomcontrol_Leds_serial: Steuert den, über ein RS232 Anschluss angebundenen,
@@ -47,6 +52,7 @@ Plugins für mitgelieferte Tools:
 Architektur:
 ============
 Kernprozess:
+------------
 Der ausführende Kernprozess "roomcontrolserver" wird im weiteren Server genannt.
 Der Server baut nach dem Start eine Verbindung zur Datenhaltung auf und fordert alle Plugin Konfigurationen an.
 Eine Plugin Konfiguration enthält die benötigten Parameter um eine bestimmte Plugin Instanz
@@ -67,28 +73,33 @@ Der Server selber bietet keine Session/Sicherheitsverwaltung an,
 diese Funktionalitäten können mit zusätzlichen Proxy Prozessen abgedeckt werden.
 
 Websocketsproxy + SessionProxy:
+-------------------------------
 Über den Websocketsproxy können sich über https Wenclients mit dem Server verbinden. Es wird eine
 Authentifizierung gegenüber den auf dem Betriebssystem vorhandenen Benutzern
 durchgeführt, sofern auch der SessionProxy aktiv ist. Zugriffsrechte werden dann durch Gruppenmitgliedschaften des
 angegeben Benutzers geregelt.
 
 Plugins:
+--------
 Plugins sind eigene Prozesse, welche selbstständig eine Kommunikationsverbindung zum Server aufbauen müssen.
 Über QDataStream kodierte Nachrichten kann mit anderen Plugins oder dem Server kommuniziert werden.
 Plugins können Eigenschaften (properties) besitzen und auf Eigenschaftsänderungen des Servers oder anderer Plugins
 reagieren. 
 
 Datenspeicherung:
+-----------------
 Welches Ereignis, unter welchen Bedinungen welche Aktion auslöst wird in einer Datenbank vorgehalten. Für diesen
 Zweck wird die dokumentenbasierte Datenbank MongoDB verwendet. Über MongoDB Werkzeuge kann der Datenbestand regelmäßig
 gesichert, redundant vorgehalten oder verfielfältigt werden.
 
 Beispiel: Ereignisse, Bedingungen und Aktionen:
+-----------------------------------------------
 Ein Ereignis kann das Eintreten eines gewissen Zeitpunktes sein,
 eine Bedingung könnte den aktuellen Steckdosenzustand meinen,
 eine Aktion löst eine Veränderung aus etwa das Ändern der Lichwerte von Leuchtdioden.
 
 Profile:
+--------
 Ereignisse, Bedingungen und Aktionen machen erst Sinn, sobald diese zusammengefasst werden können.
 Dies geschieht durch Profile (Collections). Sobald ein Ereignis in einem Profil eintritt,
 werden die Bedingungen geprüft und dann ggfs. die im Profil definierten Aktionen,
