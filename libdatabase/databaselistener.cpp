@@ -2,6 +2,7 @@
 #include <QDebug>
 #include "bson.h"
 #include "servicedata.h"
+#include <time.h>
 
 DatabaseListener::DatabaseListener(const QString& serverHostname, QObject* parent):
         QThread(parent), m_abort(false)
@@ -28,21 +29,25 @@ void DatabaseListener::run()
     // minKey is smaller than any other possible value
 	
 	mongo::BSONObjBuilder b;
-	b.appendTimestamp("$gt");
+	b.appendTimestamp("$gt", time (NULL)*1000, 0);
     mongo::BSONElement lastId = b.done().firstElement();
 	
-    mongo::Query query = mongo::Query(BSON("_id" << b.done())).sort("$natural"); // { $natural : 1 } means in forward
+    mongo::Query query;
+	std::auto_ptr<mongo::DBClientCursor> c;
+	
     // capped collection insertion order
     while ( !m_abort ) {
-        std::auto_ptr<mongo::DBClientCursor> c;
-		c = m_conn.query("roomcontrol.listen", query, 0, 0, 0,
-							mongo::QueryOption_CursorTailable );
+		query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
+		std::cout << query.toString() << endl;
+		c = m_conn.query("roomcontrol.listen", query, 0, 0, 0, mongo::QueryOption_CursorTailable );
+		
         if (c.get()==0) {
             qWarning()<<"Pointer empty!" << QString::fromStdString(m_conn.getLastError());
             sleep(3);
             continue;
         }
-        while ( !m_abort ) {
+        
+        while ( 1 ) {
             if ( !c->more() ) {
                 if ( c->isDead() ) {
                     // we need to requery
@@ -55,7 +60,7 @@ void DatabaseListener::run()
             mongo::BSONObj o = c->next();
             lastId = o["_id"];
             std::string op = o.getStringField("op");
-            if (op=="i" || op=="u") {
+            if (op=="u") {
                 const QVariantMap object = BJSON::fromBson(o.getObjectField("o"));
                 const QString id = ServiceData::id(object);
                 if (id.size())
@@ -74,7 +79,6 @@ void DatabaseListener::run()
         if (m_abort)
             break;
 		
-		query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
 		sleep(3);
     }
     exit();

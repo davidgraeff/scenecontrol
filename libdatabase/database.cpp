@@ -85,7 +85,7 @@ Database::ConnectStateEnum Database::reconnectToDatabase()
             m_listener = new DatabaseListener(m_serveraddress);
             connect(m_listener, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
             connect(m_listener, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
-            m_listener->start();
+             m_listener->start();
         }
     } catch (mongo::UserException&e) {
         m_state = DisconnectedState;
