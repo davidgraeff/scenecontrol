@@ -1,5 +1,5 @@
 Raumautomatisierungsoftware:
-----------------------------
+============================
 Eine Plugin orientierte Steuersoftware für die Raumautomatisierung. Plugins für
 Steckdosen, Rollo, Led Beleuchtung, PulseAudio, Videoabspielprogramm,
 Beamersteuerung und Zeitbasierte Ereignisse sind vorhanden.
@@ -8,12 +8,12 @@ Diese README gibt erste Hintergrundinformationen.
 Die Dokumentation befindet sich unter ambiente.dyndns.dk/roomcontrol/
 
 Unterstützte Plattformen:
--------------------------
-- Windows ab Vista (Qt4;OpenSSL;Windows API: CryptProtectData, CryptUnprotectData, LogonUser)
-- Linux ab 2.6.22 (Qt4;OpenSSL;pam)
+=========================
+* Windows ab Vista (Qt4;OpenSSL;Windows API: CryptProtectData, CryptUnprotectData, LogonUser)
+* Linux ab 2.6.22 (Qt4;OpenSSL;pam)
 
 Mitgelieferte Plugins:
-----------------------
+======================
 Generische Plugins:
 * Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
 * Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
@@ -45,7 +45,7 @@ Plugins für mitgelieferte Tools:
   Atmega µController mit der Firmware unter tools/firmware/ethersex um ein Rollo anzusteuern.
 
 Architektur:
-------------
+============
 Kernprozess:
 Der ausführende Kernprozess "roomcontrolserver" wird im weiteren Server genannt.
 Der Server baut nach dem Start eine Verbindung zur Datenhaltung auf und fordert alle Plugin Konfigurationen an.
@@ -96,18 +96,18 @@ evtl. mit eingestellter zeitlicher Verzögerung, ausgeführt.
 
 
 Anwendungsgebiete:
-------------------
+==================
 1. Intelligenter Wecker
 2. Energiesparsystem
 3. Intelligenter Raum
 4. Automatisiertes Heimkino
 
 Clients:
---------
+========
 Es befinden sich in QML/qt4 geschriebene Clientprogramme im Ordner clients/.
 
 Benötigte Bibliotheken für den Server ohne Plugins:
----------------------------------------------------#
+===================================================
 Kernprozess:
 Name          Ubuntu Paket          Beschreibung
 Qt4           libqt4-dev            Qt4 Framework
