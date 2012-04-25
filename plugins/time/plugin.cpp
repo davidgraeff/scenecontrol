@@ -68,39 +68,48 @@ bool plugin::timespan ( const QString& current, const QString& lower, const QStr
     return true;
 }
 
-void plugin::eventDateTime ( const QString& eventid, const QString& collectionuid, const QString& date, const QString& time) {
+void plugin::eventDateTime ( const QString& _id, const QString& collection_, const QString& date, const QString& time) {
     // remove from next events
-    m_timeout_events.remove ( eventid );
+    m_timeout_events.remove ( _id );
 
     // recalculate next event
     EventTimeStructure s;
-    s.collectionuid = collectionuid;
+    s.collectionuid = collection_;
     s.date = QDate::fromString(date, QLatin1String("dd.MM.yyyy"));
     s.time = QTime::fromString(time, QLatin1String("h:m"));
-    m_remaining_events[eventid] = s;
+    m_remaining_events[_id] = s;
     calculate_next_events();
 
     // property update
     ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
-    sc.setData("uid", eventid);
+    sc.setData("uid", _id);
     changeProperty(sc.getData());
 }
 
-void plugin::eventPeriodic ( const QString& eventid, const QString& collectionuid, const QString& time, const QBitArray& days) {
+void plugin::eventPeriodic ( const QString& _id, const QString& collection_, const QString& time, const QVariantList& days) {
     // remove from next events
-    m_timeout_events.remove ( eventid );
-
+    m_timeout_events.remove ( _id );
+	
+	QVariantList days_ = days;
+	QBitArray converted(7);
+	while (days_.size()) {
+		int day = days_.takeLast().toInt();
+		if (day>=0 && day < 7)
+			converted.setBit(day, true);
+	}
+	
+// qDebug() << __FUNCTION__ << time << converted.testBit(0) << converted.testBit(1) << converted.testBit(2) << converted.testBit(3);
     // recalculate next event
     EventTimeStructure s;
-    s.collectionuid = collectionuid;
+    s.collectionuid = collection_;
     s.time = QTime::fromString(time, QLatin1String("h:m"));
-    s.days = days;
-    m_remaining_events[eventid] = s;
+    s.days = converted;
+    m_remaining_events[_id] = s;
     calculate_next_events();
 
     // property update
     ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
-    sc.setData("uid", eventid);
+    sc.setData("uid", _id);
     changeProperty(sc.getData());
 }
 

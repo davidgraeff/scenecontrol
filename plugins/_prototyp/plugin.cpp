@@ -43,3 +43,7 @@ plugin::plugin(const QString& instanceid) : AbstractPlugin(instanceid) {
 plugin::~plugin() {
 }
 
+void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
+    Q_UNUSED(plugin_id);
+    Q_UNUSED(data);
+}

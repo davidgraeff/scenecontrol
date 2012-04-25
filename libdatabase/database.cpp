@@ -220,7 +220,7 @@ QVariantMap Database::checkTypes(const QVariantMap& data, const QVariantMap& typ
             continue;
         }
         QVariant element = i.value();
-        if (!element.convert(QVariant::nameToType(targettype))) {
+        if (element.type()!=QVariant::nameToType(targettype) && !element.convert(QVariant::nameToType(targettype))) {
             qWarning()<<"checkTypes: Conversion failed" << i.key() << "orig:" << i.value().typeName() << "dest:" << targettype;
             continue;
         }

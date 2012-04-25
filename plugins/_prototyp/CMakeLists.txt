@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 find_package(RoomPlugins REQUIRED)
 
 SET(DEBFOUND TRUE)
-IF (DEBFOUND)
+IF (DEBFOUND AND NOT ${PROJECT_NAME} STREQUAL "_prototyp_plugin")
 	OPTION(PLUGIN_${PROJECT_NAME} "Plugin  ${PROJECT_NAME} Server" ON)
 
 	IF (PLUGIN_${PROJECT_NAME})
