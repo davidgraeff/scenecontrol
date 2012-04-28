@@ -29,49 +29,37 @@ void CollectionController::requestExecutionByCollectionId ( const QString& colle
             break;
         }
     if (foundIndex!=-1) {
-  qDebug()<<__FUNCTION__;
         RunningCollection* run = m_cachedCollections[foundIndex];
         m_runningCollections.insert(collectionid, run);
         updateListOfRunningCollections();
-  qDebug()<<__FUNCTION__;
         run->start();
-  qDebug()<<__FUNCTION__;
     } else
         Database::instance()->requestDataOfCollection(collectionid);
 }
 
 void CollectionController::runningCollectionFinished(const QString& collectionid)
 {
-  qDebug()<<__FUNCTION__;
     // Remove collection from list of running collections
     RunningCollection* run = m_runningCollections.take(collectionid);
     // Remove all instances from the cache and add another one at the end
-  qDebug()<<__FUNCTION__;
     m_cachedCollections.removeAll(run);
     m_cachedCollections.append(run);
     // if cache size > running collections or 1: trim down
-  qDebug()<<__FUNCTION__;
-    while (qMax<int>(1, m_cachedCollections.size()) > m_runningCollections.size()) {
+    while (m_cachedCollections.size() > m_runningCollections.size()) {
 	run = m_cachedCollections.takeFirst();
 	Q_ASSERT(!m_runningCollections.contains(collectionid));
 	delete run;
     }
-  qDebug()<<__FUNCTION__;
     updateListOfRunningCollections();
-  qDebug()<<__FUNCTION__;
 }
 
 void CollectionController::dataOfCollection(const QString& collectionid, const QList< QVariantMap >& services)
 {
-  qDebug()<<__FUNCTION__;
     delete m_runningCollections.take(collectionid);
     RunningCollection* run = new RunningCollection(collectionid, services);
-  qDebug()<<__FUNCTION__;
     connect(run, SIGNAL(runningCollectionFinished(QString)), SLOT(runningCollectionFinished(QString)));
     m_runningCollections.insert(collectionid, run);
-  qDebug()<<__FUNCTION__;
     updateListOfRunningCollections();
-  qDebug()<<__FUNCTION__;
     run->start();
 }
 
