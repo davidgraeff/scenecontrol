@@ -5,18 +5,24 @@ IF (NOT DEFINED PRODUCTID)
 	RETURN()
 ENDIF()
 
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" "/usr/share/apps/cmake/modules/")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/mongoclientextern")
 
 find_package(OpenSSL QUIET)
+find_package(MongoClient QUIET)
 
 project(roomcontrolserver)
 
-IF (OPENSSL_FOUND)
-	OPTION(BUILD_SERVER "Build server" ON)
-ELSE()
+IF (NOT OPENSSL_FOUND)
 	MESSAGE("Not building: Server (OpenSSL)")
+	RETURN()
 ENDIF()
 
+IF (NOT MONGOCLIENT_FOUND)
+	MESSAGE("Not building: Server (MongoDB Client)")
+	RETURN()
+ENDIF()
+
+OPTION(BUILD_SERVER "Build server" ON)
 IF (BUILD_SERVER)
 	include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}
 	${MONGOCLIENT_INCLUDE_DIRECTORIES} ${ROOTDIR} )
@@ -42,7 +48,7 @@ IF (BUILD_SERVER)
 
 	target_link_libraries(${PROJECT_NAME}
 	${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}
-	${QT_QTTEST_LIBRARIES} ${OPENSSL_LIBRARIES} ${MONGOCLIENT_LIBRARIES})
+	${QT_QTTEST_LIBRARIES} ${OPENSSL_LIBRARIES} ${MONGOCLIENT_LIBRARY} ${Boost_LIBRARIES})
 
 	add_dependencies(${PROJECT_NAME} mongoclient)
 	

@@ -14,10 +14,10 @@ if (NOT UDEV_MINIMUM_VERSION)
   set(UDEV_MINIMUM_VERSION "0.11.0")
 endif (NOT UDEV_MINIMUM_VERSION)
 
-if (UDEV_INCLUDE_DIR AND UDEV_LIBRARY)
-   # Already in cache, be silent
-   set(UDEV_FIND_QUIETLY TRUE)
-endif (UDEV_INCLUDE_DIR AND UDEV_LIBRARY)
+# if (UDEV_INCLUDE_DIR AND UDEV_LIBRARY)
+#    # Already in cache, be silent
+#    set(UDEV_FIND_QUIETLY TRUE)
+# endif (UDEV_INCLUDE_DIR AND UDEV_LIBRARY)
 
 if (NOT WIN32)
    include(FindPkgConfig)
