@@ -39,13 +39,16 @@ void CollectionController::requestExecutionByCollectionId ( const QString& colle
 
 void CollectionController::runningCollectionFinished(const QString& collectionid)
 {
+    // Remove collection from list of running collections
     RunningCollection* run = m_runningCollections.take(collectionid);
-    if (run && !m_cachedCollections.contains(run)) {
-        if (m_cachedCollections.size()>1) {
-            delete m_cachedCollections.first();
-            m_cachedCollections.pop_front();
-        }
-        m_cachedCollections.push_back(run);
+    // Remove all instances from the cache and add another one at the end
+    m_cachedCollections.removeAll(run);
+    m_cachedCollections.append(run);
+    // if cache size > running collections or 1: trim down
+    while (qMax<int>(1, m_cachedCollections.size()) > m_runningCollections.size()) {
+	run = m_cachedCollections.takeFirst();
+	Q_ASSERT(!m_runningCollections.contains(collectionid));
+	delete run;
     }
     updateListOfRunningCollections();
 }

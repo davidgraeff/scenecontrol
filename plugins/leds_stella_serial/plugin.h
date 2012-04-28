@@ -26,7 +26,7 @@
 #include <QVariantMap>
 #include <stdint.h>
 #include "_sharedsrc/abstractplugin.h"
-#include <shared/qxtserialdevice/qxtserialdevice.h>
+#include <_sharedsrc/qxtserialdevice/qxtserialdevice.h>
 
 
 enum stella_fade_function

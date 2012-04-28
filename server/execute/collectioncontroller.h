@@ -51,7 +51,7 @@ private:
 	 * roundtrips to the database are expensive and not rational
 	 * if the same collection is executed many times in sequal.
 	 */ 
-	QVector<RunningCollection*> m_cachedCollections;
+	QList<RunningCollection*> m_cachedCollections;
 	/// Internally called after a running collection finished or aanother collection will be executed
     void updateListOfRunningCollections();
 public Q_SLOTS:

@@ -38,7 +38,7 @@ void DatabaseListener::run()
     // capped collection insertion order
     while ( !m_abort ) {
 		query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
-		std::cout << query.toString() << endl;
+		std::cout << query.toString() << std::endl;
 		c = m_conn.query("roomcontrol.listen", query, 0, 0, 0, mongo::QueryOption_CursorTailable );
 		
         if (c.get()==0) {
@@ -66,13 +66,13 @@ void DatabaseListener::run()
                 if (id.size())
                     emit doc_changed(id,object);
 				else
-					std::cout << "update" << o.toString() << endl;
+					std::cout << "update" << o.toString() << std::endl;
             } else if (op=="d") {
                 const QVariantMap v = BJSON::fromBson(o.getObjectField("o"));
                 emit doc_removed(ServiceData::id(v));
                 //qDebug() << "delete" << ServiceData::id(v);
             }
-			std::cout << o.toString() << endl;
+			std::cout << o.toString() << std::endl;
         }
 
         // prepare to requery from where we left off
