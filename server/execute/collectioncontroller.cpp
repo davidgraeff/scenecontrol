@@ -55,7 +55,11 @@ void CollectionController::runningCollectionFinished(const QString& collectionid
 
 void CollectionController::dataOfCollection(const QString& collectionid, const QList< QVariantMap >& services)
 {
-    delete m_runningCollections.take(collectionid);
+    {
+      RunningCollection* old = m_runningCollections.take(collectionid);
+      m_cachedCollections.removeAll(old);
+      delete old;
+    }
     RunningCollection* run = new RunningCollection(collectionid, services);
     connect(run, SIGNAL(runningCollectionFinished(QString)), SLOT(runningCollectionFinished(QString)));
     m_runningCollections.insert(collectionid, run);
