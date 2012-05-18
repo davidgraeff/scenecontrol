@@ -1,2 +1,5 @@
 build/*
 tools/statetracker_gen/statetracker_gen/build/
+
+*.kdev_include_paths
+*.directory

@@ -18,7 +18,7 @@ IF (NOT OPENSSL_FOUND)
 ENDIF()
 
 IF (NOT MONGOCLIENT_FOUND)
-	MESSAGE("Not building: Server (MongoDB Client)")
+	MESSAGE("Not building: Server (MongoDB library)")
 	RETURN()
 ENDIF()
 
