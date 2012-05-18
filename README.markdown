@@ -117,6 +117,19 @@ Clients:
 ========
 Es befinden sich in QML/qt4 geschriebene Clientprogramme im Ordner clients/.
 
+Software bauen:
+===============
+Es wird CMake (www.cmake.org) benötigt. Im CMake-Gui Programm kann grafisch
+der Quellcodeordner und ein davon unabhängiger BUILD-Ordner angegeben werden.
+CMake versucht alle benötigten Abhängigkeiten und den angegebenen C++ Compiler
+zu finden. Im nachfolgendem Abschnitt sind die Abhängigkeiten noch einmal
+aufgeführt. Nach dem Generierungsschritt liegen (je nach Auswahl) Visual Studio
+Projektdateien, Makefiles, usw vor.
+
+Unter Linux: Hier bietet sich das Erstellen lassen von Makefiles an. Anschließend
+in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
+generieren zu lassen den Befehl "make package" nutzen.
+
 Benötigte Bibliotheken für den Server ohne Plugins:
 ===================================================
 Kernprozess:
