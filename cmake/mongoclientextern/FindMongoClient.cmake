@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.4)
 
 find_package(Boost COMPONENTS system thread signals filesystem QUIET) 
 IF (NOT ${Boost_FOUND})
-	message(FATAL_ERROR "Boost libraries (system thread signals) not intalled! ${Boost_LIBRARIES}  ${Boost_ERROR_REASON}")
+	message("Boost libraries (system thread signals) not intalled! ${Boost_LIBRARIES}  ${Boost_ERROR_REASON}")
 	set(MONGOCLIENT_FOUND FALSE)
 	return()
 ENDIF()
