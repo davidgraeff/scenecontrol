@@ -1,0 +1,16 @@
+[CMake]
+BuildDirs[$e]=$HOME/Entwicklung/roomcontrol/build
+CMakeDir=/usr/share/cmake-2.8/Modules
+Current CMake Binary=file:///usr/bin/cmake
+CurrentBuildDir=file:///home/david/Entwicklung/roomcontrol/build
+CurrentBuildType=Release
+CurrentInstallDir=file:///usr/local
+ProjectRootRelative=./
+
+[MakeBuilder]
+Install As Root=true
+Number Of Jobs=6
+Su Command=1
+
+[Project]
+VersionControlSupport=kdevgit

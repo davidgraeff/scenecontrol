@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 set (SHAREDPLUGINDIR "${CMAKE_SOURCE_DIR}/plugins/_sharedsrc")
 
+# Enable c++11 standard
+add_definitions(-std=c++0x)
+add_definitions(-std=gnu++0x)
+
 # install path of libs
 IF(WIN32)
 	IF (CMAKE_BUILD_TYPE EQUAL "DEBUG" OR CMAKE_BUILD_TYPE EQUAL "Debug")

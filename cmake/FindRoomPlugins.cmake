@@ -9,14 +9,14 @@ get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 message(STATUS "Plugin: ${targetname}")
 project(${targetname}_plugin)
 
-LIST(APPEND Shared_SRCS_H "${SHAREDPLUGINDIR}/abstractplugin.h")
+LIST(APPEND Shared_SRCS_H "${SHAREDPLUGINDIR}/abstractplugin.h" ${SRCS_JSON_H})
 LIST(APPEND Shared_SRCS "${SHAREDPLUGINDIR}/plugineventmap.cpp" "${SHAREDPLUGINDIR}/abstractplugin.cpp"
-"${ROOTDIR}/libdatabase/json.cpp" "${ROOTDIR}/libdatabase/servicedata.cpp")
+${SRCS_JSON} "${CMAKE_SOURCE_DIR}/libdatabase/servicedata.cpp")
 
-file(GLOB SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-file(GLOB SRCS_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+FILE(GLOB SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+FILE(GLOB SRCS_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
+include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
 ${ROOTDIR} ${PLUGINSDIR})
 
 # rs232

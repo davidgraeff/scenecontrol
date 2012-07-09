@@ -98,7 +98,7 @@ Database::ConnectStateEnum Database::reconnectToDatabase()
 void Database::requestEvents(const QString& plugin_id, const QString& instanceid)
 {
     try {
-        std::auto_ptr<mongo::DBClientCursor> cursor =
+        std::unique_ptr<mongo::DBClientCursor> cursor =
             m_mongodb.query( "roomcontrol.event", BSON("plugin_" << plugin_id.toStdString() << "instanceid_" << instanceid.toStdString()) );
         while ( cursor->more() ) {
             QVariantMap jsonData = BJSON::fromBson(cursor->next());
@@ -120,21 +120,21 @@ void Database::requestDataOfCollection(const QString &collecion_id)
         return;
     QList<QVariantMap> servicelist;
     {
-        std::auto_ptr<mongo::DBClientCursor> cursor =
+        std::unique_ptr<mongo::DBClientCursor> cursor =
             m_mongodb.query("roomcontrol.event", BSON("collection_" << collecion_id.toStdString()));
         while ( cursor->more() ) {
             servicelist.append(BJSON::fromBson(cursor->next()));
         }
     }
     {
-        std::auto_ptr<mongo::DBClientCursor> cursor =
+        std::unique_ptr<mongo::DBClientCursor> cursor =
             m_mongodb.query("roomcontrol.condition", BSON("collection_" << collecion_id.toStdString()));
         while ( cursor->more() ) {
             servicelist.append(BJSON::fromBson(cursor->next()));
         }
     }
     {
-        std::auto_ptr<mongo::DBClientCursor> cursor =
+        std::unique_ptr<mongo::DBClientCursor> cursor =
             m_mongodb.query("roomcontrol.action", QUERY("collection_" << collecion_id.toStdString()));
         while ( cursor->more() ) {
             servicelist.append(BJSON::fromBson(cursor->next()));
@@ -153,7 +153,7 @@ void Database::requestPluginConfiguration(const QString &pluginid)
     if (pluginid.isEmpty())
         return;
     try {
-        std::auto_ptr<mongo::DBClientCursor> cursor =
+        std::unique_ptr<mongo::DBClientCursor> cursor =
             m_mongodb.query("roomcontrol.configuration", QUERY("plugin_" << pluginid.toStdString()));
         while ( cursor->more() ) {
             QVariantMap jsonData = BJSON::fromBson(cursor->next());
@@ -190,7 +190,7 @@ void Database::changePluginConfiguration(const QString& pluginid, const QString&
 
 void Database::requestSchemas()
 {
-    std::auto_ptr<mongo::DBClientCursor> cursor =
+    std::unique_ptr<mongo::DBClientCursor> cursor =
         m_mongodb.query("roomcontrol.schema", mongo::BSONObj());
     while ( cursor->more() ) {
         QVariantMap jsonData = BJSON::fromBson(cursor->next());
@@ -200,7 +200,7 @@ void Database::requestSchemas()
 
 void Database::requestCollections()
 {
-    std::auto_ptr<mongo::DBClientCursor> cursor =
+    std::unique_ptr<mongo::DBClientCursor> cursor =
         m_mongodb.query("roomcontrol.collection", mongo::BSONObj());
     while ( cursor->more() ) {
         QVariantMap jsonData = BJSON::fromBson(cursor->next());
@@ -241,7 +241,7 @@ void Database::removeDocument(const QString &type, const QString &id)
     if (type == QLatin1String("collection")) {
         // if it is a collection, remove all actions, conditions, events belonging to it
         // Do it in a per-element way to update the listen collection after every operation
-        std::auto_ptr<mongo::DBClientCursor> cursor;
+        std::unique_ptr<mongo::DBClientCursor> cursor;
         cursor = m_mongodb.query("roomcontrol.action", BSON("collection_" << id.toStdString()));
         while ( cursor->more() ) {
             std::string elementid = cursor->next().getStringField("_id");
@@ -325,7 +325,7 @@ bool Database::contains(const QString& type, const QString& id)
 {
     const mongo::BSONObj query = BSON("_id" << id.toStdString());
     const std::string dbid = "roomcontrol."+type.toStdString();
-    std::auto_ptr<mongo::DBClientCursor> cursor =
+    std::unique_ptr<mongo::DBClientCursor> cursor =
         m_mongodb.query(dbid, query, 1);
     if (cursor.get()==0) {
         qWarning()<<"Database: Query failed!" << type << id;
@@ -340,7 +340,7 @@ void Database::exportAsJSON(const QString& path)
     std::list<std::string>::const_iterator i = collections.begin();
     for (;i!= collections.end();++i) {
         const QString collectionname = QString::fromStdString(*i);
-        std::auto_ptr<mongo::DBClientCursor> cursor =
+        std::unique_ptr<mongo::DBClientCursor> cursor =
             m_mongodb.query(collectionname.toStdString(), mongo::BSONObj());
         while ( cursor->more() ) {
             QVariantMap jsonData = BJSON::fromBson(cursor->next());

@@ -47,8 +47,8 @@ void plugin::wol ( const QString& mac) {
         macdecoded.append ( QByteArray::fromHex ( parts[i] ) );
 
     // 6 mal FF
-    const char header[] = {255,255,255,255,255,255};
-    QByteArray bytes ( header );
+    const unsigned char header[] = {255,255,255,255,255,255};
+    QByteArray bytes ( (const char*)header );
     // 16 mal mac
     for ( int i=0;i<16;++i )
         bytes.append ( macdecoded );

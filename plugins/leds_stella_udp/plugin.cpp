@@ -202,8 +202,8 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
 
 void plugin::resendConnectSequence() {
     // request all channel values
-    char b[] = {255,0,0};
-    m_socket->write ( b, sizeof ( b ) );
+    const unsigned char b[] = {255,0,0};
+    m_socket->write ( (const char*)b, sizeof ( b ) );
     m_socket->flush();
     m_connectTime *= 2;
     if (m_connectTime>60000)

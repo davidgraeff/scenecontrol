@@ -24,7 +24,7 @@ ENDIF()
 
 OPTION(BUILD_SERVER "Build server" ON)
 IF (BUILD_SERVER)
-	include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+	include_directories(${QT_INCLUDES} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}
 	${MONGOCLIENT_INCLUDE_DIRECTORIES} ${ROOTDIR} )
 	#message("mongo include: ${MONGOCLIENT_INCLUDE_DIRECTORIES}")
 	#LWS_OPENSSL_SUPPORT: for libwebsocket to support wss (ws secured with ssl)

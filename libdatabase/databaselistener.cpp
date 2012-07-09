@@ -1,6 +1,7 @@
 #include "databaselistener.h"
 #include <QDebug>
 #include "bson.h"
+#include "mongo/bson/bson.h"
 #include "servicedata.h"
 #include <time.h>
 
@@ -33,7 +34,7 @@ void DatabaseListener::run()
     mongo::BSONElement lastId = b.done().firstElement();
 	
     mongo::Query query;
-	std::auto_ptr<mongo::DBClientCursor> c;
+	std::unique_ptr<mongo::DBClientCursor> c;
 	
     // capped collection insertion order
     while ( !m_abort ) {

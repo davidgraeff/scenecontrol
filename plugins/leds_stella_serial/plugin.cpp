@@ -202,8 +202,8 @@ void plugin::setCurtain ( unsigned int position ) {
     if ( !m_serial ) return;
     m_curtain_value = position;
     emit curtainChanged ( m_curtain_value, m_curtain_max );
-    const char t1[] = {0xdf, position};
-    m_serial->write ( t1, sizeof ( t1 ) );
+    const unsigned char t1[] = {0xdf, static_cast<char>(position)};
+    m_serial->write ( (const char*)t1, sizeof ( t1 ) );
 }
 
 int plugin::getCurtain() {
@@ -245,8 +245,8 @@ void plugin::setLed ( const QString& channel, int value, int fade ) {
     default:
         break;
     };
-    const char t1[] = {cfade, channel.toUInt(), value};
-    m_serial->write ( t1, sizeof ( t1 ) );
+    const unsigned char t1[] = {cfade, static_cast<unsigned char>(channel.toUInt()), static_cast<unsigned char>(value)};
+    m_serial->write ( (const char*)t1, sizeof ( t1 ) );
 }
 
 void plugin::toggleLed ( const QString& channel, int fade )
@@ -296,8 +296,8 @@ void plugin::panicTimeout() {
             qWarning() << pluginid() << "Failed to reset panic counter. Try reconnection";
         }
         m_serial->close();
-        const char t1[] = {0xef};
-        if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1,  sizeof ( t1 ) ) ) {
+        const unsigned char t1[] = {0xef};
+        if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( (const char*)t1,  sizeof ( t1 ) ) ) {
             qWarning() << pluginid() << "rs232 init fehler";
         }
     }
@@ -326,7 +326,7 @@ void plugin::connectToLeds ( const QString& device ) {
                                 | QxtSerialDevice::Stop1 | QxtSerialDevice::Bit8);
     connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
 
-    const char t1[] = {0xef};
+    const char t1[] = {(char)0xef};
     if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1, sizeof ( t1 ) ) ) {
         qWarning() << pluginid() << "rs232 error:" << m_serial->errorString();
     } else {
