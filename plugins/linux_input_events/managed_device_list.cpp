@@ -25,6 +25,7 @@ extern "C"
 #include <libudev.h>
 #include <poll.h>
 #include <errno.h>
+#include <unistd.h>
 }
 
 #include "managed_device_list.h"
@@ -41,7 +42,6 @@ ManagedDeviceList::ManagedDeviceList() {
 ManagedDeviceList::~ManagedDeviceList() {
     m_udevMonitorNotifier->setEnabled(false);
     delete m_udevMonitorNotifier;
-    close (udev_monitor_fd);
 
     if (udev_mon)
         udev_monitor_unref(udev_mon);
@@ -49,6 +49,7 @@ ManagedDeviceList::~ManagedDeviceList() {
     if (udev)
         udev_unref(udev);
 
+    close (udev_monitor_fd);
     udev = 0;
     udev_mon = 0;
 

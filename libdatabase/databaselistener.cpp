@@ -40,7 +40,7 @@ void DatabaseListener::run()
     while ( !m_abort ) {
 		query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
 		std::cout << query.toString() << std::endl;
-		c = m_conn.query("roomcontrol.listen", query, 0, 0, 0, mongo::QueryOption_CursorTailable );
+		c = m_conn.query("roomcontrol.listen", query, 0, 0, 0, mongo::QueryOption_CursorTailable | mongo::QueryOption_AwaitData );
 		
         if (c.get()==0) {
             qWarning()<<"Pointer empty!" << QString::fromStdString(m_conn.getLastError());
