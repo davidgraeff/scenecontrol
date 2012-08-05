@@ -17,13 +17,9 @@ modify_registry_path:
 ---------------------
 Für den Windows NSIS Installer. Das Programm wird gebaut und im Installer unter Windows genutzt um den
 Installationspfad in die Registry zu schreiben. Der Server liest diesen Wert aus, um etwa den Installationsort
-der Pluginprozesse finden zu können.
+der Plugins finden zu können.
 
 startonboot:
 ------------
 Für verschiedene Betriebssysteme enthaltene Programme um den Server beim Systemstart mit zu starten.
 
-ethersex:
----------
-Eine trunk Kopie des Projektes ethersex, welches als firmware für verschiedene eingebette Systeme (Led-, Rollosteuerung)
-eingesetzt wird.

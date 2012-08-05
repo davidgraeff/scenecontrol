@@ -40,8 +40,9 @@ Hardwareabhängige Plugins:
 
 Plugins für mitgelieferte Tools:
 --------------------------------
-* RemoteSystem: Ermöglicht Steuerbefehle an alle Computer im selben Subnetzwerk,
+* RemoteSystem: Ermöglicht Steuerbefehle an alle Windows Computer im selben Subnetzwerk,
   welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
+  Zugehöriges Projekt: https://github.com/davidgraeff/windows_net_control
 * Roomcontrol_Leds_serial: Steuert den, über ein RS232 Anschluss angebundenen,
   Atmega µController mit der Firmware unter tools/firmware/ethersex um Leuchtdioden anzusteuern.
 * Roomcontrol_Leds_udp: Steuert den, über UDP/IP angebundenen,
@@ -53,44 +54,62 @@ Architektur:
 ============
 Kernprozess:
 ------------
-Der ausführende Kernprozess "roomcontrolserver" wird im weiteren Server genannt.
-Der Server baut nach dem Start eine Verbindung zur Datenhaltung auf und fordert alle Plugin Konfigurationen an.
+Der ausführende Kernprozess wird im weiteren SceneServer genannt.
+Der SceneServer baut nach dem Start eine Verbindung zur Datenhaltung auf und fordert alle Plugin Konfigurationen an.
 Eine Plugin Konfiguration enthält die benötigten Parameter um eine bestimmte Plugin Instanz
 erfolgreich starten zu können. Es können also jederzeit mehrfache Instanzen eines Plugins gestartet werden.
-Plugin Instanzen laufen in eigenen Prozessen und können untereinander oder mit dem Server kommunizieren.
+Plugin Instanzen laufen in eigenen Prozessen und können untereinander oder mit dem SceneServer kommunizieren.
 
 Sobald ein Pluginprozess angelaufen und eine Verbindung zum Server hergestellt worden ist, werden aus der Datenhaltung
 alle auf diese Plugin Instanz registrierten Ereignisse angefordert and an die Plugin Instanz weitergereicht.
 
-Sobald ein Ereignis entsprechend der Ereignisdaten eintritt, wird der Server informiert und lädt aus der Datenhaltung
+Sobald ein Ereignis entsprechend der Ereignisdaten eintritt, wird der SceneServer informiert und lädt aus der Datenhaltung
 die mit dem Ereignisdaten verbundenen Profile und damit wiederum verbundene Bedingungsdaten und Aktionsdaten.
 
 Wenn alle betroffenen Plugin Instanzen die Bedingungen anhand der Bedinungsdaten mit positiver Rückmeldung
 evaluiert haben, werden die Aktionsdaten an die zuständigen Plugin Instanzen zur Ausführung gesendet.
 
 Über einen TCP Port i.d.R. Port 3101 können per JSON kodierte Nachrichten an den Prozess abgesetzt werden.
-Der Server selber bietet keine Session/Sicherheitsverwaltung an,
-diese Funktionalitäten können mit zusätzlichen Proxy Prozessen abgedeckt werden.
+Der Server selber bietet keine Session/Sicherheitsverwaltung an und bietet außer direkter Sockets keine andere
+Kontrollmöglichkeit an. Diese Funktionalitäten können mit zusätzlichen Proxy Prozessen abgedeckt werden.
 
-Websocketsproxy + SessionProxy:
--------------------------------
-Über den Websocketsproxy können sich über https Wenclients mit dem Server verbinden. Es wird eine
-Authentifizierung gegenüber den auf dem Betriebssystem vorhandenen Benutzern
-durchgeführt, sofern auch der SessionProxy aktiv ist. Zugriffsrechte werden dann durch Gruppenmitgliedschaften des
-angegeben Benutzers geregelt.
+Durch die Trennung in Prozesse mit fest gelegtem, eingegrenztem Aufgabenbereich ist die Ausfallsicherheit der
+gesamten Architektur besonders hoch und für den 24/7 Betrieb ausgelegt.
 
-Plugins:
---------
-Plugins sind eigene Prozesse, welche selbstständig eine Kommunikationsverbindung zum Server aufbauen müssen.
-Über QDataStream kodierte Nachrichten kann mit anderen Plugins oder dem Server kommuniziert werden.
+Websocketsproxy:
+----------------
+Über den Websocketsproxy können sich über https Webclients über das WebSocket Protokoll mit dem SceneServer verbinden
+und das JSON Kommandointerface des SceneServers nutzen.
+
+SessionProxy:
+-------------
+Der SessionProxy handelt mit dem SceneServer einen neuen Port für das JSON Kommandointerface aus und öffnet selber
+den JSON Kommandointerface Port. Somit werden effektiv alle neuen Verbindungen über den SessionProxy ablaufen.
+Alle Verbindungen erfordern ab dann eine Authentifizierung gegenüber den auf dem Betriebssystem vorhandenen Benutzern.
+Zugriffsrechte werden durch Gruppenmitgliedschaften des angegeben Benutzers geregelt und müssen in der SessionProxy
+Konfiguration gesondert angegeben werden.
+Ein Beispiel: Ein Nutzer wählt über die Android App eine Szene zur Ausführung aus.
+Der SessionProxy wird diese Ausführungsanfrage nur an den SceneServer weiterleiten, wenn der Nutzer sich als "abc"
+beim Start der Android App authorisiert hat.
+
+Plugin und Plugin<->SceneServer Kommunikation:
+----------------------------------------------
+Plugins sind als eigene Prozesse modelliert, welche selbstständig eine Kommunikationsverbindung zum Server aufbauen müssen.
+Da viele Qt Container und Basisklassen serialisiert werden können, wird ein einfaches QDataStream basiertes Protokoll für
+die Kommunikation zwischen Plugin Prozess und SceneServer verwendet. Unter Windows werden NamedPipes, unter Linux/MacOS
+UnixSockets verwendet.
 Plugins können Eigenschaften (properties) besitzen und auf Eigenschaftsänderungen des Servers oder anderer Plugins
-reagieren. 
+reagieren.
+Ein Plugin muss ein C++/Qt PluginInterface implementieren. Entsprechend markierte Funktionen dienen als Ereignis, Bedingungs- oder
+Aktionsmethoden und können vom SceneServer direkt genutzt werden.
 
 Datenspeicherung:
 -----------------
-Welches Ereignis, unter welchen Bedinungen welche Aktion auslöst wird in einer Datenbank vorgehalten. Für diesen
-Zweck wird die dokumentenbasierte Datenbank MongoDB verwendet. Über MongoDB Werkzeuge kann der Datenbestand regelmäßig
-gesichert, redundant vorgehalten oder verfielfältigt werden.
+Ereignisse, Bedingungen, Aktionen und Szenen werden als JSON Objekte direkt auf dem Dateisystem hinterlegt, da
+nach umfangreicher Evaluierung von dokumentbasierten Datenbanken diese keine weiteren Vorteile nach sich ziehen. Durch
+Betriebssystemroutinen kann der SceneServer über Änderungen an den Dateien informiert werden. Übliche Dateiverwaltungs-
+werkzeuge ermöglichen das manuelle Replizieren oder regelmäßige sichern der Daten und auf Dateisystemebene vorhandene
+Konsistenzdaten sorgen für die nötige Datensicherheit auf Dateiebene.
 
 Beispiel: Ereignisse, Bedingungen und Aktionen:
 -----------------------------------------------
@@ -98,11 +117,11 @@ Ein Ereignis kann das Eintreten eines gewissen Zeitpunktes sein,
 eine Bedingung könnte den aktuellen Steckdosenzustand meinen,
 eine Aktion löst eine Veränderung aus etwa das Ändern der Lichwerte von Leuchtdioden.
 
-Profile:
---------
+Szenen:
+-------
 Ereignisse, Bedingungen und Aktionen machen erst Sinn, sobald diese zusammengefasst werden können.
-Dies geschieht durch Profile (Collections). Sobald ein Ereignis in einem Profil eintritt,
-werden die Bedingungen geprüft und dann ggfs. die im Profil definierten Aktionen,
+Dies geschieht durch Szenen. Sobald ein, an eine Szene gebundenes, Ereignis auftritt,
+werden die Bedingungen geprüft und dann ggfs. die in die Szene eingebundenen Aktionen,
 evtl. mit eingestellter zeitlicher Verzögerung, ausgeführt.
 
 
@@ -113,9 +132,18 @@ Anwendungsgebiete:
 3. Intelligenter Raum
 4. Automatisiertes Heimkino
 
-Clients:
-========
-Es befinden sich in QML/qt4 geschriebene Clientprogramme im Ordner clients/.
+Grafisches Programm zur Gestaltung von Profilen:
+================================================
+Um Ereignisse, Bedingungen und Aktionen in Szenen grafisch zu gestalten befindet
+sich eine HTML5/JS Browser Anwendung im Ordner "profileeditor".
+Diese greift per Webdav Protokoll auf die JSON Ressourcen zu. Entsprechend müssen
+die JSON Ressourcen in einem Ordner liegen, der sowohl vom SceneServer als auch
+von einem Http Server mit WebDav Unterstützung ausgelesen und verändert werden kann.
+Wenn der WebSocketProxy und optional der SessionProxy aktiv ist, können Aktionen
+auf dem SceneServer über die Html Oberfläche ausgelöst werden. Außerdem wird das
+Erstellen und Parametriesieren von Ereignissen und Bedingungen erleichert, da
+mögliche Parameter direkt vom SceneServer abgefragt werden können.
+
 
 Software bauen:
 ===============
