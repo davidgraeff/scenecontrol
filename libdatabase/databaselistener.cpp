@@ -20,6 +20,8 @@ DatabaseListener::~DatabaseListener()
 void DatabaseListener::abort()
 {
     m_abort = true;
+    if (m_cursor.get()!=0)
+      m_conn.killCursor(m_cursor->getCursorId());
     while (!isFinished());
 }
 
@@ -34,23 +36,22 @@ void DatabaseListener::run()
     mongo::BSONElement lastId = b.done().firstElement();
 	
     mongo::Query query;
-	std::unique_ptr<mongo::DBClientCursor> c;
-	
+
     // capped collection insertion order
     while ( !m_abort ) {
 		query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
 		std::cout << query.toString() << std::endl;
-		c = m_conn.query("roomcontrol.listen", query, 0, 0, 0, mongo::QueryOption_CursorTailable | mongo::QueryOption_AwaitData );
+		m_cursor = m_conn.query("roomcontrol.listen", query, 0, 0, 0, mongo::QueryOption_CursorTailable | mongo::QueryOption_AwaitData );
 		
-        if (c.get()==0) {
+        if (m_cursor.get()==0) {
             qWarning()<<"Pointer empty!" << QString::fromStdString(m_conn.getLastError());
             sleep(3);
             continue;
         }
         
         while ( 1 ) {
-            if ( !c->more() ) {
-                if ( c->isDead() ) {
+            if ( !m_cursor->more() ) {
+                if ( m_cursor->isDead() ) {
                     // we need to requery
                     break;
                 }
@@ -58,7 +59,7 @@ void DatabaseListener::run()
             }
             if (m_abort)
                 break;
-            mongo::BSONObj o = c->next();
+            mongo::BSONObj o = m_cursor->next();
             lastId = o["_id"];
             std::string op = o.getStringField("op");
             if (op=="u") {

@@ -15,6 +15,7 @@ protected:
 private:
 	mongo::DBClientConnection m_conn;
 	bool m_abort;
+	std::unique_ptr<mongo::DBClientCursor> m_cursor;
 Q_SIGNALS:
 	/// A document changed
     void doc_changed(const QString& id, const QVariantMap& data);
