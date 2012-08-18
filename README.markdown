@@ -1,11 +1,9 @@
 Raumautomatisierungsoftware:
 ============================
-Eine Plugin orientierte Steuersoftware für die Raumautomatisierung. Plugins für
-Steckdosen, Rollo, Led Beleuchtung, PulseAudio, Videoabspielprogramm,
-Beamersteuerung und Zeitbasierte Ereignisse sind vorhanden.
-
+Eine Plugin orientierte Steuersoftware für die Heimautomatisierung. Einige auf die Bedürfnisse
+der Entwickler abgestimmten Plugins sowie generische Plugins sind bereits vorhanden.
 Diese README gibt erste Hintergrundinformationen.
-Die Dokumentation befindet sich unter ambiente.dyndns.dk/roomcontrol/
+Die Dokumentation befindet sich unter www.sceneserver.de.vu
 
 Unterstützte Plattformen:
 =========================
