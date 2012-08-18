@@ -1,6 +1,19 @@
 build/*
-tools/statetracker_gen/statetracker_gen/build/
 
 *.kdev_include_paths
 .kdev4/*
 *.directory
+.kdev4
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
