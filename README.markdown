@@ -15,6 +15,7 @@ Mitgelieferte Plugins:
 Generische Plugins:
 -------------------
 * Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
+* DMX: Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware IP-->DMX Umsetzung notwendig.
 * Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
 * Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
 * Time: Bietet feste und periodische Zeitereignisse an.
@@ -33,7 +34,6 @@ Softwareabhängige Plugins:
 Hardwareabhängige Plugins:
 --------------------------
 * Anel sockets: Steuert Steckdosenleisten von der Firma anel (http://www.anel-elektronik.de/).
-* Cardreader PCSC: Reagiert auf das Ein/Ausstecken von Karten bei PCSC Kompatiblen Kartenlesegeräten.
 * Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
 
 Plugins für mitgelieferte Tools:
@@ -41,12 +41,6 @@ Plugins für mitgelieferte Tools:
 * RemoteSystem: Ermöglicht Steuerbefehle an alle Windows Computer im selben Subnetzwerk,
   welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
   Zugehöriges Projekt: https://github.com/davidgraeff/windows_net_control
-* Roomcontrol_Leds_serial: Steuert den, über ein RS232 Anschluss angebundenen,
-  Atmega µController mit der Firmware unter tools/firmware/ethersex um Leuchtdioden anzusteuern.
-* Roomcontrol_Leds_udp: Steuert den, über UDP/IP angebundenen,
-  Atmega µController mit der Firmware unter tools/firmware/ethersex um Leuchtdioden anzusteuern.
-* Roomcontrol_curtain: Steuert den, über UDP/IP angebundenen,
-  Atmega µController mit der Firmware unter tools/firmware/ethersex um ein Rollo anzusteuern.
 
 Architektur:
 ============
