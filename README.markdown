@@ -15,7 +15,7 @@ Mitgelieferte Plugins:
 Generische Plugins:
 -------------------
 * Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
-* DMX: Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware IP-->DMX Umsetzung notwendig.
+* DMX/ArtNet: Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware Umsetzung IP-->DMX notwendig.
 * Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
 * Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
 * Time: Bietet feste und periodische Zeitereignisse an.
