@@ -1,5 +1,0 @@
-{
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"sync", "name":"Vorhang sync",
-	"parameters": {}
-}

@@ -1,0 +1,8 @@
+Part of scenecontrol project suite.
+
+Purpose:
+--------
+This is a static library for the SceneServer to access the data storage.
+An older version worked on a mongodb database. The current implementation
+relies on the filesystem itself and operating system methods to get notified
+of file changes.

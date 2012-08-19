@@ -1,6 +1,0 @@
-Part of roomcontrol project suite.
-
-Purpose:
---------
-This is a convenience library (Not actually build. Files are just included in subprojects) to access the database
-within a client and the server.

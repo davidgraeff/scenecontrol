@@ -1,7 +1,0 @@
-{
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"setRelative", "name":"Vorhang setzten (Relativ)",
-	"parameters": {
-		"value":{"name":"Wert", "type":"integer", "min":-100, "max":100, "value":0}
-	}
-}
