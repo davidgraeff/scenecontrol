@@ -127,7 +127,7 @@ Anwendungsgebiete:
 Grafisches Programm zur Gestaltung von Profilen:
 ================================================
 Um Ereignisse, Bedingungen und Aktionen in Szenen grafisch zu gestalten befindet
-sich eine HTML5/JS Browser Anwendung im Ordner "profileeditor".
+sich eine HTML5/JS Browser Anwendung im Ordner "editor".
 Diese greift per Webdav Protokoll auf die JSON Ressourcen zu. Entsprechend müssen
 die JSON Ressourcen in einem Ordner liegen, der sowohl vom SceneServer als auch
 von einem Http Server mit WebDav Unterstützung ausgelesen und verändert werden kann.

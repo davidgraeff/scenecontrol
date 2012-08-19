@@ -1,8 +1,0 @@
-{
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"toggleLed", "name":"Led umschalten",
-	"parameters": {
-		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"leds","indexproperty":"channel","textproperty":"name", "value":""},
-		"fade":{"name":"Fade", "type":"enum", "value":0, "data":["Kein Fade", "Linearer Fade", "Special Fade"] }
-	}
-}
