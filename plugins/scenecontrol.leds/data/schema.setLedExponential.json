@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"setLedExponential", "name":"Led setzen (expo)",
+	"type_":"schema", "targettype":"action",
+	"method_":"setLedExponential", "name":"Led setzen (expo)",
 	"parameters": {
 		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"leds","indexproperty":"channel","textproperty":"name", "value":""},
 		"multiplikator":{"name":"Multiplikator", "type":"double", "min":0, "max":10, "value":0, "step":0.2},

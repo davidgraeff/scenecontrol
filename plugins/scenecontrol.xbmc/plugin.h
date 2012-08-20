@@ -62,5 +62,5 @@ private:
     QString m_host;
     int m_port;
     QTcpSocket m_socket;
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+
 };

@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"back", "name":"Zurück",
+	"type_":"schema", "targettype":"action",
+	"method_":"back", "name":"Zurück",
 	"parameters": {}
 }

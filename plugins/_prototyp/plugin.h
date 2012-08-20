@@ -40,10 +40,14 @@ public:
     * process. Use "clear" for cleaning up and "initialize" for setting up your ressources.
     */
     virtual ~plugin();
+public Q_SLOTS:
     /**
-     * Implement dataFromPlugin for receiving data from other plugins identified by plugin_id or 
-     * from the server (plugin_id==COMSERVERSTRING)
+     * Just implement your desired functionality here. The parameters are defined by the json schema.
+	 * Example: A json schema defines a method "callthis" with one int parameter with the name "number".
+	 * Then your method signature should be:
+	 * void callthis(QByteArray componentid_, QByteArray instanceid_, int number);
+	 * The first two parameters are necessary and give you information about the sender. The server e.g.
+	 * has the componentid_==COMSERVERSTRING and en empty instanceid.
      */
-    void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
 private:
 };

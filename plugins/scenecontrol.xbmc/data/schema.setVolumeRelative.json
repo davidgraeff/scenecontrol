@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"setVolumeRelative", "name":"Lautstärke setzen (Relativ)",
+	"type_":"schema", "targettype":"action",
+	"method_":"setVolumeRelative", "name":"Lautstärke setzen (Relativ)",
 	"parameters": {}
 }

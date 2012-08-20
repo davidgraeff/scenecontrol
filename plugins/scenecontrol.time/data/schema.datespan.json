@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"condition",
-	"member_":"datespan", "name":"Datum?",
+	"type_":"schema", "targettype":"condition",
+	"method_":"datespan", "name":"Datum?",
 	"parameters": {
 		"current":{"name":"Vergleichsdatum", "type":"date", "value":"", "placeholder":"01.01.2012"},
 		"lower":{"name":"Mindest Datum", "type":"date", "value":"", "placeholder":"01.01.2012"},

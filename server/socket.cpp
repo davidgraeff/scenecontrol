@@ -1,9 +1,10 @@
 #include "socket.h"
-#include "paths.h"
 #include "config.h"
 #include <QDebug>
+#include <qfile.h>
 #include <QSslKey>
 #include "shared/jsondocuments/json.h"
+#include "shared/utils/paths.h"
 #include "plugins/plugincontroller.h"
 #include "plugins/pluginprocess.h"
 //openssl req -x509 -new -out server.crt -keyout server.key -days 365

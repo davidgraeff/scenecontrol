@@ -40,7 +40,15 @@ QDir dbimportDir(bool* found)
     return dir;
 }
 
-QDir baseDir() {
+QDir dbuserdir(bool createIfNotExists, bool* success)
+{
+	QSettings s(QSettings::IniFormat, QSettings::UserScope, QLatin1String(ABOUT_ORGANIZATIONID), QLatin1String(ABOUT_ORGANIZATIONID));
+	QDir home = QFileInfo(s.fileName()).absoluteDir();
+	*success = home.cd(QLatin1String("datastorage")) || (createIfNotExists && home.mkdir(QLatin1String("datastorage")) && home.cd(QLatin1String("datastorage")));
+	return home;
+}
+
+QDir installdir() {
     QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
     return dir;
 }

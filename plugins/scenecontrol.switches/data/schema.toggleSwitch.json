@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"toggleSwitch", "name":"Schalter umschalten",
+	"type_":"schema", "targettype":"action",
+	"method_":"toggleSwitch", "name":"Schalter umschalten",
 	"parameters": {
 		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"switches","indexproperty":"channel","textproperty":"name", "value":""}
 	}

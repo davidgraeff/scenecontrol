@@ -22,6 +22,8 @@
 #include <QVariantMap>
 #include <QString>
 #include <QFileInfo>
+#include <QDir>
+#include <boost/concept_check.hpp>
 #include <shared/jsondocuments/scenedocument.h>
 
 namespace Datastorage {
@@ -30,20 +32,23 @@ namespace Datastorage {
 		public:
 		virtual bool isValid(SceneDocument& data, const QString& filename) = 0;
 	};
-	/* Use this verifier class for importing plugin json documents. It will add some information before the document
-	 * is send to the datastorage
+	/* Use this verifier class for importing plugin json documents from a directory where only documents of that particulary plugin resides.
+	 * It will add the componentid based on the given pluginid and verify that every configuration contains an instanceid.
 	 */
 	class VerifyPluginDocument : public VerifyInterface {
 		private:
 			QString m_pluginid;
 		public:
 		VerifyPluginDocument(const QString& pluginid) : m_pluginid(pluginid) {}
-		virtual bool isValid(SceneDocument& data, const QString& filename) {
-			data.setPluginid(m_pluginid);
-			if (!data.id().isEmpty())
-            	data.setid((QString)(QFileInfo(filename).completeBaseName() + m_pluginid));
-			return true;
-		}
+		virtual bool isValid(SceneDocument& data, const QString& filename);
+	};
+	/* Use this verifier class for importing arbitrary json documents. The directory containing a json document have to have the same name
+	 * as the ID of the component it belongs to. Example: To import documents for the plugin "leds" your file structure would be: "import/path/leds/file.json".
+	 * This verifier is used to install the schema and configuration files on a first run.
+	 */
+	class VerifyImportDocument : public VerifyInterface {
+		public:
+		virtual bool isValid(SceneDocument& data, const QString& filename);
 	};
 
 /**

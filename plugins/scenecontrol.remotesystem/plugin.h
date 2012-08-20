@@ -44,11 +44,23 @@ public:
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
 private:
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+
     QMap<int, ExternalClient> m_clients;
     QStringList m_allowedmembers;
     QVariantMap stateChanged(const ExternalClient* client, bool propagate);
     virtual void session_change(int sessionid, bool running);
+	
+	void sendToClients(const SceneDocument& sc);
 private Q_SLOTS:
     void registerclient(const QString& host, const QString& identifier);
+	void mute(int mute);
+	void standby();
+	void media_start();
+	void media_playpause();
+	void media_stop();
+	void media_next();
+	void media_previous();
+	void volume_relative(int volume);
+	void media_playlist_next();
+	void media_playlist_previous();
 };

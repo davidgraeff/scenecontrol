@@ -3,10 +3,10 @@
 #include "execute/collectioncontroller.h"
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/jsondocuments/json.h"
+#include "shared/utils/paths.h"
 #include "libdatastorage/datastorage.h"
 #include "libdatastorage/importexport.h"
 #include "socket.h"
-#include "paths.h"
 
 #include <QCoreApplication>
 #include <QSettings>
@@ -99,9 +99,8 @@ void PluginController::newConnection()
                 QDataStream stream(allinput);
                 stream >> jsonData;
             }
-            
 
-            PluginProcess* plugin = getPlugin(SceneDocument(jsonData).pluginuid());
+            PluginProcess* plugin = getPlugin(SceneDocument(jsonData).componentUniqueID());
             if (!plugin) {
                 qWarning()<<"Socket auth failed: " << jsonData;
                 socket->deleteLater();
@@ -130,7 +129,7 @@ PluginProcess* PluginController::getPlugin(const QString& pluginUid) {
 void PluginController::doc_changed(const SceneDocument &doc) {
 	if (!doc.checkType(SceneDocument::TypeEvent))
 		return;
-    PluginProcess* plugin = getPlugin ( doc.pluginuid());
+    PluginProcess* plugin = getPlugin ( doc.componentUniqueID());
     if ( !plugin ) {
         qWarning() <<"Plugins: Cannot register event. No plugin found:"<< doc.pluginid() << doc.id();
         return;
@@ -165,8 +164,7 @@ void PluginController::scanPlugins() {
         qWarning() << "Server: Datastorage initial import path not found!";
 
     for (int i=0;i<pluginfiles.size();++i) {
-        QString pluginid = QFileInfo(pluginfiles[i]).baseName();
-        pluginid = pluginid.mid(0, pluginid.lastIndexOf(QLatin1String("_plugin")));
+        const QString pluginid = pluginfiles[i].mid(0, pluginfiles[i].lastIndexOf(QLatin1String("_plugin")));
 
         // Install missing files for this plugin first
         if (importdirfound && importdir.cd(pluginid)) {
@@ -177,22 +175,22 @@ void PluginController::scanPlugins() {
 
 		// Get all configurations of this plugin
 		SceneDocument filter;
-		filter.setPluginid(pluginid);
+		filter.setComponentID(pluginid);
 		QList<SceneDocument*> configurations = DataStorage::instance()->requestAllOfType(SceneDocument::TypeConfiguration, filter.getData());
 		for (int pi = 0; pi < configurations.size(); ++pi) {
-			SceneDocument* configuration = configurations[i];
-			if (!configuration->hasPluginuid()) {
-				qWarning() << "Server: Document incomplete. PluginID or PluginInstance is missing!" << configurations[i]->getData();
+			SceneDocument* configuration = configurations[pi];
+			if (!configuration->hasComponentUniqueID()) {
+				qWarning() << "Server: Document incomplete. PluginID or PluginInstance is missing!" << configurations[pi]->getData();
 				continue;
 			}
 
-			PluginProcess* p = getPlugin(configuration->pluginuid());
+			PluginProcess* p = getPlugin(configuration->componentUniqueID());
 			if (!p) {
-				p = new PluginProcess( this, pluginid, configuration->plugininstance());
+				p = new PluginProcess( this, pluginid, configuration->instanceID());
 				m_pluginprocesses.insert( p );
-				m_plugins.insert(configuration->pluginuid(),p);
+				m_plugins.insert(configuration->componentUniqueID(),p);
 				p->startProcess();
-				qDebug() << "Process start" << pluginid << p->getInstanceid();
+				qDebug() << "Process start" << configuration->componentUniqueID();
 			}
 			p->configChanged(configuration->configurationkey(), configuration->getData());
 		}
@@ -216,7 +214,7 @@ void PluginController::requestAllProperties(int sessionid) {
     }
     SceneDocument s = SceneDocument::createNotification("plugins");
     s.setData("plugins", pluginlist);
-    s.setPluginid(QLatin1String("PluginController"));
+    s.setComponentID(QLatin1String("PluginController"));
     Socket::instance()->propagateProperty(s.getData(), sessionid);
 }
 

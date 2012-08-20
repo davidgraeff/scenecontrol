@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"rewind", "name":"Schnell zurück",
+	"type_":"schema", "targettype":"action",
+	"method_":"rewind", "name":"Schnell zurück",
 	"parameters": {}
 }

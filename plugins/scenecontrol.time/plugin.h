@@ -43,7 +43,7 @@ public Q_SLOTS:
     bool datespan ( const QString& current, const QString& lower, const QString& upper);
     bool timespan ( const QString& current, const QString& lower, const QString& upper);
 private:
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+
     void calculate_next_events();
     struct EventTimeStructure {
         QString collectionuid;

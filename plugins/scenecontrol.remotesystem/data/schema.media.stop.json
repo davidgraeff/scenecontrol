@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"media.stop", "name":"Medium stoppen",
+	"type_":"schema", "targettype":"action",
+	"method_":"media_stop", "name":"Medium stoppen",
 	"parameters": {}
 }

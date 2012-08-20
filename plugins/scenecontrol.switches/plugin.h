@@ -36,9 +36,8 @@ private Q_SLOTS:
     void clear(const QByteArray& plugin_);
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
-    void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     // Call this method to update <channel, value>-pairs and clear(your_plugin_id) to clear
-    void subpluginChange(const QByteArray& plugin_, const QString& channel, bool value, const QString& name);
+    void subpluginChange( const QString& componentid_, const QString& instanceid_, const QString& channel, bool value, const QString& name );
 
     // Get, Set Names
     QString getSwitchName ( const QString& channel );
@@ -56,7 +55,7 @@ private:
         bool value;
         QString name;
 		QString channel;
-        QByteArray plugin_id;
+        QByteArray componentUniqueID;
 
         iochannel() {
             value = -1;

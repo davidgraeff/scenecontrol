@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"display", "name":"Bildschirm",
+	"type_":"schema", "targettype":"action",
+	"method_":"display", "name":"Bildschirm",
 	"parameters": {
 		"power":{"name":"Power", "type":"enum", "data":["Aus","An","Umschalten"]}
 	}

@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"mute", "name":"Stumm/Laut",
+	"type_":"schema", "targettype":"action",
+	"method_":"mute", "name":"Stumm/Laut",
 	"parameters": {
 		"mute":{"name":"Wert", "type":"enum", "data":["Stumm","Laut","Umschalten"]}
 	}

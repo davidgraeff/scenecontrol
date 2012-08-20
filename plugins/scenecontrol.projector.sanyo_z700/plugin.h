@@ -35,7 +35,7 @@ public Q_SLOTS:
   void projector_sanyo_video(bool mute);
   void projector_sanyo_lamp(bool eco);
 private:
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+
     QxtSerialDevice* m_serial;
     char m_buffer[4];
     void writeToDevice();

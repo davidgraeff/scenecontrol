@@ -13,6 +13,7 @@
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/jsondocuments/json.h"
 #include "databaselistener.h"
+#include "shared/utils/paths.h"
 
 #define __FUNCTION__ __FUNCTION__
 
@@ -20,6 +21,9 @@ static DataStorage *databaseInstance = 0;
 
 DataStorage::DataStorage() : m_listener(0)
 {
+	// set directory
+	bool found;
+	m_dir = setup::dbuserdir(true, &found).absolutePath();
 }
 
 DataStorage::~DataStorage()
@@ -43,17 +47,30 @@ void DataStorage::unload()
 	m_index_typeid.clear();
 	delete m_listener;
 	m_listener = 0;
+	m_cache.clear();
 }
 
 void DataStorage::load()
 {
 	unload();
+	if (!m_dir.exists())
+		return;
+
+	m_cache.insert(QLatin1String("action"), QList<SceneDocument*>());
+	m_cache.insert(QLatin1String("event"), QList<SceneDocument*>());
+	m_cache.insert(QLatin1String("condition"), QList<SceneDocument*>());
+	m_cache.insert(QLatin1String("scene"), QList<SceneDocument*>());
+	m_cache.insert(QLatin1String("configuration"), QList<SceneDocument*>());
+	
+	// initiate a directory watcher
 	m_listener = new DataStorageWatcher();
 	connect(m_listener, SIGNAL(doc_changed(SceneDocument*)), SLOT(updateCache(SceneDocument*)));
 	connect(m_listener, SIGNAL(doc_removed(QString,QString)), SLOT(removeFromCache(QString,QString)));
 	
 	QStringList dirs;
+	// add the user storage dir
 	dirs.append(m_dir.absolutePath());
+	
 	while (dirs.size()) {
 		QDir currentdir(dirs.takeFirst());
 		m_listener->watchdir(currentdir.absolutePath());
@@ -69,6 +86,12 @@ void DataStorage::load()
 			updateCache(doc);
 		}
 	}
+	
+	qDebug() << "Loaded actions:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeAction)).size();
+	qDebug() << "Loaded conditions:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeCondition)).size();
+	qDebug() << "Loaded events:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeEvent)).size();
+	qDebug() << "Loaded scenes:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeScene)).size();
+	qDebug() << "Loaded configurations:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeConfiguration)).size();
 }
 
 QList< SceneDocument* > DataStorage::filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter) const {
@@ -116,7 +139,7 @@ int DataStorage::changeDocumentsValue(SceneDocument::TypeEnum type, const QVaria
 	QList<SceneDocument*> v = filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
 	for (int i=0;i<v.size();++i) {
 		v[i]->getData().insert(key, value); 
-		changeDocument(*v[i]);
+		storeDocument(*v[i], true, true);
 	}
 	return v.size();
 }
@@ -149,43 +172,38 @@ void DataStorage::removeDocument(const SceneDocument &doc)
 	}
 }
 
-bool DataStorage::changeDocument(const SceneDocument& doc, bool insertWithNewID, const QVariantMap& types)
+bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting, bool updateCache)
 {
 	if (!doc.isValid()) {
-		qWarning() << "changeDocument: can not add/change an invalid document";
-		return false;
-	}
-	
-	// Add id if none present
-	SceneDocument mdoc(doc);
-	if (!doc.hasid()) {
-		if (insertWithNewID)
-			mdoc.setid(QUuid::createUuid().toString().
-			replace(QLatin1String("{"),QString()).
-			replace(QLatin1String("}"),QString()).
-			replace(QLatin1String("-"),QString()));
-		else {
-			qWarning() << "changeDocument: can not change document without _id";
-			return false;
-		}
-	}
-	
-	// Correct types
-	if (!mdoc.correctTypes(types)) {
-		qWarning() << "changeDocument: correctTypes failed";
+		qWarning() << "storeDocument: can not store an invalid document";
 		return false;
 	}
 	
 	// Write to disc
 	QDir d(m_dir);
-	m_dir.cd(doc.type());
-	QFile f(d.absoluteFilePath(doc.filename()));
-	if (!f.open(QFile::WriteOnly|QFile::Truncate)) {
-		qWarning() << "changeDocument: could not open document for write";
+	if (!d.cd(doc.type()) && !(d.mkdir(doc.type()) && d.cd(doc.type()))) {
+		qWarning() << "storeDocument: could not open subdir" << doc.type();
 		return false;
 	}
-	f.write(mdoc.getjson());
+	
+	QFile f(d.absoluteFilePath(doc.filename()));
+	
+	if (f.exists() && !overwriteExisting)
+		return true;
+	
+	qDebug() << "WRITE" << d.absoluteFilePath(doc.filename());
+	if (!f.open(QFile::WriteOnly|QFile::Truncate)) {
+		qWarning() << "storeDocument: could not open document for write";
+		return false;
+	}
+	f.write(doc.getjson());
 	f.close();
+	
+	if (updateCache) {
+		removeFromCache(doc.type(), doc.id());
+		SceneDocument* ndoc = new SceneDocument(doc.getjson());
+		this->updateCache(ndoc);
+	}
 	
 	return true;
 }

@@ -53,7 +53,7 @@ void plugin::clear(const QByteArray& plugin_) {
     QMutableMapIterator<QString, iochannel> i(m_ios);
     while (i.hasNext()) {
         i.next();
-        if (i.value().plugin_id == plugin_) {
+        if (i.value().componentUniqueID == plugin_) {
             SceneDocument sc = SceneDocument::createModelRemoveItem("switches");
             sc.setData("channel", i.value().channel);
             changeProperty(sc.getData());
@@ -156,25 +156,21 @@ void plugin::cacheToDevice()
     QVariantMap datamap;
     for (;it != m_cache.constEnd(); ++it) {
 		SceneDocument doc;
+		doc.setComponentID(m_pluginid);
+		doc.setInstanceID(m_instanceid);
 		doc.setMethod("setSwitch");
 		doc.setData("channel",(*it)->channel);
 		doc.setData("value",(*it)->value);
-		sendDataToPlugin((*it)->plugin_id, doc.getData());
+		sendDataToComponent((*it)->componentUniqueID, doc.getData());
     }
     m_cache.clear();
 }
 
-
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    Q_UNUSED(plugin_id);
-    Q_UNUSED(data);
-}
-
-void plugin::subpluginChange(const QByteArray& plugin_, const QString& channel, bool value, const QString& name) {
+void plugin::subpluginChange( const QString& componentid_, const QString& instanceid_, const QString& channel, bool value, const QString& name ) {
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];
-    io.plugin_id = plugin_;
+    io.componentUniqueID = QString(componentid_+instanceid_).toUtf8();
     //p.moodlight = false;
     //p.fadeType = 1;
     io.channel = channel;

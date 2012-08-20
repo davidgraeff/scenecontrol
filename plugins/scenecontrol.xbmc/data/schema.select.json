@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"select", "name":"Auswählen",
+	"type_":"schema", "targettype":"action",
+	"method_":"select", "name":"Auswählen",
 	"parameters": {}
 }

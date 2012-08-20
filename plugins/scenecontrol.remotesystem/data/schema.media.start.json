@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"media.start", "name":"Medium starten",
+	"type_":"schema", "targettype":"action",
+	"method_":"media_start", "name":"Medium starten",
 	"parameters": {}
 }

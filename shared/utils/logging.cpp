@@ -26,8 +26,10 @@
 
 QFile logfile;
 bool logToConsole = true;
+static QByteArray logid;
 
-void setLogOptions(bool toConsole, const char* logfilename) {
+void setLogOptions(QByteArray logidtext, bool toConsole, const char* logfilename) {
+	logid = logidtext;
 	logToConsole = toConsole;
 	if (!logfilename) return;
 	#if defined(_WIN32)
@@ -54,16 +56,16 @@ void messageout(QtMsgType type, const char *msg, FILE * stream_debug, FILE * str
 
     switch (type) {
     case QtDebugMsg:
-        fprintf(stream_debug, "[%2d:%02d] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stdout, "[%2d:%02d,%s] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, logid.constData(), msg);
         break;
     case QtWarningMsg:
-        fprintf(stream_warning, "[%2d:%02d] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stderr, "[%2d:%02d,%s] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, logid.constData(), msg);
         break;
     case QtCriticalMsg:
-        fprintf(stream_error, "[%2d:%02d] \033[31mCritical: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stderr, "[%2d:%02d,%s] \033[31mCritical: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, logid.constData(), msg);
         break;
     case QtFatalMsg:
-        fprintf(stream_error, "[%2d:%02d] \033[31mFatal: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stderr, "[%2d:%02d,%s] \033[31mFatal: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, logid.constData(), msg);
         abort();
     }
 }

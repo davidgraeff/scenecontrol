@@ -78,6 +78,6 @@ void CollectionController::updateListOfRunningCollections()
         list.append(orig[i]);
     }
     doc.setData("running",list);
-    doc.setPluginid(QLatin1String("CollectionController"));
+    doc.setComponentID(QLatin1String("CollectionController"));
     Socket::instance()->propagateProperty(doc.getData(), -1);
 }

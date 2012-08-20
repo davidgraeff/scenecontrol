@@ -118,14 +118,15 @@ void plugin::readyRead()
         sc.setData("value", value);
         changeProperty(sc.getData(), -1);
 
-        // send to switches plugin
+        // send to scenecontrol.switches plugin
 		SceneDocument doc;
 		doc.setMethod("subpluginChange");
-		doc.setPluginid(QLatin1String(PLUGIN_ID));
+		doc.setComponentID(m_pluginid);
+		doc.setInstanceID(m_instanceid);
 		doc.setData("channel",channelid);
 		doc.setData("value",value);
 		doc.setData("name",channelid);
-		sendDataToPlugin("switches", doc.getData());
+		sendDataToComponent("scenecontrol.switchesnull", doc.getData());
 	
         // update cache
         if(value)
@@ -205,8 +206,9 @@ void plugin::clear()
 
     SceneDocument doc;
     doc.setMethod("clear");
-	doc.setPluginid(QLatin1String(PLUGIN_ID));
-    sendDataToPlugin("switches", doc.getData());
+	doc.setComponentID(m_pluginid);
+	doc.setInstanceID(m_instanceid);
+    sendDataToComponent("scenecontrol.switchesnull", doc.getData());
 }
 
 void plugin::configChanged(const QByteArray &configid, const QVariantMap &data)
@@ -230,10 +232,3 @@ void plugin::requestProperties(int sessionid)
         changeProperty(sc.getData(), sessionid);
     }
 }
-
-void plugin::dataFromPlugin(const QByteArray &plugin_id, const QVariantMap &data)
-{
-    Q_UNUSED(plugin_id);
-    Q_UNUSED(data);
-}
-

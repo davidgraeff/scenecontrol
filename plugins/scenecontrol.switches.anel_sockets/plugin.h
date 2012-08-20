@@ -55,7 +55,7 @@ private:
     QTimer m_cacheTimer;
     // Host address -> 8-bit value (= 8 switches)
     QMap<QString, unsigned char> m_cache;
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+
     struct iochannel {
         bool value;
         iochannel() {

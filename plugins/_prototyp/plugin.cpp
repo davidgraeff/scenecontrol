@@ -42,8 +42,3 @@ plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlu
 
 plugin::~plugin() {
 }
-
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    Q_UNUSED(plugin_id);
-    Q_UNUSED(data);
-}

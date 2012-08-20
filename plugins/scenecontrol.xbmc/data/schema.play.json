@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"play", "name":"Abspielen",
+	"type_":"schema", "targettype":"action",
+	"method_":"play", "name":"Abspielen",
 	"parameters": {}
 }

@@ -38,9 +38,9 @@
  * including the header of this class.
  *
  * Communication:
- * You may use sendCmdToPlugin and sendDataToPlugin to communicate with other
- * plugins or with the server process (use plugin_id="server") and you have
- * to implement dataFromPlugin for receiving data from other processes.
+ * You may use sendDataToComponent to communicate with other
+ * plugins or with the server process (use componentid := COMSERVERSTRING). See
+ * "Conditions, Actions" below for receiving.
  *
  * Reimplementable methods:
  * You may reimplement initialize, clear or configChanged to react on server state
@@ -69,11 +69,7 @@ public:
     virtual ~AbstractPlugin();
 
     bool createCommunicationSockets();
-	/**
-	 * Reimplement this to receive data from other plugins which addressed your plugin 
-	 */
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) = 0;
-    bool sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+    bool sendDataToComponent(const QByteArray& plugin_id, const QVariantMap& data);
     void changeConfig(const QByteArray& category, const QVariantMap& data);
     void changeProperty(const QVariantMap& data, int sessionid = -1);
     void eventTriggered(const QString& eventid, const QString& dest_collectionId);
@@ -84,14 +80,14 @@ private Q_SLOTS:
     void disconnectedFromServer();
 protected:
     int m_lastsessionid;
+	QString m_pluginid;
+	QString m_instanceid;
 private:
     QByteArray m_chunk;
     QMap<QByteArray, QLocalSocket*> m_connectionsByID;
     QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
     QSet<QLocalSocket*> m_pendingConnections;
     QLocalSocket* getClientConnection(const QByteArray& plugin_id);
-	QString m_pluginid;
-	QString m_instanceid;
     void writeToSocket(QLocalSocket* socket, const QVariantMap& data);
     int invokeHelperGetMethodId(const QByteArray& methodName);
 	// Return -1 if parameters are not matching

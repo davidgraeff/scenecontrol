@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"setLedRelative", "name":"Led setzten (Relativ)",
+	"type_":"schema", "targettype":"action",
+	"method_":"setLedRelative", "name":"Led setzten (Relativ)",
 	"parameters": {
 		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"leds","indexproperty":"channel","textproperty":"name", "value":""},
 		"value":{"name":"Wert", "type":"integer", "min":-255, "max":255, "value":0},

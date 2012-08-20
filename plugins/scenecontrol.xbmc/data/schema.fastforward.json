@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"FastForward", "name":"Schnell vorwärts",
+	"type_":"schema", "targettype":"action",
+	"method_":"FastForward", "name":"Schnell vorwärts",
 	"parameters": {}
 }

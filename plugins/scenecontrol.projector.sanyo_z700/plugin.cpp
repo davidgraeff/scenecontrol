@@ -86,11 +86,6 @@ void plugin::readyRead() {
     m_serial->read ( bytes.data(), bytes.size() );
 }
 
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    Q_UNUSED(plugin_id);
-    Q_UNUSED(data);
-}
-
 void plugin::projector_sanyo_power(bool power) {
     if ( !m_serial ) return;
     if (power)

@@ -63,27 +63,24 @@ void DataStorageWatcher::readnotify() {
         const inotify_event &event = **it;
         ++it;
 
-        qDebug() << "inotify event, wd" << event.wd << "name mask" << event.name << event.mask;
-
         int id = event.wd;
         QString path = idToPath.value(id);
         if (path.isEmpty()) {
-            // perhaps a directory?
-            id = -id;
-            path = idToPath.value(id);
-            if (path.isEmpty())
-                continue;
+			continue;
         }
 
-        qDebug() << "event for path" << path;
+        qDebug() << "inotify " << path << event.name;
 
         if ((event.mask & (IN_DELETE_SELF | IN_MOVE_SELF | IN_UNMOUNT)) != 0) {
             pathToID.remove(path);
             idToPath.remove(id);
             inotify_rm_watch(m_inotify_fd, event.wd);
 			// dir removed; do nothing
+			qDebug() << "\tRemoved";
         } else {
 			// emit something
+			if (event.mask & IN_CREATE) qDebug() << "\tCreated";
+			if (event.mask & IN_CLOSE_WRITE) qDebug() << "\tChanged";
         }
     }
     

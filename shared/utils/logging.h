@@ -22,5 +22,5 @@
 #include <QtGlobal>
 
 void roomMessageOutput(QtMsgType type, const char *msg);
-void setLogOptions(bool toConsole, const char* logfilename = 0);
+void setLogOptions(QByteArray logidtext, bool toConsole, const char* logfilename = 0);
 void logclose();

@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"wol", "name":"WakeUpOnLan",
+	"type_":"schema", "targettype":"action",
+	"method_":"wol", "name":"WakeUpOnLan",
 	"parameters": {
 		"mac":{"name":"Modus", "type":"string", "value":""}
 	}

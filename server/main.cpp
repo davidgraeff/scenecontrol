@@ -18,14 +18,14 @@
 */
 
 #include "config.h"
-#include "logging.h"
+#include "shared/utils/logging.h"
+#include "shared/utils/paths.h"
 #include "plugins/plugincontroller.h"
 #include "execute/collectioncontroller.h"
 #include "execute/executerequest.h"
 #include "libdatastorage/datastorage.h"
 #include "libdatastorage/importexport.h"
 #include "socket.h"
-#include "paths.h"
 
 #include <stdio.h>
 #include <signal.h>    /* signal name macros, and the signal() prototype */
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
 
     // Set up log options and message handler and print out a first message
-    setLogOptions(ROOM_LOGTOCONSOLE, ROOM_LOGFILE);
+    setLogOptions("Server", ROOM_LOGTOCONSOLE, ROOM_LOGFILE);
     qInstallMsgHandler(roomMessageOutput);
     qDebug() << QString(QLatin1String("%1 (%2) - Pid: %3")).
     arg(QCoreApplication::applicationName()).
@@ -119,7 +119,14 @@ int main(int argc, char *argv[])
     QObject::connect(datastorage, SIGNAL(doc_removed(SceneDocument)), plugins, SLOT(doc_removed(SceneDocument)));
     QObject::connect(socket, SIGNAL(requestExecution(SceneDocument,int)), executeRequests, SLOT(requestExecution(SceneDocument,int)));
 
-	// connect to the database
+	// Import json documents from install dir if no files are presend in the user storage dir
+	bool success;
+	if (setup::dbuserdir(true, &success).entryList(QDir::Files|QDir::Dirs|QDir::NoDotAndDotDot).size()==0 && success) {
+		Datastorage::VerifyImportDocument verifier;
+		Datastorage::importFromJSON(*datastorage, setup::dbimportDir().absolutePath(), false, &verifier);
+	}
+	
+	// load data storage and start plugin processes
     datastorage->load();
 	plugins->scanPlugins();
 

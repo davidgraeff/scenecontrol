@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"next", "name":"Nächster",
+	"type_":"schema", "targettype":"action",
+	"method_":"next", "name":"Nächster",
 	"parameters": {}
 }

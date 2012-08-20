@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"event",
-	"member_":"eventPeriodic", "name":"Periodischer Alarm",
+	"type_":"schema", "targettype":"event",
+	"method_":"eventPeriodic", "name":"Periodischer Alarm",
 	"parameters": {
 		"time":{"name":"Zeit", "type":"time"},
 		"days":{"name":"Tage", "type":"multienum", "data":["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"]}

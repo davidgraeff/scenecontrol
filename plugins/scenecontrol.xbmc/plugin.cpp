@@ -295,11 +295,6 @@ void plugin::setVolumeRelative(int v)
     m_socket.write(JSON::stringify(data).toUtf8());
 }
 
-void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) {
-    Q_UNUSED(plugin_id);
-    Q_UNUSED(data);
-}
-
 void plugin::hostconnected() {
     qDebug() << "Connected to xmbc";
 }

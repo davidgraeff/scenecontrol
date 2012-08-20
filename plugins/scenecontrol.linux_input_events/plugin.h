@@ -77,7 +77,7 @@ public:
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
     virtual void unregister_event ( const QString& eventid);
     virtual void session_change ( int sessionid, bool running );
-    virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);
+
 public Q_SLOTS:
   void inputevent ( const QString& _id, const QString& collection_, const QString& inputdevice, const QString& kernelkeyname, bool repeat);
 private:

@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"volume.relative", "name":"Volume",
+	"type_":"schema", "targettype":"action",
+	"method_":"volume.relative", "name":"Volume",
 	"parameters": {
 		"volume":{"name":"Volume", "type":"integer", "min":-100, "max":100, "value":0}
 	}

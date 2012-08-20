@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"projector_sanyo_power", "name":"Ein/Ausschalten",
+	"type_":"schema", "targettype":"action",
+	"method_":"projector_sanyo_power", "name":"Ein/Ausschalten",
 	"parameters": {
 		"power":{"name":"Power", "type":"boolean"}
 	}

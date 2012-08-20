@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"media.next", "name":"Medium nächstes",
+	"type_":"schema", "targettype":"action",
+	"method_":"media_next", "name":"Medium nächstes",
 	"parameters": {}
 }

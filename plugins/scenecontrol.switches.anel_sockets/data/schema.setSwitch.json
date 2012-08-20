@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"setSwitch", "name":"Schalter setzten",
+	"type_":"schema", "targettype":"action",
+	"method_":"setSwitch", "name":"Schalter setzten",
 	"parameters": {
 		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"switches","indexproperty":"channel","textproperty":"name", "value":""},
 		"value":{"name":"Wert", "type":"boolean"}

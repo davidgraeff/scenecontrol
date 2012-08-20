@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"up", "name":"Hoch",
+	"type_":"schema", "targettype":"action",
+	"method_":"up", "name":"Hoch",
 	"parameters": {}
 }

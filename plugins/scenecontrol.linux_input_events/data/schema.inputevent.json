@@ -1,6 +1,6 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"event",
-	"member_":"inputevent", "name":"Bei Tastendruck",
+	"type_":"schema", "targettype":"event",
+	"method_":"inputevent", "name":"Bei Tastendruck",
 	"parameters": {
 		"inputdevice":{"name":"Gerät", "type":"modelenum", "model":"inputdevice","indexproperty":"udid","textproperty":"info", "value":"", "notification":"input.device.key"},
 		"kernelkeyname":{"name":"Taste", "type":"string", "notification":"input.device.key","indexproperty":"kernelkeyname","textproperty":"kernelkeyname", "value":""},

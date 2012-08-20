@@ -1,15 +1,13 @@
-#include "pluginprocess.h"
-#include "plugincontroller.h"
-#include <QTimer>
-#include "paths.h"
-#include "config.h"
+#include "plugins/pluginprocess.h"
 #include "plugins/plugincontroller.h"
 #include "shared/jsondocuments/scenedocument.h"
+#include "shared/utils/paths.h"
 #include "libdatastorage/datastorage.h"
-#include "socket.h"
 #include "execute/collectioncontroller.h"
-#include "paths.h"
+#include "socket.h"
+#include "config.h"
 
+#include <QTimer>
 #include <QElapsedTimer>
 #include <QThread>
 #include <QTimer>
@@ -96,8 +94,8 @@ void PluginProcess::setSocket(QLocalSocket* socket)
 	m_configcache.clear();
 	
 	SceneDocument filter;
-	filter.setPluginid(m_pluginid);
-	filter.setPlugininstance(m_instanceid);
+	filter.setComponentID(m_pluginid);
+	filter.setInstanceID(m_instanceid);
 	QList<SceneDocument*> events = DataStorage::instance()->requestAllOfType(SceneDocument::TypeEvent, filter.getData());
 	for (int i=0;i<events.size();++i)
 		callQtSlot(events[i]->getData());
@@ -165,9 +163,13 @@ void PluginProcess::readyReadPluginData()
             }
             // TODO store new configuration value in database
             SceneDocument filter;
-			filter.setPluginid(m_pluginid);
-			filter.setPlugininstance(m_instanceid);
-            DataStorage::instance()->changeDocumentsValue(SceneDocument::TypeConfiguration, filter.getData(), QString::fromUtf8(configurationkey), doc.getData());
+			filter.setComponentID(m_pluginid);
+			filter.setInstanceID(m_instanceid);
+            if (DataStorage::instance()->changeDocumentsValue(SceneDocument::TypeConfiguration, filter.getData(), QString::fromUtf8(configurationkey), doc.getData())==0) {
+				// No configuration found: create one
+				filter.setData(configurationkey, doc.getData());
+				DataStorage::instance()->storeDocument(filter, true, true);
+			}
         } else if (method == "changeProperty") {
             // Get session id and remove id from QVariantMap
             const int sessionid = doc.sessionid();

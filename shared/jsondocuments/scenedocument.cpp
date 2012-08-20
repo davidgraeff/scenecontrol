@@ -96,7 +96,7 @@ SceneDocument::SceneDocument(QTextStream& jsonstream) {
 }
 
 bool SceneDocument::isValid() const {
-  return !m_map.empty() && hasType();
+  return !m_map.empty() && hasType() && hasid() && hasComponentID();
 }
 
 QByteArray SceneDocument::getjson() const { return JSON::stringify(m_map).toUtf8(); }

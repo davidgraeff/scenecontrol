@@ -39,18 +39,18 @@ void ExecuteRequest::requestExecution(const SceneDocument& doc, int sessionid) {
             SceneDocument s = SceneDocument::createNotification("database");
             //s.setData("database", b->databaseAddress());
             //s.setData("state", b->state());
-            s.setPluginid(QLatin1String("server"));
+            s.setComponentID(QLatin1String("server"));
             Socket::instance()->propagateProperty(s.getData(), sessionid);
         } else if (doc.isMethod("version")) {
             SceneDocument s = SceneDocument::createNotification("version");
             s.setData("version", QLatin1String(ABOUT_VERSION));
-            s.setPluginid(QLatin1String("server"));
+            s.setComponentID(QLatin1String("server"));
             Socket::instance()->propagateProperty(s.getData(), sessionid);
         }
         return;
     }
     // Look for a plugin that fits "data"
-    PluginProcess* plugin = PluginController::instance()->getPlugin ( doc.pluginuid() );
+    PluginProcess* plugin = PluginController::instance()->getPlugin ( doc.componentUniqueID() );
     if ( !plugin ) {
         qWarning() <<"Cannot execute service. No plugin found:"<<doc.getData() << sessionid;
         return;

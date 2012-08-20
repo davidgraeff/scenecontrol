@@ -25,8 +25,6 @@ void exportAsJSON(const DataStorage& ds, const QString& exportpath)
         return;
     }
 
-    qDebug() << "Database: Export JSON Documents to" << exportpath;
-
 	QDir datadir = ds.datadir();
 	QStringList dirs;
 	dirs.append(datadir.absolutePath());
@@ -54,8 +52,6 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
         return;
     }
 
-    qDebug() << "Database: Import JSON Documents from" << path;
-
     const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
     for (int i = 0; i < files.size(); ++i) {
         QFile file(dir.absoluteFilePath(files[i]));
@@ -70,19 +66,25 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
             continue;
         }
 
-		if (verify && !verify->isValid(document, files[i])) {
-			qWarning() << "\tCustom verification denied import!";
+		if (verify && !verify->isValid(document, dir.absoluteFilePath(files[i]))) {
+			qWarning() << "Custom verification denied import!" << files[i];
             continue;
 		}
 
-        if (!document.hasType() || !document.hasPluginid()) {
-            qWarning() << "\tType or plugin ID not set!";
+        if (!document.hasType()) {
+            qWarning() << "Type not set:" << files[i];
+			continue;
+        }
+        if (!document.hasid()) {
+            qWarning() << "ID not set:" << files[i];
+			continue;
+        }
+        if (!document.hasComponentID()) {
+            qWarning() << "ComponentID not set:" << files[i];
+			continue;
         }
 
-		if (!overwriteExisting && ds.contains(document))
-			continue;
-
-        ds.changeDocument(document, false);
+        ds.storeDocument(document, overwriteExisting, true);
     }
 
     // recursivly go into all subdirectories
@@ -92,6 +94,25 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
         importFromJSON(ds, dir.absolutePath(), overwriteExisting, verify);
         dir.cdUp();
     }
+}
+
+bool VerifyImportDocument::isValid(SceneDocument& data, const QString& filename) {
+	QFileInfo finfo(filename);
+	data.setComponentID(finfo.absoluteDir().dirName()); //componentid: dir name
+	if (!data.hasid()) // no identifier set?: use filename without extension and componentid
+		data.setid(QFileInfo(filename).completeBaseName() + QLatin1String(".") + finfo.absoluteDir().dirName());
+	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
+		return false;
+	return true;
+}
+
+bool VerifyPluginDocument::isValid(SceneDocument& data, const QString& filename) {
+	data.setComponentID(m_pluginid);
+	if (!data.hasid()) // no identifier set? use filename without extension and componentid
+          	data.setid((QString)(QFileInfo(filename).completeBaseName() + QLatin1String(".") + m_pluginid));
+	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
+		return false;
+	return true;
 }
 
 }

@@ -64,10 +64,10 @@ public Q_SLOTS:
     void removeDocument(const SceneDocument &doc);
 
     /**
-      * Change or insert document given by data.
-      * data have to contain a field "_id" if insertWithNewID is not true
+      * Store a document given by data.
+      * data have to contain an ID (id_) field if insertWithNewID is not true
       */
-    bool changeDocument(const SceneDocument& data, bool insertWithNewID = false, const QVariantMap& types = QVariantMap());
+    bool storeDocument(const SceneDocument& doc, bool overwriteExisting = false, bool updateCache = false);
 
     /**
      * Change configurations of a given plugin (synchronous)
@@ -80,7 +80,7 @@ public Q_SLOTS:
       * Return true if document with type and id is already stored
       */
     bool contains(const SceneDocument &doc) const;
-private Q_SLOTS:
+public Q_SLOTS:
     void updateCache(SceneDocument* doc);
     void removeFromCache(const QString &type, const QString& id);
 private:

@@ -15,7 +15,7 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< S
         if (doc->checkType(SceneDocument::TypeAction)) {
             const int delay = doc->actiondelay();
             // Get the right plugin process
-            PluginProcess* plugin = PluginController::instance()->getPlugin (doc->pluginuid());
+            PluginProcess* plugin = PluginController::instance()->getPlugin (doc->componentUniqueID());
             if ( !plugin ) {
                 qWarning() <<"No plugin for action found:"<<doc;
                 continue;
@@ -24,7 +24,7 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< S
             m_timetable.insert (delay, dataWithPlugin(plugin, doc));
         } else if (doc->checkType(SceneDocument::TypeCondition)) { // condition
             // Get the right plugin process
-            PluginProcess* plugin = PluginController::instance()->getPlugin (doc->pluginuid());
+            PluginProcess* plugin = PluginController::instance()->getPlugin (doc->componentUniqueID());
             if ( !plugin ) {
                 qWarning() <<"No plugin for condition found:"<<doc;
                 continue;

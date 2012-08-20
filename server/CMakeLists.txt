@@ -35,7 +35,7 @@ SET(SRCS ${SRCSm} ${SRCSp} ${SRCSe})
 QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${SRCS_H})
 #QT4_ADD_RESOURCES(RoomControlServer_RC ../res.qrc)
 
-add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} $<TARGET_OBJECTS:jsonDocumentsLib>)
+add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} $<TARGET_OBJECTS:jsonDocumentsLib> $<TARGET_OBJECTS:utilsLib>)
 
 target_link_libraries(${PROJECT_NAME}
 ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}

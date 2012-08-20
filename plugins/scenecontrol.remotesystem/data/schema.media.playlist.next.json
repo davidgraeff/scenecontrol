@@ -1,5 +1,5 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"media.playlist.next", "name":"Nächste Abspielliste",
+	"type_":"schema", "targettype":"action",
+	"method_":"media_playlist_next", "name":"Nächste Abspielliste",
 	"parameters": {}
 }

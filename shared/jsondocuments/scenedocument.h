@@ -26,7 +26,7 @@
 /**
  * A scene document is the in-memory copy of a json document, technically implemented
  * with a QVariantMap. This class provides a lot of convenience functions to access typical
- * scene document properties like "id_", "type_" or "pluginid_".
+ * scene document properties like "id_", "type_" or "componentid_".
  */
 class SceneDocument {
 private:
@@ -126,27 +126,28 @@ public:
     }
 
     QString pluginid() const {
-        return m_map.value(QLatin1String("pluginid_")).toString();
+        return m_map.value(QLatin1String("componentid_")).toString();
     }
-    void setPluginid(const QString& pluginid) {
-        m_map[QLatin1String("pluginid_")] = pluginid;
+    void setComponentID(const QString& pluginid) {
+        m_map[QLatin1String("componentid_")] = pluginid;
     }
-    bool hasPluginid() const {
-        return m_map.contains(QLatin1String("pluginid_"));
-    }
-    bool hasPluginuid() const {
-		return m_map.contains(QLatin1String("pluginid_")) && m_map.contains(QLatin1String("plugininstance_"));
+    bool hasComponentID() const {
+		return m_map.contains(QLatin1String("componentid_"));
 	}
+    bool hasComponentUniqueID() const {
+		return m_map.contains(QLatin1String("componentid_")) && m_map.contains(QLatin1String("instanceid_"));
+	}
+    QString componentUniqueID() const{
+        return m_map.value(QLatin1String("componentid_")).toString()+m_map[QLatin1String("instanceid_")].toString();
+    }
     
-    QString plugininstance() const{
-        return m_map[QLatin1String("plugininstance_")].toString();
+    QString instanceID() const{
+        return m_map[QLatin1String("instanceid_")].toString();
     }
-    void setPlugininstance(const QString& instanceid) {
-        m_map[QLatin1String("plugininstance_")] = instanceid;
+    void setInstanceID(const QString& instanceid) {
+        m_map[QLatin1String("instanceid_")] = instanceid;
     }
-    QString pluginuid() const{
-        return m_map.value(QLatin1String("pluginid_")).toString()+m_map[QLatin1String("plugininstance_")].toString();
-    }
+
     
     
     QString type() const {
@@ -157,10 +158,10 @@ public:
     }
     
     QString sceneid() const {
-        return m_map.value(QLatin1String("collection_")).toString();
+        return m_map.value(QLatin1String("sceneid_")).toString();
     }
     void setSceneid(const QString& collectionid) {
-        m_map[QLatin1String("collection_")] = collectionid;
+        m_map[QLatin1String("sceneid_")] = collectionid;
     }
 
     QByteArray configurationkey() const {
