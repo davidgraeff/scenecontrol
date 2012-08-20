@@ -25,6 +25,7 @@
 #include <QVariantMap>
 #include <QSslSocket>
 #include <QTcpServer>
+#include "shared/jsondocuments/scenedocument.h"
 
 class ServiceController;
 
@@ -48,5 +49,5 @@ private Q_SLOTS:
     void socketDisconnected();
     void sslErrors ( const QList<QSslError> & errors );
 Q_SIGNALS:
-    void requestExecution ( const QVariantMap& data, int session_id);
+    void requestExecution ( const SceneDocument& doc, int session_id);
 };

@@ -115,9 +115,9 @@ int main(int argc, char *argv[])
 	ExecuteRequest* executeRequests = ExecuteRequest::instance();
 	
     // connect objects
-    QObject::connect(datastorage, SIGNAL(doc_changed(SceneDocument)), plugins,  SLOT(Event_add(QString,QVariantMap)));
-    QObject::connect(datastorage, SIGNAL(doc_removed(SceneDocument)), plugins, SLOT(Event_remove(QString)));
-    QObject::connect(socket, SIGNAL(requestExecution(QVariantMap,int)), executeRequests, SLOT(requestExecution(QVariantMap,int)));
+    QObject::connect(datastorage, SIGNAL(doc_changed(SceneDocument)), plugins,  SLOT(doc_changed(SceneDocument)));
+    QObject::connect(datastorage, SIGNAL(doc_removed(SceneDocument)), plugins, SLOT(doc_removed(SceneDocument)));
+    QObject::connect(socket, SIGNAL(requestExecution(SceneDocument,int)), executeRequests, SLOT(requestExecution(SceneDocument,int)));
 
 	// connect to the database
     datastorage->load();

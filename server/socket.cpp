@@ -101,7 +101,8 @@ void Socket::readyRead() {
             continue;
         QVariant v =JSON::parse(rawdata);
         if (!v.isNull()) {
-            emit requestExecution(v.toMap(), serverSocket->socketDescriptor());
+			SceneDocument doc(v.toMap());
+            emit requestExecution(doc, serverSocket->socketDescriptor());
             serverSocket->write("{\"response\":0, \"msg\":\"OK\"}\n");
         } else {
             serverSocket->write("{\"response\":1, \"msg\":\"Failed to parse json\"}\n");
