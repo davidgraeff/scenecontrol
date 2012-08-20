@@ -115,8 +115,8 @@ int main(int argc, char *argv[])
 	ExecuteRequest* executeRequests = ExecuteRequest::instance();
 	
     // connect objects
-    QObject::connect(datastorage, SIGNAL(doc_changed(SceneDocument)), plugins,  SLOT(doc_changed(SceneDocument)));
-    QObject::connect(datastorage, SIGNAL(doc_removed(SceneDocument)), plugins, SLOT(doc_removed(SceneDocument)));
+    QObject::connect(datastorage, SIGNAL(doc_changed(const SceneDocument*)), plugins,  SLOT(doc_changed(const SceneDocument*)));
+    QObject::connect(datastorage, SIGNAL(doc_removed(const SceneDocument*)), plugins, SLOT(doc_removed(const SceneDocument*)));
     QObject::connect(socket, SIGNAL(requestExecution(SceneDocument,int)), executeRequests, SLOT(requestExecution(SceneDocument,int)));
 
 	// Import json documents from install dir if no files are presend in the user storage dir

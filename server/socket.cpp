@@ -148,7 +148,7 @@ void Socket::sendToClient(const QByteArray& rawdata, int sessionid) {
 
 void Socket::propagateProperty(const QVariantMap& data, int sessionid) {
     QByteArray jsondata = JSON::stringify(data).toUtf8();
-    qDebug()<<__FUNCTION__<<jsondata<<sessionid;
+//    qDebug()<<__FUNCTION__<<jsondata<<sessionid;
     if (!jsondata.isEmpty()) {
         if (sessionid==-1)
             sendToAllClients(jsondata + "\n");

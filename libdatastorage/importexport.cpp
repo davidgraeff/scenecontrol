@@ -84,7 +84,7 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
 			continue;
         }
 
-        ds.storeDocument(document, overwriteExisting, true);
+        ds.storeDocument(document, overwriteExisting);
     }
 
     // recursivly go into all subdirectories
@@ -98,7 +98,8 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
 
 bool VerifyImportDocument::isValid(SceneDocument& data, const QString& filename) {
 	QFileInfo finfo(filename);
-	data.setComponentID(finfo.absoluteDir().dirName()); //componentid: dir name
+	if (!data.hasComponentID())
+		data.setComponentID(finfo.absoluteDir().dirName()); //componentid: dir name
 	if (!data.hasid()) // no identifier set?: use filename without extension and componentid
 		data.setid(QFileInfo(filename).completeBaseName() + QLatin1String(".") + finfo.absoluteDir().dirName());
 	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
@@ -107,7 +108,8 @@ bool VerifyImportDocument::isValid(SceneDocument& data, const QString& filename)
 }
 
 bool VerifyPluginDocument::isValid(SceneDocument& data, const QString& filename) {
-	data.setComponentID(m_pluginid);
+	if (!data.hasComponentID())
+		data.setComponentID(m_pluginid);
 	if (!data.hasid()) // no identifier set? use filename without extension and componentid
           	data.setid((QString)(QFileInfo(filename).completeBaseName() + QLatin1String(".") + m_pluginid));
 	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid

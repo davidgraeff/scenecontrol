@@ -64,8 +64,8 @@ void DataStorage::load()
 	
 	// initiate a directory watcher
 	m_listener = new DataStorageWatcher();
-	connect(m_listener, SIGNAL(doc_changed(SceneDocument*)), SLOT(updateCache(SceneDocument*)));
-	connect(m_listener, SIGNAL(doc_removed(QString,QString)), SLOT(removeFromCache(QString,QString)));
+	connect(m_listener, SIGNAL(fileChanged(QString)), SLOT(reloadDocument(QString)));
+	connect(m_listener, SIGNAL(fileRemoved(QString)), SLOT(removeFromCache(QString)));
 	
 	QStringList dirs;
 	// add the user storage dir
@@ -78,12 +78,7 @@ void DataStorage::load()
 
 		QStringList files = currentdir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
 		for (int i = 0; i < files.size(); ++i) {
-			QFile file(currentdir.absoluteFilePath(files[i]));
-			file.open(QFile::ReadOnly);
-			QTextStream stream(&file);
-			SceneDocument* doc = new SceneDocument(stream);
-			file.close();
-			updateCache(doc);
+			reloadDocument(currentdir.absoluteFilePath(files[i]));
 		}
 	}
 	
@@ -139,7 +134,7 @@ int DataStorage::changeDocumentsValue(SceneDocument::TypeEnum type, const QVaria
 	QList<SceneDocument*> v = filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
 	for (int i=0;i<v.size();++i) {
 		v[i]->getData().insert(key, value); 
-		storeDocument(*v[i], true, true);
+		storeDocument(*v[i], true);
 	}
 	return v.size();
 }
@@ -172,7 +167,7 @@ void DataStorage::removeDocument(const SceneDocument &doc)
 	}
 }
 
-bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting, bool updateCache)
+bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting)
 {
 	if (!doc.isValid()) {
 		qWarning() << "storeDocument: can not store an invalid document";
@@ -185,25 +180,24 @@ bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting
 		qWarning() << "storeDocument: could not open subdir" << doc.type();
 		return false;
 	}
+	m_listener->watchdir(doc.type());
 	
 	QFile f(d.absoluteFilePath(doc.filename()));
 	
 	if (f.exists() && !overwriteExisting)
 		return true;
 	
-	qDebug() << "WRITE" << d.absoluteFilePath(doc.filename());
 	if (!f.open(QFile::WriteOnly|QFile::Truncate)) {
 		qWarning() << "storeDocument: could not open document for write";
 		return false;
 	}
 	f.write(doc.getjson());
 	f.close();
-	
-	if (updateCache) {
-		removeFromCache(doc.type(), doc.id());
-		SceneDocument* ndoc = new SceneDocument(doc.getjson());
-		this->updateCache(ndoc);
-	}
+		
+	// This should not be neccessary, all storage paths signal changes
+// 		removeFromCache(doc.type(), doc.id());
+// 		SceneDocument* ndoc = new SceneDocument(doc.getjson());
+// 		this->updateCache(ndoc);
 	
 	return true;
 }
@@ -213,14 +207,51 @@ bool DataStorage::contains(const SceneDocument& doc) const
 	return m_index_typeid.contains(doc.uid());
 }
 
-void DataStorage::updateCache(SceneDocument* doc) {
-	if (!m_cache.contains(doc->type()))
-		return;
-		
-	SceneDocument* olddoc = m_index_typeid.take(doc->uid());
-	m_index_typeid.insert(doc->uid(), doc);
+void DataStorage::reloadDocument( const QString& filename ) {
+	QFile file(filename);
+	file.open(QFile::ReadOnly);
+	QTextStream stream(&file);
+	SceneDocument* doc = new SceneDocument(stream);
+	file.close();
 	
-	QMutableListIterator<SceneDocument*> i(m_cache[doc->type()]);
+	if (!doc->isValid()) {
+		qWarning() << "Document is not valid!" << filename;
+		delete doc;
+		return;
+	}
+	
+	if (!m_cache.contains(doc->type())) {
+		delete doc;
+		return;
+	}
+	
+	SceneDocument* olddoc = m_index_filename.take(filename);
+	if (olddoc) {
+		m_index_typeid.remove(olddoc->uid());
+		QMutableListIterator<SceneDocument*> i(m_cache[doc->type()]);
+		while (i.hasNext()) {
+			i.next();
+			if (i.value() == olddoc) {
+				i.remove();
+				break;
+			}
+		}
+		delete olddoc;
+	}
+	
+	m_index_filename.insert(filename, doc);
+	m_index_typeid.insert(doc->uid(), doc);
+	m_cache[doc->type()].append(doc);
+	emit doc_changed(doc);
+}
+
+void DataStorage::removeFromCache( const QString& filename ) {
+	SceneDocument* olddoc = m_index_filename.take(filename);
+	if (!olddoc)
+		return;
+	m_index_typeid.remove(olddoc->uid());
+	
+	QMutableListIterator<SceneDocument*> i(m_cache[olddoc->type()]);
 	while (i.hasNext()) {
 		i.next();
 		if (i.value() == olddoc) {
@@ -229,26 +260,6 @@ void DataStorage::updateCache(SceneDocument* doc) {
 		}
 	}
 	
+	emit doc_removed(olddoc);
 	delete olddoc;
-	m_cache[doc->type()].append(doc);
-	emit doc_changed(*doc);
-}
-
-void DataStorage::removeFromCache(const QString& type, const QString& id) {
-	if (!m_cache.contains(type))
-		return;
-	
-	SceneDocument* doc = m_index_typeid.take(type+id);
-	
-	QMutableListIterator<SceneDocument*> i(m_cache[type]);
-	while (i.hasNext()) {
-		i.next();
-		if (i.value() == doc) {
-			i.remove();
-			break;
-		}
-	}
-	
-	emit doc_removed(*doc);
-	delete doc;
 }

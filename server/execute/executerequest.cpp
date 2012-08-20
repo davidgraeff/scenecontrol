@@ -29,7 +29,7 @@ ExecuteRequest::~ExecuteRequest()
 void ExecuteRequest::requestExecution(const SceneDocument& doc, int sessionid) {
     if ( !doc.checkType(SceneDocument::TypeExecution )) return;
     // Special case: a method of the server process should be executed. handle this immediatelly
-    if (doc.pluginid()==QLatin1String("server") && sessionid != -1) {
+    if (doc.componentID()==QLatin1String("server") && sessionid != -1) {
         if (doc.isMethod("requestAllProperties"))
             PluginController::instance()->requestAllProperties(sessionid);
         else if (doc.isMethod("runcollection"))

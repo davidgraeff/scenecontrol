@@ -126,27 +126,29 @@ PluginProcess* PluginController::getPlugin(const QString& pluginUid) {
     return m_plugins.value(pluginUid);
 }
 
-void PluginController::doc_changed(const SceneDocument &doc) {
-	if (!doc.checkType(SceneDocument::TypeEvent))
-		return;
-    PluginProcess* plugin = getPlugin ( doc.componentUniqueID());
-    if ( !plugin ) {
-        qWarning() <<"Plugins: Cannot register event. No plugin found:"<< doc.pluginid() << doc.id();
-        return;
-    }
+void PluginController::doc_changed(const SceneDocument* doc) {
+	if (doc->checkType(SceneDocument::TypeEvent)) {
+		PluginProcess* plugin = getPlugin ( doc->componentUniqueID());
+		if ( !plugin ) {
+			qWarning() <<"Plugins: Cannot register event. No plugin found:"<< doc->componentID() << doc->id();
+			return;
+		}
 
-    plugin->unregister_event ( doc.id() );
-    plugin->callQtSlot(doc.getData());
-    m_registeredevents.insert(doc.id(), plugin);
+		plugin->unregister_event ( doc->id() );
+		plugin->callQtSlot(doc->getData());
+		m_registeredevents.insert(doc->id(), plugin);
+	} else if (doc->checkType(SceneDocument::TypeConfiguration)) {
+		startOrChangePluginProcessByConfiguration(doc);
+	}
 }
 
-void PluginController::doc_removed(const SceneDocument &doc) {
-	if (!doc.checkType(SceneDocument::TypeEvent))
+void PluginController::doc_removed(const SceneDocument* doc) {
+	if (!doc->checkType(SceneDocument::TypeEvent))
 		return;
-    PluginProcess* executeplugin = m_registeredevents.take ( doc.id() );
+    PluginProcess* executeplugin = m_registeredevents.take ( doc->id() );
     if ( executeplugin ) {
 //         qDebug() << "Plugins: unregister event" << id << executeplugin;
-        executeplugin->unregister_event ( doc.id() );
+        executeplugin->unregister_event ( doc->id() );
     }
 }
 
@@ -164,37 +166,41 @@ void PluginController::scanPlugins() {
         qWarning() << "Server: Datastorage initial import path not found!";
 
     for (int i=0;i<pluginfiles.size();++i) {
-        const QString pluginid = pluginfiles[i].mid(0, pluginfiles[i].lastIndexOf(QLatin1String("_plugin")));
+        const QString componentid = pluginfiles[i].mid(0, pluginfiles[i].lastIndexOf(QLatin1String("_plugin")));
 
         // Install missing files for this plugin first
-        if (importdirfound && importdir.cd(pluginid)) {
-			Datastorage::VerifyPluginDocument verifier(pluginid);
+        if (importdirfound && importdir.cd( componentid )) {
+			Datastorage::VerifyPluginDocument verifier( componentid );
 			Datastorage::importFromJSON(*DataStorage::instance(), importdir.absolutePath(), false, &verifier);
 			importdir.cdUp();
 		}
 
 		// Get all configurations of this plugin
 		SceneDocument filter;
-		filter.setComponentID(pluginid);
+		filter.setComponentID( componentid );
 		QList<SceneDocument*> configurations = DataStorage::instance()->requestAllOfType(SceneDocument::TypeConfiguration, filter.getData());
 		for (int pi = 0; pi < configurations.size(); ++pi) {
-			SceneDocument* configuration = configurations[pi];
-			if (!configuration->hasComponentUniqueID()) {
-				qWarning() << "Server: Document incomplete. PluginID or PluginInstance is missing!" << configurations[pi]->getData();
-				continue;
-			}
-
-			PluginProcess* p = getPlugin(configuration->componentUniqueID());
-			if (!p) {
-				p = new PluginProcess( this, pluginid, configuration->instanceID());
-				m_pluginprocesses.insert( p );
-				m_plugins.insert(configuration->componentUniqueID(),p);
-				p->startProcess();
-				qDebug() << "Process start" << configuration->componentUniqueID();
-			}
-			p->configChanged(configuration->configurationkey(), configuration->getData());
+			startOrChangePluginProcessByConfiguration(configurations[pi]);
 		}
 	}
+}
+
+void PluginController::startOrChangePluginProcessByConfiguration ( const SceneDocument* configuration )
+{
+	if (!configuration->hasComponentUniqueID()) {
+		qWarning() << "Server: Document incomplete. PluginID or PluginInstance is missing!" << configuration->getData();
+		return;
+	}
+
+	PluginProcess* p = getPlugin(configuration->componentUniqueID());
+	if (!p) {
+		p = new PluginProcess( this, configuration->componentID(), configuration->instanceID());
+		m_pluginprocesses.insert( p );
+		m_plugins.insert(configuration->componentUniqueID(),p);
+		p->startProcess();
+		qDebug() << "Process start" << configuration->componentUniqueID();
+	}
+	p->configChanged(configuration->configurationkey(), configuration->getData());
 }
 
 void PluginController::requestAllProperties(int sessionid) {

@@ -125,7 +125,7 @@ public:
         return m_map.contains(QLatin1String("id_"));
     }
 
-    QString pluginid() const {
+    QString componentID() const {
         return m_map.value(QLatin1String("componentid_")).toString();
     }
     void setComponentID(const QString& pluginid) {

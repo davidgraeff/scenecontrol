@@ -168,7 +168,7 @@ void PluginProcess::readyReadPluginData()
             if (DataStorage::instance()->changeDocumentsValue(SceneDocument::TypeConfiguration, filter.getData(), QString::fromUtf8(configurationkey), doc.getData())==0) {
 				// No configuration found: create one
 				filter.setData(configurationkey, doc.getData());
-				DataStorage::instance()->storeDocument(filter, true, true);
+				DataStorage::instance()->storeDocument(filter, true);
 			}
         } else if (method == "changeProperty") {
             // Get session id and remove id from QVariantMap

@@ -17,9 +17,9 @@ private:
 private Q_SLOTS:
 	void readnotify();
 Q_SIGNALS:
-	/// A document changed
-    void doc_changed(SceneDocument* doc);
-	/// A document has been removed
-    void doc_removed(const QString &type, const QString& id);
+	/// Document changed or created
+    void fileChanged(const QString &filename);
+	/// Document has been removed
+    void fileRemoved(const QString &filename);
 };
 

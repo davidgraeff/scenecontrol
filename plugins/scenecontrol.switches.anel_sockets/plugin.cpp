@@ -195,7 +195,6 @@ void plugin::initialize()
     QByteArray str("wer da?");
     str.append(0x0D);
     str.append(0x0A);
-	qDebug() << "initialize" << m_sendPort << str;
     m_writesocket->writeDatagram(str, QHostAddress::Broadcast, m_sendPort);
 }
 

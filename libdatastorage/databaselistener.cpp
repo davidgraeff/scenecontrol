@@ -5,6 +5,7 @@
 #include <QSocketNotifier>
 #include <qvarlengtharray.h>
 #include <qfile.h>
+#include <QDir>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,18 +70,21 @@ void DataStorageWatcher::readnotify() {
 			continue;
         }
 
-        qDebug() << "inotify " << path << event.name;
 
         if ((event.mask & (IN_DELETE_SELF | IN_MOVE_SELF | IN_UNMOUNT)) != 0) {
             pathToID.remove(path);
             idToPath.remove(id);
             inotify_rm_watch(m_inotify_fd, event.wd);
 			// dir removed; do nothing
-			qDebug() << "\tRemoved";
         } else {
 			// emit something
-			if (event.mask & IN_CREATE) qDebug() << "\tCreated";
-			if (event.mask & IN_CLOSE_WRITE) qDebug() << "\tChanged";
+			//qDebug() << "inotify " << path << event.name;
+			if (event.mask & IN_CREATE)
+				emit fileChanged(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
+			else if (event.mask & IN_CLOSE_WRITE)
+				emit fileChanged(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
+			else if (event.mask & IN_DELETE)
+				emit fileRemoved(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
         }
     }
     

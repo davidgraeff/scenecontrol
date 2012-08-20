@@ -67,7 +67,7 @@ public Q_SLOTS:
       * Store a document given by data.
       * data have to contain an ID (id_) field if insertWithNewID is not true
       */
-    bool storeDocument(const SceneDocument& doc, bool overwriteExisting = false, bool updateCache = false);
+    bool storeDocument( const SceneDocument& doc, bool overwriteExisting = false );
 
     /**
      * Change configurations of a given plugin (synchronous)
@@ -81,8 +81,10 @@ public Q_SLOTS:
       */
     bool contains(const SceneDocument &doc) const;
 public Q_SLOTS:
-    void updateCache(SceneDocument* doc);
-    void removeFromCache(const QString &type, const QString& id);
+	// Create a new scene document on the heap and hand it over to this method and
+	// it will replace an older document with the same id and type
+	void reloadDocument(const QString &filename);
+	void removeFromCache(const QString &filename);
 private:
     DataStorage ();
     QDir m_dir;
@@ -90,11 +92,12 @@ private:
     // data and indexes
     QMap<QString, QList<SceneDocument*>> m_cache;
     QMap<QString, SceneDocument*> m_index_typeid;
+	QMap<QString, SceneDocument*> m_index_filename;
     
     QList<SceneDocument*> filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter = QVariantMap()) const;
 Q_SIGNALS:
 	/// A document changed: only triggered if startChangeListener has been called
-    void doc_changed(const SceneDocument &doc);
+    void doc_changed(const SceneDocument*);
 	/// A document has been removed: only triggered if startChangeListener has been called
-    void doc_removed(const SceneDocument &doc);
+    void doc_removed(const SceneDocument*);
 };

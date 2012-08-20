@@ -79,6 +79,7 @@ public:
     void requestAllProperties(int sessionid = -1);
 private:
     PluginController ();
+    void startOrChangePluginProcessByConfiguration ( const SceneDocument* configuration );
     QMap<QString,PluginProcess*> m_plugins;
     QSet<PluginProcess*> m_pluginprocesses;
     QMap<QString, PluginProcess*> m_registeredevents;
@@ -90,6 +91,6 @@ private:
 private Q_SLOTS:
     void newConnection();
 public Q_SLOTS:
-    void doc_changed(const SceneDocument &doc);
-    void doc_removed(const SceneDocument &doc);
+    void doc_changed( const SceneDocument* doc );
+    void doc_removed( const SceneDocument* doc );
 };
