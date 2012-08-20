@@ -117,7 +117,6 @@ int main(int argc, char *argv[])
     // connect objects
     QObject::connect(datastorage, SIGNAL(doc_changed(SceneDocument)), plugins,  SLOT(Event_add(QString,QVariantMap)));
     QObject::connect(datastorage, SIGNAL(doc_removed(SceneDocument)), plugins, SLOT(Event_remove(QString)));
-    QObject::connect(datastorage, SIGNAL(dataOfCollection(QString,QList<QVariantMap>)), collectioncontroller, SLOT(dataOfCollection(QString,QList<QVariantMap>)));
     QObject::connect(socket, SIGNAL(requestExecution(QVariantMap,int)), executeRequests, SLOT(requestExecution(QVariantMap,int)));
 
 	// connect to the database

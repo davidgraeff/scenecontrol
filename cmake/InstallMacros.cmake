@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.8)
 
 # set default build type
 IF (NOT CMAKE_BUILD_TYPE)
@@ -19,8 +19,8 @@ SET(CPACK_PACKAGE_NAME "RoomcontrolSuite")
 SET(CPACK_PACKAGE_VERSION_MAJOR "2")
 SET(CPACK_PACKAGE_VERSION_MINOR "3")
 SET(CPACK_PACKAGE_VERSION_PATCH "1")
-SET(CPACK_PACKAGE_CONTACT "David Gräff <david.graeff@web.d_e>")
-SET(CPACK_PACKAGE_VENDOR "David Gräff")
+SET(CPACK_PACKAGE_CONTACT "David Grï¿½ff <david.graeff@web.d_e>")
+SET(CPACK_PACKAGE_VENDOR "David Grï¿½ff")
 #SET(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/clients/roomeditor/images\\\\serviceprovider.png")
 SET(CPACK_PACKAGE_DESCRIPTION "Roomcontrol server application, clients and plugins")
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.markdown")
@@ -76,5 +76,5 @@ cpack_add_component(Server
   INSTALL_TYPES Full)
 # cpack_add_component(Tools
 #   DISPLAY_NAME "Werkzeuge"
-#   DESCRIPTION "Administrative Werkzeuge um Einstellungen am Server vorzunehmen oder Profile zu ändern"
+#   DESCRIPTION "Administrative Werkzeuge um Einstellungen am Server vorzunehmen oder Profile zu ï¿½ndern"
 #   INSTALL_TYPES Full ClientsOnly)

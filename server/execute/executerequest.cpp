@@ -39,12 +39,12 @@ void ExecuteRequest::requestExecution(const SceneDocument& doc, int sessionid) {
             SceneDocument s = SceneDocument::createNotification("database");
             //s.setData("database", b->databaseAddress());
             //s.setData("state", b->state());
-            s.setPluginid("server");
+            s.setPluginid(QLatin1String("server"));
             Socket::instance()->propagateProperty(s.getData(), sessionid);
         } else if (doc.isMethod("version")) {
             SceneDocument s = SceneDocument::createNotification("version");
             s.setData("version", QLatin1String(ABOUT_VERSION));
-            s.setPluginid("server");
+            s.setPluginid(QLatin1String("server"));
             Socket::instance()->propagateProperty(s.getData(), sessionid);
         }
         return;

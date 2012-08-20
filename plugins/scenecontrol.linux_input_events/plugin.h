@@ -68,7 +68,7 @@ class plugin : public AbstractPlugin
     Q_OBJECT
     friend class InputDevice;
 public:
-    plugin(const QString& instanceid);
+    plugin(const QString& pluginid, const QString& instanceid);
     virtual ~plugin();
 
     virtual void initialize();

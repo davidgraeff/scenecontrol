@@ -38,7 +38,7 @@ class RunningCollection: public QObject {
 public:
     RunningCollection(const QString& collectionid, const QList< SceneDocument* >& services);
     void start();
-	QString id() const;
+	QString sceneid() const;
 private:
     struct dataWithPlugin {
         QPointer<PluginProcess> plugin;

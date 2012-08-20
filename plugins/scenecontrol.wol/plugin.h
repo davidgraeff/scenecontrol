@@ -26,7 +26,7 @@ class plugin : public AbstractPlugin
 {
     Q_OBJECT
 public:
-    plugin(const QString& instanceid);
+    plugin(const QString& pluginid, const QString& instanceid);
     virtual ~plugin();
     virtual void requestProperties(int sessionid);
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data);

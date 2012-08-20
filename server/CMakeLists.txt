@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.8)
 
 #Only allow this file to be included by the root cmake file
 IF (NOT DEFINED PRODUCTID)
@@ -29,17 +29,17 @@ file(GLOB SRCS_He execute/*.h)
 file(GLOB SRCSe execute/*.cpp)
 file(GLOB SRCS_Hp plugins/*.h)
 file(GLOB SRCSp plugins/*.cpp)
-SET(SRCS_H ${SRCS_Hm} ${SRCS_Hp} ${SRCS_He} ${SRCS_DATABASE_H})
-SET(SRCS ${SRCSm} ${SRCSp} ${SRCSe} ${SRCS_DATABASE})
+SET(SRCS_H ${SRCS_Hm} ${SRCS_Hp} ${SRCS_He})
+SET(SRCS ${SRCSm} ${SRCSp} ${SRCSe})
 
 QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${SRCS_H})
 #QT4_ADD_RESOURCES(RoomControlServer_RC ../res.qrc)
 
-add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS})
+add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} $<TARGET_OBJECTS:jsonDocumentsLib>)
 
 target_link_libraries(${PROJECT_NAME}
 ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES}
-${QT_QTTEST_LIBRARIES} ${OPENSSL_LIBRARIES})
+${QT_QTTEST_LIBRARIES} ${OPENSSL_LIBRARIES} libdatastorage)
 
 add_dependencies(${PROJECT_NAME} libdatastorage)
 

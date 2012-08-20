@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.8)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(UDEV QUIET)
 
@@ -8,7 +8,7 @@ find_package(RoomPlugin REQUIRED)
 FILE(GLOB SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 FILE(GLOB SRCS_H "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 QT4_WRAP_CPP(SRCS_MOCS ${SRCS_H})
-add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} ${SRCS_SHARED_JSON} ${SRCS_SHARED_PLUGINS} ${SRCS_SHARED_PLUGINS_MOCS})
+add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} $<TARGET_OBJECTS:basePluginLib> $<TARGET_OBJECTS:jsonDocumentsLib>)
 target_link_libraries(${PROJECT_NAME} ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES} ${UDEV_LIBRARY})
 
 install_lib()

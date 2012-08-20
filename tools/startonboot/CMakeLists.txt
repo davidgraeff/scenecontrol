@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.8)
 IF(UNIX)
 	# try to guess the distribution
 	execute_process(COMMAND /usr/bin/lsb_release -i -s

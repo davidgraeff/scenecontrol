@@ -15,7 +15,7 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 
-DataStorageWatcher::DataStorageWatcher(QObject* parent)
+DataStorageWatcher::DataStorageWatcher(QObject* parent) : QObject(parent)
 {
 	m_inotify_fd = inotify_init();
 	if ( m_inotify_fd <= 0 ) {

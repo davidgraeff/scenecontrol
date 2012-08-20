@@ -61,7 +61,6 @@ private Q_SLOTS:
 	 * State changed
 	 */
     void communicationSocketStateChanged();
-	void databaseStateChanged();
 public Q_SLOTS:
     /// proxy methods: they send a request to the plugin process ////
     /// Proxy Method: Initialize plugin

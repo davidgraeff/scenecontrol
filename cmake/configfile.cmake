@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.8)
 
 # prepare configuration file
 SET(CONFIG_SERVER_BASEPATH "${CMAKE_INSTALL_PREFIX}")

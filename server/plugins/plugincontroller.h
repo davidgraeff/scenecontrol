@@ -90,12 +90,6 @@ private:
 private Q_SLOTS:
     void newConnection();
 public Q_SLOTS:
-	void databaseStateChanged();
     void doc_changed(const SceneDocument &doc);
     void doc_removed(const SceneDocument &doc);
-	/**
-	 * Start a plugin instance. The @configuration map has to contain at least the field: instanceid_
-	 */
-    bool startPluginInstance(const QString& pluginid, const QVariantMap& configuration);
-
 };

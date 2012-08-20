@@ -12,6 +12,7 @@
 
 #define MAGICSTRING "roomcontrol_"
 
+static QByteArray pluginidstatic;
 static void catch_int(int )
 {
     signal(SIGINT, 0);
@@ -29,22 +30,23 @@ void roomMessageOutput(QtMsgType type, const char *msg)
 
     switch (type) {
     case QtDebugMsg:
-        fprintf(stdout, "[%2d:%02d," PLUGIN_ID "] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stdout, "[%2d:%02d,%s] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, pluginidstatic.constData(), msg);
         break;
     case QtWarningMsg:
-        fprintf(stderr, "[%2d:%02d," PLUGIN_ID "] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stderr, "[%2d:%02d,%s] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, pluginidstatic.constData(), msg);
         break;
     case QtCriticalMsg:
-        fprintf(stderr, "[%2d:%02d," PLUGIN_ID "] \033[31mCritical: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stderr, "[%2d:%02d,%s] \033[31mCritical: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, pluginidstatic.constData(), msg);
         break;
     case QtFatalMsg:
-        fprintf(stderr, "[%2d:%02d," PLUGIN_ID "] \033[31mFatal: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, msg);
+        fprintf(stderr, "[%2d:%02d,%s] \033[31mFatal: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, pluginidstatic.constData(), msg);
         abort();
     }
 }
 
-AbstractPlugin::AbstractPlugin(const QString& instanceid) : m_lastsessionid(-1), m_instanceid(instanceid)
+AbstractPlugin::AbstractPlugin(const QString& pluginid, const QString& instanceid) : m_lastsessionid(-1), m_pluginid(pluginid), m_instanceid(pluginid)
 {
+	pluginidstatic = m_pluginid.toUtf8();
     qInstallMsgHandler(roomMessageOutput);
     connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
 
@@ -63,7 +65,7 @@ AbstractPlugin::~AbstractPlugin()
 bool AbstractPlugin::createCommunicationSockets()
 {
     // create server socket for incoming connections
-    const QString name = QLatin1String(MAGICSTRING) + QLatin1String(PLUGIN_ID);
+    const QString name = QLatin1String(MAGICSTRING) + m_pluginid;
     removeServer(name);
     if (!listen(name)) {
         qWarning() << "Plugin interconnect server failed";
@@ -125,7 +127,7 @@ void AbstractPlugin::readyReadCommunication()
         if (method == "pluginid") {
 			SceneDocument transferdoc;
 			transferdoc.setMethod("pluginid");
-			transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+			transferdoc.setPluginid(m_pluginid);
             writeToSocket(socket, transferdoc.getData());
         } else if (method == "configChanged") {
             const QByteArray key = doc.configurationkey();
@@ -145,13 +147,13 @@ void AbstractPlugin::readyReadCommunication()
             // Prepare response
 			SceneDocument transferdoc;
 			transferdoc.setMethod("methodresponse");
-			transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+			transferdoc.setPluginid(m_pluginid);
 			
             int methodId = invokeHelperGetMethodId(method);
             // If method not found call dataFromPlugin
             if (methodId == -1) {
                 qWarning() << "Method not found!" << method;
-                responseData[QLatin1String("error")] = "Method not found!";
+				transferdoc.setData("error", "Method not found!");
                 writeToSocket(socket, transferdoc.getData());
                 continue;
             }
@@ -160,7 +162,7 @@ void AbstractPlugin::readyReadCommunication()
             int params;
             if ((params = invokeHelperMakeArgumentList(methodId, variantdata, argumentsInOrder)) == -1) {
 				qWarning() << "Arguments list incompatible!" << method << methodId << variantdata << argumentsInOrder;
-                responseData[QLatin1String("error")] = "Arguments list incompatible!";
+                transferdoc.setData("error", "Arguments list incompatible!");
                 writeToSocket(socket, transferdoc.getData());
                 continue;
             }
@@ -169,11 +171,14 @@ void AbstractPlugin::readyReadCommunication()
             // If no response is expected, write the method-response message before invoking the target method,
             // because that may write data the the server and the response-message have to be the first answer
             QByteArray responseid = variantdata.value(QLatin1String("responseid_")).toByteArray();
-            responseData[QLatin1String("responseid_")] = responseid;
-            responseData[QLatin1String("response_")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
+            transferdoc.setData("responseid_", responseid);
+            transferdoc.setData("response_",
+								invokeSlot(method, params, returntype,
+											argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3],
+											argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]));
             if (responseid.size()) {
                 writeToSocket(socket, transferdoc.getData());
-                qDebug() << "WRITE RESPONSE" << responseData[QLatin1String("response_")];
+                qDebug() << "WRITE RESPONSE" << transferdoc.toString("response_");
             }
         }
     }
@@ -237,7 +242,7 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& plugin_id) {
         m_connectionsBySocket[socket] = plugin_id;
 		SceneDocument transferdoc;
 		transferdoc.setMethod("identifyplugin");
-		transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+		transferdoc.setPluginid(m_pluginid);
 		transferdoc.setPlugininstance(m_instanceid);
 		writeToSocket(socket, transferdoc.getData());
         socket->waitForBytesWritten();
@@ -248,7 +253,7 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& plugin_id) {
 void AbstractPlugin::changeConfig(const QByteArray& category, const QVariantMap& data) {
 	SceneDocument transferdoc(data);
 	transferdoc.setMethod("changeConfig");
-	transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+	transferdoc.setPluginid(m_pluginid);
 	transferdoc.setPlugininstance(m_instanceid);
 	transferdoc.setConfigurationkey(category);
 	sendDataToPlugin(COMSERVERSTRING, transferdoc.getData());
@@ -257,18 +262,19 @@ void AbstractPlugin::changeConfig(const QByteArray& category, const QVariantMap&
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
 	SceneDocument transferdoc(data);
 	transferdoc.setMethod("changeProperty");
-	transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+	transferdoc.setPluginid(m_pluginid);
 	transferdoc.setPlugininstance(m_instanceid);
 	transferdoc.setSessionID(sessionid);
 	sendDataToPlugin(COMSERVERSTRING, transferdoc.getData());
 }
 
 void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_sceneid) {
-	SceneDocument transferdoc(data);
+	SceneDocument transferdoc;
 	transferdoc.setMethod("eventTriggered");
-	transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+	transferdoc.setPluginid(m_pluginid);
 	transferdoc.setPlugininstance(m_instanceid);
 	transferdoc.setSceneid(dest_sceneid);
+	transferdoc.setid(eventid);
 	sendDataToPlugin(COMSERVERSTRING, transferdoc.getData());
 }
 
@@ -316,4 +322,10 @@ QVariant AbstractPlugin::invokeSlot(const QByteArray& methodname, int numParams,
         qWarning() << __FUNCTION__ << "failed";
     }
     return result;
+}
+QString AbstractPlugin::pluginid() {
+    return m_pluginid;
+}
+QString AbstractPlugin::instanceid() {
+    return m_instanceid;
 }

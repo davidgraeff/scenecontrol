@@ -44,13 +44,13 @@ int main(int argc, char* argv[]) {
 		qWarning()<<"No instanceid provided!";
 		return 1;
 	}
-    plugin p(QString::fromAscii(argv[1]));
+    plugin p(QLatin1String(PLUGIN_ID), QString::fromAscii(argv[1]));
     if (!p.createCommunicationSockets())
         return -1;
     return app.exec();
 }
 
-plugin::plugin(const QString& instanceid) : AbstractPlugin(instanceid) {
+plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
 	m_dontgrab = 0;
     m_repeat = 0;
     m_repeatInit = 0;

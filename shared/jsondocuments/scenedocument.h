@@ -170,6 +170,10 @@ public:
         m_map[QLatin1String("configkey_")] = configurationkey;
     }
 
+    int actiondelay() const {
+        return m_map.value(QLatin1String("delay_"), 0).toInt();
+    }
+    
     enum TypeEnum {
         TypeUnknown,
 	// Documents that are stored to disk and need to have an ID

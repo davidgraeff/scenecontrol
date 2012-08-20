@@ -65,10 +65,4 @@ public Q_SLOTS:
 	 * as appropriate.
 	 */
     void runningCollectionFinished (const QString& collectionid);
-	/**
-	 * Start a new running collection object.
-	 * dataOfCollection is used to be called by the database and is an indirect reaction to
-	 * a call to requestExecutionByCollectionId before.
-	 */
-    void dataOfCollection (const QString& collectionid, const QList<QVariantMap>& services);
 };

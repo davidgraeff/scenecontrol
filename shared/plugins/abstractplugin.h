@@ -28,11 +28,6 @@
 #include <QSet>
 #include <QVariant>
 
-/// Always define a PLUGIN_ID for this compilation unit
-#ifndef PLUGIN_ID
-#error Define PLUGIN_ID before including this header!
-#endif
-
 /// The name of the server communication socket
 #define COMSERVERSTRING "server"
 
@@ -70,9 +65,10 @@ public:
      *
      * Use this in your plugin main method.
      */
-    bool createCommunicationSockets();
-    AbstractPlugin(const QString& instanceid);
+    AbstractPlugin(const QString& pluginid, const QString& instanceid);
     virtual ~AbstractPlugin();
+
+    bool createCommunicationSockets();
 	/**
 	 * Reimplement this to receive data from other plugins which addressed your plugin 
 	 */
@@ -94,6 +90,7 @@ private:
     QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
     QSet<QLocalSocket*> m_pendingConnections;
     QLocalSocket* getClientConnection(const QByteArray& plugin_id);
+	QString m_pluginid;
 	QString m_instanceid;
     void writeToSocket(QLocalSocket* socket, const QVariantMap& data);
     int invokeHelperGetMethodId(const QByteArray& methodName);
@@ -104,12 +101,8 @@ public Q_SLOTS:
     /**
      * Return pluginid
      */
-    QString pluginid() {
-        return QLatin1String(PLUGIN_ID);
-    }
-    QString instanceid() {
-        return m_instanceid;
-    }
+    QString pluginid();
+    QString instanceid();
     
     /**
      * (Re)Initialize the plugin. Called after all plugins are loaded but before the

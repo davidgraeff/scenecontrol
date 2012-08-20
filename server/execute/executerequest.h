@@ -1,6 +1,7 @@
 #pragma once
 #include <QObject>
 #include <QVariantMap>
+#include "shared/jsondocuments/scenedocument.h"
 
 /**
  * This singleton object takes QVariantMap data and either execute the request immediatelly
@@ -19,7 +20,7 @@ public Q_SLOTS:
 	 * This slot is used to called by the network controller where a session id is always
 	 * available.
 	 */
-    void requestExecution ( const QVariantMap& data, int sessionid );
+    void requestExecution ( const SceneDocument& doc, int sessionid );
 private:
     ExecuteRequest();
 };

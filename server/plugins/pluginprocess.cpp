@@ -95,8 +95,12 @@ void PluginProcess::setSocket(QLocalSocket* socket)
 		configChanged(i.key(),i.value());
 	m_configcache.clear();
 	
-	// get events
-    b->requestEvents(m_pluginid, m_instanceid);
+	SceneDocument filter;
+	filter.setPluginid(m_pluginid);
+	filter.setPlugininstance(m_instanceid);
+	QList<SceneDocument*> events = DataStorage::instance()->requestAllOfType(SceneDocument::TypeEvent, filter.getData());
+	for (int i=0;i<events.size();++i)
+		callQtSlot(events[i]->getData());
 }
 
 QLocalSocket* PluginProcess::getSocket() {

@@ -12,8 +12,8 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< S
     for ( int i=0;i<services.size();++i ) { // action
         // Extract data and delay time
         SceneDocument* doc = services[i];
-        if (doc.checkType(SceneDocument::TypeAction)) {
-            const int delay = doc.value(QLatin1String("delay_"), 0).toInt();
+        if (doc->checkType(SceneDocument::TypeAction)) {
+            const int delay = doc->actiondelay();
             // Get the right plugin process
             PluginProcess* plugin = PluginController::instance()->getPlugin (doc->pluginuid());
             if ( !plugin ) {
@@ -22,7 +22,7 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< S
             }
 
             m_timetable.insert (delay, dataWithPlugin(plugin, doc));
-        } else if (doc.checkType(SceneDocument::TypeCondition)) { // condition
+        } else if (doc->checkType(SceneDocument::TypeCondition)) { // condition
             // Get the right plugin process
             PluginProcess* plugin = PluginController::instance()->getPlugin (doc->pluginuid());
             if ( !plugin ) {
@@ -96,7 +96,7 @@ void RunningCollection::timeoutNextAction()
 
     while (lowerBound != upperBound) {
         const dataWithPlugin& dp = lowerBound.value();
-        dp.plugin->callQtSlot ( dp.data );
+        dp.plugin->callQtSlot ( dp.doc->getData() );
         ++lowerBound;
     }
 
@@ -114,7 +114,7 @@ void RunningCollection::timeoutNextAction()
     m_timer.start(lowerBound.key() - m_lasttime);
 }
 
-QString RunningCollection::id() const
+QString RunningCollection::sceneid() const
 {
     return m_collectionid;
 }

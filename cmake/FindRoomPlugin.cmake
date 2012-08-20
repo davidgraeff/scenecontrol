@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.8)
 #Only allow this file to be included by the root cmake file
 IF (NOT DEFINED PRODUCTID)
 	RETURN()
@@ -36,5 +36,3 @@ ADD_DEFINITIONS(-DPLUGIN_ID="${targetname}" -D_GNU_SOURCE -Wall -W -DQT_NO_CAST_
 # add include directories
 include_directories(${QT_INCLUDES} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
 ${ROOTDIR} ${PLUGINSDIR})
-
-QT4_WRAP_CPP(SRCS_SHARED_PLUGINS_MOCS ${SRCS_SHARED_PLUGINS_H})
