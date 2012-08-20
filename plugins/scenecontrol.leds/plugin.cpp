@@ -53,7 +53,7 @@ void plugin::clear(const QByteArray& plugin_) {
     while (i.hasNext()) {
         i.next();
         if (i.value().plugin_id == plugin_) {
-            ServiceData sc = ServiceData::createModelRemoveItem("leds");
+            SceneDocument sc = SceneDocument::createModelRemoveItem("leds");
             sc.setData("channel", i.value().channel);
             changeProperty(sc.getData());
             i.remove();
@@ -73,11 +73,11 @@ bool plugin::isLedValue ( const QString& channel, int lower, int upper )  {
 }
 
 void plugin::requestProperties(int sessionid) {
-    changeProperty(ServiceData::createModelReset("leds", "channel").getData(), sessionid);
+    changeProperty(SceneDocument::createModelReset("leds", "channel").getData(), sessionid);
     QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for (;i!=m_ios.end();++i) {
         const plugin::iochannel& io = i.value();
-        ServiceData sc = ServiceData::createModelChangeItem("leds");
+        SceneDocument sc = SceneDocument::createModelChangeItem("leds");
         sc.setData("channel", io.channel);
         sc.setData("value", io.value);
         sc.setData("name", io.name);
@@ -134,12 +134,12 @@ void plugin::setLed ( const QString& channel, int value, int fade )
     p.value = value;
     p.fadeType = fade;
 
-    QVariantMap datamap;
-    ServiceData::setMethod(datamap,"setLed");
-    datamap[QLatin1String("channel")] = channel;
-    datamap[QLatin1String("value")] = value;
-    datamap[QLatin1String("fade")] = fade;
-    sendDataToPlugin(p.plugin_id, datamap);
+    SceneDocument doc;
+    doc.setMethod("setLed");
+	doc.setData("channel",channel);
+	doc.setData("value",value);
+	doc.setData("fade",fade);
+    sendDataToPlugin(p.plugin_id, doc.getData());
 }
 
 void plugin::setLedName ( const QString& channel, const QString& name, bool updateDatabase )
@@ -152,7 +152,7 @@ void plugin::setLedName ( const QString& channel, const QString& name, bool upda
     io.name = name;
 
     // change name property
-    ServiceData sc = ServiceData::createModelChangeItem("leds");
+    SceneDocument sc = SceneDocument::createModelChangeItem("leds");
     sc.setData("channel", channel);
     sc.setData("name", name);
     sc.setData("value", io.value);
@@ -230,7 +230,7 @@ void plugin::subpluginChange(const QByteArray& plugin_, const QString& channel, 
         io.name = QLatin1String("Channel ") + QString::number(m_ios.size());
     }
 
-    ServiceData sc = ServiceData::createModelChangeItem("leds");
+    SceneDocument sc = SceneDocument::createModelChangeItem("leds");
     sc.setData("channel", io.channel);
     if (io.name.size()) sc.setData("name", io.name);
     if (io.value != -1) sc.setData("value", io.value);

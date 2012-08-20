@@ -25,6 +25,7 @@
 #include <QTimer>
 #include <QPointer>
 
+class SceneDocument;
 class PluginProcess;
 
 /**
@@ -35,14 +36,14 @@ class PluginProcess;
 class RunningCollection: public QObject {
     Q_OBJECT
 public:
-    RunningCollection(const QString& collectionid, const QList< QVariantMap >& services);
+    RunningCollection(const QString& collectionid, const QList< SceneDocument* >& services);
     void start();
 	QString id() const;
 private:
     struct dataWithPlugin {
         QPointer<PluginProcess> plugin;
-        QVariantMap data;
-        dataWithPlugin(QPointer<PluginProcess> p, QVariantMap m) : plugin(p), data(m) {}
+        SceneDocument* doc;
+        dataWithPlugin(QPointer<PluginProcess> p, SceneDocument* m) : plugin(p), doc(m) {}
     };
     QString m_collectionid;
     QTimer m_timer;

@@ -1,4 +1,4 @@
-#include "database.h"
+#include "datastorage.h"
 
 #include <QDebug>
 #include <QSocketNotifier>
@@ -8,276 +8,229 @@
 #include <QHostInfo>
 #include <QUuid>
 #include <QUrl>
+#include <qfile.h>
 
-#include "servicedata.h"
-#include "json.h"
-#include "bson.h"
+#include "shared/jsondocuments/scenedocument.h"
+#include "shared/jsondocuments/json.h"
 #include "databaselistener.h"
 
 #define __FUNCTION__ __FUNCTION__
 
-static Database *databaseInstance = 0;
+static DataStorage *databaseInstance = 0;
 
-Database::Database() :m_state(DisconnectedState), m_listener(0)
+DataStorage::DataStorage() : m_listener(0)
 {
-    m_reconnectTimer.setInterval(5000);
-    m_reconnectTimer.setSingleShot(true);
-    connect(&m_reconnectTimer, SIGNAL(timeout()), SLOT(reconnectToDatabase()));
 }
 
-Database::~Database()
+DataStorage::~DataStorage()
 {
-    unload();
+	unload();
 }
 
-void Database::unload()
+DataStorage *DataStorage::instance()
 {
-
-}
-
-Database *Database::instance()
-{
-    if (databaseInstance == 0)
-        databaseInstance = new Database();
-
-    return databaseInstance;
-}
-
-
-void Database::load()
-{
-    // Read/Write mongodb timeout
-    m_mongodb.setSoTimeout(5);
-    try {
-        m_mongodb.connect(m_serveraddress.toStdString());
-        m_mongodb.createCollection("roomcontrol.listen", 50*500, true, 50, 0);
-        m_state = ConnectedState;
-        {
-            m_listener = new DatabaseListener(m_serveraddress);
-            connect(m_listener, SIGNAL(doc_changed(QString,QVariantMap)), SIGNAL(doc_changed(QString,QVariantMap)));
-            connect(m_listener, SIGNAL(doc_removed(QString)), SIGNAL(doc_removed(QString)));
-             m_listener->start();
-        }
-    } catch (mongo::UserException&e) {
-        m_state = DisconnectedState;
-        qWarning() << "Database: Connection failed" << m_serveraddress << QString::fromStdString(e.toString());
-    }
-    changeState(m_state);
-    return m_state;
-}
-
-void Database::requestEvents(const QString& plugin_id, const QString& instanceid)
-{
-    try {
-        std::unique_ptr<mongo::DBClientCursor> cursor =
-            m_mongodb.query( "roomcontrol.event", BSON("plugin_" << plugin_id.toStdString() << "instanceid_" << instanceid.toStdString()) );
-        while ( cursor->more() ) {
-            QVariantMap jsonData = BJSON::fromBson(cursor->next());
-            jsonData.remove(QLatin1String("type_"));
-            if (ServiceData::collectionid(jsonData).isEmpty()) {
-                qWarning() << "Database: Received event without collection:" << ServiceData::pluginid(jsonData) << ServiceData::id(jsonData);
-                continue;
-            }
-            emit Event_add(ServiceData::id(jsonData), jsonData);
-        }
-    } catch (mongo::UserException&) {
-        qWarning()<<"Query failed!";
-    }
-}
-
-void Database::requestDataOfCollection(const QString &collecion_id)
-{
-    if (collecion_id.isEmpty())
-        return;
-    QList<QVariantMap> servicelist;
-    {
-        std::unique_ptr<mongo::DBClientCursor> cursor =
-            m_mongodb.query("roomcontrol.event", BSON("collection_" << collecion_id.toStdString()));
-        while ( cursor->more() ) {
-            servicelist.append(BJSON::fromBson(cursor->next()));
-        }
-    }
-    {
-        std::unique_ptr<mongo::DBClientCursor> cursor =
-            m_mongodb.query("roomcontrol.condition", BSON("collection_" << collecion_id.toStdString()));
-        while ( cursor->more() ) {
-            servicelist.append(BJSON::fromBson(cursor->next()));
-        }
-    }
-    {
-        std::unique_ptr<mongo::DBClientCursor> cursor =
-            m_mongodb.query("roomcontrol.action", QUERY("collection_" << collecion_id.toStdString()));
-        while ( cursor->more() ) {
-            servicelist.append(BJSON::fromBson(cursor->next()));
-        }
-    }
-
-    if (servicelist.size()) {
-        emit dataOfCollection(collecion_id, servicelist);
-    } else {
-        qWarning() << "No actions, conditions, events found" << collecion_id;
-    }
-}
-
-void Database::requestPluginConfiguration(const QString &pluginid)
-{
-    if (pluginid.isEmpty())
-        return;
-    try {
-        std::unique_ptr<mongo::DBClientCursor> cursor =
-            m_mongodb.query("roomcontrol.configuration", QUERY("plugin_" << pluginid.toStdString()));
-        while ( cursor->more() ) {
-            QVariantMap jsonData = BJSON::fromBson(cursor->next());
-            jsonData.remove(QLatin1String("type_"));
-            jsonData.remove(QLatin1String("plugin_"));
-            emit pluginConfiguration(pluginid, jsonData);
-        }
-    } catch (mongo::UserException&) {
-        qWarning()<<"Query failed!";
-    }
-}
-
-void Database::changePluginConfiguration(const QString& pluginid, const QString& instanceid, const QByteArray& category, const QVariantMap& value)
-{
-    if (value.isEmpty() || instanceid.isEmpty() || pluginid.isEmpty() || category.isEmpty())
-        return;
-
-    QVariantMap jsonData = value;
-    ServiceData::setPluginid(jsonData, pluginid.toAscii());
-    ServiceData::setInstanceid(jsonData, instanceid);
-    jsonData[QLatin1String("_id")] = pluginid.toAscii()+"_"+instanceid.toAscii()+"_"+category;
-    const mongo::BSONObj dataToSend = BJSON::toBson(jsonData);
-    const mongo::BSONObj query = BSON("_id" << dataToSend.getStringField("_id"));
-    const std::string dbid = "roomcontrol.configuration";
-    m_mongodb.update(dbid, query, dataToSend, true, false);
-    m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1}"));
-    // update listen collection
-    mongo::BSONObjBuilder b;
-    b.appendTimestamp("_id");
-    b.append("op", "u");
-    b.append("o", dataToSend);
-    m_mongodb.insert("roomcontrol.listen", b.done());
-}
-
-void Database::requestSchemas()
-{
-    std::unique_ptr<mongo::DBClientCursor> cursor =
-        m_mongodb.query("roomcontrol.schema", mongo::BSONObj());
-    while ( cursor->more() ) {
-        QVariantMap jsonData = BJSON::fromBson(cursor->next());
-        emit doc_changed(ServiceData::id(jsonData), jsonData);
-    }
-}
-
-void Database::requestCollections()
-{
-    std::unique_ptr<mongo::DBClientCursor> cursor =
-        m_mongodb.query("roomcontrol.collection", mongo::BSONObj());
-    while ( cursor->more() ) {
-        QVariantMap jsonData = BJSON::fromBson(cursor->next());
-        emit doc_changed(ServiceData::id(jsonData), jsonData);
-    }
-}
-
-void Database::removeDocument(const QString &type, const QString &id)
-{
-    if (type.isEmpty()||id.isEmpty())
-        return;
-
-    m_mongodb.remove("roomcontrol."+type.toStdString(), BSON("_id" << id.toStdString()));
-    if (type == QLatin1String("collection")) {
-        // if it is a collection, remove all actions, conditions, events belonging to it
-        // Do it in a per-element way to update the listen collection after every operation
-        std::unique_ptr<mongo::DBClientCursor> cursor;
-        cursor = m_mongodb.query("roomcontrol.action", BSON("collection_" << id.toStdString()));
-        while ( cursor->more() ) {
-            std::string elementid = cursor->next().getStringField("_id");
-            removeDocument(QLatin1String("action"), QString::fromStdString(elementid));
-        }
-        cursor = m_mongodb.query("roomcontrol.event", BSON("collection_" << id.toStdString()));
-        while ( cursor->more() ) {
-            std::string elementid = cursor->next().getStringField("_id");
-            removeDocument(QLatin1String("event"), QString::fromStdString(elementid));
-        }
-        cursor = m_mongodb.query("roomcontrol.condition", BSON("collection_" << id.toStdString()));
-        while ( cursor->more() ) {
-            std::string elementid = cursor->next().getStringField("_id");
-            removeDocument(QLatin1String("condition"), QString::fromStdString(elementid));
-        }
-    }
-
-    // update listen collection
-    mongo::BSONObjBuilder b;
-    b.appendTimestamp("_id");
-    b.append("op", "d");
-    b.append("o", BSON("_id" << id.toStdString()));
-    m_mongodb.insert("roomcontrol.listen", b.done());
-
-}
-
-bool Database::changeDocument(const QVariantMap& data, bool insertWithNewID, const QVariantMap& types)
-{
-    if (!data.contains(QLatin1String("type_"))) {
-        qWarning() << "changeDocument: can not add/change document without type_";
-        return false;
-    }
-
-    QVariantMap jsonData = data;
-    if (!jsonData.contains(QLatin1String("_id"))) {
-        if (insertWithNewID)
-            jsonData[QLatin1String("_id")] = QUuid::createUuid().toString().
-                                             replace(QLatin1String("{"),QString()).
-                                             replace(QLatin1String("}"),QString()).
-                                             replace(QLatin1String("-"),QString());
-        else {
-            qWarning() << "changeDocument: can not change document without _id";
-            return false;
-        }
-    }
-
-    if (types.size()) {
-        jsonData = checkTypes(jsonData, types);
-    }
-
-    const QString docid = jsonData[QLatin1String("_id")].toString();
-    const mongo::BSONObj dataToSend = BJSON::toBson(jsonData);
-    const mongo::BSONObj query = BSON("_id" << docid.toStdString());
-    const std::string dbid = "roomcontrol."+ServiceData::type(jsonData).toStdString();
-    m_mongodb.update(dbid, query, dataToSend, true, false);
-
-    std::string lasterror = m_mongodb.getLastError();
-    if (lasterror.size()!=0) {
-        return false;
-    }
-
-    // update listen collection
-    mongo::BSONObjBuilder b;
-    b.appendTimestamp("_id");
-    b.append("op", "u");
-    b.append("o", dataToSend);
-    m_mongodb.insert("roomcontrol.listen", b.done());
+	if (databaseInstance == 0)
+		databaseInstance = new DataStorage();
 	
-    if (jsonData.contains(QLatin1String("plugin_")) && jsonData.contains(QLatin1String("instanceid_")))
-        m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1,\"instanceid_\":1}"));
-    else if (jsonData.contains(QLatin1String("plugin_")))
-        m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"plugin_\":1}"));
-    if (jsonData.contains(QLatin1String("collection_")))
-        m_mongodb.ensureIndex(dbid, mongo::fromjson("{\"collection_\":1}"));
-
-    emit doc_changed(docid, jsonData);
-    return true;
+	return databaseInstance;
 }
 
-bool Database::contains(const QString& type, const QString& id)
+QDir DataStorage::datadir() const {return m_dir;}
+
+void DataStorage::unload()
 {
-    const mongo::BSONObj query = BSON("_id" << id.toStdString());
-    const std::string dbid = "roomcontrol."+type.toStdString();
-    std::unique_ptr<mongo::DBClientCursor> cursor =
-        m_mongodb.query(dbid, query, 1);
-    if (cursor.get()==0) {
-        qWarning()<<"Database: Query failed!" << type << id;
-        return false;
-    }
-    return cursor->itcount();
+	qDeleteAll(m_index_typeid);
+	m_index_typeid.clear();
+	delete m_listener;
+	m_listener = 0;
 }
 
+void DataStorage::load()
+{
+	unload();
+	m_listener = new DataStorageWatcher();
+	connect(m_listener, SIGNAL(doc_changed(SceneDocument*)), SLOT(updateCache(SceneDocument*)));
+	connect(m_listener, SIGNAL(doc_removed(QString,QString)), SLOT(removeFromCache(QString,QString)));
+	
+	QStringList dirs;
+	dirs.append(m_dir.absolutePath());
+	while (dirs.size()) {
+		QDir currentdir(dirs.takeFirst());
+		m_listener->watchdir(currentdir.absolutePath());
+		dirs.append(directories(currentdir));
+
+		QStringList files = currentdir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
+		for (int i = 0; i < files.size(); ++i) {
+			QFile file(currentdir.absoluteFilePath(files[i]));
+			file.open(QFile::ReadOnly);
+			QTextStream stream(&file);
+			SceneDocument* doc = new SceneDocument(stream);
+			file.close();
+			updateCache(doc);
+		}
+	}
+}
+
+QList< SceneDocument* > DataStorage::filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter) const {
+	QList< SceneDocument* > d;
+	QList< SceneDocument* >::const_iterator it = source.constBegin();
+	// Go through all QVariantMaps of source
+	for(;it!=source.constEnd();++it) {
+		// Assume entry will be taken
+		bool ok = true;
+		// Loop through filter and check each filter entry with the current variantmap
+		QVariantMap::const_iterator i = filter.constBegin();
+		for(;i!= filter.constEnd();++i) {
+			if ((*it)->getData().value(i.key()) != i.value()) {
+				// If there is something in the filter (like plugin_=abc) and this is not matched by the current QVariantMap (like plugin_=def)
+				// do not take this entry
+				ok = false;
+				break;
+			}
+		}
+		if (!ok)
+			continue;
+		d.append(*it);
+	}
+	return d;
+}
+
+QStringList DataStorage::directories(const QDir& dir) {
+	QStringList d = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+	for (int i = 0; i < d.size(); ++i) {
+		d[i] = dir.absoluteFilePath(d[i]);
+	}
+	return d;
+}
+
+QList<SceneDocument*> DataStorage::requestAllOfType(SceneDocument::TypeEnum type, const QVariantMap& filter) const {
+	// special if id is known
+	const QString typetext = SceneDocument::stringFromTypeEnum(type);
+	if (filter.contains(SceneDocument::idkey()))
+		return m_index_typeid.values(SceneDocument::id(filter)+typetext);
+	// generic
+		return filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
+}
+
+int DataStorage::changeDocumentsValue(SceneDocument::TypeEnum type, const QVariantMap& filter, const QString& key, const QVariantMap& value) {
+	QList<SceneDocument*> v = filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
+	for (int i=0;i<v.size();++i) {
+		v[i]->getData().insert(key, value); 
+		changeDocument(*v[i]);
+	}
+	return v.size();
+}
+
+void DataStorage::removeDocument(const SceneDocument &doc)
+{
+	if (!doc.isValid()) {
+		qWarning() << "changeDocument: can not add/change an invalid document";
+		return;
+	}
+	
+	// remove from disc
+	QDir d(m_dir);
+	m_dir.cd(doc.type());
+	if (!QFile::remove(d.absoluteFilePath(doc.filename()))) {
+		qWarning() << "removeDocument: can not remove document" << d.absoluteFilePath(doc.filename());
+		return;
+	}
+	
+	if (doc.checkType(SceneDocument::TypeScene)) {
+		const QString sceneid = doc.sceneid();
+		QList<SceneDocument*> v;
+		
+		v = m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeAction));
+		for (int i=v.size()-1;i>=0;--i) removeDocument(*v[i]);
+		v = m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeCondition));
+		for (int i=v.size()-1;i>=0;--i) removeDocument(*v[i]);
+		v = m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeEvent));
+		for (int i=v.size()-1;i>=0;--i) removeDocument(*v[i]);
+	}
+}
+
+bool DataStorage::changeDocument(const SceneDocument& doc, bool insertWithNewID, const QVariantMap& types)
+{
+	if (!doc.isValid()) {
+		qWarning() << "changeDocument: can not add/change an invalid document";
+		return false;
+	}
+	
+	// Add id if none present
+	SceneDocument mdoc(doc);
+	if (!doc.hasid()) {
+		if (insertWithNewID)
+			mdoc.setid(QUuid::createUuid().toString().
+			replace(QLatin1String("{"),QString()).
+			replace(QLatin1String("}"),QString()).
+			replace(QLatin1String("-"),QString()));
+		else {
+			qWarning() << "changeDocument: can not change document without _id";
+			return false;
+		}
+	}
+	
+	// Correct types
+	if (!mdoc.correctTypes(types)) {
+		qWarning() << "changeDocument: correctTypes failed";
+		return false;
+	}
+	
+	// Write to disc
+	QDir d(m_dir);
+	m_dir.cd(doc.type());
+	QFile f(d.absoluteFilePath(doc.filename()));
+	if (!f.open(QFile::WriteOnly|QFile::Truncate)) {
+		qWarning() << "changeDocument: could not open document for write";
+		return false;
+	}
+	f.write(mdoc.getjson());
+	f.close();
+	
+	return true;
+}
+
+bool DataStorage::contains(const SceneDocument& doc) const
+{
+	return m_index_typeid.contains(doc.uid());
+}
+
+void DataStorage::updateCache(SceneDocument* doc) {
+	if (!m_cache.contains(doc->type()))
+		return;
+		
+	SceneDocument* olddoc = m_index_typeid.take(doc->uid());
+	m_index_typeid.insert(doc->uid(), doc);
+	
+	QMutableListIterator<SceneDocument*> i(m_cache[doc->type()]);
+	while (i.hasNext()) {
+		i.next();
+		if (i.value() == olddoc) {
+			i.remove();
+			break;
+		}
+	}
+	
+	delete olddoc;
+	m_cache[doc->type()].append(doc);
+	emit doc_changed(*doc);
+}
+
+void DataStorage::removeFromCache(const QString& type, const QString& id) {
+	if (!m_cache.contains(type))
+		return;
+	
+	SceneDocument* doc = m_index_typeid.take(type+id);
+	
+	QMutableListIterator<SceneDocument*> i(m_cache[type]);
+	while (i.hasNext()) {
+		i.next();
+		if (i.value() == doc) {
+			i.remove();
+			break;
+		}
+	}
+	
+	emit doc_removed(*doc);
+	delete doc;
+}

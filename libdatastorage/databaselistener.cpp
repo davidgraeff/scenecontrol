@@ -1,88 +1,103 @@
 #include "databaselistener.h"
 #include <QDebug>
-#include "bson.h"
-#include "mongo/bson/bson.h"
-#include "servicedata.h"
 #include <time.h>
+#include <QFileSystemWatcher>
+#include <QSocketNotifier>
+#include <qvarlengtharray.h>
+#include <qfile.h>
 
-DatabaseListener::DatabaseListener(const QString& serverHostname, QObject* parent):
-        QThread(parent), m_abort(false)
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/inotify.h>
+#include <unistd.h>
+
+DataStorageWatcher::DataStorageWatcher(QObject* parent)
 {
-    m_conn.setSoTimeout(5);
-    m_conn.connect(serverHostname.toStdString());
-}
-
-DatabaseListener::~DatabaseListener()
-{
-    m_abort = true;
-}
-
-void DatabaseListener::abort()
-{
-    m_abort = true;
-    if (m_cursor.get()!=0)
-      m_conn.killCursor(m_cursor->getCursorId());
-    while (!isFinished());
-}
-
-void DatabaseListener::run()
-{
-    if (m_conn.isFailed())
-        return;
-    // minKey is smaller than any other possible value
-	
-	mongo::BSONObjBuilder b;
-	b.appendTimestamp("$gt", time (NULL)*1000, 0);
-    mongo::BSONElement lastId = b.done().firstElement();
-	
-    mongo::Query query;
-
-    // capped collection insertion order
-    while ( !m_abort ) {
-		query = QUERY( "_id" << mongo::GT << lastId).sort("$natural");
-		std::cout << query.toString() << std::endl;
-		m_cursor = m_conn.query("roomcontrol.listen", query, 0, 0, 0, mongo::QueryOption_CursorTailable | mongo::QueryOption_AwaitData );
+	m_inotify_fd = inotify_init();
+	if ( m_inotify_fd <= 0 ) {
 		
-        if (m_cursor.get()==0) {
-            qWarning()<<"Pointer empty!" << QString::fromStdString(m_conn.getLastError());
-            sleep(3);
-            continue;
-        }
-        
-        while ( 1 ) {
-            if ( !m_cursor->more() ) {
-                if ( m_cursor->isDead() ) {
-                    // we need to requery
-                    break;
-                }
-                continue; // we will try more() again
-            }
-            if (m_abort)
-                break;
-            mongo::BSONObj o = m_cursor->next();
-            lastId = o["_id"];
-            std::string op = o.getStringField("op");
-            if (op=="u") {
-                const QVariantMap object = BJSON::fromBson(o.getObjectField("o"));
-                const QString id = ServiceData::id(object);
-                if (id.size())
-                    emit doc_changed(id,object);
-				else
-					std::cout << "update" << o.toString() << std::endl;
-            } else if (op=="d") {
-                const QVariantMap v = BJSON::fromBson(o.getObjectField("o"));
-                emit doc_removed(ServiceData::id(v));
-                //qDebug() << "delete" << ServiceData::id(v);
-            }
-			std::cout << o.toString() << std::endl;
-        }
+	}
+	fcntl(m_inotify_fd, F_SETFD, FD_CLOEXEC);
+	QSocketNotifier* mSn = new QSocketNotifier( m_inotify_fd, QSocketNotifier::Read, this );
+	connect(mSn, SIGNAL(activated(int)), this, SLOT(readnotify()));
+	mSn->setEnabled(true);
+}
 
-        // prepare to requery from where we left off
-        if (m_abort)
-            break;
-		
-		sleep(3);
+DataStorageWatcher::~DataStorageWatcher()
+{
+	foreach (int id, pathToID) {
+		inotify_rm_watch(m_inotify_fd, id);
+	}
+	close(m_inotify_fd);
+}
+
+void DataStorageWatcher::readnotify() {
+	QSocketNotifier* mSn = (QSocketNotifier*)sender();
+	mSn->setEnabled(false);
+	
+	    int buffSize = 0;
+    ioctl(m_inotify_fd, FIONREAD, (char *) &buffSize);
+    QVarLengthArray<char, 4096> buffer(buffSize);
+    buffSize = read(m_inotify_fd, buffer.data(), buffSize);
+    char *at = buffer.data();
+    char * const end = at + buffSize;
+
+    QHash<int, inotify_event *> eventForId;
+    while (at < end) {
+        inotify_event *event = reinterpret_cast<inotify_event *>(at);
+
+        if (eventForId.contains(event->wd))
+            eventForId[event->wd]->mask |= event->mask;
+        else
+            eventForId.insert(event->wd, event);
+
+        at += sizeof(inotify_event) + event->len;
     }
-    exit();
+
+    QHash<int, inotify_event *>::const_iterator it = eventForId.constBegin();
+    while (it != eventForId.constEnd()) {
+        const inotify_event &event = **it;
+        ++it;
+
+        qDebug() << "inotify event, wd" << event.wd << "name mask" << event.name << event.mask;
+
+        int id = event.wd;
+        QString path = idToPath.value(id);
+        if (path.isEmpty()) {
+            // perhaps a directory?
+            id = -id;
+            path = idToPath.value(id);
+            if (path.isEmpty())
+                continue;
+        }
+
+        qDebug() << "event for path" << path;
+
+        if ((event.mask & (IN_DELETE_SELF | IN_MOVE_SELF | IN_UNMOUNT)) != 0) {
+            pathToID.remove(path);
+            idToPath.remove(id);
+            inotify_rm_watch(m_inotify_fd, event.wd);
+			// dir removed; do nothing
+        } else {
+			// emit something
+        }
+    }
+    
+	mSn->setEnabled(true);
 }
+
+void DataStorageWatcher::watchdir(const QString& dir) {
+	int wd = inotify_add_watch(m_inotify_fd, QFile::encodeName(dir), (IN_CLOSE_WRITE | IN_MOVE | IN_CREATE | IN_DELETE | IN_DELETE_SELF ));
+	if (wd <= 0) {
+        qWarning("DataStorageWatcher::watchdir: inotify_add_watch failed");
+		return;
+	}
+	pathToID.insert(dir, wd);
+	idToPath.insert(wd, dir);
+}
+
 

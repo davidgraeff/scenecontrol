@@ -4,7 +4,7 @@
 #define PLUGIN_ID "fake_from_pluginservicehelper.cpp"
 #endif
 
-#include "libdatabase/servicedata.h"
+#include "shared/jsondocuments/scenedocument.h"
 
 #include <QVariantMap>
 #include <QString>
@@ -19,13 +19,13 @@
  * plugin.cpp (event trigger)   : m_events.getUids(key);
  */
 template <class T, char* MEMBER>
-class EventMap : private QMap<T, QMap<QString, QVariantMap > >
+class EventMap : private QMap<T, QMap<QString, SceneDocument > >
 {
 public:
     EventMap() ;
-    void add(const QVariantMap& data, const QString& collectionuid) ;
-    QVariantMap remove(const QString& eventid) ;
-    QList<QVariantMap> data(T key);
+    void add(const SceneDocument& doc, const QString& collectionuid) ;
+    SceneDocument remove(const QString& eventid) ;
+    QList<SceneDocument> data(T key);
 private:
     QString m_fieldname;
 };
@@ -34,37 +34,33 @@ template <class T, char* MEMBER>
 EventMap<T,MEMBER>::EventMap () : m_fieldname ( QString::fromAscii(MEMBER) ) { }
 
 template <class T, char* MEMBER>
-void EventMap<T,MEMBER>::add ( const QVariantMap& data, const QString& collectionuid ) {
-    T key = data.value ( m_fieldname ).value<T>();
-    QMap<QString, QVariantMap > datas = QMap<T, QMap<QString, QVariantMap > >::take ( key );
-    QVariantMap modifieddata = data;
-    modifieddata[QLatin1String("collection_")] = collectionuid;
-    datas.insert ( ServiceData::id ( data ), modifieddata );
-    QMap<T, QMap<QString, QVariantMap > >::insert ( key, datas );
+void EventMap<T,MEMBER>::add ( const SceneDocument& doc, const QString& collectionuid ) {
+    T key = doc.getData().value ( m_fieldname ).value<T>();
+    QMap<QString, SceneDocument > datas = QMap<T, QMap<QString, SceneDocument > >::take ( key );
+    SceneDocument docm(doc);
+	docm.setSceneid(collectionuid);
+    datas.insert ( docm.id(), docm );
+    QMap<T, QMap<QString, SceneDocument > >::insert ( key, datas );
 }
 
 template <class T, char* MEMBER>
-QVariantMap EventMap<T,MEMBER>::remove ( const QString& eventid) {
-    QMutableMapIterator<T, QMap<QString, QVariantMap > > outerMapIt(*this);
+SceneDocument EventMap<T,MEMBER>::remove ( const QString& eventid) {
+    QMutableMapIterator<T, QMap<QString, SceneDocument > > outerMapIt(*this);
     while (outerMapIt.hasNext()) {
         outerMapIt.next();
         if (outerMapIt.value().contains(eventid)) {
-	  const QVariantMap data = outerMapIt.value().value(eventid);
+	  const SceneDocument doc = outerMapIt.value().value(eventid);
             outerMapIt.value().remove(eventid);
             if (!outerMapIt.value().size()) {
                 outerMapIt.remove();
             }
-            return data;
+            return doc;
         }
     }
     return QVariantMap();
 }
 
 template <class T, char* MEMBER>
-QList<QVariantMap> EventMap<T,MEMBER>::data(T key) {
-    return QMap<T, QMap<QString, QVariantMap > >::value ( key ).values();
+QList<SceneDocument> EventMap<T,MEMBER>::data(T key) {
+    return QMap<T, QMap<QString, SceneDocument > >::value ( key ).values();
 }
-//     foreach ( QVariantMap& data, datas ) {
-//         server->pluginEventTriggered(ServiceData::id(data), ServiceData::collectionid ( data ));
-//     }
-

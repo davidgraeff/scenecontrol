@@ -113,20 +113,20 @@ void plugin::readyRead()
         m_ios[channelid].value = value;
 
         // send property
-        ServiceData sc = ServiceData::createModelChangeItem("anel.io");
+        SceneDocument sc = SceneDocument::createModelChangeItem("anel.io");
         sc.setData("channel", channelid);
         sc.setData("value", value);
         changeProperty(sc.getData(), -1);
 
         // send to switches plugin
-        QVariantMap datamap;
-        ServiceData::setMethod(datamap, "subpluginChange");
-        ServiceData::setPluginid(datamap, PLUGIN_ID);
-        datamap[QLatin1String("channel")] = channelid;
-        datamap[QLatin1String("value")] = value;
-        datamap[QLatin1String("name")] = channelid;
-        sendDataToPlugin("switches", datamap);
-
+		SceneDocument doc;
+		doc.setMethod("subpluginChange");
+		doc.setPluginid(QLatin1String(PLUGIN_ID));
+		doc.setData("channel",channelid);
+		doc.setData("value",value);
+		doc.setData("name",channelid);
+		sendDataToPlugin("switches", doc.getData());
+	
         // update cache
         if(value)
             m_cache[host.toString()] |= (unsigned char)(1 << pincounter);
@@ -203,10 +203,10 @@ void plugin::clear()
     m_ios.clear();
     m_ios.clear();
 
-    QVariantMap datamap;
-    ServiceData::setMethod(datamap, "clear");
-    ServiceData::setPluginid(datamap, PLUGIN_ID);
-    sendDataToPlugin("switches", datamap);
+    SceneDocument doc;
+    doc.setMethod("clear");
+	doc.setPluginid(QLatin1String(PLUGIN_ID));
+    sendDataToPlugin("switches", doc.getData());
 }
 
 void plugin::configChanged(const QByteArray &configid, const QVariantMap &data)
@@ -220,11 +220,11 @@ void plugin::configChanged(const QByteArray &configid, const QVariantMap &data)
 
 void plugin::requestProperties(int sessionid)
 {
-    changeProperty(ServiceData::createModelReset("anel.io", "channel").getData(), sessionid);
+    changeProperty(SceneDocument::createModelReset("anel.io", "channel").getData(), sessionid);
     QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for(; i != m_ios.end(); ++i) {
         const plugin::iochannel str = i.value();
-        ServiceData sc = ServiceData::createModelChangeItem("anel.io");
+        SceneDocument sc = SceneDocument::createModelChangeItem("anel.io");
         sc.setData("channel", i.key());
         sc.setData("value", str.value);
         changeProperty(sc.getData(), sessionid);

@@ -22,7 +22,8 @@
 #include "plugins/plugincontroller.h"
 #include "execute/collectioncontroller.h"
 #include "execute/executerequest.h"
-#include "libdatabase/database.h"
+#include "libdatastorage/datastorage.h"
+#include "libdatastorage/importexport.h"
 #include "socket.h"
 #include "paths.h"
 
@@ -44,7 +45,7 @@ static void catch_int(int )
     printf("\n");
 	PluginController* plugins = PluginController::instance();
 	plugins->waitForPluginsAndExit();
-	Database::instance()->disconnectFromHost();
+	DataStorage::instance()->unload();
 }
 
 int main(int argc, char *argv[])
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
     setup::writeLastStarttime();
 
     // Set up the database connection. All events, actions, configurations are hold within a database
-    Database* database = Database::instance();
+    DataStorage* datastorage = DataStorage::instance();
 
     // CollectionController: Starts, stops collections
     // and hold references to running collections.
@@ -114,40 +115,28 @@ int main(int argc, char *argv[])
 	ExecuteRequest* executeRequests = ExecuteRequest::instance();
 	
     // connect objects
-    QObject::connect(database, SIGNAL(Event_add(QString,QVariantMap)), plugins,  SLOT(Event_add(QString,QVariantMap)));
-    QObject::connect(database, SIGNAL(Event_remove(QString)), plugins, SLOT(Event_remove(QString)));
-    QObject::connect(database, SIGNAL(pluginConfiguration(QString,QVariantMap)), plugins, SLOT(startPluginInstance(QString,QVariantMap)));
-	QObject::connect(database, SIGNAL(stateChanged()), plugins, SLOT(databaseStateChanged()));
-    QObject::connect(database, SIGNAL(dataOfCollection(QString,QList<QVariantMap>)), collectioncontroller, SLOT(dataOfCollection(QString,QList<QVariantMap>)));
+    QObject::connect(datastorage, SIGNAL(doc_changed(SceneDocument)), plugins,  SLOT(Event_add(QString,QVariantMap)));
+    QObject::connect(datastorage, SIGNAL(doc_removed(SceneDocument)), plugins, SLOT(Event_remove(QString)));
+    QObject::connect(datastorage, SIGNAL(dataOfCollection(QString,QList<QVariantMap>)), collectioncontroller, SLOT(dataOfCollection(QString,QList<QVariantMap>)));
     QObject::connect(socket, SIGNAL(requestExecution(QVariantMap,int)), executeRequests, SLOT(requestExecution(QVariantMap,int)));
 
 	// connect to the database
-    database->connectToDatabase(QLatin1String(ROOM_DATABASE), true);
+    datastorage->load();
+	plugins->scanPlugins();
 
 	if (cmdargs.contains("--export")) { // Export json documents from database
-		if (database->state() != Database::ConnectedState) {
-			qWarning() << "Server: Cannot export. No connection to the database!";
-		} else {
 			int index = cmdargs.indexOf("--export");
 			QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
 			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
 				path = QDir::currentPath();
-			database->exportAsJSON(path);
-		}
+			Datastorage::exportAsJSON(*datastorage, path);
 	} else if (cmdargs.contains("--import")) { // Import json documents from database
-		if (database->state() != Database::ConnectedState) {
-			qWarning() << "Server: Cannot import. No connection to the database!";
-		} else {
 			int index = cmdargs.indexOf("--import");
 			QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
 			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
 				path = QDir::currentPath();
-			database->importFromJSON(path);
-		}
+			Datastorage::importFromJSON(*datastorage, path);
 	} else if (!cmdargs.contains("--no-event-loop") && plugins->valid()) { // Start event loop
-        //TODO start change listeners
-//         database->startChangeListenerEvents();
-//         database->startChangeListenerSettings();
         exitcode = qapp.exec();
 		// one last event processing to free all deleteLater objects
 		qapp.processEvents();
@@ -155,7 +144,7 @@ int main(int argc, char *argv[])
 
 	delete plugins;
 	delete socket;
-    delete database;
+    delete datastorage;
     delete collectioncontroller;
 	delete executeRequests;
 

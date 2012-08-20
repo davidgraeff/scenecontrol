@@ -1,5 +1,3 @@
-#include "database.h"
-
 #include <QDebug>
 #include <QSocketNotifier>
 #include <QTimer>
@@ -8,21 +6,18 @@
 #include <QHostInfo>
 #include <QUuid>
 #include <QUrl>
+#include <qfile.h>
 
-#include "scenedocument.h"
-#include "json.h"
+#include "shared/jsondocuments/scenedocument.h"
+#include "shared/jsondocuments/json.h"
+#include "datastorage.h"
+#include "importexport.h"
 
 #define __FUNCTION__ __FUNCTION__
 
-QStringList directories(const QDir& dir) {
-	QStringList d = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
-	for (int i = 0; i < d.size(); ++i) {
-		d[i] = datadir.absoluteFilePath(d[i]);
-	}
-	return d;
-}
-
-void exportAsJSON(const DataStorage& ds, const QString& exportpath, VerifyInterface* verify)
+namespace Datastorage {
+	
+void exportAsJSON(const DataStorage& ds, const QString& exportpath)
 {
     QDir exportdir(exportpath);
     if (!exportdir.exists()) {
@@ -37,7 +32,7 @@ void exportAsJSON(const DataStorage& ds, const QString& exportpath, VerifyInterf
 	dirs.append(datadir.absolutePath());
 	while (dirs.size()) {
 		QDir currentdir(dirs.takeFirst());
-		dirs.append(directories(currentdir));
+		dirs.append(DataStorage::directories(currentdir));
 
 		QString relpath(currentdir.absolutePath().mid(datadir.absolutePath().size()));
 		
@@ -46,13 +41,12 @@ void exportAsJSON(const DataStorage& ds, const QString& exportpath, VerifyInterf
 
 		QStringList files = currentdir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
 		for (int i = 0; i < files.size(); ++i) {
-				QFile file(datadir.absoluteFilePath(files[i]));
-				QFile::copy(datadir.absoluteFilePath(files[i]), targetdir.absoluteFilePath(files[i]));
+			QFile::copy(datadir.absoluteFilePath(files[i]), targetdir.absoluteFilePath(files[i]));
 		}
 	}
 }
 
-void importFromJSON(const DataStorage& ds, const QString& path, bool overwriteExisting = false, VerifyInterface* verify)
+void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting, VerifyInterface* verify)
 {
     QDir dir(path);
     if (!dir.exists()) {
@@ -70,7 +64,6 @@ void importFromJSON(const DataStorage& ds, const QString& path, bool overwriteEx
             qWarning() << "\tFile to big!" << files[i] << file.size();
             continue;
         }
-        bool error = false;
         QTextStream stream(&file);
         SceneDocument document(stream);
         if (!document.isValid()) {
@@ -89,7 +82,7 @@ void importFromJSON(const DataStorage& ds, const QString& path, bool overwriteEx
 		if (!overwriteExisting && ds.contains(document))
 			continue;
 
-        changeDocument(jsonData, false);
+        ds.changeDocument(document, false);
     }
 
     // recursivly go into all subdirectories
@@ -101,3 +94,4 @@ void importFromJSON(const DataStorage& ds, const QString& path, bool overwriteEx
     }
 }
 
+}

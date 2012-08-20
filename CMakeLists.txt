@@ -15,9 +15,8 @@ IF (NOT ${QT_FOUND})
 ENDIF()
 
 # Shared source
-file(GLOB SRCS_SHARED_PLUGINS_H "${CMAKE_CURRENT_SOURCE_DIR}/shared/plugins/*.h")
+file(GLOB SRCS_SHARED_PLUGINS_H "${CMAKE_CURRENT_SOURCE_DIR}/shared/plugins/abstractplugin.h")
 file(GLOB SRCS_SHARED_PLUGINS "${CMAKE_CURRENT_SOURCE_DIR}/shared/plugins/*.cpp")
-QT4_WRAP_CPP(SRCS_SHARED_PLUGINS_MOCS ${SRCS_SHARED_PLUGINS_H})
 file(GLOB SRCS_SHARED_JSON_H "${CMAKE_CURRENT_SOURCE_DIR}/shared/jsondocuments/*.h")
 file(GLOB SRCS_SHARED_JSON "${CMAKE_CURRENT_SOURCE_DIR}/shared/jsondocuments/*.cpp")
 

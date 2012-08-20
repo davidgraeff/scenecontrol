@@ -26,6 +26,7 @@
 #include <QVariantMap>
 #include <QLocalSocket>
 #include <QLocalServer>
+#include "shared/jsondocuments/scenedocument.h"
 
 class PluginProcess;
 
@@ -63,7 +64,7 @@ public:
 	/**
 	 * Return the plugin communication channel given by the plugin id
 	 */
-    PluginProcess* getPlugin(const QString& pluginid, const QString& instanceid);
+    PluginProcess* getPlugin(const QString& pluginUid);
 
 	/**
 	 * To iterate over all plugins use getPluginIterator and nextPlugin
@@ -90,8 +91,8 @@ private Q_SLOTS:
     void newConnection();
 public Q_SLOTS:
 	void databaseStateChanged();
-    void Event_add(const QString& id, const QVariantMap& event_data);
-    void Event_remove(const QString& id);
+    void doc_changed(const SceneDocument &doc);
+    void doc_removed(const SceneDocument &doc);
 	/**
 	 * Start a plugin instance. The @configuration map has to contain at least the field: instanceid_
 	 */

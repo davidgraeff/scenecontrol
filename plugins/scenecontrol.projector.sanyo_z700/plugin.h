@@ -20,7 +20,7 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "_sharedsrc/abstractplugin.h"
+#include "shared/plugins/abstractplugin.h"
 
 class QxtSerialDevice;
 class plugin : public AbstractPlugin

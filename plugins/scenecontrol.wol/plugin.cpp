@@ -58,7 +58,7 @@ void plugin::wol ( const QString& mac) {
 }
 
 void plugin::requestProperties(int sessionid) {
-    changeProperty(ServiceData::createModelReset("wol.arpcache", "mac").getData(), sessionid);
+    changeProperty(SceneDocument::createModelReset("wol.arpcache", "mac").getData(), sessionid);
 
     QFile file(QLatin1String("/proc/net/arp"));
     if (file.exists() && file.open(QFile::ReadOnly)) {
@@ -78,7 +78,7 @@ void plugin::requestProperties(int sessionid) {
             // get mac
             QByteArray mac = line.mid(c, line.indexOf(' ', c) - c);
 
-            ServiceData sc = ServiceData::createModelChangeItem("wol.arpcache");
+            SceneDocument sc = SceneDocument::createModelChangeItem("wol.arpcache");
             sc.setData("mac", mac);
             sc.setData("ip", ip);
             changeProperty(sc.getData(), sessionid);

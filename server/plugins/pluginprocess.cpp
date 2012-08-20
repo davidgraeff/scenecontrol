@@ -4,8 +4,8 @@
 #include "paths.h"
 #include "config.h"
 #include "plugins/plugincontroller.h"
-#include "libdatabase/servicedata.h"
-#include "libdatabase/database.h"
+#include "shared/jsondocuments/scenedocument.h"
+#include "libdatastorage/datastorage.h"
 #include "socket.h"
 #include "execute/collectioncontroller.h"
 #include "paths.h"
@@ -14,8 +14,8 @@
 #include <QThread>
 #include <QTimer>
 #include <QDir>
-#include <libdatabase/database_install.h>
 #include <QCoreApplication>
+#include <signal.h>
 
 PluginProcess::PluginProcess(PluginController* controller, const QString& pluginid, const QString& instanceid)
         : m_controller(controller), m_pluginCommunication(0), m_pluginid(pluginid), m_instanceid(instanceid) {
@@ -37,8 +37,6 @@ void PluginProcess::startProcess()
     m_pid = 0;
     if (!QProcess::startDetached(m_filename, QStringList() << m_instanceid, QString(), &m_pid))
         qWarning() << "Failed starting plugin process" << m_filename;
-
-    connect(Database::instance(), SIGNAL(stateChanged()), SLOT(databaseStateChanged()));
 
     // Waiting at most 7 seconds for a respond otherwise kill the connection
 	connect(&m_timeout, SIGNAL(timeout()), SLOT(responseTimeout()));
@@ -76,19 +74,6 @@ void PluginProcess::communicationSocketStateChanged() {
     shutdown();
 }
 
-void PluginProcess::databaseStateChanged() {
-    // Process not started or no local socket: abort
-    if (!isValid())
-        return;
-
-    Database* b = Database::instance();
-    if (b->state()==Database::ConnectedState) {
-        b->requestEvents(m_pluginid, m_instanceid);
-    } else if (b->state()==Database::DisconnectedState) {
-        clear();
-    }
-}
-
 void PluginProcess::setSocket(QLocalSocket* socket)
 {
     if (m_pluginCommunication) {
@@ -110,8 +95,8 @@ void PluginProcess::setSocket(QLocalSocket* socket)
 		configChanged(i.key(),i.value());
 	m_configcache.clear();
 	
-    // now try to fetch events from database
-    databaseStateChanged();
+	// get events
+    b->requestEvents(m_pluginid, m_instanceid);
 }
 
 QLocalSocket* PluginProcess::getSocket() {
@@ -160,34 +145,39 @@ void PluginProcess::readyReadPluginData()
         }
         // Drop chunk and chunk-complete-bytes
         m_chunk.remove(0,indexOfChunkEnd+3);
+		
+		SceneDocument doc(variantdata);
 
-        const QByteArray method = ServiceData::method(variantdata);
+        const QByteArray method = doc.method();
         //qDebug() << "Data from" << id << variantdata;
         if (method == "methodresponse") {
             emit qtSlotResponse(variantdata.value(QLatin1String("response_")),
                                 variantdata.value(QLatin1String("responseid_")).toByteArray(), m_pluginid, m_instanceid);
         } else if (method == "changeConfig") {
-            const QByteArray configcategory = ServiceData::configurationkey(variantdata).toAscii();
-            if (configcategory.isEmpty()) {
+            const QByteArray configurationkey = doc.configurationkey();
+            if (configurationkey.isEmpty()) {
                 qWarning() << "Server: Request changeConfig for" << m_pluginid << m_instanceid <<"but no key provided";
                 continue;
             }
-            // store new configuration value in database
-            Database::instance()->changePluginConfiguration(m_pluginid, m_instanceid, configcategory, variantdata);
+            // TODO store new configuration value in database
+            SceneDocument filter;
+			filter.setPluginid(m_pluginid);
+			filter.setPlugininstance(m_instanceid);
+            DataStorage::instance()->changeDocumentsValue(SceneDocument::TypeConfiguration, filter.getData(), QString::fromUtf8(configurationkey), doc.getData());
         } else if (method == "changeProperty") {
             // Get session id and remove id from QVariantMap
-            const int sessionid = ServiceData::sessionid(variantdata);
-            ServiceData::removeSessionID(variantdata);
+            const int sessionid = doc.sessionid();
+			doc.removeSessionID();
             // propagate changed property
-            Socket::instance()->propagateProperty(variantdata, sessionid);
+            Socket::instance()->propagateProperty(doc.getData(), sessionid);
         } else if (method == "eventTriggered") {
-            const QString collectionid = ServiceData::collectionid(variantdata);
-            if (collectionid.isEmpty()) {
-                qWarning() << "Server: Request collection execution by event for" << m_pluginid << m_instanceid <<"but no collectionid provided";
+            const QString sceneid = doc.sceneid();
+            if (sceneid.isEmpty()) {
+                qWarning() << "Server: Request collection execution by event for" << m_pluginid << m_instanceid <<"but no sceneid provided";
                 continue;
             }
             //qDebug() << "eventTriggered";
-            CollectionController::instance()->requestExecutionByCollectionId(collectionid);
+            CollectionController::instance()->requestExecutionByCollectionId(sceneid);
         } else {
             qWarning() << "Unknown data from plugin" << m_chunk;
         }
@@ -197,17 +187,17 @@ void PluginProcess::readyReadPluginData()
 void PluginProcess::initialize() {
     if (!m_pluginCommunication)
         return;
-    QVariantMap data;
-    ServiceData::setMethod(data, "initialize");
-    writeToPlugin(data);
+    SceneDocument doc;
+    doc.setMethod("initialize");
+    writeToPlugin(doc.getData());
 }
 
 void PluginProcess::clear() {
     if (!m_pluginCommunication)
         return;
-    QVariantMap data;
-    ServiceData::setMethod(data, "clear");
-    writeToPlugin(data);
+    SceneDocument doc;
+    doc.setMethod("clear");
+    writeToPlugin(doc.getData());
 }
 
 void PluginProcess::configChanged(const QByteArray& configid, const QVariantMap& data) {
@@ -219,19 +209,19 @@ void PluginProcess::configChanged(const QByteArray& configid, const QVariantMap&
 		m_configcache.insert(configid, data);
         return;
 	}
-    QVariantMap mdata(data);
-    ServiceData::setMethod(mdata, "configChanged");
-    ServiceData::setConfigurationkey(mdata, configid);
-    writeToPlugin(mdata);
+    SceneDocument doc(data);
+    doc.setMethod("configChanged");
+    doc.setConfigurationkey(configid);
+    writeToPlugin(doc.getData());
 }
 
 void PluginProcess::requestProperties(int sessionid) {
     if (!m_pluginCommunication)
         return;
-    QVariantMap data;
-    ServiceData::setMethod(data, "requestProperties");
-    ServiceData::setSessionID(data, sessionid);
-    writeToPlugin(data);
+    SceneDocument doc;
+    doc.setMethod("requestProperties");
+    doc.setSessionID(sessionid);
+    writeToPlugin(doc.getData());
 }
 
 void PluginProcess::unregister_event(const QString& eventid) {
@@ -241,30 +231,30 @@ void PluginProcess::unregister_event(const QString& eventid) {
         qWarning() << "unregister_event eventid empty!";
         return;
     }
-    QVariantMap mdata;
-    ServiceData::setMethod(mdata, "unregister_event");
-    mdata[QLatin1String("eventid")] = eventid;
-    writeToPlugin(mdata);
+    SceneDocument doc;
+    doc.setMethod("unregister_event");
+	doc.setData("eventid", eventid);
+    writeToPlugin(doc.getData());
 }
 
 void PluginProcess::session_change(int sessionid, bool running)
 {
     if (!m_pluginCommunication)
         return;
-    QVariantMap mdata;
-    ServiceData::setMethod(mdata, "session_change");
-    ServiceData::setSessionID(mdata, sessionid);
-    mdata[QLatin1String("running")] = running;
-    writeToPlugin(mdata);
+    SceneDocument doc;
+	doc.setMethod("session_change");
+    doc.setSessionID(sessionid);
+	doc.setData("running", running);
+    writeToPlugin(doc.getData());
 }
 
 void PluginProcess::callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid, int sessionid) {
-    if (!ServiceData::hasMethod(methodAndArguments)) {
+    SceneDocument doc(methodAndArguments);
+    if (!doc.hasMethod()) {
         qWarning() << "Call of qt slot without method" << methodAndArguments;
         return;
     }
-    QVariantMap modified = methodAndArguments;
-    modified[QLatin1String("responseid_")] = responseid;
-    ServiceData::setSessionID(modified, sessionid);
-    writeToPlugin(modified);
+    doc.setid(QString::fromAscii(responseid));
+    doc.setSessionID(sessionid);
+    writeToPlugin(doc.getData());
 }

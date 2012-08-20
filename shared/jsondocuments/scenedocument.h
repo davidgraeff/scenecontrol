@@ -35,7 +35,7 @@ public:
     /** 
      * Constructor: Construct by an existing QVariantMap
      */
-    SceneDocument(const QVariantMap& map);
+    SceneDocument(const QVariantMap& map = QVariantMap());
     /** 
      * Constructor: Construct by a json document
      */
@@ -43,7 +43,7 @@ public:
     /** 
      * Constructor: Construct by a stream containing json
      */
-    SceneDocument(const QTextStream& jsonstream);
+    SceneDocument(QTextStream& jsonstream);
     
     /**
      * Creates a model item remove notification.
@@ -82,19 +82,20 @@ public:
     static SceneDocument createExecuteByDataCmd(const char* plugin_id, const char* id) ;
     
     /***************** Is valid ******************/
-    bool isValid();
+    bool isValid() const;
     /***************** Export to json ******************/
-    QByteArray getjson();
+    QByteArray getjson() const;
     
     /***************** Getter ******************/
-    QString toString(const char* key);
-    int toInt(const char* key) ;
-    bool toBool(const char* key) ;
-    double toDouble(const char* key) ;
-    QVariantList toList(const char* key) ;
-    QVariantMap toMap(const char* key) ;
+    QString toString(const char* key) const;
+    int toInt(const char* key) const;
+    bool toBool(const char* key) const;
+    double toDouble(const char* key) const;
+    QVariantList toList(const char* key) const;
+    QVariantMap toMap(const char* key) const;
 
     QVariantMap& getData() ;
+	const QVariantMap& getData() const;
 
     /***************** Setter ******************/
     void setData(const char* index, const QVariant& data) ;
@@ -106,48 +107,66 @@ public:
     bool correctTypes(const QVariantMap& types);
 	
     /***************** Convinience Getter/Setter ******************/
-    QString id() {
-        return m_map[QLatin1String("id_")].toString();
+    QString id() const {
+        return m_map.value(QLatin1String("id_")).toString();
     }
+    // Unique id: type+id
+    QString uid() const {
+        return m_map.value(QLatin1String("type_")).toString()+m_map.value(QLatin1String("id_")).toString();
+    }
+    static QString id(const QVariantMap& data) {
+        return data.value(QLatin1String("id_")).toString();
+    }
+    static QString idkey() { return QLatin1String("id_"); }
     void setid(const QString& id) {
       m_map[QLatin1String("id_")] = id;
     }
-
-    QString pluginid() {
-        return m_map[QLatin1String("pluginid_")].toString();
+    bool hasid() const {
+        return m_map.contains(QLatin1String("id_"));
     }
-    void setPluginid(const QByteArray& pluginid) {
+
+    QString pluginid() const {
+        return m_map.value(QLatin1String("pluginid_")).toString();
+    }
+    void setPluginid(const QString& pluginid) {
         m_map[QLatin1String("pluginid_")] = pluginid;
     }
-    bool hasPluginid() {
+    bool hasPluginid() const {
         return m_map.contains(QLatin1String("pluginid_"));
     }
+    bool hasPluginuid() const {
+		return m_map.contains(QLatin1String("pluginid_")) && m_map.contains(QLatin1String("plugininstance_"));
+	}
     
-    QString plugininstance() {
+    QString plugininstance() const{
         return m_map[QLatin1String("plugininstance_")].toString();
     }
     void setPlugininstance(const QString& instanceid) {
         m_map[QLatin1String("plugininstance_")] = instanceid;
     }
-    
-    QString type() {
-        return m_map[QLatin1String("type_")].toString();
+    QString pluginuid() const{
+        return m_map.value(QLatin1String("pluginid_")).toString()+m_map[QLatin1String("plugininstance_")].toString();
     }
-    bool hasType() {
+    
+    
+    QString type() const {
+        return m_map.value(QLatin1String("type_")).toString();
+    }
+    bool hasType() const {
         return m_map.contains(QLatin1String("type_"));
     }
     
-    QString sceneid() {
+    QString sceneid() const {
         return m_map.value(QLatin1String("collection_")).toString();
     }
     void setSceneid(const QString& collectionid) {
         m_map[QLatin1String("collection_")] = collectionid;
     }
 
-    static QString configurationkey() {
-        return data.value(QLatin1String("configkey_")).toString();
+    QByteArray configurationkey() const {
+        return m_map.value(QLatin1String("configkey_")).toByteArray();
     }
-    static void setConfigurationkey(const QByteArray& configurationkey) {
+    void setConfigurationkey(const QByteArray& configurationkey) {
         m_map[QLatin1String("configkey_")] = configurationkey;
     }
 
@@ -157,7 +176,7 @@ public:
         TypeEvent,
         TypeCondition,
         TypeAction,
-        TypeCollection,
+        TypeScene,
         TypeConfiguration,
         TypeSchema,
 	
@@ -168,13 +187,27 @@ public:
         TypeModelItem	// An item of a model
     };
 
-    static bool checkType(const checkTypeEnum t) {
+    static QString stringFromTypeEnum(const TypeEnum t) {
+	switch (t) {
+	  case TypeEvent: return QLatin1String("event");
+	  case TypeCondition: return QLatin1String("condition");
+	  case TypeAction: return QLatin1String("action");
+	  case TypeScene: return QLatin1String("scene");
+	  case TypeConfiguration: return QLatin1String("configuration");
+	  case TypeSchema: return QLatin1String("schema");
+	  default:
+	    break;
+	};
+	return QString();
+    }
+    
+    bool checkType(const TypeEnum t) const {
         const QByteArray type = m_map.value(QLatin1String("type_")).toByteArray();
         return (
 			(type == "action" && t==TypeAction) ||
 			(type == "condition" && t==TypeCondition) ||
 			(type == "event" && t==TypeEvent) ||
-			(type == "collection" && t==TypeCollection) ||
+			(type == "collection" && t==TypeScene) ||
 			(type == "execute" && t==TypeExecution) ||
 			(type == "remove" && t==TypeRemove) ||
 			(type == "notification" && t==TypeNotification) ||
@@ -182,31 +215,33 @@ public:
 			(type == "configuration" && t==TypeConfiguration)
 		);
     }
+    
+    QString filename() const {return id() + QLatin1String(".json"); }
 
-    bool isNegatedCondition() {
+    bool isNegatedCondition() const {
         return m_map.value(QLatin1String("conditionnegate_")).toBool();
     }
-    QString conditionGroup() {
+    QString conditionGroup() const {
         QString cg = m_map.value(QLatin1String("conditiongroup_")).toString();
         if (cg.isEmpty()) cg = QLatin1String("all");
         return cg;
     }
 
 
-    bool isMethod(const const char* id) {
-        return m_map[QLatin1String("method_")].toByteArray() == QByteArray(id);
+    bool isMethod(const char* id) const {
+        return m_map.value(QLatin1String("method_")).toByteArray() == QByteArray(id);
     }
-    QByteArray method() {
-        return m_map[QLatin1String("method_")].toByteArray();
+    QByteArray method() const {
+        return m_map.value(QLatin1String("method_")).toByteArray();
     }
     void setMethod(const QByteArray& methodname) {
         m_map[QLatin1String("method_")] = methodname;
     }
-    bool hasMethod() {
+    bool hasMethod() const {
         return m_map.contains(QLatin1String("method_"));
     }
 
-    int sessionid() {
+    int sessionid() const {
         return m_map.value(QLatin1String("sessionid_"),-1).toInt();
     }
 
@@ -218,7 +253,7 @@ public:
         m_map[QLatin1String("sessionid_")] = sessionid;
     }
 
-    bool isQtSlotRespons() {
+    bool isQtSlotRespons() const {
         return m_map.contains(QLatin1String("isrespons_"));
     }
 

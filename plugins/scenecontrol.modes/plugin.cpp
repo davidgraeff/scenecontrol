@@ -58,14 +58,14 @@ void plugin::unregister_event ( const QString& eventid) {
 }
 
 void plugin::requestProperties(int sessionid) {
-    ServiceData sc = ServiceData::createNotification("mode");
+    SceneDocument sc = SceneDocument::createNotification("mode");
     sc.setData("mode", m_mode);
     changeProperty(sc.getData(), sessionid);
 }
 
 void plugin::modeChange(const QString& mode) {
     m_mode = mode;
-    ServiceData sc = ServiceData::createNotification("mode");
+    SceneDocument sc = SceneDocument::createNotification("mode");
     sc.setData("mode", mode);
     changeProperty(sc.getData());
 

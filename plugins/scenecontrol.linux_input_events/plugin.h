@@ -20,7 +20,7 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "_sharedsrc/abstractplugin.h"
+#include "shared/plugins/abstractplugin.h"
 #include <QSet>
 #include <QTimer>
 #include <qfile.h>
@@ -100,7 +100,7 @@ private:
 	int m_dontgrab; // if true: do not grab devices exclusivly
     int m_repeat; //NotUsed
     int m_repeatInit; //NotUsed
-    ServiceData createServiceOfDevice(ManagedDevice* device);
+    SceneDocument createServiceOfDevice(ManagedDevice* device);
 private Q_SLOTS:
     void deviceAdded(ManagedDevice*);
     void deviceRemoved(ManagedDevice*);

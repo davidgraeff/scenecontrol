@@ -20,9 +20,9 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "_sharedsrc/abstractplugin.h"
-#include "_sharedsrc/plugineventmap.h"
-#include "libdatabase/servicedata.h"
+#include "shared/plugins/abstractplugin.h"
+#include "shared/plugins/plugineventmap.h"
+#include "shared/jsondocuments/scenedocument.h"
 #include <QSet>
 
 class plugin : public AbstractPlugin

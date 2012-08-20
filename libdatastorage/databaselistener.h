@@ -1,25 +1,25 @@
 #pragma once
-#include <QThread>
-#include "mongo/client/dbclient.h"
+#include <QObject>
 #include <QVariantMap>
 
-class DatabaseListener : public QThread
+class SceneDocument;
+class DataStorageWatcher : public QObject
 {
 	Q_OBJECT
 public:
-    explicit DatabaseListener(const QString& serverHostname, QObject* parent = 0);
-    virtual ~DatabaseListener();
-	void abort();
-protected:
-    virtual void run();
+    explicit DataStorageWatcher(QObject* parent = 0);
+    virtual ~DataStorageWatcher();
+	void watchdir(const QString& dir);
 private:
-	mongo::DBClientConnection m_conn;
-	bool m_abort;
-	std::unique_ptr<mongo::DBClientCursor> m_cursor;
+	int m_inotify_fd;
+	QHash<QString, int> pathToID;
+	QHash<int, QString> idToPath;
+private Q_SLOTS:
+	void readnotify();
 Q_SIGNALS:
 	/// A document changed
-    void doc_changed(const QString& id, const QVariantMap& data);
+    void doc_changed(SceneDocument* doc);
 	/// A document has been removed
-    void doc_removed(const QString& id);
+    void doc_removed(const QString &type, const QString& id);
 };
 

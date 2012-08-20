@@ -63,7 +63,7 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
 }
 
 void plugin::requestProperties(int sessionid) {
-    changeProperty(ServiceData::createModelReset("remote.connection.state", "host").getData(), sessionid);
+    changeProperty(SceneDocument::createModelReset("remote.connection.state", "host").getData(), sessionid);
     QMap<int, ExternalClient>::const_iterator i = m_clients.constBegin();
     for (;i != m_clients.constEnd(); ++i) {
         changeProperty(stateChanged(&(*i), false), sessionid);
@@ -71,7 +71,7 @@ void plugin::requestProperties(int sessionid) {
 }
 
 inline QVariantMap plugin::stateChanged(const ExternalClient* client, bool propagate) {
-    ServiceData sc = ServiceData::createModelChangeItem("remote.connection.state");
+    SceneDocument sc = SceneDocument::createModelChangeItem("remote.connection.state");
     sc.setData("host",client->host);
     sc.setData("identifier",client->identifier);
     if (propagate) changeProperty(sc.getData());
@@ -86,7 +86,7 @@ void plugin::dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data
 
     QMap<int, ExternalClient>::const_iterator i = m_clients.constBegin();
 
-    if (!m_allowedmembers.contains(ServiceData::method(data))) {
+    if (!m_allowedmembers.contains(SceneDocument(data).method())) {
         qWarning() << "Unallowed memeber action requested" << data;
         return;
     }
@@ -116,7 +116,7 @@ void plugin::session_change(int sessionid, bool running) {
 
     // Session finished, remove from m_clients
     if (!running) {
-        ServiceData sc = ServiceData::createModelRemoveItem("remote.connection.state");
+        SceneDocument sc = SceneDocument::createModelRemoveItem("remote.connection.state");
         sc.setData("host",i->host);
         sc.setData("identifier",i->identifier);
 	qDebug() << "Session finished" << i->sessionid;

@@ -36,7 +36,7 @@
 /// The name of the server communication socket
 #define COMSERVERSTRING "server"
 
-#include "libdatabase/servicedata.h"
+#include "shared/jsondocuments/scenedocument.h"
 
 /**
  * Use this as your plugin base class. You have to define PLUGIN_ID before
@@ -73,6 +73,9 @@ public:
     bool createCommunicationSockets();
     AbstractPlugin(const QString& instanceid);
     virtual ~AbstractPlugin();
+	/**
+	 * Reimplement this to receive data from other plugins which addressed your plugin 
+	 */
     virtual void dataFromPlugin(const QByteArray& plugin_id, const QVariantMap& data) = 0;
     bool sendDataToPlugin(const QByteArray& plugin_id, const QVariantMap& data);
     void changeConfig(const QByteArray& category, const QVariantMap& data);

@@ -3,7 +3,7 @@
 #include "config.h"
 #include <QDebug>
 #include <QSslKey>
-#include "libdatabase/json.h"
+#include "shared/jsondocuments/json.h"
 #include "plugins/plugincontroller.h"
 #include "plugins/pluginprocess.h"
 //openssl req -x509 -new -out server.crt -keyout server.key -days 365

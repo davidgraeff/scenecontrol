@@ -1,8 +1,8 @@
 #include "execute/executerequest.h"
 #include "execute/collectioncontroller.h"
 #include "plugins/plugincontroller.h"
-#include "libdatabase/servicedata.h"
-#include "libdatabase/database.h"
+#include "shared/jsondocuments/scenedocument.h"
+#include "libdatastorage/datastorage.h"
 #include "socket.h"
 #include "config.h"
 #include <plugins/pluginprocess.h>
@@ -26,23 +26,23 @@ ExecuteRequest::~ExecuteRequest()
 
 }
 
-void ExecuteRequest::requestExecution(const QVariantMap& data, int sessionid) {
-    if ( !ServiceData::checkType ( data, ServiceData::TypeExecution )) return;
+void ExecuteRequest::requestExecution(const SceneDocument& doc, int sessionid) {
+    if ( !doc.checkType(SceneDocument::TypeExecution )) return;
     // Special case: a method of the server process should be executed. handle this immediatelly
-    if (ServiceData::pluginid(data)==QLatin1String("server") && sessionid != -1) {
-        if (ServiceData::isMethod(data, "requestAllProperties"))
+    if (doc.pluginid()==QLatin1String("server") && sessionid != -1) {
+        if (doc.isMethod("requestAllProperties"))
             PluginController::instance()->requestAllProperties(sessionid);
-        else if (ServiceData::isMethod(data, "runcollection"))
-            CollectionController::instance()->requestExecutionByCollectionId(ServiceData::collectionid(data));
-        else if (ServiceData::isMethod(data, "database")) {
-            Database* b = Database::instance();
-            ServiceData s = ServiceData::createNotification("database");
-            s.setData("database", b->databaseAddress());
-            s.setData("state", b->state());
+        else if (doc.isMethod("runcollection"))
+            CollectionController::instance()->requestExecutionByCollectionId(doc.sceneid());
+        else if (doc.isMethod("database")) {
+            //Database* b = Database::instance();
+            SceneDocument s = SceneDocument::createNotification("database");
+            //s.setData("database", b->databaseAddress());
+            //s.setData("state", b->state());
             s.setPluginid("server");
             Socket::instance()->propagateProperty(s.getData(), sessionid);
-        } else if (ServiceData::isMethod(data, "version")) {
-            ServiceData s = ServiceData::createNotification("version");
+        } else if (doc.isMethod("version")) {
+            SceneDocument s = SceneDocument::createNotification("version");
             s.setData("version", QLatin1String(ABOUT_VERSION));
             s.setPluginid("server");
             Socket::instance()->propagateProperty(s.getData(), sessionid);
@@ -50,11 +50,10 @@ void ExecuteRequest::requestExecution(const QVariantMap& data, int sessionid) {
         return;
     }
     // Look for a plugin that fits "data"
-    PluginProcess* plugin = PluginController::instance()->getPlugin ( ServiceData::pluginid ( data ),
-                            ServiceData::instanceid( data ));
+    PluginProcess* plugin = PluginController::instance()->getPlugin ( doc.pluginuid() );
     if ( !plugin ) {
-        qWarning() <<"Cannot execute service. No plugin found:"<<data << sessionid;
+        qWarning() <<"Cannot execute service. No plugin found:"<<doc.getData() << sessionid;
         return;
     }
-    plugin->callQtSlot ( data, QByteArray(), sessionid );
+    plugin->callQtSlot ( doc.getData(), QByteArray(), sessionid );
 }

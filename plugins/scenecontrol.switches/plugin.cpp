@@ -54,7 +54,7 @@ void plugin::clear(const QByteArray& plugin_) {
     while (i.hasNext()) {
         i.next();
         if (i.value().plugin_id == plugin_) {
-            ServiceData sc = ServiceData::createModelRemoveItem("switches");
+            SceneDocument sc = SceneDocument::createModelRemoveItem("switches");
             sc.setData("channel", i.value().channel);
             changeProperty(sc.getData());
             i.remove();
@@ -72,11 +72,11 @@ bool plugin::isSwitchOn ( const QString& channel, bool value )  {
 }
 
 void plugin::requestProperties(int sessionid) {
-    changeProperty(ServiceData::createModelReset("switches", "channel").getData(), sessionid);
+    changeProperty(SceneDocument::createModelReset("switches", "channel").getData(), sessionid);
     QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for (;i!=m_ios.end();++i) {
         const plugin::iochannel& str = i.value();
-        ServiceData sc = ServiceData::createModelChangeItem("switches");
+        SceneDocument sc = SceneDocument::createModelChangeItem("switches");
         sc.setData("channel", str.channel);
         sc.setData("value", str.value);
         sc.setData("name", str.name);
@@ -108,7 +108,7 @@ void plugin::setSwitchName ( const QString& channel, const QString& name )
     m_ios[channel].name = name;
 
     // change name property
-    ServiceData sc = ServiceData::createModelChangeItem("switches");
+    SceneDocument sc = SceneDocument::createModelChangeItem("switches");
     sc.setData("channel", channel);
     sc.setData("name", name);
     changeProperty(sc.getData());
@@ -155,10 +155,11 @@ void plugin::cacheToDevice()
     QSet<iochannel*>::const_iterator it = m_cache.constBegin();
     QVariantMap datamap;
     for (;it != m_cache.constEnd(); ++it) {
-        ServiceData::setMethod(datamap,"setSwitch");
-        datamap[QLatin1String("channel")] = (*it)->channel;
-        datamap[QLatin1String("value")] = (*it)->value;
-        sendDataToPlugin((*it)->plugin_id, datamap);
+		SceneDocument doc;
+		doc.setMethod("setSwitch");
+		doc.setData("channel",(*it)->channel);
+		doc.setData("value",(*it)->value);
+		sendDataToPlugin((*it)->plugin_id, doc.getData());
     }
     m_cache.clear();
 }
@@ -184,7 +185,7 @@ void plugin::subpluginChange(const QByteArray& plugin_, const QString& channel, 
         io.name = QLatin1String("Channel ") + QString::number(m_ios.size());
     }
 
-    ServiceData sc = ServiceData::createModelChangeItem("switches");
+    SceneDocument sc = SceneDocument::createModelChangeItem("switches");
     sc.setData("channel", io.channel);
     if (io.name.size()) sc.setData("name", io.name);
     if (io.value != -1) sc.setData("value", io.value);

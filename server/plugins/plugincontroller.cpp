@@ -1,9 +1,10 @@
 #include "plugins/plugincontroller.h"
 #include "plugins/pluginprocess.h"
 #include "execute/collectioncontroller.h"
-#include "libdatabase/servicedata.h"
-#include "libdatabase/database.h"
-#include "libdatabase/json.h"
+#include "shared/jsondocuments/scenedocument.h"
+#include "shared/jsondocuments/json.h"
+#include "libdatastorage/datastorage.h"
+#include "libdatastorage/importexport.h"
 #include "socket.h"
 #include "paths.h"
 
@@ -14,7 +15,6 @@
 #include <QUuid>
 #include <QDebug>
 #include <QElapsedTimer>
-#include <libdatabase/database_install.h>
 
 #define __FUNCTION__ __FUNCTION__
 #define MAGICSTRING "roomcontrol_"
@@ -99,10 +99,11 @@ void PluginController::newConnection()
                 QDataStream stream(allinput);
                 stream >> jsonData;
             }
+            
 
-            PluginProcess* plugin = getPlugin(ServiceData::pluginid(jsonData), ServiceData::instanceid(jsonData));
+            PluginProcess* plugin = getPlugin(SceneDocument(jsonData).pluginuid());
             if (!plugin) {
-                qWarning()<<"Socket auth failed: " << jsonData << ServiceData::pluginid(jsonData), ServiceData::instanceid(jsonData);
+                qWarning()<<"Socket auth failed: " << jsonData;
                 socket->deleteLater();
             } else
                 plugin->setSocket(socket);
@@ -122,35 +123,35 @@ PluginProcess* PluginController::nextPlugin(QMap< QString, PluginProcess* >::ite
     return (*(index++));
 }
 
-PluginProcess* PluginController::getPlugin(const QString& pluginid, const QString& instanceid) {
-    return m_plugins.value(pluginid+instanceid);
+PluginProcess* PluginController::getPlugin(const QString& pluginUid) {
+    return m_plugins.value(pluginUid);
 }
 
-void PluginController::Event_add(const QString& id, const QVariantMap& event_data) {
-    PluginProcess* plugin = getPlugin ( ServiceData::pluginid ( event_data ),
-                                        ServiceData::instanceid ( event_data ) );
+void PluginController::doc_changed(const SceneDocument &doc) {
+	if (!doc.checkType(SceneDocument::TypeEvent))
+		return;
+    PluginProcess* plugin = getPlugin ( doc.pluginuid());
     if ( !plugin ) {
-        qWarning() <<"Plugins: Cannot register event. No plugin found:"<<ServiceData::pluginid ( event_data ) << id;
+        qWarning() <<"Plugins: Cannot register event. No plugin found:"<< doc.pluginid() << doc.id();
         return;
     }
 
-//      qDebug() << "Plugins: register event:" << id << ServiceData::pluginid ( event_data ) << ServiceData::method ( event_data );
-    plugin->unregister_event ( id );
-    plugin->callQtSlot(event_data);
-    m_registeredevents.insert(id, plugin);
+    plugin->unregister_event ( doc.id() );
+    plugin->callQtSlot(doc.getData());
+    m_registeredevents.insert(doc.id(), plugin);
 }
 
-void PluginController::Event_remove(const QString& id) {
-    PluginProcess* executeplugin = m_registeredevents.take ( id );
+void PluginController::doc_removed(const SceneDocument &doc) {
+	if (!doc.checkType(SceneDocument::TypeEvent))
+		return;
+    PluginProcess* executeplugin = m_registeredevents.take ( doc.id() );
     if ( executeplugin ) {
 //         qDebug() << "Plugins: unregister event" << id << executeplugin;
-        executeplugin->unregister_event ( id );
+        executeplugin->unregister_event ( doc.id() );
     }
 }
 
 void PluginController::scanPlugins() {
-	if (Database::instance()->state()!=Database::ConnectedState)
-		return;
     const QDir plugindir = setup::pluginDir();
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     if (pluginfiles.empty()) {
@@ -158,40 +159,44 @@ void PluginController::scanPlugins() {
         return;
     }
 
-    bool tryToInstallImportFiles;
-    QDir importdir(setup::dbimportDir(&tryToInstallImportFiles));
-    if (!tryToInstallImportFiles)
-        qWarning() << "Server: Database initial import path not found!";
+    bool importdirfound;
+    QDir importdir(setup::dbimportDir(&importdirfound));
+    if (!importdirfound)
+        qWarning() << "Server: Datastorage initial import path not found!";
 
     for (int i=0;i<pluginfiles.size();++i) {
         QString pluginid = QFileInfo(pluginfiles[i]).baseName();
         pluginid = pluginid.mid(0, pluginid.lastIndexOf(QLatin1String("_plugin")));
 
         // Install missing files for this plugin first
-        if (tryToInstallImportFiles)
-            DatabaseInstall().installPlugindataIfMissing(pluginid, importdir.absolutePath());
+        if (importdirfound && importdir.cd(pluginid)) {
+			Datastorage::VerifyPluginDocument verifier(pluginid);
+			Datastorage::importFromJSON(*DataStorage::instance(), importdir.absolutePath(), false, &verifier);
+			importdir.cdUp();
+		}
 
-        // Request configuration. A valid response automatically initiate a new plugin process.
-        Database::instance()->requestPluginConfiguration(pluginid);
-    }
-}
+		// Get all configurations of this plugin
+		SceneDocument filter;
+		filter.setPluginid(pluginid);
+		QList<SceneDocument*> configurations = DataStorage::instance()->requestAllOfType(SceneDocument::TypeConfiguration, filter.getData());
+		for (int pi = 0; pi < configurations.size(); ++pi) {
+			SceneDocument* configuration = configurations[i];
+			if (!configuration->hasPluginuid()) {
+				qWarning() << "Server: Document incomplete. PluginID or PluginInstance is missing!" << configurations[i]->getData();
+				continue;
+			}
 
-bool PluginController::startPluginInstance(const QString& pluginid,const QVariantMap& configuration)
-{
-    QString instanceid = configuration.value(QLatin1String("instanceid_")).toString();
-    if (instanceid.isEmpty())
-        return false;
-
-    PluginProcess* p = getPlugin(pluginid, instanceid);
-    if (!p) {
-        p = new PluginProcess( this, pluginid, instanceid);
-        m_pluginprocesses.insert( p );
-		m_plugins.insert(pluginid+instanceid,p);
-		p->startProcess();
-		qDebug() << "Process start" << pluginid << instanceid;
-    }
-    p->configChanged(configuration.value(QLatin1String("key_")).toString().toAscii(), configuration);
-    return true;
+			PluginProcess* p = getPlugin(configuration->pluginuid());
+			if (!p) {
+				p = new PluginProcess( this, pluginid, configuration->plugininstance());
+				m_pluginprocesses.insert( p );
+				m_plugins.insert(configuration->pluginuid(),p);
+				p->startProcess();
+				qDebug() << "Process start" << pluginid << p->getInstanceid();
+			}
+			p->configChanged(configuration->configurationkey(), configuration->getData());
+		}
+	}
 }
 
 void PluginController::requestAllProperties(int sessionid) {
@@ -209,9 +214,9 @@ void PluginController::requestAllProperties(int sessionid) {
         const QString identifier = (*i)->getPluginid() + QLatin1String(":") + (*i)->getInstanceid();
         pluginlist += identifier;
     }
-    ServiceData s = ServiceData::createNotification("plugins");
+    SceneDocument s = SceneDocument::createNotification("plugins");
     s.setData("plugins", pluginlist);
-    s.setPluginid("PluginController");
+    s.setPluginid(QLatin1String("PluginController"));
     Socket::instance()->propagateProperty(s.getData(), sessionid);
 }
 
@@ -232,12 +237,4 @@ void PluginController::processFinished(PluginProcess* process) {
     // Exit if no plugin processes are loaded
     if (m_pluginprocesses.isEmpty() && m_exitIfNoPluginProcess)
         QCoreApplication::exit(0);
-}
-
-void PluginController::databaseStateChanged() {
-    Database* b = Database::instance();
-    if (b->state()==Database::ConnectedState) {
-        scanPlugins();
-    } else if (b->state()==Database::DisconnectedState) {
-    }
 }

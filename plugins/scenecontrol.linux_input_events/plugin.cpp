@@ -130,7 +130,7 @@ void plugin::session_change ( int sessionid, bool running ) {
 }
 
 void plugin::requestProperties(int sessionid) {
-    changeProperty( ServiceData::createModelReset ( "inputdevice", "udid" ).getData(), sessionid );
+    changeProperty( SceneDocument::createModelReset ( "inputdevice", "udid" ).getData(), sessionid );
     foreach ( InputDevice* device, m_devices ) {
         changeProperty( createServiceOfDevice ( device->device() ).getData(), sessionid );
     }
@@ -154,7 +154,7 @@ void plugin::deviceAdded ( ManagedDevice* device ) {
 }
 
 void plugin::deviceRemoved ( ManagedDevice* device ) {
-    ServiceData sc = ServiceData::createModelRemoveItem ( "inputdevice" );
+    SceneDocument sc = SceneDocument::createModelRemoveItem ( "inputdevice" );
     sc.setData ( "udid", device->udid );
     changeProperty ( sc.getData() );
 	
@@ -162,8 +162,8 @@ void plugin::deviceRemoved ( ManagedDevice* device ) {
     delete m_devices.take ( device->udid );
 }
 
-ServiceData plugin::createServiceOfDevice ( ManagedDevice* device ) {
-    ServiceData sc = ServiceData::createModelChangeItem ( "inputdevice" );
+SceneDocument plugin::createServiceOfDevice ( ManagedDevice* device ) {
+    SceneDocument sc = SceneDocument::createModelChangeItem ( "inputdevice" );
     sc.setData ( "path", device->devPath );
     sc.setData ( "info", device->info );
     sc.setData ( "udid", device->udid );
@@ -197,7 +197,7 @@ bool InputDevice::isClosable() {
 void InputDevice::connectSession ( int sessionid ) {
     m_sessionids.insert ( sessionid );
     if ( fd ) {
-        ServiceData sc = ServiceData::createNotification ( "input.device.selected" );
+        SceneDocument sc = SceneDocument::createNotification ( "input.device.selected" );
         sc.setData ( "udid", m_device->udid );
         sc.setData ( "listen", true );
         sc.setData ( "errormsg", QString() );
@@ -227,7 +227,7 @@ void InputDevice::connectDevice() {
         // only reconnect to new device if a client is actually listening or events are registered
         if ( (m_sessionids.isEmpty() && m_keyToUids.isEmpty()) || m_socketnotifier) return;
 
-        ServiceData sc = ServiceData::createNotification ( "input.device.selected" );
+        SceneDocument sc = SceneDocument::createNotification ( "input.device.selected" );
         sc.setData ( "udid", m_device->udid );
 
         if ( !QFileInfo ( m_device->devPath ).isReadable() ) {
@@ -316,7 +316,7 @@ void InputDevice::eventData() {
         // properties
         if (m_sessionids.size()) {
             // last key property. Will be propagated to interested clients only.
-            ServiceData sc = ServiceData::createNotification ( "input.device.key" );
+            SceneDocument sc = SceneDocument::createNotification ( "input.device.key" );
             sc.setData ( "kernelkeyname", kernelkeyname );
             sc.setData ( "udid", m_device->udid );
 

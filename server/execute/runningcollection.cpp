@@ -1,38 +1,36 @@
 #include "runningcollection.h"
 #include "plugins/plugincontroller.h"
-#include "libdatabase/servicedata.h"
+#include "shared/jsondocuments/scenedocument.h"
 #include <plugins/pluginprocess.h>
 
 
-RunningCollection::RunningCollection(const QString& collectionid, const QList< QVariantMap >& services):
+RunningCollection::RunningCollection(const QString& collectionid, const QList< SceneDocument* >& services):
         QObject(), m_collectionid(collectionid), m_lasttime(0), m_conditionok(0)
 {
     // Add all actions ("actions" list contains (key,value) pairs. The value is the actuall action data)
     // into "m_timetable" depending on their start delay.
     for ( int i=0;i<services.size();++i ) { // action
         // Extract data and delay time
-        const QVariantMap& servicesdata = services[i];
-        if (ServiceData::checkType(servicesdata, ServiceData::TypeAction)) {
-            const int delay = servicesdata.value(QLatin1String("delay_"), 0).toInt();
+        SceneDocument* doc = services[i];
+        if (doc.checkType(SceneDocument::TypeAction)) {
+            const int delay = doc.value(QLatin1String("delay_"), 0).toInt();
             // Get the right plugin process
-            PluginProcess* plugin = PluginController::instance()->getPlugin (
-				ServiceData::pluginid ( servicesdata ), ServiceData::instanceid ( servicesdata ) );
+            PluginProcess* plugin = PluginController::instance()->getPlugin (doc->pluginuid());
             if ( !plugin ) {
-                qWarning() <<"No plugin for action found:"<<servicesdata;
+                qWarning() <<"No plugin for action found:"<<doc;
                 continue;
             }
 
-            m_timetable.insert (delay, dataWithPlugin(plugin, servicesdata));
-        } else if (ServiceData::checkType(servicesdata, ServiceData::TypeCondition)) { // condition
+            m_timetable.insert (delay, dataWithPlugin(plugin, doc));
+        } else if (doc.checkType(SceneDocument::TypeCondition)) { // condition
             // Get the right plugin process
-            PluginProcess* plugin = PluginController::instance()->getPlugin (
-				ServiceData::pluginid ( servicesdata ), ServiceData::instanceid ( servicesdata ) );
+            PluginProcess* plugin = PluginController::instance()->getPlugin (doc->pluginuid());
             if ( !plugin ) {
-                qWarning() <<"No plugin for condition found:"<<servicesdata;
+                qWarning() <<"No plugin for condition found:"<<doc;
                 continue;
             }
 
-            m_conditions.append (dataWithPlugin(plugin, servicesdata));
+            m_conditions.append (dataWithPlugin(plugin, doc));
             connect(plugin,SIGNAL(qtSlotResponse(QVariant,QByteArray,QString,QString)),
                     SLOT(qtSlotResponse(QVariant,QByteArray,QString,QString)));
 
@@ -56,8 +54,7 @@ void RunningCollection::start()
     m_conditionok = 0;
     // Check conditions
     for (int i=0; i < m_conditions.size(); ++i) {
-        m_conditions[i].data.insert(QLatin1String("responseid_"), ServiceData::id(m_conditions[i].data));
-        m_conditions[i].plugin->callQtSlot ( m_conditions[i].data, QByteArray::number(i) );
+        m_conditions[i].plugin->callQtSlot ( m_conditions[i].doc->getData(), QByteArray::number(i) );
     }
     if (m_conditions.isEmpty()) {
         timeoutNextAction();

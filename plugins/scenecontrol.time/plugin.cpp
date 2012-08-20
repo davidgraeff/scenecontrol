@@ -81,7 +81,7 @@ void plugin::eventDateTime ( const QString& _id, const QString& collection_, con
     calculate_next_events();
 
     // property update
-    ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
+    SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
     sc.setData("uid", _id);
     changeProperty(sc.getData());
 }
@@ -108,7 +108,7 @@ void plugin::eventPeriodic ( const QString& _id, const QString& collection_, con
     calculate_next_events();
 
     // property update
-    ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
+    SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
     sc.setData("uid", _id);
     changeProperty(sc.getData());
 }
@@ -124,27 +124,27 @@ void plugin::unregister_event ( const QString& eventid) {
     calculate_next_events();
 
     // property update
-    ServiceData s = ServiceData::createModelRemoveItem("time.alarms");
+    SceneDocument s = SceneDocument::createModelRemoveItem("time.alarms");
     s.setData("uid", eventid);
     changeProperty(s.getData());
 }
 
 void plugin::requestProperties(int sessionid) {
     if (!m_nextAlarm.isNull()) {
-        ServiceData s = ServiceData::createNotification("nextalarm");
+        SceneDocument s = SceneDocument::createNotification("nextalarm");
         s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         changeProperty(s.getData(), sessionid);
     } else {
-        ServiceData s = ServiceData::createNotification("nextalarm");
+        SceneDocument s = SceneDocument::createNotification("nextalarm");
         changeProperty(s.getData(), sessionid);
     }
 
-    changeProperty(ServiceData::createModelReset("time.alarms", "uid").getData(), sessionid);
+    changeProperty(SceneDocument::createModelReset("time.alarms", "uid").getData(), sessionid);
 
     QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
     for (;i != m_remaining_events.end(); ++i) {
-        ServiceData sc = ServiceData::createModelChangeItem("time.alarms");
+        SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
         sc.setData("uid", i.key());
         changeProperty(sc.getData(), sessionid);
     }
@@ -217,18 +217,18 @@ void plugin::calculate_next_events() {
     // remove remaining events that are in the next event list
     foreach (QString uid, removeEventids) {
         m_remaining_events.remove ( uid );
-        ServiceData s = ServiceData::createModelRemoveItem("time.alarms");
+        SceneDocument s = SceneDocument::createModelRemoveItem("time.alarms");
         s.setData("uid", uid);
         changeProperty(s.getData());
     }
 
     if (!m_nextAlarm.isNull()) {
-        ServiceData s = ServiceData::createNotification("nextalarm");
+        SceneDocument s = SceneDocument::createNotification("nextalarm");
         s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         changeProperty(s.getData());
     } else {
-        ServiceData s = ServiceData::createNotification("nextalarm");
+        SceneDocument s = SceneDocument::createNotification("nextalarm");
         changeProperty(s.getData());
     }
 

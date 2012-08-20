@@ -103,56 +103,56 @@ void AbstractPlugin::readyReadCommunication()
         }
         // Drop chunk and chunk-complete-bytes
         m_chunk.remove(0,indexOfChunkEnd+3);
+		
+		SceneDocument doc(variantdata);
 
-        m_lastsessionid = ServiceData::sessionid(variantdata);
+        m_lastsessionid = doc.sessionid();
 
         // Retrieve method
-        const QByteArray method = ServiceData::method(variantdata);
+        const QByteArray method = doc.method();
 
 //         if (method.size())
 //             qDebug() << plugin_id << "calls method" << method;
 //         else
 //             qDebug() << "Received from" << plugin_id << variantdata;
 
+		// The received data do not contain a method: This have to be payload from another plugin
         if (!method.size()) {
             dataFromPlugin(plugin_id, variantdata);
             continue;
         }
         // Predefined methods
         if (method == "pluginid") {
-            QVariantMap dataout;
-            ServiceData::setMethod(dataout, "pluginid");
-            ServiceData::setPluginid(dataout, PLUGIN_ID);
-            writeToSocket(socket, dataout);
+			SceneDocument transferdoc;
+			transferdoc.setMethod("pluginid");
+			transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+            writeToSocket(socket, transferdoc.getData());
         } else if (method == "configChanged") {
-            const QString key = ServiceData::configurationkey(variantdata);
-            configChanged(key.toUtf8(), variantdata);
+            const QByteArray key = doc.configurationkey();
+            configChanged(key, variantdata);
         } else if (method == "methodresponse") { // Ignore responses
         } else if (method == "initialize") {
             initialize();
         } else if (method == "clear") {
             clear();
         } else if (method == "requestProperties") {
-            const int sessionid = ServiceData::sessionid(variantdata);
-            requestProperties(sessionid);
+            requestProperties(m_lastsessionid);
         } else if (method == "session_change") {
-            const int sessionid = ServiceData::sessionid(variantdata);
-            session_change(sessionid, variantdata.value(QLatin1String("running")).toBool());
+            session_change(m_lastsessionid, doc.toBool("running"));
         } else if (method == "unregister_event") {
-            const QString eventid = variantdata.value(QLatin1String("eventid")).toString();
-            unregister_event(eventid);
+            unregister_event(doc.toString("eventid"));
         } else {
             // Prepare response
-            QVariantMap responseData;
-            ServiceData::setMethod(responseData, "methodresponse");
-            ServiceData::setPluginid(responseData, PLUGIN_ID);
-
+			SceneDocument transferdoc;
+			transferdoc.setMethod("methodresponse");
+			transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+			
             int methodId = invokeHelperGetMethodId(method);
             // If method not found call dataFromPlugin
             if (methodId == -1) {
                 qWarning() << "Method not found!" << method;
                 responseData[QLatin1String("error")] = "Method not found!";
-                writeToSocket(socket, responseData);
+                writeToSocket(socket, transferdoc.getData());
                 continue;
             }
 
@@ -161,7 +161,7 @@ void AbstractPlugin::readyReadCommunication()
             if ((params = invokeHelperMakeArgumentList(methodId, variantdata, argumentsInOrder)) == -1) {
 				qWarning() << "Arguments list incompatible!" << method << methodId << variantdata << argumentsInOrder;
                 responseData[QLatin1String("error")] = "Arguments list incompatible!";
-                writeToSocket(socket, responseData);
+                writeToSocket(socket, transferdoc.getData());
                 continue;
             }
 
@@ -172,7 +172,7 @@ void AbstractPlugin::readyReadCommunication()
             responseData[QLatin1String("responseid_")] = responseid;
             responseData[QLatin1String("response_")] = invokeSlot(method, params, returntype, argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3], argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]);
             if (responseid.size()) {
-                writeToSocket(socket, responseData);
+                writeToSocket(socket, transferdoc.getData());
                 qDebug() << "WRITE RESPONSE" << responseData[QLatin1String("response_")];
             }
         }
@@ -235,39 +235,41 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& plugin_id) {
         // connection established: add to map, send welcome string with current plugin id
         m_connectionsByID[plugin_id] = socket;
         m_connectionsBySocket[socket] = plugin_id;
-        QVariantMap dataout;
-        ServiceData::setMethod(dataout, "identifyplugin");
-        ServiceData::setPluginid(dataout, PLUGIN_ID);
-		ServiceData::setInstanceid(dataout, m_instanceid);
-        writeToSocket(socket, dataout);
+		SceneDocument transferdoc;
+		transferdoc.setMethod("identifyplugin");
+		transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+		transferdoc.setPlugininstance(m_instanceid);
+		writeToSocket(socket, transferdoc.getData());
         socket->waitForBytesWritten();
     }
     return socket;
 }
 
 void AbstractPlugin::changeConfig(const QByteArray& category, const QVariantMap& data) {
-    QVariantMap modifieddata = data;
-    ServiceData::setMethod(modifieddata, "changeConfig");
-    ServiceData::setPluginid(modifieddata, PLUGIN_ID);
-    ServiceData::setConfigurationkey(modifieddata, category);
-    sendDataToPlugin(COMSERVERSTRING, modifieddata);
+	SceneDocument transferdoc(data);
+	transferdoc.setMethod("changeConfig");
+	transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+	transferdoc.setPlugininstance(m_instanceid);
+	transferdoc.setConfigurationkey(category);
+	sendDataToPlugin(COMSERVERSTRING, transferdoc.getData());
 }
 
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
-    QVariantMap modifieddata = data;
-    ServiceData::setMethod(modifieddata, "changeProperty");
-    ServiceData::setPluginid(modifieddata, PLUGIN_ID);
-    ServiceData::setSessionID(modifieddata, sessionid);
-    sendDataToPlugin(COMSERVERSTRING, modifieddata);
+	SceneDocument transferdoc(data);
+	transferdoc.setMethod("changeProperty");
+	transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+	transferdoc.setPlugininstance(m_instanceid);
+	transferdoc.setSessionID(sessionid);
+	sendDataToPlugin(COMSERVERSTRING, transferdoc.getData());
 }
 
-void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_collectionId) {
-    QVariantMap modifieddata;
-    ServiceData::setMethod(modifieddata, "eventTriggered");
-    ServiceData::setPluginid(modifieddata, PLUGIN_ID);
-    ServiceData::setCollectionid(modifieddata, dest_collectionId);
-    modifieddata[QLatin1String("sourceevent")] = eventid;
-    sendDataToPlugin(COMSERVERSTRING, modifieddata);
+void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_sceneid) {
+	SceneDocument transferdoc(data);
+	transferdoc.setMethod("eventTriggered");
+	transferdoc.setPluginid(QLatin1String(PLUGIN_ID));
+	transferdoc.setPlugininstance(m_instanceid);
+	transferdoc.setSceneid(dest_sceneid);
+	sendDataToPlugin(COMSERVERSTRING, transferdoc.getData());
 }
 
 void AbstractPlugin::disconnectedFromServer() {

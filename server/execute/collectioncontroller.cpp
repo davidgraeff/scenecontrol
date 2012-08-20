@@ -3,7 +3,7 @@
 #include "collectioncontroller.h"
 #include "socket.h"
 #include "runningcollection.h"
-#include "libdatabase/servicedata.h"
+#include "shared/jsondocuments/scenedocument.h"
 #include "libdatabase/database.h"
 #include <QDebug>
 #define __FUNCTION__ __FUNCTION__
@@ -69,13 +69,13 @@ void CollectionController::dataOfCollection(const QString& collectionid, const Q
 
 void CollectionController::updateListOfRunningCollections()
 {
-    ServiceData data = ServiceData::createNotification("collection.running");
+    SceneDocument doc = SceneDocument::createNotification("collection.running");
     QVariantList list;
     QList<QString> orig = m_runningCollections.keys();
     for (int i=0;i<orig.size(); ++i) {
         list.append(orig[i]);
     }
-    data.setData("running",list);
-    data.setPluginid("CollectionController");
-    Socket::instance()->propagateProperty(data.getData(), -1);
+    doc.setData("running",list);
+    doc.setPluginid("CollectionController");
+    Socket::instance()->propagateProperty(doc.getData(), -1);
 }

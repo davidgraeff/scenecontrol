@@ -1,6 +1,6 @@
 #include "scenedocument.h"
 #include "json.h"
-
+#include <QDebug>
 
 SceneDocument SceneDocument::createModelRemoveItem ( const char* id ) {
     SceneDocument sc;
@@ -63,28 +63,31 @@ void SceneDocument::setData ( const char* index, const QVariant& data ) {
 QVariantMap& SceneDocument::getData() {
     return m_map;
 }
-QString SceneDocument::toString(const char* key) {
-    return m_map[QString::fromUtf8(key)].toString();
+const QVariantMap& SceneDocument::getData() const {
+    return m_map;
 }
-int SceneDocument::toInt(const char* key) {
-    return m_map[QString::fromUtf8(key)].toInt();
+QString SceneDocument::toString(const char* key) const {
+    return m_map.value(QString::fromUtf8(key)).toString();
 }
-bool SceneDocument::toBool(const char* key) {
-    return m_map[QString::fromUtf8(key)].toBool();
+int SceneDocument::toInt(const char* key) const {
+    return m_map.value(QString::fromUtf8(key)).toInt();
 }
-double SceneDocument::toDouble(const char* key) {
-    return m_map[QString::fromUtf8(key)].toDouble();
+bool SceneDocument::toBool(const char* key) const {
+    return m_map.value(QString::fromUtf8(key)).toBool();
 }
-QVariantList SceneDocument::toList(const char* key) {
-    return m_map[QString::fromUtf8(key)].toList();
+double SceneDocument::toDouble(const char* key) const {
+    return m_map.value(QString::fromUtf8(key)).toDouble();
 }
-QVariantMap SceneDocument::toMap(const char* key) {
-    return m_map[QString::fromUtf8(key)].toMap();
+QVariantList SceneDocument::toList(const char* key) const {
+    return m_map.value(QString::fromUtf8(key)).toList();
+}
+QVariantMap SceneDocument::toMap(const char* key) const {
+    return m_map.value(QString::fromUtf8(key)).toMap();
 }
 
 SceneDocument::SceneDocument(const QVariantMap& map) : m_map(map) {}
 SceneDocument::SceneDocument(const QByteArray& jsondata) { m_map = JSON::parse(jsondata).toMap(); }
-SceneDocument::SceneDocument(const QTextStream& jsonstream) {
+SceneDocument::SceneDocument(QTextStream& jsonstream) {
   bool error = false;
   m_map = JSON::parseValue(jsonstream, error).toMap();
   if (error) {
@@ -92,14 +95,17 @@ SceneDocument::SceneDocument(const QTextStream& jsonstream) {
   }
 }
 
-bool SceneDocument::isValid() {
-  return m_map.isValid() && hasType();
+bool SceneDocument::isValid() const {
+  return !m_map.empty() && hasType();
 }
 
-QByteArray SceneDocument::getjson() { return JSON::stringify(m_map).toUtf8(); }
+QByteArray SceneDocument::getjson() const { return JSON::stringify(m_map).toUtf8(); }
 
 bool SceneDocument::correctTypes(const QVariantMap& types)
 {
+    if (types.empty())
+      return true;
+    
     QVariantMap result;
     // convert types if neccessary (javascript/qt-qml do not use the same types as QVariant some times)
     QVariantMap::const_iterator i = m_map.begin();
@@ -120,4 +126,5 @@ bool SceneDocument::correctTypes(const QVariantMap& types)
     if (result.size() < m_map.size())
         return false;
     m_map = result;
+	return true;
 }

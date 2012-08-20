@@ -22,22 +22,23 @@
 #include <QVariantMap>
 #include <QString>
 #include <QFileInfo>
+#include <shared/jsondocuments/scenedocument.h>
 
 namespace Datastorage {
 	/* Derive from this interface to use your own verifier for importing and exporting json documents */
 	class VerifyInterface {
 		public:
-		static bool isValid(SceneDocument& data, const QString& filename) = 0;
+		virtual bool isValid(SceneDocument& data, const QString& filename) = 0;
 	};
 	/* Use this verifier class for importing plugin json documents. It will add some information before the document
 	 * is send to the datastorage
 	 */
-	class VerifyPluginDocument {
+	class VerifyPluginDocument : public VerifyInterface {
 		private:
 			QString m_pluginid;
 		public:
 		VerifyPluginDocument(const QString& pluginid) : m_pluginid(pluginid) {}
-		static bool isValid(SceneDocument& data, const QString& filename) {
+		virtual bool isValid(SceneDocument& data, const QString& filename) {
 			data.setPluginid(m_pluginid);
 			if (!data.id().isEmpty())
             	data.setid((QString)(QFileInfo(filename).completeBaseName() + m_pluginid));
@@ -48,10 +49,10 @@ namespace Datastorage {
 /**
  * Export all json documents to the given path (synchronous)
  */
-void exportAsJSON(const DataStorage& ds, const QString& exportpath, VerifyInterface* verify = 0);
+void exportAsJSON(const DataStorage& ds, const QString& exportpath);
 /**
  * Import all json documents from the given path recursively (synchronous)
  */
-void importFromJSON(const DataStorage& ds, const QString& path, bool overwriteExisting = false, VerifyInterface* verify = 0);
+void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting = false, Datastorage::VerifyInterface* verify = 0);
 
 }
