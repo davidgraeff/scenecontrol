@@ -43,8 +43,8 @@ bool plugin::isMode(const QString& mode)  {
     return (m_mode == mode);
 }
 
-void plugin::eventmode ( const QString& _id, const QString& collection_, const QString& mode) {
-    m_collectionsOnMode.insertMulti(mode, QPair<QString,QString>(_id, collection_));
+void plugin::eventmode ( const QString& id_, const QString& collection_, const QString& mode ) {
+    m_collectionsOnMode.insertMulti(mode, QPair<QString,QString>(id_, collection_));
 }
 
 void plugin::unregister_event ( const QString& eventid) {

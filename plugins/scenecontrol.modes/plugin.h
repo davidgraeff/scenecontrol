@@ -38,7 +38,7 @@ public:
     virtual void unregister_event ( const QString& eventid);
 
 public Q_SLOTS:
-    void eventmode ( const QString& _id, const QString& collection_, const QString& mode);
+    void eventmode ( const QString& id_, const QString& collection_, const QString& mode);
     void modeChange (const QString& mode);
     bool isMode (const QString& mode);
 private:

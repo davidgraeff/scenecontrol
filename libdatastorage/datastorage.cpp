@@ -98,23 +98,21 @@ void DataStorage::load()
 
 QList< SceneDocument* > DataStorage::filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter) const {
 	QList< SceneDocument* > d;
-	QList< SceneDocument* >::const_iterator it = source.constBegin();
-	// Go through all QVariantMaps of source
-	for(;it!=source.constEnd();++it) {
-		// Assume entry will be taken
+	// Go through all documents of source
+	for(auto sourceIter = source.constBegin();sourceIter!=source.constEnd();++sourceIter) {
+		// Assume document will be taken
 		bool ok = true;
 		// Loop through filter and check each filter entry with the current variantmap
-		for(auto i = filter.constBegin();i!= filter.constEnd();++i) {
-			if ((*it)->getData().value(i.key()) != i.value()) {
+		for(auto filterIter = filter.constBegin(); filterIter!= filter.constEnd(); ++filterIter) {
+			if (filterIter.value() != (*sourceIter)->getData().value(filterIter.key())) {
 				// If there is something in the filter (like plugin_=abc) and this is not matched by the current QVariantMap (like plugin_=def)
 				// do not take this entry
 				ok = false;
 				break;
 			}
 		}
-		if (!ok)
-			continue;
-		d.append(*it);
+		if (ok)
+			d.append(*sourceIter);
 	}
 	return d;
 }
@@ -133,7 +131,7 @@ QList<SceneDocument*> DataStorage::requestAllOfType(SceneDocument::TypeEnum type
 	if (filter.contains(SceneDocument::idkey()))
 		return m_index_typeid.values(SceneDocument::id(filter)+typetext);
 	// generic
-		return filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
+	return filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
 }
 
 int DataStorage::changeDocumentsValue(SceneDocument::TypeEnum type, const QVariantMap& filter, const QString& key, const QVariantMap& value) {

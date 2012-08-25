@@ -89,23 +89,23 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
         m_dontgrab = data[QLatin1String("dontgrab")].toBool();
 }
 
-void plugin::inputevent ( const QString& _id, const QString& collection_, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
-	QByteArray __id = _id.toAscii();
+void plugin::inputevent ( const QString& id_, const QString& sceneid_, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
+	QByteArray id__ = id_.toAscii();
     // Add to input events list
     EventInputStructure s;
-    s.collectionuid = collection_.toAscii();
+    s.collectionuid = sceneid_.toAscii();
     s.inputdevice = inputdevice.toAscii();
     s.kernelkeyname = kernelkeyname.toAscii();
     s.repeat = repeat;
-    m_events.insert(__id, s);
+    m_events.insert(id__, s);
 
     // If device for this event already exists, register key
     InputDevice* inputdeviceObj = m_devices.value ( inputdevice.toAscii() );
     if ( !inputdeviceObj )
         return;
-    m_devices_by_eventsids.insert(__id, inputdeviceObj);
-    inputdeviceObj->registerKey ( __id, collection_, s.kernelkeyname, repeat );
-    qDebug() << "Register event" << kernelkeyname << inputdeviceObj->device()->devPath << __id;
+    m_devices_by_eventsids.insert(id__, inputdeviceObj);
+    inputdeviceObj->registerKey ( id__, sceneid_, s.kernelkeyname, repeat );
+    qDebug() << "Register event" << kernelkeyname << inputdeviceObj->device()->devPath << id__;
 }
 
 void plugin::unregister_event ( const QString& eventid) {

@@ -97,7 +97,6 @@ void AbstractPlugin::readyReadCommunication()
 			}
 		}
 
-    
         m_lastsessionid = doc.sessionid();
 
         // Retrieve method
@@ -274,7 +273,7 @@ int AbstractPlugin::invokeHelperMakeArgumentList(int methodID, const QVariantMap
         if (paramPosition == inputData.end()) {
             qWarning() << "Method parameter missing!" << parameterNames[paramNameIndex] << inputData;
             return -1;
-        } else { // Otherwise create a QVariant a copy that to the output QVector
+        } else { // Otherwise create a QVariant and copy that to the output QVector
             output[paramNameIndex] = paramPosition.value();
         }
     }
