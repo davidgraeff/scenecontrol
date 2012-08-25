@@ -13,17 +13,18 @@
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/jsondocuments/json.h"
 #include "databaselistener.h"
+#include "importexport.h"
 #include "shared/utils/paths.h"
 
 #define __FUNCTION__ __FUNCTION__
 
 static DataStorage *databaseInstance = 0;
 
-DataStorage::DataStorage() : m_listener(0)
+DataStorage::DataStorage() : m_listener(0), m_isLoading(false)
 {
 	// set directory
 	bool found;
-	m_dir = setup::dbuserdir(true, &found).absolutePath();
+	m_dir = setup::dbuserdir(&found).absolutePath();
 }
 
 DataStorage::~DataStorage()
@@ -55,7 +56,7 @@ void DataStorage::unload()
 void DataStorage::load()
 {
 	unload();
-	if (!m_dir.exists())
+	if (!m_dir.exists() && !m_dir.mkpath(m_dir.absolutePath()))
 		return;
 
 	m_cache.insert(QLatin1String("action"), QList<SceneDocument*>());
@@ -69,6 +70,10 @@ void DataStorage::load()
 	connect(m_listener, SIGNAL(fileChanged(QString)), SLOT(reloadDocument(QString)));
 	connect(m_listener, SIGNAL(fileRemoved(QString)), SLOT(removeFromCache(QString)));
 	
+	// enable the watcher
+	m_listener->setEnabled(true);
+	
+	m_isLoading = true;
 	QStringList dirs;
 	dirs.append(m_dir.absolutePath());	// add the user storage dir
 	
@@ -82,6 +87,7 @@ void DataStorage::load()
 			reloadDocument(currentdir.absoluteFilePath(files[i]));
 		}
 	}
+	m_isLoading = false;
 	
 	qDebug() << "Loaded actions:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeAction)).size();
 	qDebug() << "Loaded conditions:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeCondition)).size();
@@ -173,17 +179,23 @@ bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting
 		qWarning() << "storeDocument: can not store an invalid document";
 		return false;
 	}
-	
+		
 	// Write to disc
 	QDir d(m_dir);
-	if (!d.cd(doc.type()) && !(d.mkdir(doc.type()) && d.cd(doc.type()))) {
-		qWarning() << "storeDocument: could not open subdir" << doc.type();
+	const QString subdir = doc.type();
+	if ( !d.exists(subdir) )
+		d.mkdir(subdir);
+		
+	if(!d.cd(subdir) ) {
+		qWarning() << "storeDocument: could not open subdir" << subdir;
 		return false;
 	}
-	m_listener->watchdir(doc.type());
+		
+	if (m_listener)
+		m_listener->watchdir(d.absolutePath());
 	
 	QFile f(d.absoluteFilePath(doc.filename()));
-	
+
 	if (f.exists() && !overwriteExisting)
 		return true;
 	
@@ -193,12 +205,7 @@ bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting
 	}
 	f.write(doc.getjson());
 	f.close();
-		
-	// This should not be neccessary, all storage paths signal changes
-// 		removeFromCache(doc.type(), doc.id());
-// 		SceneDocument* ndoc = new SceneDocument(doc.getjson());
-// 		this->updateCache(ndoc);
-	
+
 	return true;
 }
 
@@ -242,6 +249,11 @@ void DataStorage::reloadDocument( const QString& filename ) {
 	m_index_filename.insert(filename, doc);
 	m_index_typeid.insert(doc->uid(), doc);
 	m_cache[doc->type()].append(doc);
+	
+	// Do not notify if we are still in the initial loading process currently
+	if (m_isLoading)
+		return;
+	
 	emit doc_changed(doc);
 	
 	// notify StorageNotifiers

@@ -40,11 +40,14 @@ QDir dbimportDir(bool* found)
     return dir;
 }
 
-QDir dbuserdir(bool createIfNotExists, bool* success)
+QDir dbuserdir(bool* success)
 {
 	QSettings s(QSettings::IniFormat, QSettings::UserScope, QLatin1String(ABOUT_ORGANIZATIONID), QLatin1String(ABOUT_ORGANIZATIONID));
-	QDir home = QFileInfo(s.fileName()).absoluteDir();
-	*success = home.cd(QLatin1String("datastorage")) || (createIfNotExists && home.mkdir(QLatin1String("datastorage")) && home.cd(QLatin1String("datastorage")));
+	QDir home(QFileInfo(s.fileName()).absoluteDir().absoluteFilePath("datastorage"));
+	if (!home.exists()) {
+		home.mkpath(home.absolutePath());
+	}
+	*success = home.exists();
 	return home;
 }
 

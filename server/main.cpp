@@ -55,10 +55,10 @@ int main(int argc, char *argv[])
 
     // help text
     if (cmdargs.contains("--help")) {
-        printf("%s - %s\n%s [CMDs]\n"
+        printf("%s - %s - Usage:\n%s [CMDs]\n"
                "--export [PATH]: Export all documents from the database and store them in PATH or the working directory\n"
                "--import [PATH]: Import all documents from PATH or the working directory and store them in the database\n"
-               "--no-event-loop: Shutdown after initialisation\n"
+               "--overwrite: Overwrite existing documents while exporting or importing\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
                ABOUT_SERVICENAME, ABOUT_VERSION, argv[0]);
@@ -68,6 +68,27 @@ int main(int argc, char *argv[])
         printf("%s\n%s\n", ABOUT_VERSION, ABOUT_LASTCOMMITDATE);
         return 0;
     }
+
+    // Set up the datastorage object. All documents are accessable through the datastorage.
+    DataStorage* datastorage = DataStorage::instance();
+
+	if (cmdargs.contains("--export")) { // Export json documents from database
+			int index = cmdargs.indexOf("--export");
+			QString path = cmdargs.size()>index+1 ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
+			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
+				path = QDir::currentPath();
+			Datastorage::exportAsJSON(*datastorage, path, cmdargs.contains("--overwrite"));
+			delete datastorage;
+			return 0;
+	} else if (cmdargs.contains("--import")) { // Import json documents from database
+			int index = cmdargs.indexOf("--import");
+			QString path = cmdargs.size()>index+1 ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
+			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
+				path = QDir::currentPath();
+			Datastorage::importFromJSON(*datastorage, path, cmdargs.contains("--overwrite"));
+			delete datastorage;
+			return 0;
+	}
 
     //set up signal handlers to exit on CTRL+C
     signal(SIGINT, catch_int);
@@ -100,9 +121,6 @@ int main(int argc, char *argv[])
     // Write last start time to the log
     setup::writeLastStarttime();
 
-    // Set up the database connection. All events, actions, configurations are hold within a database
-    DataStorage* datastorage = DataStorage::instance();
-
     // CollectionController: Starts, stops collections
     // and hold references to running collections.
     CollectionController* collectioncontroller = CollectionController::instance();
@@ -112,36 +130,30 @@ int main(int argc, char *argv[])
 
     // connect objects
     QObject::connect(datastorage, SIGNAL(doc_changed(const SceneDocument*)), plugins,  SLOT(doc_changed(const SceneDocument*)));
-    QObject::connect(datastorage, SIGNAL(doc_removed(const SceneDocument*)), plugins, SLOT(doc_removed(const SceneDocument*)));
+    QObject::connect(datastorage, SIGNAL(doc_removed(const SceneDocument*)), plugins, SLOT(doc_removed(const SceneDocument*)));	
 
 	// Import json documents from install dir if no files are presend in the user storage dir
 	bool success;
-	if (setup::dbuserdir(true, &success).entryList(QDir::Files|QDir::Dirs|QDir::NoDotAndDotDot).size()==0 && success) {
+	QDir userdir = setup::dbuserdir(&success);
+	if (!success) {
+		qWarning()<<"Could not create user storage dir!";
+		return -1;
+	}
+	if (userdir.entryList(QDir::Files|QDir::Dirs|QDir::NoDotAndDotDot).size()==0) {
 		Datastorage::VerifyImportDocument verifier;
 		Datastorage::importFromJSON(*datastorage, setup::dbimportDir().absolutePath(), false, &verifier);
 	}
-	
+
 	// load data storage and start plugin processes
-    datastorage->load();
+	datastorage->load();
 	plugins->scanPlugins();
 
-	if (cmdargs.contains("--export")) { // Export json documents from database
-			int index = cmdargs.indexOf("--export");
-			QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
-			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
-				path = QDir::currentPath();
-			Datastorage::exportAsJSON(*datastorage, path);
-	} else if (cmdargs.contains("--import")) { // Import json documents from database
-			int index = cmdargs.indexOf("--import");
-			QString path = cmdargs.size()>=index ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
-			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
-				path = QDir::currentPath();
-			Datastorage::importFromJSON(*datastorage, path);
-	} else if (!cmdargs.contains("--no-event-loop") && plugins->valid()) { // Start event loop
-        exitcode = qapp.exec();
-		// one last event processing to free all deleteLater objects
-		qapp.processEvents();
-    }
+	if (!cmdargs.contains("--no-event-loop") && plugins->valid()) { // Start event loop
+		exitcode = qapp.exec();
+	}
+	// one last event processing to free all deleteLater objects
+	qapp.processEvents();
+
 
 	delete plugins;
 	delete socket;

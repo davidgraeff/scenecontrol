@@ -115,6 +115,7 @@ private:
 	QMap<QString, SceneDocument*> m_index_filename;
 	
 	QSet<AbstractStorageNotifier*> m_notifiers;
+    bool m_isLoading;
     
     QList<SceneDocument*> filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter = QVariantMap()) const;
 

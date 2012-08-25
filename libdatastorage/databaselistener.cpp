@@ -16,7 +16,7 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 
-DataStorageWatcher::DataStorageWatcher(QObject* parent) : QObject(parent)
+DataStorageWatcher::DataStorageWatcher(QObject* parent) : QObject(parent), m_enabled(false)
 {
 	m_inotify_fd = inotify_init();
 	if ( m_inotify_fd <= 0 ) {
@@ -92,6 +92,9 @@ void DataStorageWatcher::readnotify() {
 }
 
 void DataStorageWatcher::watchdir(const QString& dir) {
+	if (!m_enabled || pathToID.contains(dir))
+		return;
+	
 	int wd = inotify_add_watch(m_inotify_fd, QFile::encodeName(dir), (IN_CLOSE_WRITE | IN_MOVE | IN_CREATE | IN_DELETE | IN_DELETE_SELF ));
 	if (wd <= 0) {
         qWarning("DataStorageWatcher::watchdir: inotify_add_watch failed");
@@ -99,6 +102,10 @@ void DataStorageWatcher::watchdir(const QString& dir) {
 	}
 	pathToID.insert(dir, wd);
 	idToPath.insert(wd, dir);
+}
+
+void DataStorageWatcher::setEnabled ( bool enabled ) {
+	m_enabled = enabled;
 }
 
 

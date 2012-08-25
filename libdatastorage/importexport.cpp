@@ -17,14 +17,15 @@
 
 namespace Datastorage {
 	
-void exportAsJSON(const DataStorage& ds, const QString& exportpath)
+void exportAsJSON(const DataStorage& ds, const QString& exportpath, bool overwriteExisting)
 {
     QDir exportdir(exportpath);
-    if (!exportdir.exists()) {
+    if (!exportdir.exists() && !exportdir.mkpath(exportdir.absolutePath())) {
         qWarning() << "Database: failed to change to " << exportdir.absolutePath();
         return;
     }
 
+    int counter = 0;
 	QDir datadir = ds.datadir();
 	QStringList dirs;
 	dirs.append(datadir.absolutePath());
@@ -34,14 +35,22 @@ void exportAsJSON(const DataStorage& ds, const QString& exportpath)
 
 		QString relpath(currentdir.absolutePath().mid(datadir.absolutePath().size()));
 		
-		QDir targetdir(exportpath+relpath);
-		targetdir.mkpath(exportpath+relpath);
+		QDir targetdir(exportdir.absolutePath()+QLatin1String("/")+relpath);
+		targetdir.mkpath(targetdir.absolutePath());
 
 		QStringList files = currentdir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
 		for (int i = 0; i < files.size(); ++i) {
-			QFile::copy(datadir.absoluteFilePath(files[i]), targetdir.absoluteFilePath(files[i]));
+			if (overwriteExisting && targetdir.exists(files[i]))
+				targetdir.remove(files[i]);
+			if (QFile::copy(currentdir.absoluteFilePath(files[i]), targetdir.absoluteFilePath(files[i])))
+				++counter;
 		}
 	}
+	
+	if (overwriteExisting)
+		qDebug() << counter << "Documents exported to" << exportdir.absolutePath() << "and overwritten existing";
+	else
+		qDebug() << counter << "Documents exported to" << exportdir.absolutePath();
 }
 
 void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting, VerifyInterface* verify)
@@ -51,7 +60,6 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
         qWarning() << "Database: failed to change to " << dir.absolutePath();
         return;
     }
-
     const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
     for (int i = 0; i < files.size(); ++i) {
         QFile file(dir.absoluteFilePath(files[i]));
@@ -62,9 +70,6 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
         }
         QTextStream stream(&file);
         SceneDocument document(stream);
-        if (!document.isValid()) {
-            continue;
-        }
 
 		if (verify && !verify->isValid(document, dir.absoluteFilePath(files[i]))) {
 			qWarning() << "Custom verification denied import!" << files[i];
@@ -97,11 +102,11 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
 }
 
 bool VerifyImportDocument::isValid(SceneDocument& data, const QString& filename) {
-	QFileInfo finfo(filename);
+	const QString subdir = QFileInfo(filename).absoluteDir().dirName(); //componentid: dir name
 	if (!data.hasComponentID())
-		data.setComponentID(finfo.absoluteDir().dirName()); //componentid: dir name
+		data.setComponentID(subdir);
 	if (!data.hasid()) // no identifier set?: use filename without extension and componentid
-		data.setid(QFileInfo(filename).completeBaseName() + QLatin1String(".") + finfo.absoluteDir().dirName());
+		data.setid(subdir + QLatin1String(".") + QFileInfo(filename).completeBaseName());
 	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
 		return false;
 	return true;
@@ -111,7 +116,7 @@ bool VerifyPluginDocument::isValid(SceneDocument& data, const QString& filename)
 	if (!data.hasComponentID())
 		data.setComponentID(m_pluginid);
 	if (!data.hasid()) // no identifier set? use filename without extension and componentid
-          	data.setid((QString)(QFileInfo(filename).completeBaseName() + QLatin1String(".") + m_pluginid));
+		data.setid(m_pluginid + QLatin1String(".") + QFileInfo(filename).completeBaseName());
 	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
 		return false;
 	return true;

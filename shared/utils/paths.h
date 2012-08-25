@@ -14,7 +14,7 @@ QDir pluginDir(bool* found = 0);
 // Directory where all initial json files reside
 QDir dbimportDir(bool* found = 0);
 // Directory where all imported/changed json files reside
-QDir dbuserdir(bool createIfNotExists, bool* success);
+QDir dbuserdir( bool* success );
 // Directory where the application suite has been installed to.
 QDir installdir();
 };

@@ -5,7 +5,7 @@ IF (NOT DEFINED PRODUCTID)
 	RETURN()
 ENDIF()
 
-project(roomcontrolserver)
+project(sceneserver)
 
 find_package(OpenSSL QUIET)
 IF (NOT OPENSSL_FOUND)

@@ -28,9 +28,6 @@
 #include <QSet>
 #include <QVariant>
 
-/// The name of the server communication socket
-#define COMSERVERSTRING "server"
-
 #include "shared/jsondocuments/scenedocument.h"
 
 /**

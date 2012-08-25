@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.8)
-PROJECT(roomcontrol_suite)
+PROJECT(scenecontrol_suite)
 
 SET(PRODUCTID ${PROJECT_NAME}) # define PRODUCTID otherwise all other CMakeFiles will fail
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")

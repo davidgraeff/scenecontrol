@@ -15,8 +15,7 @@
 #include <QElapsedTimer>
 
 #define __FUNCTION__ __FUNCTION__
-#define MAGICSTRING "roomcontrol_"
-#define COMSERVERSTRING "server"
+#define LOCALSOCKETNAMESPACE "sceneserver"
 
 static PluginController* plugincontroller_instance = 0;
 
@@ -29,9 +28,11 @@ PluginController* PluginController::instance() {
 
 PluginController::PluginController () : m_exitIfNoPluginProcess(false) {
     connect(&m_comserver, SIGNAL(newConnection()), SLOT(newConnection()));
-    const QString name = QLatin1String(MAGICSTRING) + QLatin1String(COMSERVERSTRING);
+    const QString name = QLatin1String(LOCALSOCKETNAMESPACE)+QLatin1String(LOCALSOCKETNAMESPACE);
     m_comserver.removeServer(name);
-    m_comserver.listen(name);
+    if (!m_comserver.listen(name)) {
+		qWarning() << "Could not establish local socket at" << name;
+	}
 }
 
 PluginController::~PluginController()
@@ -154,14 +155,19 @@ void PluginController::scanPlugins() {
     const QDir plugindir = setup::pluginDir();
     QStringList pluginfiles = plugindir.entryList ( QDir::Files|QDir::NoDotAndDotDot );
     if (pluginfiles.empty()) {
-        qWarning() << "Plugins: No plugins found in" << plugindir;
+        qWarning() << "Plugins: No plugins found in" << plugindir.absolutePath();
         return;
     }
 
     bool importdirfound;
     QDir importdir(setup::dbimportDir(&importdirfound));
-    if (!importdirfound)
+
+    qDebug() << "Plugin path:" << plugindir.absolutePath();
+
+	if (!importdirfound)
         qWarning() << "Server: Datastorage initial import path not found!";
+	else
+		qDebug() << "Plugin initial configurations:" << importdir.absolutePath();
 
     for (int i=0;i<pluginfiles.size();++i) {
         const QString componentid = pluginfiles[i].mid(0, pluginfiles[i].lastIndexOf(QLatin1String("_plugin")));

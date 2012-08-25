@@ -11,7 +11,8 @@
 #include <QProcessEnvironment>
 #include "shared/utils/logging.h"
 
-#define MAGICSTRING "roomcontrol_"
+/// The name of the server communication socket
+#define LOCALSOCKETNAMESPACE "sceneserver"
 
 static void catch_int(int )
 {
@@ -23,7 +24,7 @@ static void catch_int(int )
 
 AbstractPlugin::AbstractPlugin(const QString& pluginid, const QString& instanceid) : m_lastsessionid(-1), m_pluginid(pluginid), m_instanceid(instanceid)
 {
-	setLogOptions(m_pluginid.toUtf8(), true);
+	setLogOptions(m_pluginid.toUtf8()+":"+m_instanceid.toUtf8(), true);
     qInstallMsgHandler(roomMessageOutput);
     connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
 
@@ -42,14 +43,14 @@ AbstractPlugin::~AbstractPlugin()
 bool AbstractPlugin::createCommunicationSockets()
 {
     // create server socket for incoming connections
-    const QString name = QLatin1String(MAGICSTRING) + m_pluginid + m_instanceid;
+    const QString name = QLatin1String(LOCALSOCKETNAMESPACE) + m_pluginid + m_instanceid;
     removeServer(name);
     if (!listen(name)) {
         qWarning() << "Plugin interconnect server failed";
         return false;
     }
     // create connection to server
-    QLocalSocket* socketToServer = getClientConnection(COMSERVERSTRING);
+    QLocalSocket* socketToServer = getClientConnection(LOCALSOCKETNAMESPACE);
     if (!socketToServer) {
         qWarning() << "Couldn't connect to server";
         return false;
@@ -196,7 +197,7 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& componentUni
     // Try to connect to the target plugin if no connection is made so far
     if (!socket) {
         socket = new QLocalSocket();
-        socket->connectToServer(QLatin1String(MAGICSTRING) + componentUniqueID);
+        socket->connectToServer(QLatin1String(LOCALSOCKETNAMESPACE) + componentUniqueID);
         connect(socket, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
         // wait for at least 30 seconds for a connection
         if (!socket->waitForConnected()) {
@@ -223,7 +224,7 @@ void AbstractPlugin::changeConfig(const QByteArray& category, const QVariantMap&
 	transferdoc.setComponentID(m_pluginid);
 	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setConfigurationkey(category);
-	sendDataToComponent(COMSERVERSTRING, transferdoc.getData());
+	sendDataToComponent(LOCALSOCKETNAMESPACE, transferdoc.getData());
 }
 
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
@@ -232,7 +233,7 @@ void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
 	transferdoc.setComponentID(m_pluginid);
 	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setSessionID(sessionid);
-	sendDataToComponent(COMSERVERSTRING, transferdoc.getData());
+	sendDataToComponent(LOCALSOCKETNAMESPACE, transferdoc.getData());
 }
 
 void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_sceneid) {
@@ -242,7 +243,7 @@ void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_
 	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setSceneid(dest_sceneid);
 	transferdoc.setid(eventid);
-	sendDataToComponent(COMSERVERSTRING, transferdoc.getData());
+	sendDataToComponent(LOCALSOCKETNAMESPACE, transferdoc.getData());
 }
 
 void AbstractPlugin::disconnectedFromServer() {

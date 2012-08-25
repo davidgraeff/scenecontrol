@@ -53,7 +53,7 @@ namespace Datastorage {
 /**
  * Export all json documents to the given path (synchronous)
  */
-void exportAsJSON(const DataStorage& ds, const QString& exportpath);
+void exportAsJSON( const DataStorage& ds, const QString& exportpath, bool overwriteExisting );
 /**
  * Import all json documents from the given path recursively (synchronous)
  */

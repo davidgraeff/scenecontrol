@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.8)
-
-set (SHAREDPLUGINDIR "${CMAKE_SOURCE_DIR}/plugins/_sharedsrc")
+#Only allow this file to be included by the root cmake file
+IF (NOT DEFINED PRODUCTID)
+	RETURN()
+ENDIF()
 
 # Enable c++11 standard
 add_definitions(-std=c++0x)

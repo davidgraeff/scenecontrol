@@ -3,8 +3,8 @@ DIR="$(dirname $0)"
 if [ $# -ne 1 ]
 then
 # start screen and connect to it
-screen -RmS server  $DIR/roomcontrolserver
+screen -RmS server  $DIR/sceneserver
 else
 # start screen detachted
-screen -dmS server  $DIR/roomcontrolserver
+screen -dmS server  $DIR/sceneserver
 fi
