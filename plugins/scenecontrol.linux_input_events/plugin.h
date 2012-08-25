@@ -79,7 +79,7 @@ public:
     virtual void session_change ( int sessionid, bool running );
 
 public Q_SLOTS:
-  void inputevent ( const QString& _id, const QString& collection_, const QString& inputdevice, const QString& kernelkeyname, bool repeat);
+  void inputevent ( const QString& id_, const QString& sceneid_, const QString& inputdevice, const QString& kernelkeyname, bool repeat );
 private:
     ManagedDeviceList* m_devicelist;
     // udid -> device
