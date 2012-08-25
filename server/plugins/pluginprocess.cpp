@@ -3,8 +3,8 @@
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/utils/paths.h"
 #include "libdatastorage/datastorage.h"
-#include "execute/collectioncontroller.h"
-#include "socket.h"
+#include "scene/scenecontroller.h"
+#include "controlsocket/socket.h"
 #include "config.h"
 
 #include <QTimer>
@@ -175,7 +175,7 @@ void PluginProcess::readyReadPluginData()
             const int sessionid = doc.sessionid();
 			doc.removeSessionID();
             // propagate changed property
-            Socket::instance()->propagateProperty(doc.getData(), sessionid);
+            Socket::instance()->sendToClients(doc.getjson(), sessionid);
         } else if (method == "eventTriggered") {
             const QString sceneid = doc.sceneid();
             if (sceneid.isEmpty()) {

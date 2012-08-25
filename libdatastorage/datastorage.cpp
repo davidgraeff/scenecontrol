@@ -48,6 +48,8 @@ void DataStorage::unload()
 	delete m_listener;
 	m_listener = 0;
 	m_cache.clear();
+	qDeleteAll(m_notifiers);
+	m_notifiers.clear();
 }
 
 void DataStorage::load()
@@ -68,8 +70,7 @@ void DataStorage::load()
 	connect(m_listener, SIGNAL(fileRemoved(QString)), SLOT(removeFromCache(QString)));
 	
 	QStringList dirs;
-	// add the user storage dir
-	dirs.append(m_dir.absolutePath());
+	dirs.append(m_dir.absolutePath());	// add the user storage dir
 	
 	while (dirs.size()) {
 		QDir currentdir(dirs.takeFirst());
@@ -97,8 +98,7 @@ QList< SceneDocument* > DataStorage::filterEntries(const QList< SceneDocument* >
 		// Assume entry will be taken
 		bool ok = true;
 		// Loop through filter and check each filter entry with the current variantmap
-		QVariantMap::const_iterator i = filter.constBegin();
-		for(;i!= filter.constEnd();++i) {
+		for(auto i = filter.constBegin();i!= filter.constEnd();++i) {
 			if ((*it)->getData().value(i.key()) != i.value()) {
 				// If there is something in the filter (like plugin_=abc) and this is not matched by the current QVariantMap (like plugin_=def)
 				// do not take this entry
@@ -243,6 +243,11 @@ void DataStorage::reloadDocument( const QString& filename ) {
 	m_index_typeid.insert(doc->uid(), doc);
 	m_cache[doc->type()].append(doc);
 	emit doc_changed(doc);
+	
+	// notify StorageNotifiers
+	for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
+		(*it)->documentChanged(filename, doc);
+	}
 }
 
 void DataStorage::removeFromCache( const QString& filename ) {
@@ -261,5 +266,51 @@ void DataStorage::removeFromCache( const QString& filename ) {
 	}
 	
 	emit doc_removed(olddoc);
+	
+	// notify StorageNotifiers
+	for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
+		(*it)->documentRemoved(filename, olddoc);
+	}
+	
 	delete olddoc;
+}
+const QList< SceneDocument >& DataStorage::fetchAllDocuments() const {
+	QList< SceneDocument > result;
+	
+	QStringList dirs;
+	dirs.append(m_dir.absolutePath());	// add the user storage dir
+	
+	while (dirs.size()) {
+		QDir currentdir(dirs.takeFirst());
+		dirs.append(directories(currentdir));
+
+		QStringList files = currentdir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
+		for (int i = 0; i < files.size(); ++i) {
+			QFile file(currentdir.absoluteFilePath(files[i]));
+			file.open(QFile::ReadOnly);
+			QTextStream stream(&file);
+			SceneDocument doc(stream);
+			file.close();
+			
+			if (!doc.isValid()) {
+				qWarning() << "Document is not valid!" << currentdir.absoluteFilePath(files[i]);
+				continue;
+			}
+
+			result.append(doc);
+		}
+	}
+	
+	return result;
+}
+
+void DataStorage::registerNotifier ( AbstractStorageNotifier* notifier ) {
+	Q_ASSERT(notifier);
+	m_notifiers.insert(notifier);
+	// Autoremove the notifier if it gets deleted
+	connect(notifier, SIGNAL(destroyed(QObject*)), SLOT(unregisterNotifier(QObject*)));
+}
+
+void DataStorage::unregisterNotifier ( QObject* obj ) {
+	m_notifiers.remove((AbstractStorageNotifier*)obj);
 }

@@ -25,12 +25,14 @@ ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_A
 
 file(GLOB SRCS_Hm *.h)
 file(GLOB SRCSm *.cpp)
-file(GLOB SRCS_He execute/*.h)
-file(GLOB SRCSe execute/*.cpp)
+file(GLOB SRCS_He scene/*.h)
+file(GLOB SRCSe scene/*.cpp)
 file(GLOB SRCS_Hp plugins/*.h)
 file(GLOB SRCSp plugins/*.cpp)
-SET(SRCS_H ${SRCS_Hm} ${SRCS_Hp} ${SRCS_He})
-SET(SRCS ${SRCSm} ${SRCSp} ${SRCSe})
+file(GLOB SRCS_Hc controlsocket/*.h)
+file(GLOB SRCSc controlsocket/*.cpp)
+SET(SRCS_H ${SRCS_Hm} ${SRCS_Hp} ${SRCS_He} ${SRCS_Hc})
+SET(SRCS ${SRCSm} ${SRCSp} ${SRCSe} ${SRCSc})
 
 QT_WRAP_CPP(${PROJECT_NAME} SRCS_MOCS ${SRCS_H})
 #QT4_ADD_RESOURCES(RoomControlServer_RC ../res.qrc)

@@ -24,6 +24,7 @@
 #pragma once
 #include <QtCore/QObject>
 #include <QVariantMap>
+#include <QStringList>
 #include <QLocalSocket>
 #include <QLocalServer>
 #include "shared/jsondocuments/scenedocument.h"
@@ -73,10 +74,13 @@ public:
     PluginProcess* nextPlugin(QMap<QString,PluginProcess*>::iterator& index);
 
 	/**
-	 * Request all properties from all known plugin processes
-	 * and write them out to the server socket.
+	 * Request all properties from all known plugin processes.
 	 */
     void requestAllProperties(int sessionid = -1);
+	/**
+	 * Get a list of all plugin ids and instances. Example item: <plugin123:instance1>
+	 */
+	QStringList pluginids() const;
 private:
     PluginController ();
     void startOrChangePluginProcessByConfiguration ( const SceneDocument* configuration );

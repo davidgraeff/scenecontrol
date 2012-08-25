@@ -14,15 +14,6 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-	Purpose: Database convenience singleton object for
-	(1) importing json documents into the database (importFromJSON)
-	(1) exporting json documents out of the database (exportAsJSON)
-	(1) installing plugin json documents in the database if not already installed (verifyPluginData)
-	(2) listening for event document changes (startChangeListenerEvents)
-	(2) request for all events of a plugin (requestEvents)
-	(3) listening for configuration document changes (startChangeListenerSettings)
-	(3) requesting configuration for a plugin (requestPluginSettings)
 */
 
 #pragma once
@@ -32,47 +23,72 @@
 #include "shared/jsondocuments/scenedocument.h"
 #include <QDir>
 #include <QStringList>
+#include <QSet>
 
 class DataStorageWatcher;
+class AbstractStorageNotifier;
+
+/**
+ * Access to documents. It provides signals for changed or removed documents and
+ * allow StorageNotifiers to be registered to also get this information.
+ * Manages a memory cache for fast access of event, condition, action, scene, configurations
+ * documents.
+ */
 class DataStorage: public QObject {
     Q_OBJECT
 public:
 	virtual ~DataStorage();
     static DataStorage* instance();
-public Q_SLOTS:
-    QDir datadir() const;
+	/**
+	 * Utility method: Build a list of subdirectories of the given dir with absolute paths.
+	 */
     static QStringList directories(const QDir& dir);
+public Q_SLOTS:
+	/**
+	 * Return the directory that all documents were loaded from.
+	 */
+    QDir datadir() const;
 
     /**
-     * Connect to database (synchronous)
-     * Return true if the connection could be established
+     * Load event, condition, action, scene, configuration documents into the memory cache
+     * and build index structures.
      */
     void load();
 
     /**
-      * Remove all listeners and disconnect from database
+      * Unload the cache, remove index structures and StorageNotifier Objects
       */
     void unload();
 	
     /**
-     * Request all documents of a type
-     * Event_add and Event_remove signals are triggered in reaction
+     * Request all documents of a type. This will use the cache so
+     * only types within the cache are allowed (event, condition, action, scene, configuration).
      */
     QList<SceneDocument*> requestAllOfType(SceneDocument::TypeEnum type, const QVariantMap& filter = QVariantMap()) const;
 
+    /**
+     * Request all documents from the disk. Does not use the cache.
+     */
+    const QList< SceneDocument >& fetchAllDocuments() const;
+	
+	/**
+	 * Register a notifier Object. Whenever storage documents are removed, created or edited
+	 * all registered StorageNotifier Objects will be notified.
+	 */
+	void registerNotifier(AbstractStorageNotifier* notifier);
+    
     /// Remove a document
     void removeDocument(const SceneDocument &doc);
 
     /**
-      * Store a document given by data.
-      * data have to contain an ID (id_) field if insertWithNewID is not true
+      * Store a document given by data on disk.
+      * @param doc Have to be valid. Refer to the documentation.
       */
     bool storeDocument( const SceneDocument& doc, bool overwriteExisting = false );
 
     /**
      * Change configurations of a given plugin (synchronous)
-     * settings signal is triggered in reaction if startChangeListenerSettings has been called before
-	 * \param category An arbitrary non empty word describing the configuration category of the values
+     * \param category An arbitrary non empty word describing the configuration category of the values
      */
     int changeDocumentsValue(SceneDocument::TypeEnum type, const QVariantMap& filter, const QString& key, const QVariantMap& value);
     
@@ -80,11 +96,15 @@ public Q_SLOTS:
       * Return true if document with type and id is already stored
       */
     bool contains(const SceneDocument &doc) const;
-public Q_SLOTS:
-	// Create a new scene document on the heap and hand it over to this method and
-	// it will replace an older document with the same id and type
+private Q_SLOTS:
 	void reloadDocument(const QString &filename);
 	void removeFromCache(const QString &filename);
+	/**
+	 * This is not a public method and should not be called manually. It will be invoked
+	 * if a registered StorageNotifier Object gets deleted and will remove its reference
+	 * from m_notifiers.
+	 */
+	void unregisterNotifier(QObject * obj);
 private:
     DataStorage ();
     QDir m_dir;
@@ -93,11 +113,26 @@ private:
     QMap<QString, QList<SceneDocument*>> m_cache;
     QMap<QString, SceneDocument*> m_index_typeid;
 	QMap<QString, SceneDocument*> m_index_filename;
+	
+	QSet<AbstractStorageNotifier*> m_notifiers;
     
     QList<SceneDocument*> filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter = QVariantMap()) const;
+
 Q_SIGNALS:
 	/// A document changed: only triggered if startChangeListener has been called
     void doc_changed(const SceneDocument*);
 	/// A document has been removed: only triggered if startChangeListener has been called
     void doc_removed(const SceneDocument*);
+};
+
+/**
+ * AbstractStorageNotifier
+ */
+class AbstractStorageNotifier: public QObject {
+	friend class DataStorage;
+private:
+	// Called by the DataStorage
+	virtual void documentChanged(const QString& filename, SceneDocument* document) = 0;
+	// Called by the DataStorage
+	virtual void documentRemoved(const QString& filename, SceneDocument* document) = 0;
 };

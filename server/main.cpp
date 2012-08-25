@@ -21,11 +21,10 @@
 #include "shared/utils/logging.h"
 #include "shared/utils/paths.h"
 #include "plugins/plugincontroller.h"
-#include "execute/collectioncontroller.h"
-#include "execute/executerequest.h"
+#include "scene/scenecontroller.h"
 #include "libdatastorage/datastorage.h"
 #include "libdatastorage/importexport.h"
-#include "socket.h"
+#include "controlsocket/socket.h"
 
 #include <stdio.h>
 #include <signal.h>    /* signal name macros, and the signal() prototype */
@@ -111,13 +110,9 @@ int main(int argc, char *argv[])
     // PluginController: Start plugin processes and set up sockets for communication
     PluginController* plugins = PluginController::instance();
 
-	// ExecuteRequest: Singleton to execute requests
-	ExecuteRequest* executeRequests = ExecuteRequest::instance();
-	
     // connect objects
     QObject::connect(datastorage, SIGNAL(doc_changed(const SceneDocument*)), plugins,  SLOT(doc_changed(const SceneDocument*)));
     QObject::connect(datastorage, SIGNAL(doc_removed(const SceneDocument*)), plugins, SLOT(doc_removed(const SceneDocument*)));
-    QObject::connect(socket, SIGNAL(requestExecution(SceneDocument,int)), executeRequests, SLOT(requestExecution(SceneDocument,int)));
 
 	// Import json documents from install dir if no files are presend in the user storage dir
 	bool success;
@@ -152,7 +147,6 @@ int main(int argc, char *argv[])
 	delete socket;
     delete datastorage;
     delete collectioncontroller;
-	delete executeRequests;
 
     // close log file. only console log is possible from here on
     logclose();

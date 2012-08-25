@@ -44,7 +44,7 @@ endif (UDEV_INCLUDE_DIR AND UDEV_LIBRARY)
 
 if (UDEV_FOUND)
    if (NOT UDEV_FIND_QUIETLY)
-      message(STATUS "Found Udev: ${UDEV_LIBRARY}")
+      message(STATUS "Found Udev: ${UDEV_LIBRARY} ${UDEV_INCLUDE_DIR}")
    endif (NOT UDEV_FIND_QUIETLY)
 else (UDEV_FOUND)
    message(STATUS "Could NOT find Udev")

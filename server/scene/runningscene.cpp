@@ -1,4 +1,4 @@
-#include "runningcollection.h"
+#include "runningscene.h"
 #include "plugins/plugincontroller.h"
 #include "shared/jsondocuments/scenedocument.h"
 #include <plugins/pluginprocess.h>

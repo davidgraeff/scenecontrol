@@ -13,9 +13,9 @@ int main(int argc, char *argv[])
       char lineWithChanges [ 258 ];
       while ( fgets ( line, sizeof line, file ) != NULL ) /* read a line */
       {
-	 if (strlen(line)==1)
-             memcpy(lineWithChanges, " .\n\0", 4);
-	 else {
+	 if (strlen(line)==1) // empty line containing only a newline character:
+             memcpy(lineWithChanges, " .\n\0", 4); // Replace that line with a whitespace+dot+newline+nullbyte
+	 else { // non empty line: move the line two characters left and assign a whitespace to characters 0+1.
 	     lineWithChanges[0] = ' '; lineWithChanges[1] = ' ';
 	     memcpy(lineWithChanges+2, line, sizeof line);
 	 }

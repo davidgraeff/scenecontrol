@@ -26,8 +26,21 @@
 #include <QSslSocket>
 #include <QTcpServer>
 #include "shared/jsondocuments/scenedocument.h"
+#include <libdatastorage/datastorage.h>
 
 class ServiceController;
+
+
+class StorageNotifierSocket: public AbstractStorageNotifier {
+public:
+	StorageNotifierSocket(int sessionid);
+private:
+	int m_sessionid;
+	// Called by the DataStorage
+	virtual void documentChanged(const QString& filename, SceneDocument* document);
+	// Called by the DataStorage
+	virtual void documentRemoved(const QString& filename, SceneDocument* document);
+};
 
 class Socket: public QTcpServer {
     Q_OBJECT
@@ -35,19 +48,20 @@ public:
     static Socket* instance();
     virtual ~Socket();
 
-    void sendToAllClients(const QByteArray& rawdata);
-    void sendToClient(const QByteArray& rawdata, int sessionid );
-    
-    void propagateProperty (const QVariantMap& data, int sessionid = -1);
+	/**
+	 * Send a document as json formated string to all connected clients (sessionid==-1)
+	 * or to a specific client.
+	 */
+    void sendToClients (const QByteArray& rawdata, int sessionid = -1);
 private:
     Socket ();
     ServiceController* m_servicecontroller;
     QMap<int, QSslSocket*> m_sockets;
+	QMap<int, StorageNotifierSocket*> m_notifiers;
     virtual void	incomingConnection ( int socketDescriptor );
+	StorageNotifierSocket* notifier(int sessionid);
 private Q_SLOTS:
     void readyRead();
     void socketDisconnected();
     void sslErrors ( const QList<QSslError> & errors );
-Q_SIGNALS:
-    void requestExecution ( const SceneDocument& doc, int session_id);
 };

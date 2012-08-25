@@ -23,7 +23,6 @@
 #include <QString>
 #include <QFileInfo>
 #include <QDir>
-#include <boost/concept_check.hpp>
 #include <shared/jsondocuments/scenedocument.h>
 
 namespace Datastorage {

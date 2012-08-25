@@ -99,7 +99,7 @@ bool SceneDocument::isValid() const {
   return !m_map.empty() && hasType() && hasid() && hasComponentID();
 }
 
-QByteArray SceneDocument::getjson() const { return JSON::stringify(m_map).toUtf8(); }
+QByteArray SceneDocument::getjson() const { return JSON::stringify(m_map).toUtf8() + "\n"; }
 
 bool SceneDocument::correctTypes(const QVariantMap& types)
 {

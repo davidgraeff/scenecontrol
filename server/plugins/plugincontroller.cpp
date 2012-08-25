@@ -1,12 +1,10 @@
 #include "plugins/plugincontroller.h"
 #include "plugins/pluginprocess.h"
-#include "execute/collectioncontroller.h"
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/jsondocuments/json.h"
 #include "shared/utils/paths.h"
 #include "libdatastorage/datastorage.h"
 #include "libdatastorage/importexport.h"
-#include "socket.h"
 
 #include <QCoreApplication>
 #include <QSettings>
@@ -204,24 +202,21 @@ void PluginController::startOrChangePluginProcessByConfiguration ( const SceneDo
 }
 
 void PluginController::requestAllProperties(int sessionid) {
-    {
-        QMap<QString,PluginProcess*>::iterator i = getPluginIterator();
-        while (PluginProcess* plugin = nextPlugin(i)) {
-            plugin->requestProperties(sessionid);
-        }
-    }
+	QMap<QString,PluginProcess*>::iterator i = getPluginIterator();
+	while (PluginProcess* plugin = nextPlugin(i)) {
+		plugin->requestProperties(sessionid);
+	}
+}
 
+QStringList PluginController::pluginids() const
+{
     // Generate plugin list
     QStringList pluginlist;
-    QMap<QString,PluginProcess*>::iterator i = m_plugins.begin();
-    for (;i!=m_plugins.end();++i) {
+    for (auto i = m_plugins.constBegin();i!=m_plugins.constEnd();++i) {
         const QString identifier = (*i)->getPluginid() + QLatin1String(":") + (*i)->getInstanceid();
         pluginlist += identifier;
     }
-    SceneDocument s = SceneDocument::createNotification("plugins");
-    s.setData("plugins", pluginlist);
-    s.setComponentID(QLatin1String("PluginController"));
-    Socket::instance()->propagateProperty(s.getData(), sessionid);
+    return pluginlist;
 }
 
 void PluginController::processFinished(PluginProcess* process) {
