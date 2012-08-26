@@ -179,7 +179,7 @@ void AbstractPlugin::newConnectionCommunication()
     }
 }
 
-bool AbstractPlugin::sendDataToComponent(const QByteArray& componentUniqueID, const QVariantMap& dataout)
+bool AbstractPlugin::sendDataToComponent( const QByteArray& componentUniqueID, const QVariantMap& dataout )
 {
     QLocalSocket* socket = getClientConnection(componentUniqueID);
     if (!socket) {

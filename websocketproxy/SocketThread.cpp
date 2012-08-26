@@ -1,5 +1,5 @@
 #include "SocketThread.h"
-#include <qt4/QtCore/QDebug>
+#include <QDebug>
 
 SocketThread::SocketThread( QWsSocket * wsSocket ) :
 	socket( wsSocket )
@@ -37,7 +37,7 @@ void SocketThread::sendMessage( QString message )
 
 void SocketThread::processPong( quint64 elapsedTime )
 {
-	QDebug( "ping: " + QString::number(elapsedTime) + " ms" );
+	qDebug() << "ping:" << elapsedTime << " ms" ;
 }
 
 void SocketThread::socketDisconnected()

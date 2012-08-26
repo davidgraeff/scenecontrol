@@ -1,5 +1,4 @@
-#ifndef SOCKETTHREAD_H
-#define SOCKETTHREAD_H
+#pragma once
 
 #include <QThread>
 
@@ -27,5 +26,3 @@ signals:
 private:
 	
 };
-
-#endif // SOCKETTHREAD_H

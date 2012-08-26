@@ -1,11 +1,11 @@
-#include <QApplication>
+#include <QCoreApplication>
 #include <QtDebug>
 
 #include "Server.h"
 
 int main(int argc, char *argv[])
 {
-	QApplication app(argc, argv);
+	QCoreApplication app(argc, argv);
 
 	Server server;
 	if (!server.connectToSceneServer()) {

@@ -19,8 +19,6 @@ IF (NOT BUILD_SERVER)
 ENDIF()
 
 include_directories(${QT_INCLUDES} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
-#LWS_OPENSSL_SUPPORT: for libwebsocket to support wss (ws secured with ssl)
-#LWS_OPENSSL_CLIENT_CERTS: for libwebsocket; client certificate directory (=empty for server)
 ADD_DEFINITIONS(-D_GNU_SOURCE -Wall -W -DQT_NO_CAST_FROM_ASCII -DQT_NO_CAST_TO_ASCII -DQT_USE_FAST_OPERATOR_PLUS -DQT_USE_FAST_CONCATENATION ${QT_DEFINITIONS})
 
 file(GLOB SRCS_Hm *.h)

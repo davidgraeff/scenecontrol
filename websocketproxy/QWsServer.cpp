@@ -99,7 +99,7 @@ void QWsServer::dataReceived()
 	regExp.setMinimal( true );
 	
 	// Extract mandatory datas
-	EWebsocketVersion version2 = (EWebsocketVersion)14;
+	//EWebsocketVersion version2 = (EWebsocketVersion)14;
 	
 	// Version
 	regExp.setPattern( QWsServer::regExpVersionStr );
@@ -396,7 +396,7 @@ QString QWsServer::composeOpeningHandshakeResponseV0( QString accept, QString or
 	response.append( "Upgrade: Websocket\r\n" );
 	response.append( "Connection: Upgrade\r\n" );
 	response.append( "Sec-WebSocket-Origin: " + origin + "\r\n" );
-	response.append( "Sec-WebSocket-Location: ws://" + hostAddress + ( hostPort.isEmpty() ? "" : (":"+hostPort) ) + resourceName + "\r\n" );
+	response.append( QLatin1String("Sec-WebSocket-Location: ws://") + hostAddress + ( hostPort.isEmpty() ? QString() : (QLatin1String(":")+hostPort) ) + resourceName + QLatin1String("\r\n") );
 	if ( ! protocol.isEmpty() )
 		response.append( "Sec-WebSocket-Protocol: " + protocol + "\r\n" );
 	response.append( "\r\n" );

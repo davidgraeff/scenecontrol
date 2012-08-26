@@ -40,7 +40,7 @@ QWsSocket::~QWsSocket()
 	if ( state() == QAbstractSocket::ConnectedState )
 	{
 		qDebug() << "CloseAway, socket destroyed in server";
-		close( CloseGoingAway, "socket destroyed in server" );
+		close( CloseGoingAway, QLatin1String("socket destroyed in server") );
 	}
 }
 
@@ -140,6 +140,9 @@ void QWsSocket::processDataV4()
 				closingHandshakeReceived = true;
 				close();
 				break;
+			default:
+				qWarning()<< "Unhandled payload opcode";
+				break;
 		}
 
 		currentFrame.clear();
@@ -224,7 +227,7 @@ qint64 QWsSocket::write ( const QString & string )
 		return QWsSocket::write( string.toAscii() );
 	}
 
-	QList<QByteArray> & framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
+	const QList<QByteArray> & framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
 	return writeFrames( framesList );
 }
 
@@ -239,7 +242,7 @@ qint64 QWsSocket::write ( const QByteArray & byteArray )
 		return writeFrame( BA );
 	}
 
-	QList<QByteArray> & framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
+	const QList<QByteArray> & framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
 
 	qint64 nbBytesWritten = writeFrames( framesList );
 	emit bytesWritten( nbBytesWritten );
@@ -311,7 +314,7 @@ void QWsSocket::close( ECloseStatusCode closeStatusCode, QString reason )
 				BA.append( QWsSocket::composeHeader( true, OpClose, 0 ) );
 
 				// Close status code (optional)
-				BA.append( QWsServer::serializeInt( (int)closeStatusCode, 2 ) );
+				BA.append( QWsServer::serializeInt( (int)closeStatusCode, 2 ).toAscii() );
 
 				// Reason (optional)
 				if ( reason.size() )
@@ -381,11 +384,12 @@ QByteArray QWsSocket::mask( QByteArray & data, QByteArray & maskingKey )
 	return data;
 }
 
-QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary, int maxFrameBytes )
+QList<QByteArray> QWsSocket::composeFrames( const QByteArray& byteArray_, bool asBinary, int maxFrameBytes )
 {
 	if ( maxFrameBytes == 0 )
 		maxFrameBytes = maxBytesPerFrame;
 
+	QByteArray byteArray = byteArray_;
 	QList<QByteArray> framesList;
 
 	QByteArray maskingKey;
@@ -429,7 +433,7 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary,
 	return framesList;
 }
 
-QByteArray QWsSocket::composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray & maskingKey )
+QByteArray QWsSocket::composeHeader( bool fin, QWsSocket::EOpcode opcode, quint64 payloadLength, const QByteArray& maskingKey )
 {
 	QByteArray BA;
 	quint8 byte;

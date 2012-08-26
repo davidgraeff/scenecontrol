@@ -202,6 +202,8 @@ void plugin::clear()
 {
     m_ios.clear();
     m_ios.clear();
+	
+	changeProperty(SceneDocument::createModelReset("anel.io", "channel").getData());
 
     SceneDocument doc;
     doc.setMethod("clear");

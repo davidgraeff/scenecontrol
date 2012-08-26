@@ -66,7 +66,7 @@ public:
     virtual ~AbstractPlugin();
 
     bool createCommunicationSockets();
-    bool sendDataToComponent(const QByteArray& plugin_id, const QVariantMap& data);
+    bool sendDataToComponent( const QByteArray& componentUniqueID, const QVariantMap& dataout );
     void changeConfig(const QByteArray& category, const QVariantMap& data);
     void changeProperty(const QVariantMap& data, int sessionid = -1);
     void eventTriggered(const QString& eventid, const QString& dest_collectionId);

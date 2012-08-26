@@ -22,32 +22,13 @@
 #include <QStringList>
 #include "shared/plugins/abstractplugin.h"
 
-/**
- * Minimal example plugin. You always should inherit AbstractPlugin for getting
- * preimplemented funcatinaliy like plugin<-->plugin and plugin<-->server
- * communication as well as predefined overridable methods like initialize and clear.
- */
 class plugin : public AbstractPlugin
 {
     Q_OBJECT
 public:
-    /**
-     * Do not use the constructor, instead override "initialize" for setting up your ressources.
-     */
     plugin(const QString& pluginid, const QString& instanceid);
-    /**
-    * Do not (only) clean up in the destructor. The server process may like to recycle the plugin
-    * process. Use "clear" for cleaning up and "initialize" for setting up your ressources.
-    */
     virtual ~plugin();
 public Q_SLOTS:
-    /**
-     * Just implement your desired functionality here. The parameters are defined by the json schema.
-	 * Example: A json schema defines a method "callthis" with one int parameter with the name "number".
-	 * Then your method signature should be:
-	 * void callthis(QByteArray componentid_, QByteArray instanceid_, int number);
-	 * The first two parameters are necessary and give you information about the sender. The server e.g.
-	 * has the componentid_==COMSERVERSTRING and en empty instanceid.
-     */
+
 private:
 };
