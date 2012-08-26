@@ -167,15 +167,18 @@ ToDo: 4. Quartal 2012:
 Benötigte Bibliotheken für den Server ohne Plugins:
 ===================================================
 Kernprozess:
+------------
 Name          Ubuntu Paket          Beschreibung
-Qt4           libqt4-dev            Qt4 Framework
+* Qt4           libqt4-dev            Qt4 Framework
 
 SessionProxy:
+-------------
 Name          Ubuntu Paket          Beschreibung
-PAM           libpam0g-dev          Benutzerauthentifizierung
+* PAM           libpam0g-dev          Benutzerauthentifizierung
 
 Plugins:
+--------
 Name          Ubuntu Paket          Beschreibung
-PA:Pulseaudio -
-PA:GLib       -
-Linux_input_events:udev  -
+* *PA:Pulseaudio -
+* PA:GLib       -
+* Linux_input_events:udev  -
