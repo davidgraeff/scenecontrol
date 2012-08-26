@@ -1,9 +1,8 @@
-Raumautomatisierungsoftware:
-============================
+Heimautomatisierungssoftware:
+=============================
 Eine Plugin orientierte Steuersoftware für die Heimautomatisierung. Einige auf die Bedürfnisse
 der Entwickler abgestimmten Plugins sowie generische Plugins sind bereits vorhanden.
 Diese README gibt erste Hintergrundinformationen.
-Die Dokumentation befindet sich unter www.sceneserver.de.vu
 
 Unterstützte Plattformen:
 =========================
@@ -146,9 +145,24 @@ zu finden. Im nachfolgendem Abschnitt sind die Abhängigkeiten noch einmal
 aufgeführt. Nach dem Generierungsschritt liegen (je nach Auswahl) Visual Studio
 Projektdateien, Makefiles, usw vor.
 
+Unter Windows: Hier wird VisualStudio 10+ empfohlen. Auf der Konsole kann nmake
+verwendet werden, ansonsten lässt sich das Projekt auch mit der VS IDE bauen.
+
 Unter Linux: Hier bietet sich das Erstellen lassen von Makefiles an. Anschließend
 in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
-generieren zu lassen den Befehl "make package" nutzen.
+generieren zu lassen den Befehl "make package" nutzen. Fertige monolitische DEB
+Pakete lassen sich im Downloadbereich herunterladen.
+
+Work in Progress: 3. Quartal 2012:
+* Websocketproxy
+* Pluginverbesserungen
+
+ToDo: 4. Quartal 2012:
+* Dokumentation unter www.sceneserver.de.vu inkl. Architekturschaubildern :D
+* HTML5 Editor: Evaluierung des JS Toolkits läuft
+* SessionProxy
+* Leds/Schalter Android App
+* Beamer Android App
 
 Benötigte Bibliotheken für den Server ohne Plugins:
 ===================================================
@@ -160,6 +174,8 @@ SessionProxy:
 Name          Ubuntu Paket          Beschreibung
 PAM           libpam0g-dev          Benutzerauthentifizierung
 
-Websocketsproxy:
+Plugins:
 Name          Ubuntu Paket          Beschreibung
-libwebsockets ----                  Websocket Bibliothek  (http://git.warmcat.com/cgi-bin/cgit/libwebsockets/) / LGPL 2.1
+PA:Pulseaudio -
+PA:GLib       -
+Linux_input_events:udev  -
