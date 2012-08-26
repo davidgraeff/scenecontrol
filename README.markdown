@@ -163,6 +163,7 @@ ToDo: 4. Quartal 2012:
 * SessionProxy
 * Leds/Schalter Android App
 * Beamer Android App
+* Alarm Android App
 
 Benötigte Bibliotheken für den Server ohne Plugins:
 ===================================================
