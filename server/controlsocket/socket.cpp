@@ -180,7 +180,8 @@ void Socket::readyRead() {
 		{
 			// Convert all SceneDocuments to QVariantMaps and store them in a QVariantList
 			QVariantList l;
-			const QList<SceneDocument>& docs = DataStorage::instance()->fetchAllDocuments();
+			QList<SceneDocument> docs;
+			DataStorage::instance()->fetchAllDocuments(docs);
 			for (int i=0;i<docs.size(); ++i) {
 				l.append(docs[i].getData());
 			}

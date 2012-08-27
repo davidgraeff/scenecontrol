@@ -284,9 +284,7 @@ void DataStorage::removeFromCache( const QString& filename ) {
 	
 	delete olddoc;
 }
-const QList< SceneDocument >& DataStorage::fetchAllDocuments() const {
-	QList< SceneDocument > result;
-	
+void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 	QStringList dirs;
 	dirs.append(m_dir.absolutePath());	// add the user storage dir
 	
@@ -310,8 +308,6 @@ const QList< SceneDocument >& DataStorage::fetchAllDocuments() const {
 			result.append(doc);
 		}
 	}
-	
-	return result;
 }
 
 void DataStorage::registerNotifier ( AbstractStorageNotifier* notifier ) {

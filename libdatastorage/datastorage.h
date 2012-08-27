@@ -69,7 +69,7 @@ public Q_SLOTS:
     /**
      * Request all documents from the disk. Does not use the cache.
      */
-    const QList< SceneDocument >& fetchAllDocuments() const;
+    void fetchAllDocuments( QList< SceneDocument >& result ) const;
 	
 	/**
 	 * Register a notifier Object. Whenever storage documents are removed, created or edited
