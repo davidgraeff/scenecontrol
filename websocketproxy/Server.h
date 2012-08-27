@@ -6,7 +6,6 @@
 
 #include "QWsServer.h"
 #include "QWsSocket.h"
-#include "SocketThread.h"
 
 class Server : public QObject
 {
@@ -15,17 +14,25 @@ class Server : public QObject
 public:
 	Server();
 	~Server();
-	bool connectToSceneServer();
+    bool startWebsocket();
 
-public slots:
-	void processNewConnection();
-	void processWSMessage( QString message );
-
-signals:
-	void broadcastWSMessage( QString message );
-
+public Q_SLOTS:
+	// Debug output slots
+	void sslErrors ( const QList<QSslError> & errors );
+	void pong( quint64 elapsedTime );
+	// new client connection slot
+	void newClientConnection();
+	// message passing
+	void processClientMessage( const QByteArray& message );
+	void processServerMessage();
+	// disconnection
+	void serverDisconnected();
+	void clientDisconnected();
+    void serverError ( QAbstractSocket::SocketError );
 private:
-	QWsServer * server;
+	QWsServer * m_server;
+	QMap<QSslSocket*, QWsSocket*> m_server_to_client;
+	QMap<QWsSocket*, QSslSocket*> m_client_to_server;
 };
 
 #endif

@@ -34,66 +34,99 @@ Socket* Socket::instance()
 void Socket::incomingConnection(int socketDescriptor)
 {
     QSslSocket *socket = new QSslSocket;
-    if (socket->setSocketDescriptor(socketDescriptor)) {
-        m_sockets.insert(socketDescriptor, socket);
-        connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
-        connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
-        connect(socket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
-        socket->ignoreSslErrors();
-        socket->setProtocol(QSsl::SslV3);
+    if (!socket->setSocketDescriptor(socketDescriptor)) {
+		delete socket;
+		return;
+	}
 
-        QByteArray key;
-        QByteArray cert;
+	m_sockets.insert(socketDescriptor, socket);
+	connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
+	connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+	connect(socket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
+	socket->setProtocol(QSsl::SslV3);
 
-        QFile fileKey(setup::certificateFile("server.key"));
-        if (fileKey.open(QIODevice::ReadOnly))
-        {
-            key = fileKey.readAll();
-            fileKey.close();
-        }
-        else
-        {
-            qWarning() << fileKey.errorString();
-        }
+	QList<QSslError> expectedSslErrors;
+	
+	// Set private key for SSL
+	QFile fileKey(setup::certificateFile("server.key"));
+	if (fileKey.open(QIODevice::ReadOnly))
+	{
+		QByteArray key = fileKey.readAll();
+		fileKey.close();
+		QSslKey sslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
+		if (key.isNull()) {
+			qWarning() << "key invalid";
+		} else
+			socket->setPrivateKey(sslKey);
+	}
+	else
+	{
+		qWarning() << fileKey.errorString();
+	}
 
-        QFile fileCert(setup::certificateFile("server.crt"));
-        if (fileCert.open(QIODevice::ReadOnly))
-        {
-            cert = fileCert.readAll();
-            fileCert.close();
-        }
-        else
-        {
-            qWarning() << fileCert.errorString();
-        }
+	// Set public certificate
+	QFile fileCert(setup::certificateFile("server.crt"));
+	if (fileCert.open(QIODevice::ReadOnly))
+	{
+		QByteArray cert = fileCert.readAll();
+		fileCert.close();
+		QSslCertificate sslCert(cert);
+		if (sslCert.isNull()) {
+			qWarning() << "sslCert invalid" << fileCert.fileName();
+		} else {
+			socket->setLocalCertificate(sslCert);
+		}
+	}
+	else
+	{
+		qWarning() << fileCert.errorString();
+	}
+	
+	// Add all other certificate files to the trusted ones.
+	QStringList certfiles = setup::certificateClientFiles();
+	while (certfiles.size()) {
+		QFile fileCert(certfiles.takeLast());
+		if (fileCert.open(QIODevice::ReadOnly))
+		{
+			QByteArray cert = fileCert.readAll();
+			fileCert.close();
+			QSslCertificate sslCert(cert);
+			if (sslCert.isNull()) {
+				qWarning() << "sslCert invalid" << fileCert.fileName();
+			} else {
+				socket->addCaCertificate(sslCert);
+				QSslError error(QSslError::SelfSignedCertificate, sslCert);
+				expectedSslErrors.append(error);
+				QSslError error2(QSslError::HostNameMismatch, sslCert);
+				expectedSslErrors.append(error2);
+				qDebug() << "Add client ssl certificate" << fileCert.fileName();
+			}
+		}
+		else
+		{
+			qWarning() << fileCert.errorString();
+		}
+	}
+	
+	socket->ignoreSslErrors(expectedSslErrors);
+	socket->startServerEncryption();
+	qDebug() << "New connection" << socket->peerAddress();
 
-        QSslKey sslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
-        if (key.isNull()) {
-            qWarning() << "key invalid";
-        }
-
-        QSslCertificate sslCert(cert);
-        if (sslCert.isNull()) {
-            qWarning() << "sslCert invalid";
-        }
-        socket->setPrivateKey(sslKey);
-        socket->setLocalCertificate(sslCert);
-        socket->startServerEncryption();
-        qDebug() << "new socket" << socketDescriptor << socket->state() << socket->peerAddress() << socket->sslErrors();
-
-        // Notify plugins of new session
-        PluginController* pc = PluginController::instance();
-        QMap<QString,PluginProcess*>::iterator i = pc->getPluginIterator();
-        while (PluginProcess* plugin = pc->nextPlugin(i)) {
-            plugin->session_change(socketDescriptor, true);
-        }
-    } else {
-        delete socket;
-    }
+	// Notify plugins of new session
+	PluginController* pc = PluginController::instance();
+	QMap<QString,PluginProcess*>::iterator i = pc->getPluginIterator();
+	while (PluginProcess* plugin = pc->nextPlugin(i)) {
+		plugin->session_change(socketDescriptor, true);
+	}
 }
 
 void Socket::sslErrors ( const QList<QSslError> & errors ) {
-    qDebug() << errors;
+	QList<QSslError> filteredErrors(errors);
+	for (int i=filteredErrors.size()-1;i>=0;--i)
+		if (filteredErrors[i].error() == QSslError::SelfSignedCertificate)
+			filteredErrors.removeAt(i);
+	if (filteredErrors.size())
+		qWarning() << "SSL Errors" << filteredErrors;
 }
 
 void Socket::readyRead() {

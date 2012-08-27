@@ -1,49 +1,216 @@
 #include "Server.h"
+#include "config.h"
+#include <shared/utils/paths.h>
+#include <shared/jsondocuments/json.h>
+#include <shared/jsondocuments/scenedocument.h>
+Server::Server() : m_server(0) {}
 
-Server::Server()
+Server::~Server() {}
+
+void Server::newClientConnection()
 {
-	int port = 1337;
-    server = new QWsServer( this );
-	if ( ! server->listen( QHostAddress::Any, port ) )
+	// Get the client socket
+	QWsSocket * clientsocket = m_server->nextPendingConnection();
+
+	// send ping
+	clientsocket->ping();
+
+	// create server socket
+    QSslSocket *serversocket = new QSslSocket;
+	connect(serversocket, SIGNAL(sslErrors (QList<QSslError>)), this, SLOT(sslErrors (QList<QSslError>)));
+	serversocket->ignoreSslErrors();
+	serversocket->setProtocol(QSsl::SslV3);
+	serversocket->setPeerVerifyMode(QSslSocket::VerifyNone);
+
+	// Add client key: Currently not used
+	QFile fileKey(setup::certificateFile("clients/websocketproxy.key"));
+	if (fileKey.open(QIODevice::ReadOnly))
 	{
-		qDebug() << "Error: Can't launch server";
-		qDebug() << "QWsServer error :" << server->errorString();
+		QByteArray key = fileKey.readAll();
+		fileKey.close();
+		QSslKey sslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
+		if (key.isNull()) {
+			qWarning() << "key invalid";
+		} else
+			serversocket->setPrivateKey(sslKey);
 	}
 	else
 	{
-		qDebug() << "Server is listening port " + QString::number(port);
+		qWarning() << fileKey.errorString();
 	}
-	connect( server, SIGNAL(newConnection()), this, SLOT(processNewConnection()) );
-}
 
-Server::~Server()
-{
-}
-
-void Server::processNewConnection()
-{
-	qDebug() << "Client connected";
-
-	// Get the connecting socket
-	QWsSocket * socket = server->nextPendingConnection();
-
-	// Create a new thread and giving to him the socket
-	SocketThread * thread = new SocketThread( socket );
+	// Set public certificate
+	QFile fileCert(setup::certificateFile("clients/websocketproxy.crt"));
+	if (fileCert.open(QIODevice::ReadOnly))
+	{
+		QByteArray cert = fileCert.readAll();
+		fileCert.close();
+		QSslCertificate sslCert(cert);
+		if (sslCert.isNull()) {
+			qWarning() << "sslCert invalid";
+		} else
+			serversocket->setLocalCertificate(sslCert);
+	}
+	else
+	{
+		qWarning() << fileCert.errorString();
+	}
 	
-	// connect for message broadcast
-	connect( socket, SIGNAL(frameReceived(QString)), this, SIGNAL(broadcastMessage(QString)) );
-	//connect( this, SIGNAL(broadcastMessage(QString)), thread, SLOT(sendMessage(QString)) );
+	// Add public certificate of the server to the trusted hosts
+	QFile fileCertServer(setup::certificateFile("server.crt"));
+	if (fileCertServer.open(QIODevice::ReadOnly))
+	{
+		QByteArray cert = fileCertServer.readAll();
+		fileCertServer.close();
+		QSslCertificate sslCert(cert);
+		if (sslCert.isNull()) {
+			qWarning() << "sslCert invalid";
+		} else
+			serversocket->addCaCertificate(sslCert);
+	}
+	else
+	{
+		qWarning() << fileCert.errorString();
+	}
 
-	// connect for message display in log
-	connect( socket, SIGNAL(frameReceived(QString)), this, SLOT(processWSMessage(QString)) );
+	// add to lists
+	m_server_to_client.insert(serversocket,clientsocket);
+	m_client_to_server.insert(clientsocket,serversocket);
+	
+	// Connect signals
+	connect( clientsocket, SIGNAL(frameReceivedText(QByteArray)), this, SLOT(processClientMessage(QByteArray)) );
+	connect( clientsocket, SIGNAL(disconnected()), this, SLOT(clientDisconnected()) );
+	connect( clientsocket, SIGNAL(pong(quint64)), this, SLOT(pong(quint64)) );
+	
+	connect(serversocket, SIGNAL(readyRead()), this, SLOT(processServerMessage()));
+	connect(serversocket, SIGNAL(disconnected()), this, SLOT(serverDisconnected()));
+	connect(serversocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(serverError(QAbstractSocket::SocketError)));
 
-	// Starting the thread
-	thread->start();
+	qDebug() << "Proxy connection from server" << QLatin1String("127.0.0.1") << "to client" << clientsocket->hostAddress();
+	
+	// Now try to connect to the server: If it fails the disconnect signal will clean up
+	serversocket->connectToHostEncrypted(QLatin1String("127.0.0.1"), ROOM_LISTENPORT);
 }
 
-void Server::processWSMessage( QString message )
+
+void Server::sslErrors ( const QList<QSslError> & errors ) {
+	QList<QSslError> filteredErrors(errors);
+	for (int i=filteredErrors.size()-1;i>=0;--i)
+		if (filteredErrors[i].error() == QSslError::SelfSignedCertificate || filteredErrors[i].error() == QSslError::HostNameMismatch)
+			filteredErrors.removeAt(i);
+	if (filteredErrors.size())
+		qWarning() << "SSL Errors" << filteredErrors;
+}
+
+void Server::pong( quint64 elapsedTime )
 {
-	// Just display in log the message received by a socket
-	qDebug() << QString::fromUtf8( message.toStdString().c_str() );
+	qDebug() << "ping:" << elapsedTime << " ms" ;
+}
+
+void Server::processServerMessage() {
+    QSslSocket *serverSocket = (QSslSocket *)sender();
+    while (serverSocket->canReadLine()) {
+        const QByteArray message = serverSocket->readLine();
+        if (!message.length())
+            continue;
+		bool error;
+		JSON::parse(message, &error);
+		if (error) {
+			qWarning()<<"Invalid document server->client";
+			continue;
+		}
+
+		QWsSocket* clientSocket = m_server_to_client.value(serverSocket);
+		Q_ASSERT(clientSocket);
+		clientSocket->writeText(message);
+    }
+}
+
+void Server::processClientMessage( const QByteArray& message )
+{
+	QWsSocket *clientSocket = (QWsSocket *)sender();
+	if (!message.length())
+		return;
+	bool error;
+	JSON::parse(message, &error);
+	if (error) {
+		qWarning()<<"Invalid document client->server";
+		// send message to client
+		SceneDocument doc;
+		doc.setData("error", true);
+		doc.setData("errormsg", "Invalid document");
+		clientSocket->writeText(doc.getjson());
+		return;
+	}
+
+	QSslSocket* serverSocket = m_client_to_server.value(clientSocket);
+	Q_ASSERT(serverSocket);
+	serverSocket->write(message+"\n");
 }	
-bool Server::connectToSceneServer() {}
+
+void Server::serverDisconnected() {
+    QSslSocket *serverSocket = (QSslSocket *)sender();
+	// remove from lists
+    QWsSocket* clientSocket = m_server_to_client.take(serverSocket);
+	if (!clientSocket)
+		return;
+	m_client_to_server.remove(clientSocket);
+	// send message to client
+	SceneDocument doc;
+	doc.setData("error", true);
+	doc.setData("errormsg", "Server disconnected");
+	clientSocket->writeText(doc.getjson());
+	// delete later
+    serverSocket->deleteLater();
+	clientSocket->deleteLater();
+	// message
+    qDebug() << "Server closed the connection" << clientSocket->hostAddress();
+}
+
+void Server::serverError ( QAbstractSocket::SocketError ) {
+    QSslSocket *serverSocket = (QSslSocket *)sender();
+	// remove from lists
+    QWsSocket* clientSocket = m_server_to_client.take(serverSocket);
+	if (!clientSocket)
+		return;
+	m_client_to_server.remove(clientSocket);
+	// send message to client
+	SceneDocument doc;
+	doc.setData("error", true);
+	doc.setData("errormsg", "Server error: "+serverSocket->errorString().toUtf8());
+	clientSocket->writeText(doc.getjson()+"\n");
+	// delete later
+    serverSocket->deleteLater();
+	clientSocket->deleteLater();
+	// message
+    qDebug() << "Server connection failed" << clientSocket->hostAddress() << serverSocket->errorString() << serverSocket->error();
+}
+
+void Server::clientDisconnected() {
+    QWsSocket *clientSocket = (QWsSocket *)sender();
+	// remove from lists
+    QSslSocket* serverSocket = m_client_to_server.take(clientSocket);
+	if (!serverSocket)
+		return;
+	m_server_to_client.remove(serverSocket);
+	// delete later
+    serverSocket->deleteLater();
+	clientSocket->deleteLater();
+	// message
+    qDebug() << "Client closed the connection" << clientSocket->hostAddress() << clientSocket->errorString() << clientSocket->error();
+}
+
+bool Server::startWebsocket() {
+	delete m_server;
+    m_server = new QWsServer( this );
+	if ( ! m_server->listen( QHostAddress::Any, ROOM_WEBSOCKETPROXY_LISTENPORT ) )
+	{
+		qWarning() << "Error: Can't launch server";
+		qWarning() << "QWsServer error :" << m_server->errorString();
+		return false;
+	}
+	
+	qDebug() << "WebsocketProxy port:" << QString::number(ROOM_WEBSOCKETPROXY_LISTENPORT);
+	connect( m_server, SIGNAL(newConnection()), this, SLOT(newClientConnection()) );
+	return true;
+}

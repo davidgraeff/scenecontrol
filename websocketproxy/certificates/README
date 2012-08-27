@@ -1,0 +1,5 @@
+Description:
+------------
+This certificate is for tests only! Generate your own certificate for
+server <--> websocketproxy ssl communication with openssl, e.g.:
+>> openssl req -x509 -new -out websocketproxy.crt -keyout websocketproxy.key -days 365

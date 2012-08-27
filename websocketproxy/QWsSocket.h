@@ -81,16 +81,16 @@ public:
 	void setProtocol( QString p );
 	void setExtensions( QString e );
 
-	qint64 write ( const QString & string ); // write data as text
-	qint64 write ( const QByteArray & byteArray ); // write data as binary
+	qint64 writeText ( const QByteArray & string ); // write data as text
+	qint64 writeBinary ( const QByteArray & byteArray ); // write data as binary
 
 public slots:
 	virtual void close( ECloseStatusCode closeStatusCode = CloseNormal, QString reason = QString() );
 	void ping();
 
 signals:
-	void frameReceived(QString frame);
-	void frameReceived(QByteArray frame);
+	void frameReceivedText(const QByteArray& frame);
+	void frameReceivedBinary(const QByteArray frame);
 	void pong(quint64 elapsedTime);
 
 protected:

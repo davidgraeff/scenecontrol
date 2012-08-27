@@ -166,42 +166,33 @@ QString JSON::stringify(QVariant v){
     return QString();
 }
 
-// static QVariant parseValue(QTextStream &s,bool & error);
 static QVariantMap parseObject (QTextStream & s,bool & error);
 static QVariantList parseArray (QTextStream & s,bool & error);
 static QString parseString (QTextStream & s,bool & error);
 static QVariant parseLiteral (QTextStream & s,bool & error);
 
-QVariant JSON::parse(const QByteArray& string) {
-  return parse(QString::fromUtf8(string));
+QVariant JSON::parse(const QByteArray& string,bool * allerror){
+	QTextStream s(string);
+	return parse( s, allerror);
 }
 
-QVariant JSON::parse(QString string){
-    QTextStream s(&string);
-    bool error=false;
-    QVariant v=JSON::parseValue(s,error);
-    if(error)
-        return QVariant();
-    return v;
-}
-
-
-
-QVariant JSON::parseValue(QTextStream &s,bool & error){
+QVariant JSON::parse(QTextStream& s,bool * allerror) {
+	
+	bool lerror;
+	bool* error = allerror;
+	if (!error)
+		error = &lerror;
+	
     s.skipWhiteSpace();
     QChar c;
-    while(!s.atEnd() && !error){
+    while(!s.atEnd() && !*error){
         s>>c;
         if (c==QLatin1Char('{')){
-            return parseObject(s,error);
-        } else if (c==QLatin1Char('"')){
-            return parseString(s,error);
-        } else if (c==QLatin1Char('[')){
-            return parseArray(s,error);
+            return parseObject(s,*error);
         } else {
-            return parseLiteral(s,error);
+			*error = true;
+            return QVariant();
         }
-        s.skipWhiteSpace();
     }
     return QVariant();
 }

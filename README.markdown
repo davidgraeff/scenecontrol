@@ -155,7 +155,10 @@ Pakete lassen sich im Downloadbereich herunterladen.
 
 Work in Progress: 3. Quartal 2012:
 * Websocketproxy
-* Pluginverbesserungen
+* Plugin: yamahaRX
+* Plugin: dmx/artnet
+* Plugin: mpd | Wartung
+* Plugin: pulseaudio | Wartung
 
 ToDo: 4. Quartal 2012:
 * Dokumentation unter www.sceneserver.de.vu inkl. Architekturschaubildern :D

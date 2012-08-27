@@ -1,0 +1,5 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"home", "name":"Home",
+	"parameters": {}
+}

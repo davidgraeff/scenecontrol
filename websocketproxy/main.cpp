@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 	QCoreApplication app(argc, argv);
 
 	Server server;
-	if (!server.connectToSceneServer()) {
+	if (!server.startWebsocket()) {
 	    return -1;
 	}
 

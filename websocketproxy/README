@@ -3,6 +3,3 @@ Description:
 Über den Websocketsproxy können sich über https Webclients über das WebSocket Protokoll mit dem SceneServer verbinden
 und das JSON Kommandointerface des SceneServers nutzen.
 
-Hinweis:
---------
-This proxy is not ready yet!

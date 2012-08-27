@@ -8,6 +8,7 @@ void writeLastStarttime();
 // Filepaths
 QString certificateFile(const QString& file);
 QString certificateFile(const char* file);
+QStringList certificateClientFiles();
 
 // Directory where all binaries of the plugins reside
 QDir pluginDir(bool* found = 0);

@@ -39,7 +39,6 @@ QWsSocket::~QWsSocket()
 	QAbstractSocket::SocketState socketState = state();
 	if ( state() == QAbstractSocket::ConnectedState )
 	{
-		qDebug() << "CloseAway, socket destroyed in server";
 		close( CloseGoingAway, QLatin1String("socket destroyed in server") );
 	}
 }
@@ -125,10 +124,10 @@ void QWsSocket::processDataV4()
 		switch ( opcode )
 		{
 			case OpBinary:
-				emit frameReceived( currentFrame );
+				emit frameReceivedBinary( currentFrame );
 				break;
 			case OpText:
-				emit frameReceived( QString::fromAscii(currentFrame) );
+				emit frameReceivedText( currentFrame );
 				break;
 			case OpPing:
 				write( QWsSocket::composeHeader( true, OpPong, 0 ) );
@@ -208,11 +207,7 @@ void QWsSocket::processDataV0()
 
 	if ( currentFrame.size() > 0 )
 	{
-		QString byteString;
-		byteString.reserve( currentFrame.size() );
-		for (int i=0 ; i<currentFrame.size() ; i++)
-			byteString[i] = currentFrame[i];
-		emit frameReceived( byteString );
+		emit frameReceivedText( currentFrame );
 		currentFrame.clear();
 	}
 
@@ -220,18 +215,18 @@ void QWsSocket::processDataV0()
 		processDataV0();
 }
 
-qint64 QWsSocket::write ( const QString & string )
+qint64 QWsSocket::writeText ( const QByteArray & string )
 {
 	if ( _version == WS_V0 )
 	{
-		return QWsSocket::write( string.toAscii() );
+		return QWsSocket::write( string );
 	}
 
-	const QList<QByteArray> & framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
+	const QList<QByteArray> & framesList = QWsSocket::composeFrames( string, false, maxBytesPerFrame );
 	return writeFrames( framesList );
 }
 
-qint64 QWsSocket::write ( const QByteArray & byteArray )
+qint64 QWsSocket::writeBinary ( const QByteArray & byteArray )
 {
 	if ( _version == WS_V0 )
 	{

@@ -89,7 +89,7 @@ SceneDocument::SceneDocument(const QVariantMap& map) : m_map(map) {}
 SceneDocument::SceneDocument(const QByteArray& jsondata) { m_map = JSON::parse(jsondata).toMap(); }
 SceneDocument::SceneDocument(QTextStream& jsonstream) {
   bool error = false;
-  m_map = JSON::parseValue(jsonstream, error).toMap();
+  m_map = JSON::parse(jsonstream, &error).toMap();
   if (error) {
       qWarning() << "\tStream does not contain a json document!";
   }

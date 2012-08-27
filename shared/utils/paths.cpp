@@ -67,4 +67,13 @@ QString certificateFile(const char* file) {
     return certificateFile(QString::fromUtf8(file));
 }
 
+QStringList certificateClientFiles() {
+    QDir dir(settings.value(QLatin1String("path"), QLatin1String(ROOM_BASEPATH)).toString());
+    dir.cd(QLatin1String(ROOM_CERTPATH_CLIENTS));
+	QStringList files = dir.entryList(QStringList() << QLatin1String("*.crt"), QDir::Files|QDir::NoDotAndDotDot);
+	for (int i=0;i<files.size();++i)
+		files[i]=dir.absoluteFilePath ( files[i] );
+    return files;
+}
+
 };

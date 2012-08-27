@@ -37,9 +37,8 @@
 
 class JSON {
 public:
-    static QVariant parse     (QString string);
-    static QVariant parse     (const QByteArray& string);
+	static QVariant parse		(QTextStream& s, bool * error = 0);
+	static QVariant parse		(const QByteArray& string, bool * error = 0);
     static QString  stringify (QVariant v);
-    static QVariant parseValue(QTextStream &s,bool & error);
 };
 
