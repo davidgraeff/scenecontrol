@@ -32,7 +32,8 @@ struct PulseChannel {
 class plugin;
 void reconnect_to_pulse(plugin* p);
 void close_pulseaudio();
-void set_sink_muted(const char* sinkname, int muted);
+void set_sink_toggle_muted(const char* sinkname);
+void set_sink_muted( const char* sinkname, bool muted );
 void set_sink_volume_relative(const char* sinkname, gdouble percent);
 void set_sink_volume(const char* sinkname, gdouble percent);
 QList<PulseChannel> getAllChannels();

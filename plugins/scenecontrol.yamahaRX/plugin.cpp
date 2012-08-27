@@ -296,10 +296,10 @@ void plugin::setVolumeRelative(int v)
 }
 
 void plugin::hostconnected() {
-    qDebug() << "Connected to xmbc";
+    qDebug() << "Connected to yamahaRX";
 }
 void plugin::hostdisconnected() {
-    qWarning() << "Lost connection to xbmc";
+    qWarning() << "Lost connection to yamahaRX";
 }
 void plugin::error(QAbstractSocket::SocketError e) {
   // Ignore "host not found" error
@@ -308,39 +308,5 @@ void plugin::error(QAbstractSocket::SocketError e) {
 }
 
 void plugin::readyRead() {
-    // "Seek" to the first "{" character
     QByteArray data = m_socket.peek(m_socket.bytesAvailable());
-    const int start = data.indexOf('{');
-    if (start==-1) return;
-    if (start) {
-        // eat up chars until {-char
-        m_socket.read(start);
-        data = m_socket.peek(m_socket.bytesAvailable());
-    }
-
-    // Analyse stream and parse json data as soon as a matching pair of parenthesis has been found: "{..}"
-    int opening = 0;
-    for (int position=0; position<data.size(); ++position) {
-        if (data[position] == '{')
-            ++opening;
-        else if (data[position] == '}') {
-            if (opening==0) {
-                QVariant v = JSON::parse(data.mid(0, position+1));
-                if (!v.isValid()) {
-                    qWarning()  << "Failed parse json" << data.mid(0, position+1);
-                } else {
-                    qDebug() << v;
-                }
-                if (data.size()) {
-                    m_socket.read(position+1);
-                    emit readyRead();
-                }
-            } else
-                --opening;
-        }
-    }
-
-    // To many data without {..}, drop everything
-    if (m_socket.bytesAvailable()>10000)
-        m_socket.readAll();
 }

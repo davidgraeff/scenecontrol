@@ -1,0 +1,5 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"dumpMediaInfo", "name":"Medieninformation ausgeben",
+	"parameters": {}
+}

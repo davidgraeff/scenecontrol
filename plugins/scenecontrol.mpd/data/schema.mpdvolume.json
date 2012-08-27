@@ -1,0 +1,8 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"mpdvolume", "name":"Lautstärke setzen",
+	"parameters": {
+		"volume":{"name":"Wert", "type":"double", "min":-1.0, "max":1.0, "value":0.0},
+		"relative":{"name":"Relativer Wert", "type":"boolean", "value":false}
+	}
+}

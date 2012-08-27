@@ -1,0 +1,8 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"mpdchangeplaylist", "name":"Playlist wechseln",
+	"parameters": {
+		"playlistid":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"mpd.playlists","indexproperty":"playlistid","textproperty":"playlistid", "value":""},
+		"track":{"name":"Wert", "type":"integer", "min":0, "value":0}
+	}
+}

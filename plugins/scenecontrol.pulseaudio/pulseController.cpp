@@ -365,10 +365,23 @@ void set_sink_volume_relative(const char* sinkname, gdouble newvolume)
     output_volume(s);
 }
 
+void set_sink_toggle_muted(const char* sinkname) {
+    if (pa_server_available == FALSE)
+        return;
+
+    sink_info *s = (sink_info *)g_hash_table_lookup(sink_hash, sinkname);
+    if (!s) {
+        fprintf (stderr, "pa_setmuted_error sink_not_available: %s\n", sinkname);
+        return;
+    }
+
+    pa_operation_unref(pa_context_set_sink_mute_by_name(pulse_context, sinkname, !s->mute, NULL, NULL));
+}
+
 /**
   Mute the sink @sinkname. muted>1: toggle mute
   */
-void set_sink_muted(const char* sinkname, int muted)
+void set_sink_muted(const char* sinkname, bool muted)
 {
     if (pa_server_available == FALSE)
         return;
@@ -379,7 +392,6 @@ void set_sink_muted(const char* sinkname, int muted)
         return;
     }
 
-    if (muted>1) muted = !s->mute;
     pa_operation_unref(pa_context_set_sink_mute_by_name(pulse_context, sinkname, muted, NULL, NULL));
 
 }

@@ -1,0 +1,7 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"pulsechannelmutetoggle", "name":"Kanal mute umschalten",
+	"parameters": {
+		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"pulse.channels","indexproperty":"sinkid","textproperty":"sinkid", "value":""}
+	}
+}

@@ -31,11 +31,26 @@ public:
     virtual ~plugin();
 private:
 	MediaController* m_mediacontroller;
-public slots:
-//     void playlistChanged ( QString );
-//     void playlistsChanged ( QString,int );
-// 	void trackChanged(const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state);
-//     void volumeChanged ( double );
-// 	QVariantMap stateChanged(MediaController* client, bool propagate = true);
+    virtual void configChanged ( const QByteArray& configid, const QVariantMap& data );
+    virtual void requestProperties ( int sessionid );
+private Q_SLOTS:
+	// from mpdController
+    void playlistChanged ( QString );
+    void playlistsChanged ( QString,int );
+	void trackChanged(const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state);
+    void volumeChanged ( double );
+	QVariantMap stateChanged(MediaController* client, bool propagate = true);
+	// control methods
+	void mpdvolume(double volume, bool relative) ;
+	void mpdposition(int position_in_ms, bool relative) ;
+	void play() ;
+	void pause() ;
+	void stop() ;
+	void next() ;
+	void previous() ;
+	void nextPlaylist() ;
+	void previousPlaylist() ;
+	void dumpMediaInfo() ;
+	void mpdchangeplaylist(const QString& playlistid, int track) ;
 };
 

@@ -1,0 +1,8 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"mpdposition", "name":"Trackposition",
+	"parameters": {
+		"position_in_ms":{"name":"Position", "type":"integer", "min":-60000, "value":0},
+		"relative":{"name":"Relativer Wert", "type":"boolean", "value":false}
+	}
+}

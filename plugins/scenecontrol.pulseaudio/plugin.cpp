@@ -19,108 +19,102 @@
 #include <QDebug>
 
 #include "plugin.h"
+#include "pulseController.h"
 #include <QCoreApplication>
 
 /**
  * A plugin is a separate process and for that reason a main function have to be implemented
  * which instantiate the plugin object.
  */
-int main(int argc, char* argv[]) {
-    QCoreApplication app(argc, argv);
-    if (argc<2) {
-		qWarning()<<"No instanceid provided!";
-		return 1;
-	}
-    plugin p(QLatin1String(PLUGIN_ID), QString::fromAscii(argv[1]));
-    if (!p.createCommunicationSockets())
+int main ( int argc, char* argv[] )
+{
+    QCoreApplication app ( argc, argv );
+    if ( argc<2 )
+    {
+        qWarning() <<"No instanceid provided!";
+        return 1;
+    }
+    plugin p ( QLatin1String ( PLUGIN_ID ), QString::fromAscii ( argv[1] ) );
+    if ( !p.createCommunicationSockets() )
         return -1;
     return app.exec();
 }
 
-plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
+plugin::plugin ( const QString& pluginid, const QString& instanceid ) : AbstractPlugin ( pluginid, instanceid )
+{
 }
 
-plugin::~plugin() {
-}
-
-/*
-plugin::~plugin() {
+plugin::~plugin()
+{
     close_pulseaudio();
 }
 
-void plugin::clear() {}
-void plugin::initialize() {
-    reconnect_to_pulse(this);
+void plugin::initialize()
+{
+    reconnect_to_pulse ( this );
 }
 
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {}
-
-void plugin::execute ( const QVariantMap& data) {
-	Q_UNUSED(sessionid);
-    if ( ServiceData::isMethod(data, "pulsechannelmute" ) ) {
-        set_sink_muted(DATA("sinkid").toUtf8().constData(), INTDATA ( "mute" ) );
-    } else if ( ServiceData::isMethod(data, "pulsechannelvolume" ) ) {
-        if (BOOLDATA ( "relative" )) {
-            set_sink_volume_relative(DATA("sinkid").toUtf8(), DOUBLEDATA ( "volume" ));
-        } else {
-            set_sink_volume(DATA("sinkid").toUtf8(), DOUBLEDATA ( "volume" ));
-        }
-    }
-}
-
-bool plugin::condition ( const QVariantMap& data)  {
-    Q_UNUSED ( data );
-	Q_UNUSED(sessionid);
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) { 
-	Q_UNUSED(sessionid);
-    Q_UNUSED ( data );
-	Q_UNUSED(collectionuid);
-}
-
-void plugin::unregister_event ( const QString& eventid) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED(data);
-	Q_UNUSED(collectionuid);
-}
-
-void plugin::requestProperties(int sessionid) {
-    Q_UNUSED(sessionid);
+void plugin::requestProperties ( int sessionid )
+{
+    Q_UNUSED ( sessionid );
 
     {
-        ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "pulse.version" );
-        sc.setData("protocol", getProtocolVersion());
-        sc.setData("server", getServerVersion());
-		changeProperty(sc.getData());
+        SceneDocument sc = SceneDocument::createNotification ( "pulse.version" );
+        sc.setData ( "protocol", getProtocolVersion() );
+        sc.setData ( "server", getServerVersion() );
+        changeProperty ( sc.getData() );
     }
     {
-        ServiceData sc = ServiceData::createModelReset( "pulse.channels", "sinkid" );
-        changeProperty(sc.getData());
+        SceneDocument sc = SceneDocument::createModelReset ( "pulse.channels", "sinkid" );
+        changeProperty ( sc.getData() );
     }
     QList<PulseChannel> channels = getAllChannels();
-    foreach(PulseChannel channel, channels) {
-        ServiceData sc = ServiceData::createModelChangeItem( "pulse.channels" );
-        sc.setData("sinkid", channel.sinkid);
-        sc.setData("mute", channel.mute);
-        sc.setData("volume", channel.volume);
-        changeProperty(sc.getData());
+    foreach ( PulseChannel channel, channels )
+    {
+        SceneDocument sc = SceneDocument::createModelChangeItem ( "pulse.channels" );
+        sc.setData ( "sinkid", channel.sinkid );
+        sc.setData ( "mute", channel.mute );
+        sc.setData ( "volume", channel.volume );
+        changeProperty ( sc.getData() );
     }
     return l;
 }
 
-void plugin::pulseSinkChanged ( const PulseChannel& channel ) {
-    ServiceData sc = ServiceData::createModelChangeItem( "pulse.channels" );
-    sc.setData("sinkid", channel.sinkid);
-    sc.setData("mute", channel.mute);
-    sc.setData("volume", channel.volume);
+void plugin::pulseSinkChanged ( const PulseChannel& channel )
+{
+    SceneDocument sc = SceneDocument::createModelChangeItem ( "pulse.channels" );
+    sc.setData ( "sinkid", channel.sinkid );
+    sc.setData ( "mute", channel.mute );
+    sc.setData ( "volume", channel.volume );
     changeProperty ( sc.getData() );
 }
 
-void plugin::pulseVersion(int protocol, int server) {
-    ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "pulse.version" );
-    sc.setData("protocol", protocol);
-    sc.setData("server", server);
+void plugin::pulseVersion ( int protocol, int server )
+{
+    SceneDocument sc = SceneDocument::createNotification ( "pulse.version" );
+    sc.setData ( "protocol", protocol );
+    sc.setData ( "server", server );
     changeProperty ( sc.getData() );
-}*/
+}
+
+void plugin::pulsechannelmute ( const QByteArray& sinkid, bool mute )
+{
+    set_sink_muted ( sinkid, mute );
+}
+
+void plugin::pulsechannelmutetoggle ( const QByteArray& sinkid )
+{
+	set_sink_toggle_muted(sinkid);
+}
+
+void plugin::pulsechannelvolume ( const QByteArray& sinkid, double volume, bool relative )
+{
+    if ( relative )
+    {
+        set_sink_volume_relative ( sinkid, volume );
+    }
+    else
+    {
+        set_sink_volume ( sinkid, volume );
+    }
+}

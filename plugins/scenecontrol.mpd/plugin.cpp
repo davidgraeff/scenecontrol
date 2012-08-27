@@ -26,178 +26,172 @@
  * A plugin is a separate process and for that reason a main function have to be implemented
  * which instantiate the plugin object.
  */
-int main(int argc, char* argv[]) {
-    QCoreApplication app(argc, argv);
-    if (argc<2) {
-		qWarning()<<"No instanceid provided!";
-		return 1;
-	}
-    plugin p(QLatin1String(PLUGIN_ID), QString::fromAscii(argv[1]));
-    if (!p.createCommunicationSockets())
+int main ( int argc, char* argv[] )
+{
+    QCoreApplication app ( argc, argv );
+    if ( argc<2 )
+    {
+        qWarning() <<"No instanceid provided!";
+        return 1;
+    }
+    plugin p ( QLatin1String ( PLUGIN_ID ), QString::fromAscii ( argv[1] ) );
+    if ( !p.createCommunicationSockets() )
         return -1;
     return app.exec();
 }
 
-plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
-}
-
-plugin::~plugin() {
-}
-
-
-
-/*
-plugin::plugin(const QString& instanceid) : AbstractPlugin(instanceid) {
+plugin::plugin ( const QString& pluginid, const QString& instanceid ) : AbstractPlugin ( pluginid, instanceid )
+{
     m_mediacontroller = new MediaController ( this );
     connect ( m_mediacontroller,SIGNAL ( playlistChanged ( QString ) ),SLOT ( playlistChanged ( QString ) ) );
     connect ( m_mediacontroller,SIGNAL ( playlistsChanged ( QString,int ) ),SLOT ( playlistsChanged ( QString,int ) ) );
-    connect ( m_mediacontroller,SIGNAL ( trackChanged(QString,QString,int,uint,uint,int)), SLOT(trackChanged(QString,QString,int,uint,uint,int)));
+    connect ( m_mediacontroller,SIGNAL ( trackChanged ( QString,QString,int,uint,uint,int ) ), SLOT ( trackChanged ( QString,QString,int,uint,uint,int ) ) );
     connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
-    connect ( m_mediacontroller,SIGNAL ( stateChanged(MediaController*)),SLOT(stateChanged(MediaController*) ) );
+    connect ( m_mediacontroller,SIGNAL ( stateChanged ( MediaController* ) ),SLOT ( stateChanged ( MediaController* ) ) );
 }
 
-plugin::~plugin() {
+plugin::~plugin()
+{
     delete m_mediacontroller;
 }
 
-void plugin::clear() {}
-void plugin::initialize() {
+void plugin::configChanged ( const QByteArray& configid, const QVariantMap& data )
+{
+	Q_UNUSED ( configid );
+    if ( data.contains ( QLatin1String ( "host" ) ) && data.contains ( QLatin1String ( "port" ) ) )
+        m_mediacontroller->connectToMpd ( data[QLatin1String ( "host" )].toString(), data[QLatin1String ( "port" )].toInt() );
 }
 
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-  if (data.contains(QLatin1String("host")) && data.contains(QLatin1String("port")))
-       m_mediacontroller->connectToMpd ( data[QLatin1String("host")].toString(), data[QLatin1String("port")].toInt());
-}
+void plugin::requestProperties ( int sessionid )
+{
+    Q_UNUSED ( sessionid );
 
-void plugin::execute ( const QVariantMap& data) {
-	Q_UNUSED(sessionid);
-    if ( ServiceData::isMethod(data, "mpdvolume" ) ) {
-        m_mediacontroller->setVolume ( DOUBLEDATA ( "volume" ), BOOLDATA ( "relative" ) );
-    } else if ( ServiceData::isMethod(data, "mpdcmd" ) ) {
-        switch ( INTDATA ( "state" ) ) {
-        case 0:
-            m_mediacontroller->play();
-            break;
-        case 1:
-            m_mediacontroller->pause();
-            break;
-        case 2:
-            m_mediacontroller->stop();
-            break;
-        case 3:
-            m_mediacontroller->next();
-            break;
-        case 4:
-            m_mediacontroller->previous();
-            break;
-        case 5:
-            m_mediacontroller->nextPlaylist();
-            break;
-        case 6:
-            m_mediacontroller->previousPlaylist();
-            break;
-        case 7:
-            m_mediacontroller->dumpMediaInfo();
-            break;
-        default:
-            break;
-        }
-    } else if ( ServiceData::isMethod(data, "mpdchangeplaylist" ) ) {
-        // set playlist
-        const QString playlistid = DATA ( "playlistid" );
-        const int track = INTDATA ( "track" );
-        if ( playlistid.size() ) {
-            m_mediacontroller->setPlaylist ( playlistid );
-        }
-        // set track number
-        if ( track != -1 ) {
-            m_mediacontroller->setCurrentTrack ( track );
-        }
-
-    } else if ( ServiceData::isMethod(data, "mpdposition" ) ) {
-        m_mediacontroller->setTrackPosition ( INTDATA ( "position_in_ms" ), BOOLDATA ( "relative" ) );
-    }
-}
-
-bool plugin::condition ( const QVariantMap& data)  {
-	Q_UNUSED(sessionid);
-    if ( ServiceData::isMethod(data, "bla" ) ) {
-        return ( INTDATA ( "mpdstatecondition" ) == m_mediacontroller->state() );
-    }
-    return false;
-}
-
-void plugin::register_event ( const QVariantMap& data, const QString& collectionuid) { 
-	Q_UNUSED(sessionid);
-    Q_UNUSED ( data );
-	Q_UNUSED(collectionuid);
-}
-
-void plugin::unregister_event ( const QString& eventid) { 
-	Q_UNUSED(sessionid);
-	Q_UNUSED(eventid);
-}
-
-void plugin::requestProperties(int sessionid) {
-    Q_UNUSED(sessionid);
-
-    changeProperty(stateChanged(m_mediacontroller, false));
+    changeProperty ( stateChanged ( m_mediacontroller, false ) );
     {
-        ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "playlist.current" );
-        sc.setData("playlistid", m_mediacontroller->currentplaylist());
-        changeProperty(sc.getData());
+        SceneDocument sc = SceneDocument::createNotification ("mpd.playlist.current" );
+        sc.setData ( "playlistid", m_mediacontroller->currentplaylist() );
+        changeProperty ( sc.getData() );
     }
     {
-        ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "volume.changed" );
-        sc.setData("volume", m_mediacontroller->volume());
-        changeProperty(sc.getData());
+        SceneDocument sc = SceneDocument::createNotification ("mpd.volume.changed" );
+        sc.setData ( "volume", m_mediacontroller->volume() );
+        changeProperty ( sc.getData() );
     }
-    if (m_mediacontroller->state()!=MediaController::NothingLoaded) {
-        ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "track.info" );
-		changeProperty(sc.getData());
+    if ( m_mediacontroller->state() !=MediaController::NothingLoaded )
+    {
+        SceneDocument sc = SceneDocument::createNotification ("mpd.track.info" );
+        changeProperty ( sc.getData() );
     }
     {
-        ServiceData sc = ServiceData::createModelReset( "playlists", "playlistid" );
-        changeProperty(sc.getData());
+        SceneDocument sc = SceneDocument::createModelReset ( "mpd.playlists", "playlistid" );
+        changeProperty ( sc.getData() );
     }
-    return l;
 }
 
-void plugin::playlistChanged ( QString p ) {
-    ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "playlist.current" );
-    sc.setData("playlistid", p);
+void plugin::playlistChanged ( QString p )
+{
+    SceneDocument sc = SceneDocument::createNotification ("mpd.playlist.current" );
+    sc.setData ( "playlistid", p );
     changeProperty ( sc.getData() );
 }
 
-void plugin::playlistsChanged ( QString p, int pos) {
-    ServiceData sc = ServiceData::createModelChangeItem( "playlists" );
-    sc.setData("playlistid", p);
-    sc.setData("position", pos);
+void plugin::playlistsChanged ( QString p, int pos )
+{
+    SceneDocument sc = SceneDocument::createModelChangeItem ( "mpd.playlists" );
+    sc.setData ( "playlistid", p );
+    sc.setData ( "position", pos );
     changeProperty ( sc.getData() );
 }
 
-void plugin::trackChanged ( const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state) {
-    ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "track.info" );
-    sc.setData("filename", filename);
-    sc.setData("trackname", trackname);
-    sc.setData("track", track);
-    sc.setData("position_in_ms", position_in_ms);
-    sc.setData("total_in_ms", total_in_ms);
-    sc.setData("state", state);
+void plugin::trackChanged ( const QString& filename, const QString& trackname, int track, uint position_in_ms, uint total_in_ms, int state )
+{
+    SceneDocument sc = SceneDocument::createNotification ("mpd.track.info" );
+    sc.setData ( "filename", filename );
+    sc.setData ( "trackname", trackname );
+    sc.setData ( "track", track );
+    sc.setData ( "position_in_ms", position_in_ms );
+    sc.setData ( "total_in_ms", total_in_ms );
+    sc.setData ( "state", state );
     changeProperty ( sc.getData() );
 }
 
-void plugin::volumeChanged ( double volume ) {
-    ServiceData sc = ServiceData::createNotification(PLUGIN_ID,  "volume.changed" );
-    sc.setData("volume", volume);
+void plugin::volumeChanged ( double volume )
+{
+    SceneDocument sc = SceneDocument::createNotification ("mpd.volume.changed" );
+    sc.setData ( "volume", volume );
     changeProperty ( sc.getData() );
 }
 
-QVariantMap plugin::stateChanged(MediaController* client, bool propagate) {
-    ServiceData sc = ServiceData::createNotification(PLUGIN_ID, "connection.state");
-    const QString server = client->host()+QLatin1String(":")+QString::number(client->port());
-    sc.setData("server",server);
-    sc.setData("state", (int)client->isConnected());
-    if (propagate) changeProperty(sc.getData());
+QVariantMap plugin::stateChanged ( MediaController* client, bool propagate )
+{
+    SceneDocument sc = SceneDocument::createNotification ( "mpd.connection.state" );
+    const QString server = client->host() +QLatin1String ( ":" ) +QString::number ( client->port() );
+    sc.setData ( "server",server );
+    sc.setData ( "state", ( int ) client->isConnected() );
+    if ( propagate ) changeProperty ( sc.getData() );
     return sc.getData();
-}*/
+}
+
+void plugin::mpdvolume ( double volume, bool relative )
+{
+    m_mediacontroller->setVolume ( volume, relative );
+}
+
+void plugin::mpdposition ( int position_in_ms, bool relative )
+{
+    m_mediacontroller->setTrackPosition ( position_in_ms, relative );
+}
+
+void plugin::play()
+{
+    m_mediacontroller->play();
+}
+
+void plugin::pause()
+{
+    m_mediacontroller->pause();
+}
+
+void plugin::stop()
+{
+    m_mediacontroller->stop();
+}
+
+void plugin::next()
+{
+    m_mediacontroller->next();
+}
+
+void plugin::previous()
+{
+    m_mediacontroller->previous();
+}
+
+void plugin::nextPlaylist()
+{
+    m_mediacontroller->nextPlaylist();
+}
+
+void plugin::previousPlaylist()
+{
+    m_mediacontroller->previousPlaylist();
+}
+
+void plugin::dumpMediaInfo()
+{
+    m_mediacontroller->dumpMediaInfo();
+}
+
+void plugin::mpdchangeplaylist ( const QString& playlistid, int track )
+{
+    // set playlist
+    if ( playlistid.size() )
+    {
+        m_mediacontroller->setPlaylist ( playlistid );
+    }
+    // set track number
+    if ( track != -1 )
+    {
+        m_mediacontroller->setCurrentTrack ( track );
+    }
+}

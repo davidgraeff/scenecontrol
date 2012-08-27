@@ -21,6 +21,7 @@
 #include <QObject>
 #include <QStringList>
 #include "shared/plugins/abstractplugin.h"
+#include "pulseController.h"
 
 class plugin : public AbstractPlugin
 {
@@ -28,7 +29,14 @@ class plugin : public AbstractPlugin
 public:
     plugin(const QString& pluginid, const QString& instanceid);
     virtual ~plugin();
-public Q_SLOTS:
-
 private:
+	virtual void initialize();
+    virtual void requestProperties ( int sessionid );
+	
+	void pulseVersion ( int protocol, int server );
+	void pulseSinkChanged ( const PulseChannel& channel );
+public Q_SLOTS:
+	void pulsechannelmute( const QByteArray& sinkid, bool mute );
+	void pulsechannelmutetoggle( const QByteArray& sinkid );
+	void pulsechannelvolume( const QByteArray& sinkid, double volume, bool relative );
 };

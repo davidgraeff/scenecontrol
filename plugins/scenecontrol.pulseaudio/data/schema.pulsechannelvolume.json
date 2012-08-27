@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"pulsechannelvolume", "name":"Kanal Lautstärke setzen",
+	"parameters": {
+		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"pulse.channels","indexproperty":"sinkid","textproperty":"sinkid", "value":""},
+		"volume":{"name":"Wert", "type":"double", "min":0.0, "max":1.0, "value":0.0},
+		"relative":{"name":"Relativer Wert", "type":"boolean", "value":false}
+	}
+}
