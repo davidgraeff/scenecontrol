@@ -70,17 +70,6 @@ public:
      */
     static SceneDocument createNotification(const char* id) ;
 
-    static SceneDocument createRemoveByUidCmd(const QString& uid, const QString& type) ;
-
-    static SceneDocument createExecuteByUidCmd(const QString& uid) ;
-
-    /**
-     * Creates an execute cmd. Will only be propagated to the destination plugin and executed if all necessary data is set.
-     * \param plugin_id The destination plugin that implements the wanted functionality.
-     * \param id The id for this action within the destination plugin
-     */
-    static SceneDocument createExecuteByDataCmd(const char* plugin_id, const char* id) ;
-    
     /***************** Is valid ******************/
     bool isValid() const;
     /***************** Export to json ******************/
@@ -149,7 +138,9 @@ public:
     }
 
     
-    
+    void setType(const QString& type) {
+		m_map[QLatin1String("type_")] = type;
+	}
     QString type() const {
         return m_map.value(QLatin1String("type_")).toString();
     }

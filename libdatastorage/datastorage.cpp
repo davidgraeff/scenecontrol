@@ -304,7 +304,6 @@ void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 				qWarning() << "Document is not valid!" << currentdir.absoluteFilePath(files[i]);
 				continue;
 			}
-
 			result.append(doc);
 		}
 	}

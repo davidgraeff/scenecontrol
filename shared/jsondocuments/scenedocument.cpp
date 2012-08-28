@@ -4,55 +4,30 @@
 
 SceneDocument SceneDocument::createModelRemoveItem ( const char* id ) {
     SceneDocument sc;
-    sc.m_map[QLatin1String ( "id" ) ] =  QLatin1String ( id );
-    sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "model" );
-    sc.m_map[QLatin1String ( "__event" ) ] = QLatin1String ( "remove" );
+	sc.setid(QLatin1String ( id ));
+	sc.setType(QLatin1String ( "model.remove" ));
     return sc;
 }
 
 SceneDocument SceneDocument::createModelChangeItem ( const char* id ) {
     SceneDocument sc;
-    sc.m_map[QLatin1String ( "id" ) ] =  QLatin1String ( id );
-    sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "model" );
-    sc.m_map[QLatin1String ( "__event" ) ] = QLatin1String ( "change" );
+	sc.setid(QLatin1String ( id ));
+	sc.setType(QLatin1String ( "model.change" ));
     return sc;
 }
 
 SceneDocument SceneDocument::createModelReset ( const char* id, const char* key ) {
     SceneDocument sc;
-    sc.m_map[QLatin1String ( "id" ) ] =  QLatin1String ( id );
-    sc.m_map[QLatin1String ( "__key" ) ] =  QLatin1String ( key );
-    sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "model" );
-    sc.m_map[QLatin1String ( "__event" ) ] = QLatin1String ( "reset" );
+	sc.setid(QLatin1String ( id ));
+	sc.setType(QLatin1String ( "model.reset" ));
+	sc.setConfigurationkey(key);
     return sc;
 }
 
 SceneDocument SceneDocument::createNotification ( const char* id ) {
     SceneDocument sc;
-    sc.m_map[QLatin1String ( "id" ) ] =  QLatin1String ( id );
-    sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "notification" );
-    return sc;
-}
-
-SceneDocument SceneDocument::createRemoveByUidCmd ( const QString& uid, const QString& type ) {
-    SceneDocument sc;
-    sc.m_map[QLatin1String ( "__uid" ) ] = uid;
-    sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "remove" );
-	sc.m_map[QLatin1String ( "__oldtype" ) ] = type;
-    return sc;
-}
-
-SceneDocument SceneDocument::createExecuteByUidCmd ( const QString& uid ) {
-    SceneDocument sc;
-    sc.m_map[QLatin1String ( "__uid" ) ] = uid;
-    sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "execute" );
-    return sc;
-}
-
-SceneDocument SceneDocument::createExecuteByDataCmd ( const char* plugin_id, const char* id ) {
-    SceneDocument sc;
-    sc.m_map[QLatin1String ( "id" ) ] = QString ( QLatin1String ( plugin_id ) + QLatin1String ( "_" ) + QLatin1String ( id ) );
-    sc.m_map[QLatin1String ( "__type" ) ] = QLatin1String ( "execute" );
+	sc.setid(QLatin1String ( id ));
+	sc.setType(QLatin1String ( "notification" ));
     return sc;
 }
 
