@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+	<head><title>SceneControl</title>
+		<meta charset=utf-8 />
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<link rel="stylesheet" type="text/css" href="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.css" />
+		<link href="jquery.mCustomScrollbar.css" rel="stylesheet" type="text/css" />
+
+		<script src="http://code.jquery.com/jquery.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.js"></script>
+		<script src='simplesplitview-1.0.js'></script>
+		<script src="websocket.js"></script>
+		<script src="storage.js"></script>
+		<script type='text/javascript'>
+			$('#mainpage').live('pageshow', function(event) { // Necessary for jQuery Mobile
+				$('#splitviewcontainer').simplesplitview();
+				$('#removepopup').popup();
+				websocketInstance.reconnect();
+			});
+			$(storageInstance).bind('onscene', function(d, doc, removed) {
+				var name = doc.name.length > 25 ? doc.name.substring(0,25) + "..." : doc.name;
+				$("#scenelist").append('<li><a href="javascript:setscene(\''+doc.id_+'\');">'+name+'</a><a href="javascript:scenemenu(\''+doc.id_+'\');" data-rel="dialog" data-position-to="window" data-inline="true" data-transition="pop"></a><span class="ui-li-count">0</span></li>');
+				$('#scenelist').listview('refresh');
+			});
+			function scenemenu(sceneid) {
+				$(".currentrmscene").text(storageInstance.scenes[sceneid].name);
+				$('#removepopup').popup("open");
+			}
+			function setscene(sceneid) {
+				$(".currentscene").text(storageInstance.scenes[sceneid].name);
+			}
+		</script>
+		<style type="text/css">
+			::-webkit-scrollbar {
+				width: 12px;
+			}
+			
+			::-webkit-scrollbar-track {
+				-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+				border-radius: 10px;
+			}
+			
+			::-webkit-scrollbar-thumb {
+				border-radius: 10px;
+				-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+			}
+			.padsides { 
+				padding-left: 20px; 
+				padding-right: 20px; 
+			}
+		</style>
+	</head>
+	<body>
+
+		<div data-role='page' id='mainpage' data-title='SceneControl' data-theme='e'>
+			
+			<div data-role='content' id='splitviewcontainer' class='splitviewcontainer'>
+				<div class='leftside padsides' id='leftpanel1'>
+						<ul id="scenelist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
+							data-split-theme="e" data-split-icon="delete" data-inset="true" data-role="listview"
+							data-theme="d" data-divider-theme="d" >
+							<li data-role="list-divider">Unkategorisiert</li>
+						</ul>
+				</div>
+				<div class='rightside' id='rightpanel1'>
+					<div data-role="header" data-theme="d">
+						<h1>Szene: <span class="currentscene">Keine ausgewählt</span></h1>
+					</div><!-- /header -->
+				</div>
+			</div>
+		</div>
+		<div data-role="popup" id="removepopup">
+			<div data-role="header" data-theme="a" class="ui-corner-top">
+				<h1>Szene löschen?</h1>
+			</div>
+			<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+				<p>Diese Aktion kann nicht rückgängig gemacht werden.<br />
+				Möchtest du "<span class="currentrmscene"></span>" wirklich entfernen?</p>
+				<a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>    
+				<a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b">Delete</a>  
+			</div>
+		</div>
+		
+	</body>
+</html>
