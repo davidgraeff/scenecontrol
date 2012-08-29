@@ -7,22 +7,54 @@ function Storage() {
 	that.conditions = {};
 	that.actions = {};
 
+	this.documentsForScene = function(sceneid) {
+		var result = []
+		for (var index in this.events)
+			if (this.events[index].sceneid_ == sceneid)
+				result.push(this.events[index]);
+		for (var index in this.conditions)
+			if (this.conditions[index].sceneid_ == sceneid)
+				result.push(this.conditions[index]);
+		for (var index in this.actions)
+			if (this.actions[index].sceneid_ == sceneid)
+				result.push(this.actions[index]);
+		return result;
+	}
+	
+	this.schemaForDocument = function(doc) {
+		for (var index in this.schemas)
+			if (this.schemas[index].componentid_ == doc.componentid_ && this.schemas[index].method_ == doc.method_ && this.schemas[index].targettype == doc.type_)
+				return this.schemas[index];
+		return null;
+	}
+	
 	this.documentChanged = function(doc, removed) {
 		var id_ = doc.id_;
 		if (doc.type_=="scene") {
 			that.scenes[id_] = doc;
-			$(that).trigger("onscene", doc, removed);
-		} else if (doc.type_=="schemas") {
+		} else if (doc.type_=="schema") {
 			that.schemas[id_] = doc;
-			$(that).trigger("onschemas", doc, removed);
 		} else if (doc.type_=="event") {
 			that.events[id_] = doc;
-			$(that).trigger("onevent", doc, removed);
 		} else if (doc.type_=="condition") {
 			that.conditions[id_] = doc;
-			$(that).trigger("oncondition", doc, removed);
 		} else if (doc.type_=="action") {
 			that.actions[id_] = doc;
+		}
+	};
+	
+	this.notifyDocumentChange = function(doc, removed) {
+		var id_ = doc.id_;
+		if (doc.type_=="scene") {
+			doc.temp_ = {"counter":that.documentsForScene(id_).length}
+			$(that).trigger("onscene", doc, removed);
+		} else if (doc.type_=="schemas") {
+			$(that).trigger("onschemas", doc, removed);
+		} else if (doc.type_=="event") {
+			$(that).trigger("onevent", doc, removed);
+		} else if (doc.type_=="condition") {
+			$(that).trigger("oncondition", doc, removed);
+		} else if (doc.type_=="action") {
 			$(that).trigger("onaction", doc, removed);
 		}
 	};
@@ -34,10 +66,22 @@ function Storage() {
 			for (var i = 0; i < doc.documents.length; i++) {
 				that.documentChanged(doc.documents[i], false);
 			}
+			// notify about scenes
+			for (var index in that.scenes) {
+				that.notifyDocumentChange(that.scenes[index], false);
+			}
 		} else if (doc.id_=="documentChanged")  {
 			that.documentChanged(doc.document, false);
+			that.notifyDocumentChange(doc.document, false);
+			// update scene
+			if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
+				that.notifyDocumentChange(doc.document.sceneid_, false);
 		} else if (doc.id_=="documentRemoved")  {
 			that.documentChanged(doc.document, true);
+			that.notifyDocumentChange(doc.document, true);
+			// update scene
+			if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
+				that.notifyDocumentChange(doc.document.sceneid_, false);
 		}
 	});
 	

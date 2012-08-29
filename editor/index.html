@@ -4,51 +4,14 @@
 		<meta charset=utf-8 />
 		<meta name="viewport" content="width=device-width, initial-scale=1"> 
 		<link rel="stylesheet" type="text/css" href="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.css" />
-		<link href="jquery.mCustomScrollbar.css" rel="stylesheet" type="text/css" />
-
+		<link rel="stylesheet" type="text/css" href="animate.css" />
+		<link rel="stylesheet" type="text/css" href="editor.css" />
 		<script src="http://code.jquery.com/jquery.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.js"></script>
 		<script src='simplesplitview-1.0.js'></script>
+		<script src='handlebars-1.0.0.beta.6.js'></script>
 		<script src="websocket.js"></script>
 		<script src="storage.js"></script>
-		<script type='text/javascript'>
-			$('#mainpage').live('pageshow', function(event) { // Necessary for jQuery Mobile
-				$('#splitviewcontainer').simplesplitview();
-				$('#removepopup').popup();
-				websocketInstance.reconnect();
-			});
-			$(storageInstance).bind('onscene', function(d, doc, removed) {
-				var name = doc.name.length > 25 ? doc.name.substring(0,25) + "..." : doc.name;
-				$("#scenelist").append('<li><a href="javascript:setscene(\''+doc.id_+'\');">'+name+'</a><a href="javascript:scenemenu(\''+doc.id_+'\');" data-rel="dialog" data-position-to="window" data-inline="true" data-transition="pop"></a><span class="ui-li-count">0</span></li>');
-				$('#scenelist').listview('refresh');
-			});
-			function scenemenu(sceneid) {
-				$(".currentrmscene").text(storageInstance.scenes[sceneid].name);
-				$('#removepopup').popup("open");
-			}
-			function setscene(sceneid) {
-				$(".currentscene").text(storageInstance.scenes[sceneid].name);
-			}
-		</script>
-		<style type="text/css">
-			::-webkit-scrollbar {
-				width: 12px;
-			}
-			
-			::-webkit-scrollbar-track {
-				-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
-				border-radius: 10px;
-			}
-			
-			::-webkit-scrollbar-thumb {
-				border-radius: 10px;
-				-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
-			}
-			.padsides { 
-				padding-left: 20px; 
-				padding-right: 20px; 
-			}
-		</style>
 	</head>
 	<body>
 
@@ -56,16 +19,133 @@
 			
 			<div data-role='content' id='splitviewcontainer' class='splitviewcontainer'>
 				<div class='leftside padsides' id='leftpanel1'>
+						<script id="sceneitem-template" type="text/x-handlebars-template">
+							<li data-icon="info" data-sceneid="{{id}}">
+								<a href="javascript:setscene('{{id}}');">{{name}}</a>
+								<a href="javascript:scenemenu('{{id}}');" data-rel="dialog"
+									data-position-to="window" data-inline="true" data-transition="pop"></a>
+								<span class="ui-li-count">{{counter}}</span>
+							</li>
+						</script>
 						<ul id="scenelist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
 							data-split-theme="e" data-split-icon="delete" data-inset="true" data-role="listview"
 							data-theme="d" data-divider-theme="d" >
-							<li data-role="list-divider">Unkategorisiert</li>
+							<li id="scenelist_cat_none" data-role="list-divider">Unkategorisiert</li>
 						</ul>
 				</div>
 				<div class='rightside' id='rightpanel1'>
 					<div data-role="header" data-theme="d">
 						<h1>Szene: <span class="currentscene">Keine ausgewählt</span></h1>
-					</div><!-- /header -->
+					</div>
+					<script id="sceneitem-service-template" type="text/x-handlebars-template">
+						<form class="sceneitemform animated fadeInDown">
+							<ul class="sceneitemcontrols" data-role="listview" data-inset="true" data-divider-theme="{{typetheme}}">
+								<li data-role="list-divider">{{name}}</li>
+							</ul>
+						</form>
+					</script>
+					<div id="sceneservices">
+						<!--demo element-->
+						<form class="sceneitemform animated fadeInDown">
+							<ul data-role="listview" data-inset="true" data-divider-theme="a">
+								<li data-role="list-divider">Name</li>
+								<li data-role="fieldcontain">
+									<label for="name">Text Input:</label>
+									<input type="text" name="name" id="name" value=""  />
+								</li>
+								<li data-role="fieldcontain">
+									<label for="slider2">Flip switch:</label>
+									<select name="slider2" id="slider2" data-role="slider">
+										<option value="off">Off</option>
+										<option value="on">On</option>
+									</select>
+								</li>
+								<li data-role="fieldcontain">
+									<label for="slider">Slider:</label>
+									<input type="range" name="slider" id="slider" value="0" min="0" max="100"  />
+								</li>
+								<li data-role="fieldcontain">
+									<fieldset data-role="controlgroup" data-type="horizontal">
+										<legend>Layout view:</legend>
+											<input type="radio" name="radio-choice-b" id="radio-choice-c" value="on" checked="checked" />
+											<label for="radio-choice-c">List</label>
+											<input type="radio" name="radio-choice-b" id="radio-choice-d" value="off" />
+											<label for="radio-choice-d">Grid</label>
+									</fieldset>
+								</li>
+								<li data-role="fieldcontain">
+									<label for="select-choice-a" class="select">Choose shipping method:</label>
+									<select name="select-choice-a" id="select-choice-a" data-native-menu="false">
+										<option>Custom menu example</option>
+										<option value="standard">Standard: 7 day</option>
+										<option value="rush">Rush: 3 days</option>
+										<option value="express">Express: next day</option>
+										<option value="overnight">Overnight</option>
+									</select>
+								</li>
+							</ul>
+						</form>
+						
+						<form class="sceneitemform animated fadeInDown">
+							<ul class="sceneitemul" data-role="listview" data-inset="true" data-divider-theme="b">
+								<li data-role="list-divider">Name</li>
+								<li data-role="fieldcontain">
+									<label for="name">Text Input:</label>
+									<input type="text" name="name" id="name" value=""  />
+								</li>
+								<li data-role="fieldcontain">
+									<label for="slider2">Flip switch:</label>
+									<select name="slider2" id="slider2" data-role="slider">
+										<option value="off">Off</option>
+										<option value="on">On</option>
+									</select>
+								</li>
+								<li data-role="fieldcontain">
+									<label for="slider">Slider:</label>
+									<input type="range" name="slider" id="slider" value="0" min="0" max="100"  />
+								</li>
+								<li data-role="fieldcontain">
+									<fieldset data-role="controlgroup" data-type="horizontal">
+										<legend>Layout view:</legend>
+											<input type="radio" name="radio-choice-b" id="radio-choice-c" value="on" checked="checked" />
+											<label for="radio-choice-c">List</label>
+											<input type="radio" name="radio-choice-b" id="radio-choice-d" value="off" />
+											<label for="radio-choice-d">Grid</label>
+									</fieldset>
+								</li>
+							</ul>
+						</form>
+						
+						<form class="sceneitemform animated fadeInDown">
+							<ul class="sceneitemul" data-role="listview" data-inset="true" data-divider-theme="c">
+								<li data-role="list-divider">Name</li>
+								<li data-role="fieldcontain">
+									<label for="name">Text Input:</label>
+									<input type="text" name="name" id="name" value=""  />
+								</li>
+								<li data-role="fieldcontain">
+									<label for="slider2">Flip switch:</label>
+									<select name="slider2" id="slider2" data-role="slider">
+										<option value="off">Off</option>
+										<option value="on">On</option>
+									</select>
+								</li>
+								<li data-role="fieldcontain">
+									<label for="slider">Slider:</label>
+									<input type="range" name="slider" id="slider" value="0" min="0" max="100"  />
+								</li>
+								<li data-role="fieldcontain">
+									<fieldset data-role="controlgroup" data-type="horizontal">
+										<legend>Layout view:</legend>
+											<input type="radio" name="radio-choice-b" id="radio-choice-c" value="on" checked="checked" />
+											<label for="radio-choice-c">List</label>
+											<input type="radio" name="radio-choice-b" id="radio-choice-d" value="off" />
+											<label for="radio-choice-d">Grid</label>
+									</fieldset>
+								</li>
+							</ul>
+						</form>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -80,6 +160,60 @@
 				<a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b">Delete</a>  
 			</div>
 		</div>
-		
+		<script type='text/javascript'>
+			$('#mainpage').live('pageshow', function(event) {
+				$('#splitviewcontainer').simplesplitview();
+				$('#removepopup').popup();
+				templateSceneItem = Handlebars.compile($("#sceneitem-template").html());
+				websocketInstance.reconnect();
+			});
+			$(storageInstance).bind('onscene', function(d, doc, removed) {
+				// Remove the scene entry first
+				$("#scenelist").find("[data-sceneid='" + doc.id_ + "']").remove();
+				// if it just has been changed or wasn't in the list at all we need to add it
+				if (!removed) {
+					var entry = {"id":doc.id_, "name":doc.name, "counter":doc.temp_.counter};
+					var categories = doc.categories;
+					// No categories: Add it to the general categories
+					if (categories.length == 0)
+						$("#scenelist_cat_none").after(templateSceneItem(entry));
+					// one or multiple categories: add 
+					else
+						for (var i=0;i<categories.length;++i) {
+							var trimmedCat = categories[i].replace(" ", "_").replace(".", "_");
+							if (!$("#scenelist_cat_"+trimmedCat).length)
+								$("#scenelist_cat_none").before('<li id="scenelist_cat_'+trimmedCat+'" data-role="list-divider">'+categories[i]+'</li>');
+							$("#scenelist_cat_"+trimmedCat).after(templateSceneItem(entry));
+						}
+				}
+				$('#scenelist').listview('refresh');
+			});
+			function scenemenu(sceneid) {
+				$(".currentrmscene").text(storageInstance.scenes[sceneid].name);
+				$('#removepopup').popup("open");
+			}
+			function setscene(sceneid) {
+				$(".currentscene").text(storageInstance.scenes[sceneid].name);
+				$("#sceneservices").children().remove();
+				var sceneDocuments = storageInstance.documentsForScene(sceneid);
+				var templateSceneServiceItem = Handlebars.compile($("#sceneitem-service-template").html());
+				for (var i=0;i < sceneDocuments.length;++i) {
+					var doc = sceneDocuments[i];
+					if (!doc)
+						continue;
+					var schema = storageInstance.schemaForDocument(doc);
+					var entry = {"id":doc.id_, "name": doc.type_+": "+doc.componentid_+"."+doc.instanceid_+"->"+(schema!==null?schema.name:doc.method_), "typetheme":(doc.type_=="action")?"a":((doc.type_=="condition")?"b":"c")};
+					$("#sceneservices").append(templateSceneServiceItem(entry));
+					var content;
+					for (var index in schema.parameters) {
+						var parameter = schema.parameters[index];
+						console.log("parameter", parameter);
+						content += '<li data-role="fieldcontain"><label for="name">Text Input:</label><input type="text" name="name" id="name" value=""  /></li>';
+					}
+				}
+				//$("#sceneservices").page('destroy').page();
+ 				$('.sceneitemcontrols').listview();
+			}
+		</script>
 	</body>
 </html>
