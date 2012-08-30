@@ -55,7 +55,7 @@ function serverWebsocket() {
 				$(that).trigger('onclose');
 			}
 		} catch(exception) {
-			
+			console.log("websocket exception");
 		}
 		//console.log(this);
 		return true;

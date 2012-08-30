@@ -70,6 +70,8 @@ function Storage() {
 			for (var index in that.scenes) {
 				that.notifyDocumentChange(that.scenes[index], false);
 			}
+			
+			$(that).trigger("onloadcomplete");
 		} else if (doc.id_=="documentChanged")  {
 			that.documentChanged(doc.document, false);
 			that.notifyDocumentChange(doc.document, false);
@@ -88,6 +90,14 @@ function Storage() {
 	$(websocketInstance).bind('onopen', function() {
 		websocketInstance.requestAllDocuments();
 		websocketInstance.registerNotifier();
+	});
+	
+	$(websocketInstance).bind('onclose', function() {
+		that.scenes = {};
+		that.schemas = {};
+		that.events = {};
+		that.conditions = {};
+		that.actions = {};
 	});
 }
 

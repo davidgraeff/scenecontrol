@@ -15,9 +15,30 @@
 	</head>
 	<body>
 
-		<div data-role='page' id='mainpage' data-title='SceneControl' data-theme='e'>
-			
+		<div data-role='page' id='mainpage' data-title='SceneControl' data-theme='d'>
 			<div data-role='content' id='splitviewcontainer' class='splitviewcontainer'>
+			
+				<div data-role="popup" id="removepopup" data-overlay-theme="a">
+					<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+					<div data-role="header" data-theme="a" class="ui-corner-top">
+						<h1>Szene löschen?</h1>
+					</div>
+					<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+						<p>Diese Aktion kann nicht rückgängig gemacht werden.<br />
+						Möchtest du "<span class="currentrmscene"></span>" wirklich entfernen?</p>
+						<a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" style="width:100%">Entfernen</a>  
+					</div>
+				</div>
+				<div data-role="popup" id="noconnectionpopup" data-overlay-theme="a">
+					<div data-role="header" data-theme="a" class="ui-corner-top">
+						<h1>Keine Verbindung</h1>
+					</div>
+					<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+						<p>Es konnte leider keine Verbindung zum Server hergestellt werden.</p>
+						<a href="javascript:reloadpage()" data-role="button" data-inline="true" data-theme="b" style="width:100%">Seite neu laden?</a>  
+					</div>
+				</div>
+				
 				<div class='leftside padsides' id='leftpanel1'>
 						<script id="sceneitem-template" type="text/x-handlebars-template">
 							<li data-icon="info" data-sceneid="{{id}}">
@@ -28,7 +49,7 @@
 							</li>
 						</script>
 						<ul id="scenelist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
-							data-split-theme="e" data-split-icon="delete" data-inset="true" data-role="listview"
+							data-split-theme="d" data-split-icon="delete" data-inset="true" data-role="listview"
 							data-theme="d" data-divider-theme="d" >
 							<li id="scenelist_cat_none" data-role="list-divider">Unkategorisiert</li>
 						</ul>
@@ -44,128 +65,31 @@
 							</ul>
 						</form>
 					</script>
-					<div id="sceneservices">
-						<!--demo element-->
-						<form class="sceneitemform animated fadeInDown">
-							<ul data-role="listview" data-inset="true" data-divider-theme="a">
-								<li data-role="list-divider">Name</li>
-								<li data-role="fieldcontain">
-									<label for="name">Text Input:</label>
-									<input type="text" name="name" id="name" value=""  />
-								</li>
-								<li data-role="fieldcontain">
-									<label for="slider2">Flip switch:</label>
-									<select name="slider2" id="slider2" data-role="slider">
-										<option value="off">Off</option>
-										<option value="on">On</option>
-									</select>
-								</li>
-								<li data-role="fieldcontain">
-									<label for="slider">Slider:</label>
-									<input type="range" name="slider" id="slider" value="0" min="0" max="100"  />
-								</li>
-								<li data-role="fieldcontain">
-									<fieldset data-role="controlgroup" data-type="horizontal">
-										<legend>Layout view:</legend>
-											<input type="radio" name="radio-choice-b" id="radio-choice-c" value="on" checked="checked" />
-											<label for="radio-choice-c">List</label>
-											<input type="radio" name="radio-choice-b" id="radio-choice-d" value="off" />
-											<label for="radio-choice-d">Grid</label>
-									</fieldset>
-								</li>
-								<li data-role="fieldcontain">
-									<label for="select-choice-a" class="select">Choose shipping method:</label>
-									<select name="select-choice-a" id="select-choice-a" data-native-menu="false">
-										<option>Custom menu example</option>
-										<option value="standard">Standard: 7 day</option>
-										<option value="rush">Rush: 3 days</option>
-										<option value="express">Express: next day</option>
-										<option value="overnight">Overnight</option>
-									</select>
-								</li>
-							</ul>
-						</form>
-						
-						<form class="sceneitemform animated fadeInDown">
-							<ul class="sceneitemul" data-role="listview" data-inset="true" data-divider-theme="b">
-								<li data-role="list-divider">Name</li>
-								<li data-role="fieldcontain">
-									<label for="name">Text Input:</label>
-									<input type="text" name="name" id="name" value=""  />
-								</li>
-								<li data-role="fieldcontain">
-									<label for="slider2">Flip switch:</label>
-									<select name="slider2" id="slider2" data-role="slider">
-										<option value="off">Off</option>
-										<option value="on">On</option>
-									</select>
-								</li>
-								<li data-role="fieldcontain">
-									<label for="slider">Slider:</label>
-									<input type="range" name="slider" id="slider" value="0" min="0" max="100"  />
-								</li>
-								<li data-role="fieldcontain">
-									<fieldset data-role="controlgroup" data-type="horizontal">
-										<legend>Layout view:</legend>
-											<input type="radio" name="radio-choice-b" id="radio-choice-c" value="on" checked="checked" />
-											<label for="radio-choice-c">List</label>
-											<input type="radio" name="radio-choice-b" id="radio-choice-d" value="off" />
-											<label for="radio-choice-d">Grid</label>
-									</fieldset>
-								</li>
-							</ul>
-						</form>
-						
-						<form class="sceneitemform animated fadeInDown">
-							<ul class="sceneitemul" data-role="listview" data-inset="true" data-divider-theme="c">
-								<li data-role="list-divider">Name</li>
-								<li data-role="fieldcontain">
-									<label for="name">Text Input:</label>
-									<input type="text" name="name" id="name" value=""  />
-								</li>
-								<li data-role="fieldcontain">
-									<label for="slider2">Flip switch:</label>
-									<select name="slider2" id="slider2" data-role="slider">
-										<option value="off">Off</option>
-										<option value="on">On</option>
-									</select>
-								</li>
-								<li data-role="fieldcontain">
-									<label for="slider">Slider:</label>
-									<input type="range" name="slider" id="slider" value="0" min="0" max="100"  />
-								</li>
-								<li data-role="fieldcontain">
-									<fieldset data-role="controlgroup" data-type="horizontal">
-										<legend>Layout view:</legend>
-											<input type="radio" name="radio-choice-b" id="radio-choice-c" value="on" checked="checked" />
-											<label for="radio-choice-c">List</label>
-											<input type="radio" name="radio-choice-b" id="radio-choice-d" value="off" />
-											<label for="radio-choice-d">Grid</label>
-									</fieldset>
-								</li>
-							</ul>
-						</form>
-					</div>
+					<div id="sceneservices"></div>
 				</div>
 			</div>
 		</div>
-		<div data-role="popup" id="removepopup">
-			<div data-role="header" data-theme="a" class="ui-corner-top">
-				<h1>Szene löschen?</h1>
-			</div>
-			<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-				<p>Diese Aktion kann nicht rückgängig gemacht werden.<br />
-				Möchtest du "<span class="currentrmscene"></span>" wirklich entfernen?</p>
-				<a href="#" data-role="button" data-inline="true" data-rel="back" data-theme="c">Cancel</a>    
-				<a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b">Delete</a>  
-			</div>
-		</div>
 		<script type='text/javascript'>
+			function reloadpage() {
+				window.location = window.location.href.replace( /#.*/, "");
+			}
 			$('#mainpage').live('pageshow', function(event) {
+				$.mobile.loading( 'show', { theme: "b", text: "Lade Dokumente", textonly: false });
 				$('#splitviewcontainer').simplesplitview();
-				$('#removepopup').popup();
+				//$('#removepopup').trigger("create").popup();
 				templateSceneItem = Handlebars.compile($("#sceneitem-template").html());
 				websocketInstance.reconnect();
+			});
+			$(storageInstance).bind('onloadcomplete', function() {
+				$.mobile.loading( 'hide' );
+			});
+			$(websocketInstance).bind('onclose', function() {
+				$("#sceneservices").children().remove();
+				$("#scenelist").children().remove();
+				$.mobile.loading( 'hide' );
+				$("#noconnectionpopup").bind('popupafterclose',  function(event, ui) {console.log("pop"); $("#noconnectionpopup").popup('open'); }).popup('open');
+				//$.mobile.changePage("#noconnectionpopup");
+				//$("#noconnectionpopup").dialog('open');
 			});
 			$(storageInstance).bind('onscene', function(d, doc, removed) {
 				// Remove the scene entry first
@@ -202,17 +126,54 @@
 					if (!doc)
 						continue;
 					var schema = storageInstance.schemaForDocument(doc);
+					if (schema == null) {
+						var entry = {"id":doc.id_, "name": doc.type_+": "+doc.componentid_+"."+doc.instanceid_+"->"+doc.method_, "typetheme":"d"};
+						var $elem = $(templateSceneServiceItem(entry)).appendTo($("#sceneservices"));
+						var $elemUL = $elem.children('ul');
+						$elemUL.append("<li>Schema nicht gefunden!</li>");
+						$elem.trigger("create");
+						continue;
+					}
 					var entry = {"id":doc.id_, "name": doc.type_+": "+doc.componentid_+"."+doc.instanceid_+"->"+(schema!==null?schema.name:doc.method_), "typetheme":(doc.type_=="action")?"a":((doc.type_=="condition")?"b":"c")};
-					$("#sceneservices").append(templateSceneServiceItem(entry));
-					var content;
+					var $elem = $(templateSceneServiceItem(entry)).appendTo($("#sceneservices"));
+					var $elemUL = $elem.children('ul');
 					for (var index in schema.parameters) {
 						var parameter = schema.parameters[index];
+						var domid = parameter.name + "_" + doc.id_;
 						console.log("parameter", parameter);
-						content += '<li data-role="fieldcontain"><label for="name">Text Input:</label><input type="text" name="name" id="name" value=""  /></li>';
+						if (parameter.type == "string") {
+							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><input type="text" id="'+domid+'" name="'+parameter.name+'" value="'+parameter.value+'"  /></li>');
+						} else if (parameter.type == "boolean") {
+							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><select id="'+domid+'" name="'+parameter.name+'" data-role="slider"><option value="off">Off</option><option value="on">On</option></select></li>');
+						} else if (parameter.type == "integer" && parameter.min && parameter.max) {
+							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><input type="range" id="'+domid+'" name="'+parameter.name+'" value="0" min="0" max="100"  /></li>');
+						} else if (parameter.type == "integer") {
+							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><input type="text" id="'+domid+'" name="'+parameter.name+'" value=""  /></li>');
+						} else if (parameter.type == "enum") {
+							$elemUL.append('<li data-role="fieldcontain">' +
+							'<fieldset data-role="controlgroup">' +
+							'	<legend>'+parameter.name+'</legend>' +
+							'	<input type="radio" name="radio-choice-1" id="radio-choice-4" value="choice-4"  />' +
+							'	<label for="radio-choice-4">Lizard</label>' +
+							'	<input type="radio" name="radio-choice-1" id="radio-choice-3" value="choice-3"  />' +
+							'	<label for="radio-choice-3">Lizard</label>' +
+							'</fieldset>' +
+							'</li>');
+						} else if (parameter.type == "modelenum") {
+							$elemUL.append('<li data-role="fieldcontain">' +
+							'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
+							'<select name="'+parameter.name+'" id="'+domid+'" data-native-menu="false">' +
+							'	<option>Custom menu example</option>' +
+							'	<option value="standard">Standard: 7 day</option>' +
+							'	<option value="rush">Rush: 3 days</option>' +
+							'	<option value="express">Express: next day</option>' +
+							'	<option value="overnight">Overnight</option>' +
+							'</select>' +
+							'</li>');
+						}
 					}
+					$elem.trigger("create");
 				}
-				//$("#sceneservices").page('destroy').page();
- 				$('.sceneitemcontrols').listview();
 			}
 		</script>
 	</body>
