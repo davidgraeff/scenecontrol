@@ -137,18 +137,22 @@ void PluginController::doc_changed(const SceneDocument* doc) {
 		plugin->callQtSlot(doc->getData());
 		m_registeredevents.insert(doc->id(), plugin);
 	} else if (doc->checkType(SceneDocument::TypeConfiguration)) {
-		startOrChangePluginProcessByConfiguration(doc);
+		startPluginProcessByConfiguration(doc);
 	}
 }
 
 void PluginController::doc_removed(const SceneDocument* doc) {
-	if (!doc->checkType(SceneDocument::TypeEvent))
-		return;
-    PluginProcess* executeplugin = m_registeredevents.take ( doc->id() );
-    if ( executeplugin ) {
-//         qDebug() << "Plugins: unregister event" << id << executeplugin;
-        executeplugin->unregister_event ( doc->id() );
-    }
+	if (doc->checkType(SceneDocument::TypeEvent)) {
+		PluginProcess* executeplugin = m_registeredevents.take ( doc->id() );
+		if ( executeplugin ) {
+	//         qDebug() << "Plugins: unregister event" << id << executeplugin;
+			executeplugin->unregister_event ( doc->id() );
+		}
+	} else if (doc->checkType(SceneDocument::TypeConfiguration)) {
+		PluginProcess* p = getPlugin(doc->componentUniqueID());
+		if (p)
+			p->deleteLater();
+	}
 }
 
 void PluginController::scanPlugins() {
@@ -169,8 +173,11 @@ void PluginController::scanPlugins() {
 	else
 		qDebug() << "Plugin initial configurations:" << importdir.absolutePath();
 
+	m_pluginlist.clear();
+	
     for (int i=0;i<pluginfiles.size();++i) {
         const QString componentid = pluginfiles[i].mid(0, pluginfiles[i].lastIndexOf(QLatin1String("_plugin")));
+		m_pluginlist.append(componentid);
 
         // Install missing files for this plugin first
         if (importdirfound && importdir.cd( componentid )) {
@@ -184,12 +191,12 @@ void PluginController::scanPlugins() {
 		filter.setComponentID( componentid );
 		QList<SceneDocument*> configurations = DataStorage::instance()->requestAllOfType(SceneDocument::TypeConfiguration, filter.getData());
 		for (int pi = 0; pi < configurations.size(); ++pi) {
-			startOrChangePluginProcessByConfiguration(configurations[pi]);
+			startPluginProcessByConfiguration(configurations[pi]);
 		}
 	}
 }
 
-void PluginController::startOrChangePluginProcessByConfiguration ( const SceneDocument* configuration )
+void PluginController::startPluginProcessByConfiguration ( const SceneDocument* configuration )
 {
 	if (!configuration->hasComponentUniqueID()) {
 		qWarning() << "Server: Document incomplete. PluginID or PluginInstance is missing!" << configuration->getData();
@@ -197,13 +204,16 @@ void PluginController::startOrChangePluginProcessByConfiguration ( const SceneDo
 	}
 
 	PluginProcess* p = getPlugin(configuration->componentUniqueID());
-	if (!p) {
-		p = new PluginProcess( this, configuration->componentID(), configuration->instanceID());
-		m_pluginprocesses.insert( p );
-		m_plugins.insert(configuration->componentUniqueID(),p);
-		p->startProcess();
-		qDebug() << "Process start" << configuration->componentUniqueID();
-	}
+	if (p) {
+		delete p;
+		qDebug() << "Restart Process" << configuration->componentUniqueID();
+	} else
+		qDebug() << "Start Process" << configuration->componentUniqueID();
+	
+	p = new PluginProcess( this, configuration->componentID(), configuration->instanceID());
+	m_pluginprocesses.insert( p );
+	m_plugins.insert(configuration->componentUniqueID(),p);
+	p->startProcess();
 	p->configChanged(configuration->configurationkey(), configuration->getData());
 }
 
@@ -216,13 +226,7 @@ void PluginController::requestAllProperties(int sessionid) {
 
 QStringList PluginController::pluginids() const
 {
-    // Generate plugin list
-    QStringList pluginlist;
-    for (auto i = m_plugins.constBegin();i!=m_plugins.constEnd();++i) {
-        const QString identifier = (*i)->getPluginid() + QLatin1String(":") + (*i)->getInstanceid();
-        pluginlist += identifier;
-    }
-    return pluginlist;
+    return m_pluginlist;
 }
 
 void PluginController::processFinished(PluginProcess* process) {

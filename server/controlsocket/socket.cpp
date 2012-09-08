@@ -143,7 +143,7 @@ void Socket::readyRead() {
 		}
 		
 		// Analyse the scene document: We only accept TypeExecution
-		SceneDocument doc(v.toMap());			
+		SceneDocument doc(v.toMap());
 		if ( !doc.checkType ( SceneDocument::TypeExecution ) ) {
 			serverSocket->write("{\"response\":2, \"msg\":\"No execution type\"}\n");
 			continue;
@@ -174,6 +174,16 @@ void Socket::readyRead() {
 			s.setData("plugins", PluginController::instance()->pluginids());
 			s.setComponentID(QLatin1String("PluginController"));
 			sendToClients(s.getjson(), sessionid);
+		}
+		
+		else if ( doc.isMethod ( "removeDocument" ) )
+		{
+			DataStorage::instance()->removeDocument(SceneDocument(v.toMap().value(QLatin1String("doc")).toMap()));
+		}
+		
+		else if ( doc.isMethod ( "changeDocument" ) )
+		{
+			DataStorage::instance()->storeDocument(SceneDocument(v.toMap().value(QLatin1String("doc")).toMap()), true);
 		}
 		
 		else if ( doc.isMethod ( "fetchAllDocuments" ) )

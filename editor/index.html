@@ -8,77 +8,159 @@
 		<link rel="stylesheet" type="text/css" href="editor.css" />
 		<script src="http://code.jquery.com/jquery.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.js"></script>
-		<script src='simplesplitview-1.0.js'></script>
+<!--		<script src='simplesplitview-1.0.js'></script>-->
 		<script src='handlebars-1.0.0.beta.6.js'></script>
 		<script src="websocket.js"></script>
 		<script src="storage.js"></script>
+		<script src="scene.js"></script>
 	</head>
 	<body>
 
 		<div data-role='page' id='mainpage' data-title='SceneControl' data-theme='d'>
-			<div data-role='content' id='splitviewcontainer' class='splitviewcontainer'>
+		
+			<div data-role="header" data-position="fixed" data-theme='d'>
+				<h1>Szene: <span class="currentscene">Keine ausgewählt</span></h1>
+			</div>
 			
-				<div data-role="popup" id="removepopup" data-overlay-theme="a">
-					<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
-					<div data-role="header" data-theme="a" class="ui-corner-top">
-						<h1>Szene löschen?</h1>
-					</div>
-					<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-						<p>Diese Aktion kann nicht rückgängig gemacht werden.<br />
-						Möchtest du "<span class="currentrmscene"></span>" wirklich entfernen?</p>
-						<a href="#" data-role="button" data-inline="true" data-rel="back" data-transition="flow" data-theme="b" style="width:100%">Entfernen</a>  
-					</div>
-				</div>
-				<div data-role="popup" id="noconnectionpopup" data-overlay-theme="a">
-					<div data-role="header" data-theme="a" class="ui-corner-top">
-						<h1>Keine Verbindung</h1>
-					</div>
-					<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-						<p>Es konnte leider keine Verbindung zum Server hergestellt werden.</p>
-						<a href="javascript:reloadpage()" data-role="button" data-inline="true" data-theme="b" style="width:100%">Seite neu laden?</a>  
-					</div>
-				</div>
+			<div data-role='content'>
 				
-				<div class='leftside padsides' id='leftpanel1'>
+				<div class='content-secondary' id='leftpanel1'>
 						<script id="sceneitem-template" type="text/x-handlebars-template">
-							<li data-icon="info" data-sceneid="{{id}}">
+							<li data-icon="false" data-sceneid="{{id}}" id="li{{id}}" data-selected="0">
 								<a href="javascript:setscene('{{id}}');">{{name}}</a>
-								<a href="javascript:scenemenu('{{id}}');" data-rel="dialog"
-									data-position-to="window" data-inline="true" data-transition="pop"></a>
+								<a href="javascript:mark('{{id}}')">Markieren</a>
 								<span class="ui-li-count">{{counter}}</span>
 							</li>
 						</script>
 						<ul id="scenelist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
-							data-split-theme="d" data-split-icon="delete" data-inset="true" data-role="listview"
+							data-split-theme="d" data-split-icon="check" data-inset="true" data-role="listview"
 							data-theme="d" data-divider-theme="d" >
 							<li id="scenelist_cat_none" data-role="list-divider">Unkategorisiert</li>
 						</ul>
-				</div>
-				<div class='rightside' id='rightpanel1'>
-					<div data-role="header" data-theme="d">
-						<h1>Szene: <span class="currentscene">Keine ausgewählt</span></h1>
-					</div>
+				</div><!-- leftside -->
+				
+				<div class='content-primary' id='rightpanel1'>
 					<script id="sceneitem-service-template" type="text/x-handlebars-template">
 						<form class="sceneitemform animated fadeInDown">
 							<ul class="sceneitemcontrols" data-role="listview" data-inset="true" data-divider-theme="{{typetheme}}">
-								<li data-role="list-divider">{{name}}</li>
+								<li data-role="list-divider">
+									<a class="btnsaveitem" href="#" data-role="button" data-theme="{{typetheme}}" data-icon="check" data-iconpos="notext">Speichern</a>
+									<a class="btnremoveitem" href="#" data-role="button" data-theme="{{typetheme}}" data-icon="minus" data-iconpos="notext">Löschen</a>
+									<small style="float:left;">{{type}}</small>
+									<center>{{name}}<br />{{subname}}</center>
+								</li>
 							</ul>
 						</form>
 					</script>
 					<div id="sceneservices"></div>
+				</div><!-- rightside -->
+			</div><!-- /content -->
+			
+			<div data-role="footer" data-position="fixed" data-theme='d'> 
+				<div class="ui-grid-a ui-bar">
+					<div class="ui-block-a"><div data-role="controlgroup" data-type="horizontal">
+						<a href="javascript:newsceneName();" data-role="button" data-icon="plus" data-mini="true" data-inline="true">Neue Szene</a>
+						<a id="btnRemoveSelectedScenes" href="javascript:removeSelectedScenesAsk();" data-role="button" data-icon="delete" data-mini="true" data-inline="true">Markierte entfernen</a>
+						<a href="config.html" data-ajax="false" data-role="button" data-icon="gear" data-mini="true" data-inline="true">Konfiguration</a>
+					</div></div>
+					<div class="ui-block-b"><span style="float:right"><div data-role="controlgroup" data-type="horizontal">
+						<a id="btnAddEvent" href="javascript:CurrentScene.newevent();" data-role="button" data-icon="plus" data-mini="true">Ereignis hinzufügen</a>
+						<a id="btnAddCondition" href="javascript:CurrentScene.newcondition();" data-role="button" data-icon="plus" data-mini="true">Bedingung hinzufügen</a>
+						<a id="btnAddAction" href="javascript:CurrentScene.newaction();" data-role="button" data-icon="plus" data-mini="true">Aktion hinzufügen</a>
+					</div></span></div>
+				</div>
+			</div> 
+
+			<div data-role="popup" id="removepopup" data-overlay-theme="a">
+				<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+				<div data-role="header" data-theme="a" class="ui-corner-top">
+					<h1>Szenen löschen?</h1>
+				</div>
+				<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+					<p>Diese Aktion kann nicht rückgängig gemacht werden.<br />
+					Möchtest du "<span class="currentrmscene"></span>" Szenen wirklich entfernen?</p>
+					<a href="javascript:removeSelectedScenes();" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Entfernen</a>  
 				</div>
 			</div>
+			<div data-role="popup" id="newscenenamepopup" data-overlay-theme="a">
+				<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+				<div data-role="header" data-theme="a" class="ui-corner-top">
+					<h1>Name der Szene</h1>
+				</div>
+				<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+					<form><input type="text" placeholder="Name" id="newscenename" name="newscenename" value=""  /></form>
+					<a href="javascript:newscene();" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Szene erstellen</a>  
+				</div>
+			</div>
+			<div data-role="popup" id="noconnectionpopup" data-overlay-theme="a">
+				<div data-role="header" data-theme="a" class="ui-corner-top">
+					<h1>Keine Verbindung</h1>
+				</div>
+				<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+					<p>Es konnte leider keine Verbindung zum Server hergestellt werden.</p>
+					<a href="javascript:reloadpage()" data-role="button" data-inline="true" data-theme="b" style="width:100%">Seite neu laden?</a>  
+				</div>
+			</div>
+			
 		</div>
 		<script type='text/javascript'>
+			// show popup to get the new scene name
+			function newsceneName() {
+				$('#newscenenamepopup').popup("open");
+				$("#newscenename").delay(300).focus();
+			}
+			// call method to create scene
+			function newscene() {
+				var name = escapeInputForJson($("#newscenename").val());
+				if (name.length == 0)
+					return;
+				Scenes.create(name);
+				$("#newscenename").val('');
+				$('#newscenenamepopup').popup("close");
+			}
+			var selectedScenesCounter = 0;
+			function removeSelectedScenesAsk() {
+				$(".currentrmscene").text(selectedScenesCounter);
+				$('#removepopup').popup("open");
+			}
+			
+			function removeSelectedScenes() {
+				$('#removepopup').popup("close");
+				$("#btnRemoveSelectedScenes").addClass("ui-disabled");
+				selectedScenesCounter = 0;
+				$("#scenelist").find("[data-selected='1']").removeClass("selectedSceneListItem").addClass("ui-disabled").each(function(index,elem){
+					Scenes.delete(elem.getAttribute('data-sceneid'));
+				});
+			}
+			
+			function mark(sceneid) {
+				var item = document.getElementById("li" + sceneid);
+				if (item.getAttribute('data-selected')=="1") { // is selected: deselect
+					$(item).removeClass("selectedSceneListItem");
+					item.setAttribute('data-selected',"0");
+					--selectedScenesCounter;
+				} else {
+					$(item).addClass("selectedSceneListItem");
+					item.setAttribute('data-selected',"1");
+					++selectedScenesCounter;
+				}
+				if (selectedScenesCounter)
+					$("#btnRemoveSelectedScenes").removeClass("ui-disabled");
+				else
+					$("#btnRemoveSelectedScenes").addClass("ui-disabled");
+			}
+			
 			function reloadpage() {
 				window.location = window.location.href.replace( /#.*/, "");
 			}
-			$('#mainpage').live('pageshow', function(event) {
+			$('#mainpage').live('pageinit', function(event) {
 				$.mobile.loading( 'show', { theme: "b", text: "Lade Dokumente", textonly: false });
-				$('#splitviewcontainer').simplesplitview();
-				//$('#removepopup').trigger("create").popup();
+				//$('#splitviewcontainer').simplesplitview();
 				templateSceneItem = Handlebars.compile($("#sceneitem-template").html());
+				$("#btnRemoveSelectedScenes").addClass("ui-disabled");
+				setscene(null);
 				websocketInstance.reconnect();
+				// focus to the name field
 			});
 			$(storageInstance).bind('onloadcomplete', function() {
 				$.mobile.loading( 'hide' );
@@ -87,13 +169,14 @@
 				$("#sceneservices").children().remove();
 				$("#scenelist").children().remove();
 				$.mobile.loading( 'hide' );
-				$("#noconnectionpopup").bind('popupafterclose',  function(event, ui) {console.log("pop"); $("#noconnectionpopup").popup('open'); }).popup('open');
+				//$("#noconnectionpopup").bind('popupafterclose',  function(event, ui) {console.log("pop"); $("#noconnectionpopup").popup('open'); }).popup('open');
 				//$.mobile.changePage("#noconnectionpopup");
-				//$("#noconnectionpopup").dialog('open');
+				$("#noconnectionpopup").popup('open');
 			});
 			$(storageInstance).bind('onscene', function(d, doc, removed) {
 				// Remove the scene entry first
-				$("#scenelist").find("[data-sceneid='" + doc.id_ + "']").remove();
+				//$("#scenelist").find("[data-sceneid='" + doc.id_ + "']").remove();
+				$("#li" + doc.id_).remove();
 				// if it just has been changed or wasn't in the list at all we need to add it
 				if (!removed) {
 					var entry = {"id":doc.id_, "name":doc.name, "counter":doc.temp_.counter};
@@ -111,14 +194,24 @@
 						}
 				}
 				$('#scenelist').listview('refresh');
+				CurrentScene.checkscene(doc.id_, removed);
+				if (!CurrentScene.isValid()) {
+					setscene(null);
+				}
 			});
-			function scenemenu(sceneid) {
-				$(".currentrmscene").text(storageInstance.scenes[sceneid].name);
-				$('#removepopup').popup("open");
-			}
 			function setscene(sceneid) {
+				if (sceneid === null) {
+					$("#btnAddEvent").addClass("ui-disabled");
+					$("#btnAddCondition").addClass("ui-disabled");
+					$("#btnAddAction").addClass("ui-disabled");
+					return;
+				}
+				$("#btnAddEvent").removeClass("ui-disabled");
+				$("#btnAddCondition").removeClass("ui-disabled");
+				$("#btnAddAction").removeClass("ui-disabled");
 				$(".currentscene").text(storageInstance.scenes[sceneid].name);
 				$("#sceneservices").children().remove();
+				CurrentScene.set(sceneid);
 				var sceneDocuments = storageInstance.documentsForScene(sceneid);
 				var templateSceneServiceItem = Handlebars.compile($("#sceneitem-service-template").html());
 				for (var i=0;i < sceneDocuments.length;++i) {
@@ -127,52 +220,107 @@
 						continue;
 					var schema = storageInstance.schemaForDocument(doc);
 					if (schema == null) {
-						var entry = {"id":doc.id_, "name": doc.type_+": "+doc.componentid_+"."+doc.instanceid_+"->"+doc.method_, "typetheme":"d"};
+						var entry = {"id":doc.id_, "type": doc.type_, "name": doc.componentid_+"."+doc.instanceid_, "subname": doc.method_, "typetheme":"d"};
 						var $elem = $(templateSceneServiceItem(entry)).appendTo($("#sceneservices"));
-						var $elemUL = $elem.children('ul');
-						$elemUL.append("<li>Schema nicht gefunden!</li>");
+						var $ulBase = $elem.children('ul');
+						$ulBase.append("<li>Schema nicht gefunden!</li>");
 						$elem.trigger("create");
+						$elem.find(".btnsaveitem").addClass("ui-disabled");
 						continue;
 					}
-					var entry = {"id":doc.id_, "name": doc.type_+": "+doc.componentid_+"."+doc.instanceid_+"->"+(schema!==null?schema.name:doc.method_), "typetheme":(doc.type_=="action")?"a":((doc.type_=="condition")?"b":"c")};
-					var $elem = $(templateSceneServiceItem(entry)).appendTo($("#sceneservices"));
-					var $elemUL = $elem.children('ul');
-					for (var index in schema.parameters) {
-						var parameter = schema.parameters[index];
-						var domid = parameter.name + "_" + doc.id_;
-						console.log("parameter", parameter);
-						if (parameter.type == "string") {
-							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><input type="text" id="'+domid+'" name="'+parameter.name+'" value="'+parameter.value+'"  /></li>');
-						} else if (parameter.type == "boolean") {
-							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><select id="'+domid+'" name="'+parameter.name+'" data-role="slider"><option value="off">Off</option><option value="on">On</option></select></li>');
-						} else if (parameter.type == "integer" && parameter.min && parameter.max) {
-							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><input type="range" id="'+domid+'" name="'+parameter.name+'" value="0" min="0" max="100"  /></li>');
-						} else if (parameter.type == "integer") {
-							$elemUL.append('<li data-role="fieldcontain"><label for="'+domid+'">'+parameter.name+'</label><input type="text" id="'+domid+'" name="'+parameter.name+'" value=""  /></li>');
-						} else if (parameter.type == "enum") {
-							$elemUL.append('<li data-role="fieldcontain">' +
-							'<fieldset data-role="controlgroup">' +
-							'	<legend>'+parameter.name+'</legend>' +
-							'	<input type="radio" name="radio-choice-1" id="radio-choice-4" value="choice-4"  />' +
-							'	<label for="radio-choice-4">Lizard</label>' +
-							'	<input type="radio" name="radio-choice-1" id="radio-choice-3" value="choice-3"  />' +
-							'	<label for="radio-choice-3">Lizard</label>' +
-							'</fieldset>' +
-							'</li>');
-						} else if (parameter.type == "modelenum") {
-							$elemUL.append('<li data-role="fieldcontain">' +
-							'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
-							'<select name="'+parameter.name+'" id="'+domid+'" data-native-menu="false">' +
-							'	<option>Custom menu example</option>' +
-							'	<option value="standard">Standard: 7 day</option>' +
-							'	<option value="rush">Rush: 3 days</option>' +
-							'	<option value="express">Express: next day</option>' +
-							'	<option value="overnight">Overnight</option>' +
-							'</select>' +
-							'</li>');
+					var entry = {"id":doc.id_, "type": doc.type_, "name": doc.componentid_+"."+doc.instanceid_, "subname": schema.name, "typetheme":(doc.type_=="action")?"a":((doc.type_=="condition")?"b":"c")};
+					var $elem = $(templateSceneServiceItem(entry));
+					createParameterForm($elem.children('ul'), schema, doc);
+					$elem.appendTo($("#sceneservices")).trigger("create");
+					$elem.find(".btnsaveitem").addClass("ui-disabled");
+				}
+			}
+			function createParameterForm($ulBase, schema, doc) {
+				for (var paramid in schema.parameters) {
+					var parameter = schema.parameters[paramid];
+					var domid = parameter.name + "_" + doc.id_;
+					if (parameter.type == "string") {
+						var value = doc[paramid] ? doc[paramid] : parameter.value;
+						$ulBase.append('<li data-role="fieldcontain">' + 
+						'<label for="'+domid+'">'+parameter.name+'</label>' + 
+						'<input type="text" id="'+domid+'" name="'+paramid+'" value="'+value+'"  /></li>');
+					} else if (parameter.type == "boolean") {
+						var value = doc[paramid] ? doc[paramid] : parameter.value;
+						$ulBase.append('<li data-role="fieldcontain">'+
+						'<label for="'+domid+'">'+parameter.name+'</label>'+
+						'<select id="'+domid+'" name="'+paramid+'" data-role="slider">'+
+						'<option value="0" '+(value?'':'selected')+'>Off</option><option value="1" '+(value?'selected':'')+'>On</option>' +
+						'</select></li>');
+					} else if (parameter.type == "integer" && parameter.min && parameter.max) {
+						var value = doc[paramid] ? doc[paramid] : parameter.value;
+						$ulBase.append('<li data-role="fieldcontain">' +
+						'<label for="'+domid+'">'+parameter.name+'</label>' +
+						'<input type="range" id="'+domid+'" name="'+paramid+'" value="'+value+'"' +
+						'min="'+parameter.min+'" max="'+parameter.max+'" '+(parameter.step?'step="'+parameter.step+'"':'')+' /></li>');
+					} else if (parameter.type == "integer") {
+						var value = doc[paramid] ? doc[paramid] : parameter.value;
+						$ulBase.append('<li data-role="fieldcontain">' +
+						'<label for="'+domid+'">'+parameter.name+'</label>' +
+						'<input type="number" id="'+domid+'" name="'+paramid+'" value="'+value+'" '+
+						(parameter.step?'step="'+parameter.step+'" ':'')+
+						(parameter.min?'min="'+parameter.min+'" ':'')+
+						(parameter.max?'max="'+parameter.max+'" ':'')+
+						' /></li>');
+					} else if (parameter.type == "enum") {
+						var d = '<li data-role="fieldcontain">' +
+						'<fieldset data-role="controlgroup" id="'+domid+'">' +
+						'	<legend>'+parameter.name+'</legend>';
+						
+						for (var i=0;i<parameter.data.length;++i) {
+							var itemDomID = domid + paramid + i;
+							d+= '<input type="radio" name="'+paramid+'" id="'+itemDomID+'" value="'+parameter.data[i]+'" '+(i==doc[paramid]?'checked="checked"':'')+' />' +
+								'<label for="'+itemDomID+'">'+parameter.data[i]+'</label>';
 						}
+
+						d += '</fieldset>' +
+						'</li>';
+						
+						$ulBase.append(d);
+					} else if (parameter.type == "modelenum") {
+						var d = '<li data-role="fieldcontain">' +
+						'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
+						'<select name="'+paramid+'" id="'+domid+'" data-native-menu="false">';
+						
+						var dElements;
+						
+						var model = storageInstance.modelItems(doc.componentid_,doc.instanceid_,parameter.model);
+						var elems = model.data;
+						//console.log("parameter_modelenum: "+paramid, parameter, elems);
+						var counter = 0;
+						var selected = 0;
+						for (var index in elems) {
+							if (elems.hasOwnProperty(index)) {
+								var key = elems[index][parameter.indexproperty];
+								var value = elems[index][parameter.textproperty];
+								var s = key==doc[parameter.indexproperty];
+								if (s)
+									++selected;
+								dElements += '<option value="'+key+'" '+(s?'selected':'')+'>'+value+'</option>';
+								++counter;
+							}
+						}
+						
+						if (!counter) {
+							d += '<option>'+parameter.name+': Keine Daten</option>';
+						} else if (!selected) {
+							d += '<option>'+parameter.name+': Keine Auswahl!</option>';
+							d += dElements;
+						} else {
+							d += dElements;
+						}
+						
+						d += '</select>' +
+						'</li>';
+						
+						$ulBase.append(d);
+					} else {
+						console.log("unknown parameter", parameter);
 					}
-					$elem.trigger("create");
 				}
 			}
 		</script>

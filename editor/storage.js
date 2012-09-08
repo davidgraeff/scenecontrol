@@ -6,6 +6,9 @@ function Storage() {
 	that.events = {};
 	that.conditions = {};
 	that.actions = {};
+	that.configurations = {};
+	that.models = {};
+	that.plugins = []; // List of plugins
 
 	this.documentsForScene = function(sceneid) {
 		var result = []
@@ -19,6 +22,10 @@ function Storage() {
 			if (this.actions[index].sceneid_ == sceneid)
 				result.push(this.actions[index]);
 		return result;
+	}
+	
+	this.modelItems = function(componentid, instanceid, modelid) {
+		return that.models[componentid+instanceid+modelid];
 	}
 	
 	this.schemaForDocument = function(doc) {
@@ -40,6 +47,8 @@ function Storage() {
 			that.conditions[id_] = doc;
 		} else if (doc.type_=="action") {
 			that.actions[id_] = doc;
+		} else if (doc.type_=="configuration") {
+			that.configurations[doc.componentid_+doc.instanceid_] = doc;
 		}
 	};
 	
@@ -56,49 +65,95 @@ function Storage() {
 			$(that).trigger("oncondition", doc, removed);
 		} else if (doc.type_=="action") {
 			$(that).trigger("onaction", doc, removed);
+		} else if (doc.type_=="configuration") {
+			$(that).trigger("onconfiguration", doc, removed);
 		}
 	};
 	
 	$(websocketInstance).bind('ondocument', function(d, doc) {
-		if (doc.type_!="notification")
-			return;
-		if (doc.id_=="alldocuments") {
-			for (var i = 0; i < doc.documents.length; i++) {
-				that.documentChanged(doc.documents[i], false);
-			}
-			// notify about scenes
-			for (var index in that.scenes) {
-				that.notifyDocumentChange(that.scenes[index], false);
-			}
+		if (doc.type_=="model.reset") {
+			that.models[doc.componentid_+doc.instanceid_+doc.id_] = {"key":doc.configkey_,"data":{}};
+			$(that).trigger("model.reset", doc.componentid_+doc.instanceid_+doc.id_);
+		} else
+		if (doc.type_=="model.change") {
+			var model = that.models[doc.componentid_+doc.instanceid_+doc.id_];
+			if (model == null || model["key"] == null)
+				return;
+			var key = doc[ model["key"] ];
+			if (key == null)
+				return;
+			delete doc.method_;
+			delete doc.type_;
+			model.data[key] = doc;
+			$(that).trigger("model.change", doc.componentid_+doc.instanceid_+doc.id_, doc);
+		} else
+		if (doc.type_=="model.remove") {
+			var model = that.models[doc.componentid_+doc.instanceid_+doc.id_];
+			if (model == null || model["key"] == null)
+				return;
+			var key = doc[ model["key"] ];
+			if (key == null)
+				return;
+			delete doc.method_;
+			delete doc.type_;
+			delete model.data[key];
+			$(that).trigger("model.remove", doc.componentid_+doc.instanceid_+doc.id_, doc);
 			
-			$(that).trigger("onloadcomplete");
-		} else if (doc.id_=="documentChanged")  {
-			that.documentChanged(doc.document, false);
-			that.notifyDocumentChange(doc.document, false);
-			// update scene
-			if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
-				that.notifyDocumentChange(doc.document.sceneid_, false);
-		} else if (doc.id_=="documentRemoved")  {
-			that.documentChanged(doc.document, true);
-			that.notifyDocumentChange(doc.document, true);
-			// update scene
-			if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
-				that.notifyDocumentChange(doc.document.sceneid_, false);
+		} else
+		if (doc.type_=="notification") {
+			if (doc.id_=="alldocuments") {
+				for (var i = 0; i < doc.documents.length; i++) {
+					that.documentChanged(doc.documents[i], false);
+				}
+				// notify about scenes
+				for (var index in that.scenes) {
+					that.notifyDocumentChange(that.scenes[index], false);
+				}
+				
+				$(that).trigger("onloadcomplete");
+			} else if (doc.id_=="documentChanged")  {
+				that.documentChanged(doc.document, false);
+				that.notifyDocumentChange(doc.document, false);
+				// update scene
+				if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
+					that.notifyDocumentChange(doc.document.sceneid_, false);
+			} else if (doc.id_=="documentRemoved")  {
+				that.documentChanged(doc.document, true);
+				that.notifyDocumentChange(doc.document, true);
+				// update scene
+				if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
+					that.notifyDocumentChange(doc.document.sceneid_, false);
+			} else if (doc.id_=="registerNotifier")  {
+				console.log("Document notifier registered:", doc.notifierstate);
+			} else if (doc.id_=="plugins" && doc.componentid_=="PluginController")  {
+				that.plugins = doc.plugins;
+				$(that).trigger("onplugins");
+			} else {
+				console.log("Notification", doc);
+			}
 		}
 	});
 	
 	$(websocketInstance).bind('onopen', function() {
 		websocketInstance.requestAllDocuments();
 		websocketInstance.registerNotifier();
+		websocketInstance.requestAllProperties();
 	});
 	
 	$(websocketInstance).bind('onclose', function() {
+		that.clear();
+	});
+	
+	this.clear = function() {
 		that.scenes = {};
 		that.schemas = {};
 		that.events = {};
 		that.conditions = {};
 		that.actions = {};
-	});
+		that.configurations = {};
+		that.models = {};
+		that.plugins = [];
+	}
 }
 
 function escapeInputForJson(text)
@@ -126,7 +181,7 @@ function escapeInputForJson(text)
 			return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
 		});
 	}
-	return text;
+	return  $.trim(text);
 };
 
 storageInstance = new Storage();

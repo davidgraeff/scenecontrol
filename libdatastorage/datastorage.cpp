@@ -177,10 +177,11 @@ bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting
 		qWarning() << "storeDocument: can not store an invalid document";
 		return false;
 	}
-		
-	// Write to disc
+
+	// directory
+	
 	QDir d(m_dir);
-	const QString subdir = doc.type();
+	QString subdir = doc.type();
 	if ( !d.exists(subdir) )
 		d.mkdir(subdir);
 		
@@ -188,7 +189,16 @@ bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting
 		qWarning() << "storeDocument: could not open subdir" << subdir;
 		return false;
 	}
+
+	subdir = doc.componentID();
+	if ( !d.exists(subdir) )
+		d.mkdir(subdir);
 		
+	if(!d.cd(subdir) ) {
+		qWarning() << "storeDocument: could not open subdir" << subdir;
+		return false;
+	}
+
 	if (m_listener)
 		m_listener->watchdir(d.absolutePath());
 	
@@ -197,6 +207,7 @@ bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting
 	if (f.exists() && !overwriteExisting)
 		return true;
 	
+	// Write to disc
 	if (!f.open(QFile::WriteOnly|QFile::Truncate)) {
 		qWarning() << "storeDocument: could not open document for write";
 		return false;

@@ -78,12 +78,12 @@ public:
 	 */
     void requestAllProperties(int sessionid = -1);
 	/**
-	 * Get a list of all plugin ids and instances. Example item: <plugin123:instance1>
+	 * Get a list of all plugin ids. Example item: [plugin123, plugin234]
 	 */
 	QStringList pluginids() const;
 private:
     PluginController ();
-    void startOrChangePluginProcessByConfiguration ( const SceneDocument* configuration );
+    void startPluginProcessByConfiguration ( const SceneDocument* configuration );
     QMap<QString,PluginProcess*> m_plugins;
     QSet<PluginProcess*> m_pluginprocesses;
     QMap<QString, PluginProcess*> m_registeredevents;
@@ -92,6 +92,7 @@ private:
 	/// Local server socket for plugins
     QLocalServer m_comserver;
 	bool m_exitIfNoPluginProcess;
+	QStringList m_pluginlist; // list of all installed plugin processes including the not running plugins
 private Q_SLOTS:
     void newConnection();
 public Q_SLOTS:

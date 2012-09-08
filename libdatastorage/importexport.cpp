@@ -106,7 +106,7 @@ bool VerifyImportDocument::isValid(SceneDocument& data, const QString& filename)
 	if (!data.hasComponentID())
 		data.setComponentID(subdir);
 	if (!data.hasid()) // no identifier set?: use filename without extension and componentid
-		data.setid(subdir + QLatin1String(".") + QFileInfo(filename).completeBaseName());
+		data.setid(QFileInfo(filename).completeBaseName());
 	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
 		return false;
 	return true;
@@ -116,7 +116,7 @@ bool VerifyPluginDocument::isValid(SceneDocument& data, const QString& filename)
 	if (!data.hasComponentID())
 		data.setComponentID(m_pluginid);
 	if (!data.hasid()) // no identifier set? use filename without extension and componentid
-		data.setid(m_pluginid + QLatin1String(".") + QFileInfo(filename).completeBaseName());
+		data.setid(QFileInfo(filename).completeBaseName());
 	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
 		return false;
 	return true;
