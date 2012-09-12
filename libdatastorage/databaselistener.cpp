@@ -78,6 +78,8 @@ void DataStorageWatcher::readnotify() {
 			// dir removed; do nothing
         } else {
 			// emit something
+			if (event.mask & IN_ISDIR)
+				continue;
 			//qDebug() << "inotify " << path << event.name;
 			if (event.mask & IN_CREATE)
 				emit fileChanged(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));

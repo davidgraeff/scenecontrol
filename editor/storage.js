@@ -10,6 +10,14 @@ function Storage() {
 	that.models = {};
 	that.plugins = []; // List of plugins
 
+	this.configurationsForPlugin = function(pluginid) {
+		var result = []
+		for (var index in this.configurations)
+			if (this.configurations[index].componentid_ == pluginid)
+				result.push(this.configurations[index]);
+		return result;
+	}
+	
 	this.documentsForScene = function(sceneid) {
 		var result = []
 		for (var index in this.events)
@@ -48,7 +56,7 @@ function Storage() {
 		} else if (doc.type_=="action") {
 			that.actions[id_] = doc;
 		} else if (doc.type_=="configuration") {
-			that.configurations[doc.componentid_+doc.instanceid_] = doc;
+			that.configurations[doc.componentid_+doc.id_] = doc;
 		}
 	};
 	
