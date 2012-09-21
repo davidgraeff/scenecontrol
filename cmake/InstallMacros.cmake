@@ -28,7 +28,9 @@ ELSE()
 		SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "armhf")
 	ENDIF()
 	
-	SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt4-network (>= 4:4.7.0), libpam0g (>= 1.1.1), libudev0 (>= 160), libssl1.0.0(>= 1.0.0)")
+	# Autodependencies
+	set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+	#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt4-network (>= 4:4.7.0), libpam0g (>= 1.1.1), libudev0 (>= 160), libssl1.0.0(>= 1.0.0)")
 ENDIF()
 
 # Package descriptions
