@@ -143,21 +143,25 @@ int DataStorage::changeDocumentsValue(SceneDocument::TypeEnum type, const QVaria
 	return v.size();
 }
 
-void DataStorage::removeDocument(const SceneDocument &doc)
+bool DataStorage::removeDocument(const SceneDocument &doc)
 {
 	if (!doc.isValid()) {
-		qWarning() << "changeDocument: can not add/change an invalid document";
-		return;
+		qWarning() << "removeDocument: Not enough data provided to identify document to remove:" << doc.getjson();
+		return false;
 	}
 	
-	// remove from disc
-	QDir d(m_dir);
-	m_dir.cd(doc.type());
-	if (!QFile::remove(d.absoluteFilePath(doc.filename()))) {
-		qWarning() << "removeDocument: can not remove document" << d.absoluteFilePath(doc.filename());
-		return;
+	QFile d(storagePath(doc));
+	if (!d.exists()) {
+		qWarning() << "removeDocument: File does not exist" << d.fileName();
+		return false;
 	}
 	
+	if (!d.remove()) {
+		qWarning() << "removeDocument: Remove failed" << d.fileName();
+		return false;
+	}
+	
+	// Remove related documents
 	if (doc.checkType(SceneDocument::TypeScene)) {
 		const QString sceneid = doc.sceneid();
 		QList<SceneDocument*> v;
@@ -169,43 +173,31 @@ void DataStorage::removeDocument(const SceneDocument &doc)
 		v = m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeEvent));
 		for (int i=v.size()-1;i>=0;--i) removeDocument(*v[i]);
 	}
+	
+	return true;
 }
 
 bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting)
 {
 	if (!doc.isValid()) {
-		qWarning() << "storeDocument: can not store an invalid document";
+		qWarning() << "storeDocument: Cannot store an invalid document";
 		return false;
 	}
 
-	// directory
-	
-	QDir d(m_dir);
-	QString subdir = doc.type();
-	if ( !d.exists(subdir) )
-		d.mkdir(subdir);
-		
-	if(!d.cd(subdir) ) {
-		qWarning() << "storeDocument: could not open subdir" << subdir;
-		return false;
-	}
-
-	subdir = doc.componentID();
-	if ( !d.exists(subdir) )
-		d.mkdir(subdir);
-		
-	if(!d.cd(subdir) ) {
-		qWarning() << "storeDocument: could not open subdir" << subdir;
-		return false;
-	}
-
-	if (m_listener)
-		m_listener->watchdir(d.absolutePath());
-	
-	QFile f(d.absoluteFilePath(doc.filename()));
-
+	QFile f(storagePath(doc));
 	if (f.exists() && !overwriteExisting)
 		return true;
+	
+	// create dir if neccessary and add it to the watched directories
+	QDir dir(QFileInfo(f.fileName()).absolutePath());
+	if (!dir.exists()) {
+		if (!dir.mkpath(dir.absolutePath())) {
+			qWarning() << "storeDocument: Cannot create path" << dir.absolutePath();
+			return false;
+		}
+		if (m_listener)
+			m_listener->watchdir(dir.absolutePath());
+	}
 	
 	// Write to disc
 	if (!f.open(QFile::WriteOnly|QFile::Truncate)) {
@@ -237,6 +229,12 @@ void DataStorage::reloadDocument( const QString& filename ) {
 	}
 	
 	if (!m_cache.contains(doc->type())) {
+		delete doc;
+		return;
+	}
+	
+	if (filename != storagePath(*doc)) {
+		qWarning() << "Storage location does not match content!" << filename;
 		delete doc;
 		return;
 	}
@@ -329,4 +327,8 @@ void DataStorage::registerNotifier ( AbstractStorageNotifier* notifier ) {
 
 void DataStorage::unregisterNotifier ( QObject* obj ) {
 	m_notifiers.remove((AbstractStorageNotifier*)obj);
+}
+
+QString DataStorage::storagePath(const SceneDocument& doc) {
+	return m_dir.absolutePath() + QLatin1String("/") + doc.type() + QLatin1String("/") + doc.componentID() + QLatin1String("/") + doc.filename();
 }

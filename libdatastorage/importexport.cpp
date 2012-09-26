@@ -17,12 +17,12 @@
 
 namespace Datastorage {
 	
-void exportAsJSON(const DataStorage& ds, const QString& exportpath, bool overwriteExisting)
+int exportAsJSON(const DataStorage& ds, const QString& exportpath, bool overwriteExisting)
 {
     QDir exportdir(exportpath);
     if (!exportdir.exists() && !exportdir.mkpath(exportdir.absolutePath())) {
         qWarning() << "Database: failed to change to " << exportdir.absolutePath();
-        return;
+        return 0;
     }
 
     int counter = 0;
@@ -47,19 +47,19 @@ void exportAsJSON(const DataStorage& ds, const QString& exportpath, bool overwri
 		}
 	}
 	
-	if (overwriteExisting)
-		qDebug() << counter << "Documents exported to" << exportdir.absolutePath() << "and overwritten existing";
-	else
-		qDebug() << counter << "Documents exported to" << exportdir.absolutePath();
+	return counter;
 }
 
-void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting, VerifyInterface* verify)
+int importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting, VerifyInterface* verify)
 {
     QDir dir(path);
     if (!dir.exists()) {
         qWarning() << "Database: failed to change to " << dir.absolutePath();
-        return;
+        return 0;
     }
+    
+    int counter = 0;
+	
     const QStringList files = dir.entryList(QStringList(QLatin1String("*.json")), QDir::Files | QDir::NoDotAndDotDot);
     for (int i = 0; i < files.size(); ++i) {
         QFile file(dir.absoluteFilePath(files[i]));
@@ -90,15 +90,18 @@ void importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting
         }
 
         ds.storeDocument(document, overwriteExisting);
+		++counter;
     }
 
     // recursivly go into all subdirectories
     const QStringList dirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
     for (int i = 0; i < dirs.size(); ++i) {
         dir.cd(dirs[i]);
-        importFromJSON(ds, dir.absolutePath(), overwriteExisting, verify);
+        counter += importFromJSON(ds, dir.absolutePath(), overwriteExisting, verify);
         dir.cdUp();
     }
+    
+    return counter;
 }
 
 bool VerifyImportDocument::isValid(SceneDocument& data, const QString& filename) {

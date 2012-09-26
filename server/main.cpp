@@ -77,16 +77,21 @@ int main(int argc, char *argv[])
 			QString path = cmdargs.size()>index+1 ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
 			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
 				path = QDir::currentPath();
-			Datastorage::exportAsJSON(*datastorage, path, cmdargs.contains("--overwrite"));
+			int processedDocuments = Datastorage::exportAsJSON(*datastorage, path, cmdargs.contains("--overwrite"));
 			delete datastorage;
+			if (cmdargs.contains("--overwrite"))
+				qDebug() << processedDocuments << "Documents exported to" << path << "and overwritten existing";
+			else
+				qDebug() << processedDocuments << "Documents exported to" << path;
 			return 0;
 	} else if (cmdargs.contains("--import")) { // Import json documents from database
 			int index = cmdargs.indexOf("--import");
 			QString path = cmdargs.size()>index+1 ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
 			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
 				path = QDir::currentPath();
-			Datastorage::importFromJSON(*datastorage, path, cmdargs.contains("--overwrite"));
+			int processedDocuments = Datastorage::importFromJSON(*datastorage, path, cmdargs.contains("--overwrite"));
 			delete datastorage;
+			printf("Imported documents: %i\n", processedDocuments);
 			return 0;
 	}
 

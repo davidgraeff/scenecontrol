@@ -78,7 +78,7 @@ public Q_SLOTS:
 	void registerNotifier(AbstractStorageNotifier* notifier);
     
     /// Remove a document
-    void removeDocument(const SceneDocument &doc);
+    bool removeDocument(const SceneDocument& doc);
 
     /**
       * Store a document given by data on disk.
@@ -118,6 +118,7 @@ private:
     bool m_isLoading;
     
     QList<SceneDocument*> filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter = QVariantMap()) const;
+	QString storagePath(const SceneDocument& doc);
 
 Q_SIGNALS:
 	/// A document changed: only triggered if startChangeListener has been called
