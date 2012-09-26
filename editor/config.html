@@ -3,17 +3,21 @@
 	<head><title>SceneControl - Plugin Konfiguration</title>
 		<meta charset=utf-8 />
 		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<!-- 3rd party tools -->
 		<link rel="stylesheet" type="text/css" href="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.css" />
 		<link rel="stylesheet" type="text/css" href="animate.css" />
 		<link rel="stylesheet" type="text/css" href="jquery.jgrowl.css" />
-		<link rel="stylesheet" type="text/css" href="editor.css" />
 		<script src="http://code.jquery.com/jquery.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.js"></script>
 		<script src='handlebars-1.0.0.beta.6.js'></script>
 		<script src="jquery.jgrowl_minimized.js"></script>
+		<!-- editor css, websocket connection, storage, scene-manager, gui-logic -->
+		<link rel="stylesheet" type="text/css" href="editor.css" />
 		<script src="websocket.js"></script>
 		<script src="storage.js"></script>
 		<script src="scene.js"></script>
+		<script src="commonui.js"></script>
+		<script src="config.js"></script>
 	</head>
 	<body>
 
@@ -78,88 +82,5 @@
 			</div>
 			
 		</div>
-		<script type='text/javascript'>
-			// call method to create scene
-			function newscene() {
-				var name = escapeInputForJson($("#newscenename").val());
-				if (name.length == 0)
-					return;
-				Scenes.create(name);
-				$("#newscenename").val('');
-				$('#newscenenamepopup').popup("close");
-			}
-			
-			function reloadpage() {
-				window.location = window.location.href.replace( /#.*/, "");
-			}
-			
-			$('#mainpage').live('pageinit', function(event) {
-				$.mobile.loading( 'show', { theme: "b", text: "Lade Dokumente", textonly: false });
-				//$('#splitviewcontainer').simplesplitview();
-				templateSceneItem = Handlebars.compile($("#sceneitem-template").html());
-				setPlugin(null);
-				websocketInstance.reconnect();
-			});
-			
-			$(storageInstance).bind('onloadcomplete', function() {
-				$.mobile.loading( 'hide' );
-			});
-			
-			$(websocketInstance).bind('onclose', function() {
-				$("#sceneservices").children().remove();
-				$("#scenelist").children().remove();
-				$.mobile.loading( 'hide' );
-				$("#noconnectionpopup").popup('open');
-			});
-			
-			$(storageInstance).bind('onplugins', function(d) {
-				// Remove the scene entry first
-				for (var i = 0;i < storageInstance.plugins.length; ++i) {
-					var pluginid = storageInstance.plugins[i].replace(":","_");
-					$("#li" + pluginid).remove();
-					var entry = {"id":pluginid, "name":pluginid, "counter":storageInstance.configurationsForPlugin(pluginid).length};
-					$("#scenelist_cat_none").after(templateSceneItem(entry));
-				}
-				$('#scenelist').listview('refresh');
-				setPlugin(null);
-			});
-			function setPlugin(pluginid) {
-				if (pluginid === null) {
-					$("#btnAddConfiguration").addClass("ui-disabled");
-					return;
-				}
-				$("#btnAddConfiguration").removeClass("ui-disabled");
-				$(".currentscene").text(pluginid);
-				$("#sceneservices").children().remove();
-				
-				var sceneDocuments = storageInstance.configurationsForPlugin(pluginid);
-				var templateSceneServiceItem = Handlebars.compile($("#sceneitem-service-template").html());
-				for (var i=0;i < sceneDocuments.length;++i) {
-					var doc = sceneDocuments[i];
-					if (!doc)
-						continue;
-					var schema = storageInstance.schemaForDocument(doc);
-					if (schema == null) {
-						schema = {
-							parameters:{
-								raw:{name:"Schemalose Daten",type:"rawdoc"}
-							}
-						};
-					}
-					var entry = {"configid":doc.id_, "componentid": doc.componentid_, "name": doc.componentid_, "subname": doc.instanceid_, "typetheme":"d"};
-					var $elem = $(templateSceneServiceItem(entry));
- 					createParameterForm($elem.children('ul'), schema, doc);
-					$elem.appendTo($("#sceneservices")).trigger("create");
-					$elem.find(".btnsaveitem").addClass("ui-disabled");
-					$('textarea').keyup();
-				}
-			}
-			function saveConfig(configid, componentid) {
-				$.jGrowl("Saved!");
-			}
-			function removeConfig(configid, componentid) {
-				$.jGrowl("Saved!");
-			}
-		</script>
 	</body>
 </html>
