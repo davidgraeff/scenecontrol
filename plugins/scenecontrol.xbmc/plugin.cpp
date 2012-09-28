@@ -325,7 +325,9 @@ void plugin::readyRead() {
             ++opening;
         else if (data[position] == '}') {
             if (opening==0) {
-                QVariant v = JSON::parse(data.mid(0, position+1));
+				JsonReader r;
+				r.parse(data.mid(0, position+1));
+                QVariant v = r.result();
                 if (!v.isValid()) {
                     qWarning()  << "Failed parse json" << data.mid(0, position+1);
                 } else {

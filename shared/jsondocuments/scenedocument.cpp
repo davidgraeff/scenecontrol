@@ -62,7 +62,11 @@ QVariantMap SceneDocument::toMap(const char* key) const {
 }
 
 SceneDocument::SceneDocument(const QVariantMap& map) : m_map(map) {}
-SceneDocument::SceneDocument(const QByteArray& jsondata) { m_map = JSON::parse(jsondata).toMap(); }
+SceneDocument::SceneDocument(const QByteArray& jsondata) {
+	JsonReader r;
+	r.parse(jsondata);
+	m_map = r.result().toMap();
+}
 
 bool SceneDocument::isValid() const {
   return !m_map.empty() && hasType() && hasid() && hasComponentID();

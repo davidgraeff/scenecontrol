@@ -116,9 +116,9 @@ void Server::processServerMessage() {
         const QByteArray message = serverSocket->readLine();
         if (!message.length())
             continue;
-		bool error;
-		JSON::parse(message, &error);
-		if (error) {
+		
+		JsonReader r;
+		if (!r.parse(message)) {
 			qWarning()<<"Invalid document server->client";
 			continue;
 		}
@@ -134,14 +134,18 @@ void Server::processClientMessage( const QByteArray& message )
 	QWsSocket *clientSocket = (QWsSocket *)sender();
 	if (!message.length())
 		return;
-	bool error;
-	JSON::parse(message, &error);
-	if (error) {
+	
+	// json parsing
+	JsonReader r;
+	QVariant v;
+	if (!r.parse(message)) {
 		qWarning()<<"Invalid document client->server";
 		// send message to client
 		SceneDocument doc;
-		doc.setData("error", true);
-		doc.setData("errormsg", "Invalid document");
+		doc.setComponentID("websocketproxy");
+		doc.setType("error");
+		doc.setid("no_json");
+		doc.setData("msg", "Failed to parse json" + r.errorString().toUtf8());
 		clientSocket->writeText(doc.getjson());
 		return;
 	}
@@ -160,8 +164,10 @@ void Server::serverDisconnected() {
 	m_client_to_server.remove(clientSocket);
 	// send message to client
 	SceneDocument doc;
-	doc.setData("error", true);
-	doc.setData("errormsg", "Server disconnected");
+	doc.setComponentID("websocketproxy");
+	doc.setType("error");
+	doc.setid("server_disconnected");
+	doc.setData("msg", QLatin1String("Server disconnected"));
 	clientSocket->writeText(doc.getjson());
 	// delete later
     serverSocket->deleteLater();
@@ -179,9 +185,11 @@ void Server::serverError ( QAbstractSocket::SocketError ) {
 	m_client_to_server.remove(clientSocket);
 	// send message to client
 	SceneDocument doc;
-	doc.setData("error", true);
-	doc.setData("errormsg", "Server error: "+serverSocket->errorString().toUtf8());
-	clientSocket->writeText(doc.getjson()+"\n");
+	doc.setComponentID("websocketproxy");
+	doc.setType("error");
+	doc.setid("server_error");
+	doc.setData("msg", "Server error: "+serverSocket->errorString().toUtf8());
+
 	// delete later
     serverSocket->deleteLater();
 	clientSocket->deleteLater();

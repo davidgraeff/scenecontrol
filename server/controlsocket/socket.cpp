@@ -144,7 +144,12 @@ void Socket::readyRead() {
 		{
 			JsonReader r;
 			if (!r.parse(rawdata)) {
-				serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"no_json\", \"msg\":\"Failed to parse json\"}\n");
+				SceneDocument responsedoc;
+				responsedoc.setComponentID(QLatin1String("server"));
+				responsedoc.setType(QLatin1String("error"));
+				responsedoc.setid(QLatin1String("no_json"));
+				responsedoc.setData("msg", "Failed to parse json" + r.errorString().toUtf8());
+				serverSocket->write(responsedoc.getjson());
 				qWarning()<<"Server Socket: Failed to parse json" << r.errorString() << rawdata;
 				continue;
 			}
@@ -154,7 +159,12 @@ void Socket::readyRead() {
 		// Analyse the scene document: We only accept TypeExecution
 		SceneDocument doc(v.toMap());
 		if ( !doc.checkType ( SceneDocument::TypeExecution ) ) {
-			serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"no_execution_type\", \"msg\":\"No execution type\"}\n");
+			SceneDocument responsedoc;
+			responsedoc.setComponentID(QLatin1String("server"));
+			responsedoc.setType(QLatin1String("error"));
+			responsedoc.setid(QLatin1String("no_execution_type"));
+			responsedoc.setData("msg", QLatin1String("No execution type"));
+			serverSocket->write(responsedoc.getjson());
 			continue;
 		}
 		
@@ -167,7 +177,12 @@ void Socket::readyRead() {
 			PluginProcess* plugin = PluginController::instance()->getPlugin ( doc.componentUniqueID() );
 			if ( !plugin )
 			{
-				serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"plugin_not_found\", \"msg\":\"Plugin not found\"}\n");
+				SceneDocument responsedoc;
+				responsedoc.setComponentID(QLatin1String("server"));
+				responsedoc.setType(QLatin1String("error"));
+				responsedoc.setid(QLatin1String("plugin_not_found"));
+				responsedoc.setData("msg", QLatin1String("Plugin not found"));
+				serverSocket->write(responsedoc.getjson());
 				continue;
 			}
 			// Call the remote method of the plugin
@@ -235,9 +250,13 @@ void Socket::readyRead() {
 			s.setComponentID ( QLatin1String ( "server" ) );
 			sendToClients ( s.getjson(), sessionid );
 		} else
-		
 		{
-			serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"method_not_known\", \"msg\":\"Method not known\"}\n");
+			SceneDocument responsedoc;
+			responsedoc.setComponentID(QLatin1String("server"));
+			responsedoc.setType(QLatin1String("error"));
+			responsedoc.setid(QLatin1String("method_not_known"));
+			responsedoc.setData("msg", QLatin1String("Method not known"));
+			serverSocket->write(responsedoc.getjson());
 		}
     }
 }
