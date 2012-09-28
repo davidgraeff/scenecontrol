@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	index = cmdargs.indexOf("--server");
 	QString sceneserver = (index!=-1 && cmdargs.size()>index+1) ? QString::fromUtf8(cmdargs.at(index+1)) : QLatin1String("127.0.0.1:" STRINGIFY(ROOM_LISTENPORT));
 	
-	qDebug() << "WebsocketProxy\n\tListeningport:" << listenport<<"\n\tSceneServer:"<<sceneserver;
+	qDebug() << "WebsocketProxy\n\tListeningport:" << listenport<<"\n\tSceneServer:"<<sceneserver<<"\n\tDisabled security:"<<cmdargs.contains("--nossl");
 	
 	Server server;
 	if (!server.startWebsocket(sceneserver, listenport, cmdargs.contains("--nossl"))) {

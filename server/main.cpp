@@ -27,6 +27,7 @@
 #include "controlsocket/socket.h"
 
 #include <stdio.h>
+#include <iostream>
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <qtextcodec.h>
 #include <QCoreApplication>
@@ -124,7 +125,14 @@ int main(int argc, char *argv[])
         return -1;
     }
     if (cmdargs.contains("--nossl")) {
-		qWarning() << "SECURE CONNECTIONS ARE DISABLED. EVERYONE CAN CONTROL THIS SERVER NOW!";
+		qWarning() << "YOU REQUEST TO DISABLE SECURE CONNECTIONS. EVERYONE CAN CONTROL THIS SERVER!\nType 'yes' if you are sure otherwise the application quit.";
+		char answer[4];
+		std::cin.getline (answer,4);
+		if (answer[0] != 'y' || answer[1] != 'e' || answer[2] != 's') {
+			qDebug() << answer;
+			delete socket;
+			return -1;
+		}
 		socket->disableSecureConnections();
 	}
 
