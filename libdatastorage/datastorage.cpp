@@ -177,8 +177,11 @@ bool DataStorage::removeDocument(const SceneDocument &doc)
 	return true;
 }
 
-bool DataStorage::storeDocument(const SceneDocument& doc, bool overwriteExisting)
+bool DataStorage::storeDocument(const SceneDocument& odoc, bool overwriteExisting)
 {
+	SceneDocument doc(odoc.getData());
+	doc.checkIfIDneedsGUID();
+	
 	if (!doc.isValid()) {
 		qWarning() << "storeDocument: Cannot store an invalid document";
 		return false;

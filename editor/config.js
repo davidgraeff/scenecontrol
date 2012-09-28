@@ -1,82 +1,151 @@
-// call method to create scene
-function newscene() {
-	var name = escapeInputForJson($("#newscenename").val());
-	if (name.length == 0)
-		return;
-	Scenes.create(name);
-	$("#newscenename").val('');
-	$('#newscenenamepopup').popup("close");
-}
+var currentPluginid;
+var templateConfigItem;
+var templateConfigServiceItem;
 
-function reloadpage() {
-	window.location = window.location.href.replace( /#.*/, "");
-}
-
-$('#mainpage').live('pageinit', function(event) {
-	$.mobile.loading( 'show', { theme: "b", text: "Lade Dokumente", textonly: false });
-	//$('#splitviewcontainer').simplesplitview();
-	templateSceneItem = Handlebars.compile($("#sceneitem-template").html());
+// All button click events
+$(document).one('pageinit', function() {
+	if (!websocketInstance.connected)
+		window.location = 'index.html';
+	$(document).off(".configpage");
+	$.mobile.loading( 'show', { theme: "b", text: "Verarbeite Dokumente", textonly: false });
+	// precompile templates
+	templateConfigServiceItem = Handlebars.compile($("#configitem-service-template").html());
+	templateConfigItem = Handlebars.compile($("#configitem-template").html());
 	setPlugin(null);
-	websocketInstance.reconnect();
-});
-
-$(storageInstance).bind('onloadcomplete', function() {
-	$.mobile.loading( 'hide' );
-});
-
-$(websocketInstance).bind('onclose', function() {
-	$("#sceneservices").children().remove();
-	$("#scenelist").children().remove();
-	$.mobile.loading( 'hide' );
-	$("#noconnectionpopup").popup('open');
-});
-
-$(storageInstance).bind('onplugins', function(d) {
-	// Remove the scene entry first
 	for (var i = 0;i < storageInstance.plugins.length; ++i) {
 		var pluginid = storageInstance.plugins[i].replace(":","_");
 		$("#li" + pluginid).remove();
 		var entry = {"id":pluginid, "name":pluginid, "counter":storageInstance.configurationsForPlugin(pluginid).length};
-		$("#scenelist_cat_none").after(templateSceneItem(entry));
+		$("#pluginlistheader").after(templateConfigItem(entry));
 	}
-	$('#scenelist').listview('refresh');
-	setPlugin(null);
+	$('#configlist').listview('refresh');
+	
+	$('#configpage').one('pagebeforechange', function(event) {
+		$(document).off(".configpage");
+	});
+	
+	$('#configpage').on('pageshow.configpage', function(event) {
+		$.mobile.loading( 'hide' );
+	});
+	
+	$('#btnGotoScenes').on('click.configpage', function() {
+		$.mobile.changePage('editor.html', {transition: 'slide',reverse:true});
+	});
+	
+	$('#btnAddConfiguration').on('click.configpage', function() {
+		$("#newconfiginstance").val('');
+		$("#configinstancepopup").popup("open");
+		$("#newconfiginstance").delay(300).focus();
+	});
+	
+	$('#btnConfirmConfiginstance').on('click.configpage', function() {
+		var instanceid = escapeInputForJson($("#newconfiginstance").val());
+		if (instanceid.length == 0 || currentPluginid.length == 0) {
+			$.jGrowl("Name nicht gültig. A-Za-z0-9 sind zugelassen!");
+			return;
+		}
+		
+		if (storageInstance.configInstanceIDUsed(currentPluginid, instanceid)) {
+			$.jGrowl("Bereits verwendet!");
+			return;
+		}
+		Document.createConfig(instanceid, currentPluginid);
+		$('#configinstancepopup').popup("close");
+	});
+	
+	$("#rightconfigpanel").on('click.configpage', '.btnSaveConfigitem', function() {
+		var $form = $(this).parent().parent().parent();
+		var configid = $form.attr("data-configid")
+		var componentid = $form.attr("data-componentid")
+		
+		var obj = storageInstance.addEssentialDocumentData(configid, "configuration", componentid, {});
+		var objdata = serializeForm($form);
+		
+		if (obj && objdata.invalid.length==0) {
+			obj = jQuery.extend(true, obj, objdata.data);
+			$.jGrowl("Saving: "+configid);
+			$form.find("input,select,label,textarea,.btnSaveConfigitem").addClass("ui-disabled");
+			Document.change(obj);
+		} else {
+			$.jGrowl("Incomplete: "+configid);
+		}
+	});
+	
+	$("#rightconfigpanel").on('click.configpage', '.btnRemoveConfigitem', function() {
+		console.log("khbsdfk")
+		var $form = $(this).parent().parent().parent();
+		var configid = $form.attr("data-configid")
+		var componentid = $form.attr("data-componentid")
+		
+		var obj = storageInstance.addEssentialDocumentData(configid, "configuration", componentid, {});
+		if (!obj)
+			return;
+		$.jGrowl("Removing...");
+		$form.find("input,select,label,textarea,.btnSaveConfigitem,.btnRemoveConfigitem").addClass("ui-disabled");
+		Document.remove(obj);
+	});
 });
+
+$(storageInstance).on('onconfiguration.configpage', function(d, doc, removed) {
+	if (doc.componentid_==currentPluginid) {
+		if (!removed)
+			addConfigItem(doc);
+		else
+			removeConfigItem(doc);
+	}
+});
+
+function removeConfigItem(doc) {
+	$('#'+doc.id_).remove();
+}
+
+function addConfigItem(doc) {
+	if (!doc)
+		return;
+	var schema = storageInstance.schemaForDocument(doc);
+	if (schema == null) {
+		schema = {
+			parameters:{
+				instanceid_:{name:"Plugin-instanz",type:"string"},
+				raw:{name:"Schemalose Daten",type:"rawdoc"}
+			}
+		};
+	}
+	var formid = doc.id_;
+	formid = formid.replace(/\./g,"_");
+	var entry = {"configid":doc.id_, "componentid": doc.componentid_,"formid": formid, "name": doc.componentid_, "subname": doc.instanceid_, "typetheme":"d"};
+	var $elem = $(templateConfigServiceItem(entry));
+	var ok = createParameterForm($elem.children('ul'), schema, doc);
+	
+	// add or replace in dom
+	if ($('#'+formid).length) { // already there
+		console.log("replace", currentPluginid);
+		$('#'+formid).replaceWith($elem);
+	} else {
+		$elem.appendTo($("#configservices"))
+	}
+	
+	// post-dom-adding stuff
+	$elem.trigger("create");
+	$elem.find(".btnSaveConfigitem").addClass("ui-disabled");
+	$('textarea').keyup();
+	if (ok)
+		registerChangeNotifiers($elem.children('ul'), function($ulBase) {$ulBase.find(".btnSaveConfigitem").removeClass("ui-disabled");});
+}
+
 function setPlugin(pluginid) {
 	if (pluginid === null) {
 		$("#btnAddConfiguration").addClass("ui-disabled");
 		return;
 	}
 	$("#btnAddConfiguration").removeClass("ui-disabled");
-	$(".currentscene").text(pluginid);
-	$("#sceneservices").children().remove();
+	$(".currentplugin").text(pluginid);
+	$("#configservices").children().remove();
+	
+	currentPluginid = pluginid;
 	
 	var sceneDocuments = storageInstance.configurationsForPlugin(pluginid);
-	var templateSceneServiceItem = Handlebars.compile($("#sceneitem-service-template").html());
 	for (var i=0;i < sceneDocuments.length;++i) {
-		var doc = sceneDocuments[i];
-		if (!doc)
-			continue;
-		var schema = storageInstance.schemaForDocument(doc);
-		if (schema == null) {
-			schema = {
-				parameters:{
-					raw:{name:"Schemalose Daten",type:"rawdoc"}
-				}
-			};
-		}
-		var entry = {"configid":doc.id_, "componentid": doc.componentid_, "name": doc.componentid_, "subname": doc.instanceid_, "typetheme":"d"};
-		var $elem = $(templateSceneServiceItem(entry));
-		createParameterForm($elem.children('ul'), schema, doc);
-		$elem.appendTo($("#sceneservices")).trigger("create");
-		$elem.find(".btnsaveitem").addClass("ui-disabled");
-		$('textarea').keyup();
-		registerChangeNotifiers($elem.children('ul'));
+		addConfigItem(sceneDocuments[i]);
 	}
-}
-function saveConfig(configid, componentid) {
-	$.jGrowl("Saved!");
-}
-function removeConfig(configid, componentid) {
-	$.jGrowl("Saved!");
 }

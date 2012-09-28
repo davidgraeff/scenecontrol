@@ -1,35 +1,55 @@
 
 function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
+	var result = true;
 	for (var paramid in schema.parameters) {
 		var parameter = schema.parameters[paramid];
 		var domid = doc.componentid_ + "_" + paramid + "_" + doc.id_;
+		var comon = 'id="'+domid+'" name="'+paramid+'" data-type="'+parameter.type+'"';
+		
 		if (parameter.type == "rawdoc") {
+			var docCopy = jQuery.extend(true, {}, doc);
+			delete docCopy.id_;
+			delete docCopy.type_;
+			delete docCopy.componentid_;
+			delete docCopy.instanceid_;
+			delete docCopy.method_;
+			delete docCopy.sceneid_;
 			$ulBase.append('<li >' + 
 			'<label for="'+domid+'">'+parameter.name+'</label>' + 
-			'<textarea rows="8" id="'+domid+'" name="'+paramid+'">'+JSON.stringify(doc, null, "\t")+'</textarea></li>');
+			'<textarea rows="8" '+comon+'">'+JSON.stringify(docCopy, null, "\t")+'</textarea></li>');
 		} else if (parameter.type == "string") {
 			var value = doc[paramid] ? doc[paramid] : parameter.value;
 			$ulBase.append('<li data-role="fieldcontain">' + 
 			'<label for="'+domid+'">'+parameter.name+'</label>' + 
-			'<input type="text" id="'+domid+'" name="'+paramid+'" value="'+value+'"  /></li>');
+			'<input type="text" '+comon+' value="'+value+'"  /></li>');
+		} else if (parameter.type == "date") {
+			var value = doc[paramid] ? doc[paramid] : parameter.value;
+			$ulBase.append('<li data-role="fieldcontain">' + 
+			'<label for="'+domid+'">'+parameter.name+'</label>' + 
+			'<input type="date" '+comon+' value="'+value+'"  /></li>');
+		} else if (parameter.type == "time") {
+			var value = doc[paramid] ? doc[paramid] : parameter.value;
+			$ulBase.append('<li data-role="fieldcontain">' + 
+			'<label for="'+domid+'">'+parameter.name+'</label>' + 
+			'<input type="time" '+comon+' value="'+value+'"  /></li>');
 		} else if (parameter.type == "boolean") {
 			var value = doc[paramid] ? doc[paramid] : parameter.value;
 			$ulBase.append('<li data-role="fieldcontain">'+
 			'<label for="'+domid+'">'+parameter.name+'</label>'+
-			'<select id="'+domid+'" name="'+paramid+'" data-role="slider">'+
+			'<select '+comon+' data-role="slider">'+
 			'<option value="0" '+(value?'':'selected')+'>Off</option><option value="1" '+(value?'selected':'')+'>On</option>' +
 			'</select></li>');
 		} else if (parameter.type == "integer" && parameter.min && parameter.max) {
 			var value = doc[paramid] ? doc[paramid] : parameter.value;
 			$ulBase.append('<li data-role="fieldcontain">' +
 			'<label for="'+domid+'">'+parameter.name+'</label>' +
-			'<input type="range" data-highlight="true" id="'+domid+'" name="'+paramid+'" value="'+value+'"' +
+			'<input type="range" data-highlight="true" '+comon+' value="'+value+'"' +
 			'min="'+parameter.min+'" max="'+parameter.max+'" '+(parameter.step?'step="'+parameter.step+'"':'')+' /></li>');
 		} else if (parameter.type == "integer") {
 			var value = doc[paramid] ? doc[paramid] : parameter.value;
 			$ulBase.append('<li data-role="fieldcontain">' +
 			'<label for="'+domid+'">'+parameter.name+'</label>' +
-			'<input type="number" id="'+domid+'" name="'+paramid+'" value="'+value+'" '+
+			'<input type="number" '+comon+' value="'+value+'" '+
 			(parameter.step?'step="'+parameter.step+'" ':'')+
 			(parameter.min?'min="'+parameter.min+'" ':'')+
 			(parameter.max?'max="'+parameter.max+'" ':'')+
@@ -41,7 +61,7 @@ function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
 			
 			for (var i=0;i<parameter.data.length;++i) {
 				var itemDomID = domid + i;
-				d+= '<input type="radio" name="'+paramid+'" id="'+itemDomID+'" value="'+parameter.data[i]+'" '+(i==doc[paramid]?'checked="checked"':'')+' />' +
+				d+= '<input type="radio" name="'+paramid+'" id="'+itemDomID+'" data-type="'+parameter.type+'" value="'+parameter.data[i]+'" '+(i==doc[paramid]?'checked="checked"':'')+' />' +
 				'<label for="'+itemDomID+'">'+parameter.data[i]+'</label>';
 			}
 			
@@ -52,7 +72,7 @@ function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
 		} else if (parameter.type == "modelenum") {
 			var d = '<li data-role="fieldcontain">' +
 			'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
-			'<select name="'+paramid+'" id="'+domid+'" data-native-menu="false">';
+			'<select '+comon+' data-native-menu="false">';
 			
 			var dElements;
 			
@@ -74,9 +94,9 @@ function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
 			}
 			
 			if (!counter) {
-				d += '<option>'+parameter.name+': Keine Daten</option>';
+				d += '<option value="">'+parameter.name+': Keine Daten</option>';
 			} else if (!selected) {
-				d += '<option>'+parameter.name+': Keine Auswahl!</option>';
+				d += '<option value="">'+parameter.name+': Keine Auswahl!</option>';
 				d += dElements;
 			} else {
 				d += dElements;
@@ -87,37 +107,61 @@ function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
 			
 			$ulBase.append(d);
 		} else {
+			$ulBase.append('<li>Unknown parameter: '+parameter.type+'</li>');
 			console.log("unknown parameter", parameter);
+			result = false;
 		}
 	}
+	return result;
 }
 
 function registerChangeNotifiers($ulBase, callbackInputChanged) {
-	$ulBase.find('input,textarea').not(':checkbox,:radio').bind('input', function() {
+	$ulBase.find('input,textarea').not(':checkbox,:radio').on('input', function() {
 		if (callbackInputChanged)
-			callbackInputChanged();
-		$ulBase.find(".btnsaveitem").removeClass("ui-disabled");
+			callbackInputChanged($ulBase);
 	});
-	$ulBase.find('select,input[type=checkbox],input[type=radio],input[type=range],input[type=number]').bind('change', function() {
+	$ulBase.find('select,input[type=checkbox],input[type=radio],input[type=range],input[type=number]').on('change', function() {
 		if (callbackInputChanged)
-			callbackInputChanged();
-		$ulBase.find(".btnsaveitem").removeClass("ui-disabled");
+			callbackInputChanged($ulBase);
 	});
 }
 
-$.fn.serializeObject = function()
+$(websocketInstance).on('onclose', function() {
+	window.location = window.location.href.replace( /#.*/, "");
+});
+
+function serializeForm($form)
 {
 	var o = {};
-	var a = this.serializeArray();
+	var invalidfields = [];
+	var a = $form.serializeArray();
 	$.each(a, function() {
+		if (this.value=="") {
+			invalidfields.push(this.name);
+			return;
+		}
+		var type = $form.find('[name='+this.name+']').attr('data-type');
 		if (o[this.name] !== undefined) {
 			if (!o[this.name].push) {
 				o[this.name] = [o[this.name]];
 			}
-			o[this.name].push(this.value || '');
+			o[this.name].push(this.value);
 		} else {
-			o[this.name] = this.value || '';
+			if (type=="rawdoc") {
+				var p = JSON.parse(this.value);
+				// security: do not allow server-used key names for raw fields
+				delete p.id_;
+				delete p.type_;
+				delete p.componentid_;
+				delete p.instanceid_;
+				delete p.method_;
+				delete p.sceneid_;
+				o = jQuery.extend(true, o, p);
+			} else if (type=="boolean") {
+				o[this.name] = (this.value=="1")?true:false;
+			} else
+				o[this.name] = this.value;
 		}
 	});
-	return o;
+	return {"data":o,"invalid":invalidfields};
 };

@@ -18,6 +18,14 @@ function Storage() {
 		return result;
 	}
 	
+	this.configInstanceIDUsed = function(pluginid, instanceid) {
+		for (var index in this.configurations)
+			if (this.configurations[index].componentid_ == pluginid &&
+				this.configurations[index].instanceid_ == instanceid)
+				return true;
+		return false;
+	}
+	
 	this.documentsForScene = function(sceneid) {
 		var result = []
 		for (var index in this.events)
@@ -32,8 +40,57 @@ function Storage() {
 		return result;
 	}
 	
+	this.sceneItemCount = function(sceneid) {
+		return this.documentsForScene(sceneid).length;
+	}
+	
+	// Find the document referenced by docID, docType, docComponentID and add basic information to baseDoc to be a valid SceneDocument
+	this.addEssentialDocumentData = function(docID, docType, docComponentID, baseDoc) {
+		var o = {};
+		var id_ = docComponentID+docID;
+		if (docType=="scene") {
+			o = that.scenes[id_];
+		} else if (docType=="event") {
+			o = that.events[id_];
+		} else if (docType=="condition") {
+			o = that.conditions[id_];
+		} else if (docType=="action") {
+			o = that.actions[id_];
+		} else if (docType=="configuration") {
+			o = that.configurations[id_];
+		} else
+			return null;
+		
+		if (!o)
+			return null;
+		
+		baseDoc.id_ = o.id_;
+		baseDoc.type_ = o.type_;
+		baseDoc.componentid_ = o.componentid_;
+		if (o.instanceid_) baseDoc.instanceid_ = o.instanceid_;
+		if (o.method_) baseDoc.method_ = o.method_;
+		if (o.sceneid_) baseDoc.sceneid_ = o.sceneid_;
+		return baseDoc;
+	}
+	
 	this.modelItems = function(componentid, instanceid, modelid) {
 		return that.models[componentid+instanceid+modelid];
+	}
+	
+	this.schemaForType = function(type) {
+		var result = [];
+		for (var index in this.schemas)
+			if (this.schemas[index].targettype == type)
+				result.push(this.schemas[index]);
+		return result;
+	}
+	
+	this.filterSchemaForPlugin = function(schemas, pluginid) {
+		var result = [];
+		for (var index in schemas)
+			if (schemas[index].componentid_ == pluginid)
+				result.push(schemas[index]);
+		return result;
 	}
 	
 	this.schemaForDocument = function(doc) {
@@ -43,27 +100,58 @@ function Storage() {
 		return null;
 	}
 	
+	/**
+	 * Return the unique id for the given SceneDocument.
+	 * Use this instead of building the keys for the cache data-maps directly.
+	 */
+	this.unqiueID = function(SceneDocument) {
+		return SceneDocument.componentid_+SceneDocument.id_;
+	}
+	
+	/**
+	 * Scenes have not real componentid and just use "server".
+	 * To get a unique id for a scene given by a scene-id use this function.
+	 */
+	this.unqiueSceneID = function(sceneid) {
+		return "server" + sceneid;
+	}
+
 	this.documentChanged = function(doc, removed) {
-		var id_ = doc.id_;
 		if (doc.type_=="scene") {
-			that.scenes[id_] = doc;
+			if (removed)
+				delete that.scenes[this.unqiueID(doc)];
+			else
+				that.scenes[this.unqiueID(doc)] = doc;
 		} else if (doc.type_=="schema") {
-			that.schemas[id_] = doc;
+			if (removed)
+				delete that.schemas[this.unqiueID(doc)];
+			else
+				that.schemas[this.unqiueID(doc)] = doc;
 		} else if (doc.type_=="event") {
-			that.events[id_] = doc;
+			if (removed)
+				delete that.events[this.unqiueID(doc)];
+			else
+				that.events[this.unqiueID(doc)] = doc;
 		} else if (doc.type_=="condition") {
-			that.conditions[id_] = doc;
+			if (removed)
+				delete that.conditions[this.unqiueID(doc)];
+			else
+				that.conditions[this.unqiueID(doc)] = doc;
 		} else if (doc.type_=="action") {
-			that.actions[id_] = doc;
+			if (removed)
+				delete that.actions[this.unqiueID(doc)];
+			else
+				that.actions[this.unqiueID(doc)] = doc;
 		} else if (doc.type_=="configuration") {
-			that.configurations[doc.componentid_+doc.id_] = doc;
+			if (removed)
+				delete that.configurations[this.unqiueID(doc)];
+			else
+				that.configurations[this.unqiueID(doc)] = doc;
 		}
 	};
 	
 	this.notifyDocumentChange = function(doc, removed) {
-		var id_ = doc.id_;
 		if (doc.type_=="scene") {
-			doc.temp_ = {"counter":that.documentsForScene(id_).length}
 			$(that).trigger("onscene", doc, removed);
 		} else if (doc.type_=="schemas") {
 			$(that).trigger("onschemas", doc, removed);
@@ -78,9 +166,9 @@ function Storage() {
 		}
 	};
 	
-	$(websocketInstance).bind('ondocument', function(d, doc) {
+	$(websocketInstance).on('ondocument', function(d, doc) {
 		if (doc.type_=="model.reset") {
-			that.models[doc.componentid_+doc.instanceid_+doc.id_] = {"key":doc.configkey_,"data":{}};
+			that.models[doc.componentid_+doc.instanceid_+doc.id_] = {"key":doc.key_,"data":{}};
 			$(that).trigger("model.reset", doc.componentid_+doc.instanceid_+doc.id_);
 		} else
 		if (doc.type_=="model.change") {
@@ -113,18 +201,17 @@ function Storage() {
 				for (var i = 0; i < doc.documents.length; i++) {
 					that.documentChanged(doc.documents[i], false);
 				}
-				// notify about scenes
-				for (var index in that.scenes) {
-					that.notifyDocumentChange(that.scenes[index], false);
-				}
 				
 				$(that).trigger("onloadcomplete");
 			} else if (doc.id_=="documentChanged")  {
 				that.documentChanged(doc.document, false);
 				that.notifyDocumentChange(doc.document, false);
 				// update scene
-				if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
-					that.notifyDocumentChange(doc.document.sceneid_, false);
+				if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition") {
+					var scenedoc = that.scenes[that.unqiueSceneID(doc.document.sceneid_)]
+					if (scenedoc)
+						that.notifyDocumentChange(scenedoc, false);
+				}
 			} else if (doc.id_=="documentRemoved")  {
 				that.documentChanged(doc.document, true);
 				that.notifyDocumentChange(doc.document, true);
@@ -139,16 +226,12 @@ function Storage() {
 			} else {
 				console.log("Notification", doc);
 			}
+		} else if (doc.type_=="serverresponse") {
+			console.warn("Server response:" + doc.msg)
 		}
 	});
 	
-	$(websocketInstance).bind('onopen', function() {
-		websocketInstance.requestAllDocuments();
-		websocketInstance.registerNotifier();
-		websocketInstance.requestAllProperties();
-	});
-	
-	$(websocketInstance).bind('onclose', function() {
+	$(websocketInstance).on('onclose', function() {
 		that.clear();
 	});
 	

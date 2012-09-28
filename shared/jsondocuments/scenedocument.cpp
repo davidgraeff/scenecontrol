@@ -1,6 +1,7 @@
 #include "scenedocument.h"
 #include "json.h"
 #include <QDebug>
+#include <QUuid>
 
 SceneDocument SceneDocument::createModelRemoveItem ( const char* id ) {
     SceneDocument sc;
@@ -20,7 +21,7 @@ SceneDocument SceneDocument::createModelReset ( const char* id, const char* key 
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
 	sc.setType(QLatin1String ( "model.reset" ));
-	sc.setConfigurationkey(key);
+	sc.setModelkey(key);
     return sc;
 }
 
@@ -102,4 +103,9 @@ bool SceneDocument::correctTypes(const QVariantMap& types)
         return false;
     m_map = result;
 	return true;
+}
+
+void SceneDocument::checkIfIDneedsGUID() {
+	if (id()==QLatin1String("GENERATEGUID"))
+		setid(QUuid::createUuid().toString().replace(QLatin1String("{"),QString()).replace(QLatin1String("}"),QString()));
 }

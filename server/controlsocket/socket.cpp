@@ -138,14 +138,14 @@ void Socket::readyRead() {
             continue;
         QVariant v =JSON::parse(rawdata);
         if (v.isNull()) {
-			serverSocket->write("{\"response\":1, \"msg\":\"Failed to parse json\"}\n");
+			serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"no_json\", \"msg\":\"Failed to parse json\"}\n");
 			continue;
 		}
 		
 		// Analyse the scene document: We only accept TypeExecution
 		SceneDocument doc(v.toMap());
 		if ( !doc.checkType ( SceneDocument::TypeExecution ) ) {
-			serverSocket->write("{\"response\":2, \"msg\":\"No execution type\"}\n");
+			serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"no_execution_type\", \"msg\":\"No execution type\"}\n");
 			continue;
 		}
 		
@@ -158,7 +158,7 @@ void Socket::readyRead() {
 			PluginProcess* plugin = PluginController::instance()->getPlugin ( doc.componentUniqueID() );
 			if ( !plugin )
 			{
-				serverSocket->write("{\"response\":4, \"msg\":\"Plugin not found\"}\n");
+				serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"plugin_not_found\", \"msg\":\"Plugin not found\"}\n");
 				continue;
 			}
 			// Call the remote method of the plugin
@@ -228,7 +228,7 @@ void Socket::readyRead() {
 		} else
 		
 		{
-			serverSocket->write("{\"response\":3, \"msg\":\"Method not known\"}\n");
+			serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"method_not_known\", \"msg\":\"Method not known\"}\n");
 		}
     }
 }

@@ -2,9 +2,17 @@ function serverWebsocket() {
 	var that = this;
 	that.connected = false;
 	var socket_di = null;
-	//that.url = "ws://" + window.location.hostname +":3102";
-	that.url = "ws://127.0.0.1:3102";
+	that.url;
 	
+	this.defaultHostAndPort = function() {
+		var v = localStorage.getItem("hostAndPort");
+		return v ? v : "127.0.0.1:3102";
+	}
+	
+	this.setHostAndPort = function(hostAndPort) {
+		localStorage.setItem("hostAndPort", hostAndPort);
+		that.url = "ws://"+hostAndPort;
+	}
 	this.requestAllDocuments = function() {
 		this.write({"componentid_":"server", "type_":"execute", "method_":"fetchAllDocuments"});
 	}
@@ -32,7 +40,7 @@ function serverWebsocket() {
 	}
 	
 	this.reconnect = function() {
-		if (that.connected) return true;
+		if (that.connected || !that.url) return true;
 		if (socket_di) socket_di.close();
 		
 		socket_di = new WebSocket(that.url, "roomcontrol-protocol");
@@ -45,8 +53,9 @@ function serverWebsocket() {
 			socket_di.onmessage =function(msg) {
 				var datas = msg.data.split("\n");
 				for (index in datas) {
-					if (datas[index] && datas[index] != '')
+					if (datas[index] && datas[index] != '') {
 						$(that).trigger('ondocument', JSON.parse(datas[index]));
+					}
 				}
 			} 
 			

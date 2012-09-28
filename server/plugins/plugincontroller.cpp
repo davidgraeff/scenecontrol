@@ -214,7 +214,7 @@ void PluginController::startPluginProcessByConfiguration ( const SceneDocument* 
 	m_pluginprocesses.insert( p );
 	m_plugins.insert(configuration->componentUniqueID(),p);
 	p->startProcess();
-	p->configChanged(configuration->configurationkey(), configuration->getData());
+	p->configChanged(configuration->id(), configuration->getData());
 }
 
 void PluginController::requestAllProperties(int sessionid) {

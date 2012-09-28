@@ -1,83 +1,73 @@
 <!DOCTYPE html>
 <html>
 	<head><title>SceneControl - Plugin Konfiguration</title>
-		<meta charset=utf-8 />
-		<meta name="viewport" content="width=device-width, initial-scale=1"> 
-		<!-- 3rd party tools -->
-		<link rel="stylesheet" type="text/css" href="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.css" />
-		<link rel="stylesheet" type="text/css" href="animate.css" />
-		<link rel="stylesheet" type="text/css" href="jquery.jgrowl.css" />
-		<script src="http://code.jquery.com/jquery.min.js"></script>
-		<script src="http://code.jquery.com/mobile/1.2.0-alpha.1/jquery.mobile-1.2.0-alpha.1.min.js"></script>
-		<script src='handlebars-1.0.0.beta.6.js'></script>
-		<script src="jquery.jgrowl_minimized.js"></script>
-		<!-- editor css, websocket connection, storage, scene-manager, gui-logic -->
-		<link rel="stylesheet" type="text/css" href="editor.css" />
-		<script src="websocket.js"></script>
-		<script src="storage.js"></script>
-		<script src="scene.js"></script>
-		<script src="commonui.js"></script>
-		<script src="config.js"></script>
+		<script type="text/javascript">
+			window.location = 'index.html';
+		</script>
 	</head>
 	<body>
 
-		<div data-role='page' id='mainpage' data-title='SceneControl - Plugin Konfiguration' data-theme='d'>
+		<div data-role='page' id='configpage' data-title='SceneControl - Plugin Konfiguration' data-theme='d'>
+			<script src="config.js"></script>
 		
 			<div data-role="header" data-position="fixed" data-theme='d'>
-				<h1>Plugin: <span class="currentscene">Keines ausgewählt</span></h1>
+				<h1>Plugin: <span class="currentplugin">Keines ausgewählt</span></h1>
 			</div>
 			
 			<div data-role='content'>
 				
-				<div class='content-secondary' id='leftpanel1'>
-						<script id="sceneitem-template" type="text/x-handlebars-template">
-							<li data-icon="false" data-sceneid="{{id}}" id="li{{id}}" data-selected="0">
+				<div class='content-secondary' id='leftconfigpanel'>
+						<script id="configitem-template" type="text/x-handlebars-template">
+							<li data-icon="false" data-id="{{id}}" id="li{{id}}" data-selected="0">
 								<a href="javascript:setPlugin('{{id}}');">{{name}}</a>
 								<span class="ui-li-count">{{counter}}</span>
 							</li>
 						</script>
-						<ul id="scenelist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
+						<ul id="configlist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
 							data-split-theme="d" data-split-icon="check" data-inset="true" data-role="listview"
 							data-theme="d" data-divider-theme="d" >
-							<li id="scenelist_cat_none" data-role="list-divider">Plugins</li>
+							<li id="pluginlistheader" data-role="list-divider">Plugins</li>
 						</ul>
 				</div><!-- leftside -->
 				
-				<div class='content-primary' id='rightpanel1'>
-					<script id="sceneitem-service-template" type="text/x-handlebars-template">
-						<form class="sceneitemform animated fadeInDown">
-							<ul class="sceneitemcontrols" data-role="listview" data-inset="true" data-divider-theme="{{typetheme}}">
+				<div class='content-primary' id='rightconfigpanel'>
+					<script id="configitem-service-template" type="text/x-handlebars-template">
+						<form class="itemform animated fadeInDown" id="{{formid}}" data-configid="{{configid}}" data-componentid="{{componentid}}">
+							<ul class="itemcontrols" data-role="listview" data-inset="true" data-divider-theme="{{typetheme}}">
 								<li data-role="list-divider">
-									<a class="btnsaveitem" href="javascript:saveConfig('{{configid}}','{{componentid}}');" data-role="button" data-theme="{{typetheme}}" data-icon="check" data-iconpos="notext">Speichern</a>
-									<a class="btnremoveitem" href="javascript:removeConfig('{{configid}}','{{componentid}}')" data-role="button" data-theme="{{typetheme}}" data-icon="minus" data-iconpos="notext">Löschen</a>
+									<a class="btnSaveConfigitem HeaderButton" data-role="button" data-theme="{{typetheme}}" data-icon="check" data-iconpos="notext">Speichern</a>
+									<a class="btnRemoveConfigitem HeaderButton" data-role="button" data-theme="{{typetheme}}" data-icon="minus" data-iconpos="notext">Löschen</a>
 									<small style="float:left;">{{type}}</small>
 									<center>{{name}}<br />{{subname}}</center>
 								</li>
 							</ul>
 						</form>
 					</script>
-					<div id="sceneservices"></div>
+					<div id="configservices"></div>
 				</div><!-- rightside -->
 			</div><!-- /content -->
 			
 			<div data-role="footer" data-position="fixed" data-theme='d'> 
 				<div class="ui-grid-a ui-bar">
 					<div class="ui-block-a"><div data-role="controlgroup" data-type="horizontal">
-						<a href="index.html" data-ajax="false" data-role="button" data-icon="gear" data-mini="true" data-inline="true">Szenen</a>
+						<a id="btnGotoScenes" data-role="button" data-icon="gear" data-mini="true" data-inline="true">Szenen</a>
 					</div></div>
 					<div class="ui-block-b"><span style="float:right"><div data-role="controlgroup" data-type="horizontal">
-						<a id="btnAddConfiguration" href="javascript:CurrentScene.newevent();" data-role="button" data-icon="plus" data-mini="true">Konfiguration hinzufügen</a>
+						<a id="btnAddConfiguration" data-role="button" data-icon="plus" data-mini="true">Konfiguration hinzufügen</a>
 					</div></span></div>
 				</div>
 			</div> 
 
-			<div data-role="popup" id="noconnectionpopup" data-overlay-theme="a">
+			<!-- Create new config popup -->
+			<div data-role="popup" id="configinstancepopup" data-overlay-theme="a">
+				<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
 				<div data-role="header" data-theme="a" class="ui-corner-top">
-					<h1>Keine Verbindung</h1>
+					<h1>Name der Plugin Instanz</h1>
 				</div>
 				<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-					<p>Es konnte leider keine Verbindung zum Server hergestellt werden.</p>
-					<a href="javascript:reloadpage()" data-role="button" data-inline="true" data-theme="b" style="width:100%">Seite neu laden?</a>  
+					<p>Wähle einen KonfigurationsinstanzID aus.<br/>Bereits verwendete IDs können nicht genutzt werden.</p>
+					<form><input type="text" placeholder="Name" id="newconfiginstance" name="newconfiginstance" value=""  /></form>
+					<a id="btnConfirmConfiginstance" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Konfigurationsinstanz erstellen</a>  
 				</div>
 			</div>
 			

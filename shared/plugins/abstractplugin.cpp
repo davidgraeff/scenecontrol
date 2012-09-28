@@ -109,8 +109,7 @@ void AbstractPlugin::readyReadCommunication()
 			transferdoc.setComponentID(m_pluginid);
             writeToSocket(socket, transferdoc.getData());
         } else if (method == "configChanged") {
-            const QByteArray key = doc.configurationkey();
-            configChanged(key, variantdata);
+            configChanged(doc.id().toUtf8(), variantdata);
         } else if (method == "methodresponse") { // Ignore responses
         } else if (method == "initialize") {
             initialize();
@@ -217,12 +216,12 @@ QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& componentUni
     return socket;
 }
 
-void AbstractPlugin::changeConfig(const QByteArray& category, const QVariantMap& data) {
+void AbstractPlugin::changeConfig(const QByteArray& configid, const QVariantMap& data) {
 	SceneDocument transferdoc(data);
 	transferdoc.setMethod("changeConfig");
 	transferdoc.setComponentID(m_pluginid);
 	transferdoc.setInstanceID(m_instanceid);
-	transferdoc.setConfigurationkey(category);
+	transferdoc.setid(configid);
 	sendDataToComponent(LOCALSOCKETNAMESPACE, transferdoc.getData());
 }
 

@@ -88,7 +88,7 @@ void PluginProcess::setSocket(QLocalSocket* socket)
     initialize();
 
 	// cached configurations
-	QMap<QByteArray, QVariantMap>::iterator i = m_configcache.begin();
+	QMap<QString, QVariantMap>::iterator i = m_configcache.begin();
 	for(;i!=m_configcache.end();++i)
 		configChanged(i.key(),i.value());
 	m_configcache.clear();
@@ -156,18 +156,17 @@ void PluginProcess::readyReadPluginData()
             emit qtSlotResponse(variantdata.value(QLatin1String("response_")),
                                 variantdata.value(QLatin1String("responseid_")).toByteArray(), m_pluginid, m_instanceid);
         } else if (method == "changeConfig") {
-            const QByteArray configurationkey = doc.configurationkey();
-            if (configurationkey.isEmpty()) {
-                qWarning() << "Server: Request changeConfig for" << m_pluginid << m_instanceid <<"but no key provided";
+            const QString configid = doc.id();
+            if (configid.isEmpty()) {
+                qWarning() << "Server: Cannot change config of" << m_pluginid << m_instanceid <<"without config id";
                 continue;
             }
-            // TODO store new configuration value in database
             SceneDocument filter;
 			filter.setComponentID(m_pluginid);
 			filter.setInstanceID(m_instanceid);
-            if (DataStorage::instance()->changeDocumentsValue(SceneDocument::TypeConfiguration, filter.getData(), QString::fromUtf8(configurationkey), doc.getData())==0) {
+            if (DataStorage::instance()->changeDocumentsValue(SceneDocument::TypeConfiguration, filter.getData(), configid, doc.getData())==0) {
 				// No configuration found: create one
-				filter.setData(configurationkey, doc.getData());
+				filter.setData(configid.toUtf8(), doc.getData());
 				DataStorage::instance()->storeDocument(filter, true);
 			}
         } else if (method == "changeProperty") {
@@ -206,7 +205,7 @@ void PluginProcess::clear() {
     writeToPlugin(doc.getData());
 }
 
-void PluginProcess::configChanged(const QByteArray& configid, const QVariantMap& data) {
+void PluginProcess::configChanged(const QString& configid, const QVariantMap& data) {
     if (data.isEmpty()) {
         qWarning() << "configChanged data empty!";
         return;
@@ -217,7 +216,7 @@ void PluginProcess::configChanged(const QByteArray& configid, const QVariantMap&
 	}
     SceneDocument doc(data);
     doc.setMethod("configChanged");
-    doc.setConfigurationkey(configid);
+    doc.setid(configid);
     writeToPlugin(doc.getData());
 }
 

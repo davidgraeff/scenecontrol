@@ -45,7 +45,7 @@ private:
 	QString m_instanceid;
     QByteArray m_chunk;
 	QTimer m_timeout;
-	QMap<QByteArray, QVariantMap> m_configcache;
+	QMap<QString, QVariantMap> m_configcache;
     bool writeToPlugin(const QVariantMap& data);
 private Q_SLOTS:
     /** After a process got started it has 7 seconds to respond to the server via in/output channels
@@ -68,7 +68,7 @@ public Q_SLOTS:
     /// Proxy Method: Clear all ressources
     void clear();
     /// Proxy Method: A configuration (key,value) touple changed
-    void configChanged(const QByteArray& configid, const QVariantMap& data);
+    void configChanged(const QString& configid, const QVariantMap& data);
     /// Proxy Method: Request plugin properties. They are send from plugin to the server
     /// via the changeProperty method. This special request can be identified by the sessionid.
     void requestProperties(int sessionid);

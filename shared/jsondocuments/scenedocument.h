@@ -70,6 +70,7 @@ public:
      */
     static SceneDocument createNotification(const char* id) ;
 
+	void checkIfIDneedsGUID();
     /***************** Is valid ******************/
     bool isValid() const;
     /***************** Export to json ******************/
@@ -155,11 +156,11 @@ public:
         m_map[QLatin1String("sceneid_")] = collectionid;
     }
 
-    QByteArray configurationkey() const {
-        return m_map.value(QLatin1String("configkey_")).toByteArray();
+    QByteArray modelkey() const {
+        return m_map.value(QLatin1String("key_")).toByteArray();
     }
-    void setConfigurationkey(const QByteArray& configurationkey) {
-        m_map[QLatin1String("configkey_")] = configurationkey;
+    void setModelkey(const QByteArray& configurationkey) {
+        m_map[QLatin1String("key_")] = configurationkey;
     }
 
     int actiondelay() const {
@@ -200,15 +201,15 @@ public:
     bool checkType(const TypeEnum t) const {
         const QByteArray type = m_map.value(QLatin1String("type_")).toByteArray();
         return (
-			(type == "action" && t==TypeAction) ||
-			(type == "condition" && t==TypeCondition) ||
-			(type == "event" && t==TypeEvent) ||
-			(type == "collection" && t==TypeScene) ||
-			(type == "execute" && t==TypeExecution) ||
-			(type == "remove" && t==TypeRemove) ||
-			(type == "notification" && t==TypeNotification) ||
-			(type == "model" && t==TypeModelItem) ||
-			(type == "configuration" && t==TypeConfiguration)
+			( t==TypeAction && type == "action") ||
+			( t==TypeCondition && type == "condition") ||
+			( t==TypeEvent && type == "event") ||
+			( t==TypeScene && type == "collection") ||
+			( t==TypeExecution && type == "execute") ||
+			( t==TypeRemove && type == "remove" ) ||
+			( t==TypeNotification && type == "notification" ) ||
+			( t==TypeModelItem && type == "model") ||
+			( t==TypeConfiguration &&type == "configuration")
 		);
     }
     
