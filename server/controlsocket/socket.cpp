@@ -138,9 +138,10 @@ void Socket::readyRead() {
 		rawdata.chop(1);
         if (!rawdata.length())
             continue;
-        QVariant v =JSON::parse(rawdata);
-        if (v.isNull()) {
-			qWarning()<<"Server Socket: Failed to parse json" << rawdata;
+		bool error;
+		QVariant v =JSON::parse(rawdata, &error);
+		if (error || v.isNull()) {
+			qWarning()<<"Server Socket: Failed to parse json" << rawdata << v;
 			serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"no_json\", \"msg\":\"Failed to parse json\"}\n");
 			continue;
 		}
