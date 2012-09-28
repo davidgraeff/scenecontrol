@@ -138,12 +138,17 @@ void Socket::readyRead() {
 		rawdata.chop(1);
         if (!rawdata.length())
             continue;
-		bool error;
-		QVariant v =JSON::parse(rawdata, &error);
-		if (error || v.isNull()) {
-			qWarning()<<"Server Socket: Failed to parse json" << rawdata << v;
-			serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"no_json\", \"msg\":\"Failed to parse json\"}\n");
-			continue;
+		
+		// json parsing
+		QVariant v;
+		{
+			JsonReader r;
+			if (!r.parse(rawdata)) {
+				serverSocket->write("{\"componentid_\":\"server\",\"type_\":\"serverresponse\", \"id_\":\"no_json\", \"msg\":\"Failed to parse json\"}\n");
+				qWarning()<<"Server Socket: Failed to parse json" << r.errorString() << rawdata;
+				continue;
+			}
+			v = r.result();
 		}
 		
 		// Analyse the scene document: We only accept TypeExecution
