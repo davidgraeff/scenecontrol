@@ -133,7 +133,8 @@ void Socket::readyRead() {
     QSslSocket *serverSocket = (QSslSocket *)sender();
     while (serverSocket->canReadLine()) {
 		// Create a SceneDocument out of the raw data
-        const QByteArray rawdata = serverSocket->readLine();
+        QByteArray rawdata = serverSocket->readLine();
+		rawdata.chop(1);
         if (!rawdata.length())
             continue;
         QVariant v =JSON::parse(rawdata);

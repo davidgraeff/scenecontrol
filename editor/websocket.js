@@ -36,7 +36,7 @@ function serverWebsocket() {
 	this.write = function(data) {
 		if (typeof data == "object")
 			data = JSON.stringify(data);
-		socket_di.send(data);
+		socket_di.send(data+"\n");
 	}
 	
 	this.reconnect = function() {
