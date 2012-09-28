@@ -221,8 +221,7 @@ bool DataStorage::contains(const SceneDocument& doc) const
 void DataStorage::reloadDocument( const QString& filename ) {
 	QFile file(filename);
 	file.open(QFile::ReadOnly);
-	QTextStream stream(&file);
-	SceneDocument* doc = new SceneDocument(stream);
+	SceneDocument* doc = new SceneDocument(file.readAll());
 	file.close();
 	
 	if (!doc->isValid()) {
@@ -308,8 +307,7 @@ void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 		for (int i = 0; i < files.size(); ++i) {
 			QFile file(currentdir.absoluteFilePath(files[i]));
 			file.open(QFile::ReadOnly);
-			QTextStream stream(&file);
-			SceneDocument doc(stream);
+			SceneDocument doc(file.readAll());
 			file.close();
 			
 			if (!doc.isValid()) {

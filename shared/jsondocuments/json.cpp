@@ -1,360 +1,447 @@
 /****************************************************************************
-** Copyright (c) 2006 - 2011, the LibQxt project.
-** See the Qxt AUTHORS file for a list of authors and copyright holders.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are met:
-**     * Redistributions of source code must retain the above copyright
-**       notice, this list of conditions and the following disclaimer.
-**     * Redistributions in binary form must reproduce the above copyright
-**       notice, this list of conditions and the following disclaimer in the
-**       documentation and/or other materials provided with the distribution.
-**     * Neither the name of the LibQxt project nor the
-**       names of its contributors may be used to endorse or promote products
-**       derived from this software without specific prior written permission.
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS QLatin1String("AS IS" AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-** WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-** DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-** DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-** (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-** LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-** ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-**
-** <http://libqxt.org>  <foundation@libqxt.org>
-*****************************************************************************/
-
-
-/*!
-    \class JSON
-    \inmodule QxtCore
-    \brief The JSON class implements serializing/deserializing from/to JSON
-
-    implements JSON (JavaScript Object Notation) is a lightweight data-interchange format. 
-    see http://www.json.org/
-
-    \section2 Type Conversion
-    \table 80%
-    \header \o JSON Type \o Qt Type
-    \row  \o object \o QVariantMap/QVariantHash
-    \row  \o array \o QVariantList/QStringList
-    \row  \o string \o QByteArray
-    \row  \o number \o int,double
-    \row  \o true \o bool
-    \row  \o false \o bool
-    \row  \o null \o QVariant()
-
-    \endtable
-
-*/
+ * *
+ ** Copyright (c) 2010 Girish Ramakrishnan <girish@forwardbias.in>
+ **
+ ** Use, modification and distribution is allowed without limitation,
+ ** warranty, liability or support of any kind.
+ **
+ ****************************************************************************/
 
 #include "json.h"
-#include <QVariant>
-#include <QDebug>
-#include <QTextStream>
-#include <QStringList>
+#include "jsonparser.cpp"
 
-QString JSON::stringify(QVariant v){
-    if (v.isNull()){
-        return QLatin1String("null");
-    }
-    switch (v.type()) {
-        case QVariant::Bool:
-            return v.toBool()?QLatin1String("true"):QLatin1String("false");
-            break;
-        case QVariant::ULongLong:
-        case QVariant::UInt:
-            return QString::number(v.toULongLong());
-            break;
-        case QVariant::LongLong:
-        case QVariant::Int:
-            return QString::number(v.toLongLong());
-            break;
-        case QVariant::Double:
-            return QString::number(v.toDouble());
-            break;
-        case QVariant::Map:
-            {
-                QString r=QLatin1String("{");
-                QMap<QString, QVariant> map = v.toMap();
-                QMapIterator<QString, QVariant> i(map);
-                while (i.hasNext()){
-                    i.next();
-                    r+=QLatin1String("\"")+i.key()+ QLatin1String("\":") +stringify(i.value())+QLatin1String(",");
-                }
-                if(r.length()>1)
-                    r.chop(1);
-                r+=QLatin1String("}");
-                return r;
-            }
-            break;
-#if QT_VERSION >= 0x040500
-        case QVariant::Hash:
-            {
-                QString r=QLatin1String("{");
-                QHash<QString, QVariant> map = v.toHash();
-                QHashIterator<QString, QVariant> i(map);
-                while (i.hasNext()){
-                    i.next();
-                    r+=QLatin1String("\"")+i.key()+QLatin1String("\":")+stringify(i.value())+QLatin1String(",");
-                }
-                if(r.length()>1)
-                    r.chop(1);
-                r+=QLatin1String("}");
-                return r;
-            }
-            break;
-#endif
-        case QVariant::StringList:
-            {
-                QString r=QLatin1String("[");
-                QStringList l = v.toStringList();
-                foreach(QString i, l){
-                    r+=QLatin1String("\"")+i+QLatin1String("\",");
-                }
-                if(r.length()>1)
-                    r.chop(1);
-                r+=QLatin1String("]");
-                return r;
-            }
-        case QVariant::List:
-            {
-                QString r=QLatin1String("[");
-                QVariantList l = v.toList();
-                foreach(QVariant i, l){
-                    r+=stringify(i)+QLatin1String(",");
-                }
-                if(r.length()>1)
-                    r.chop(1);
-                r+=QLatin1String("]");
-                return r;
-            }
-            break;
-        case QVariant::String:
-        default:
-            {
-                QString in = v.toString();
-                QString out;
-                for(QString::ConstIterator i = in.constBegin(); i != in.constEnd(); i++){
-                    if( (*i) == QLatin1Char('\b'))
-                        out.append(QLatin1String("\\b"));
-                    else if( (*i) == QLatin1Char('\f'))
-                        out.append(QLatin1String("\\f"));
-                    else if( (*i) == QLatin1Char('\n'))
-                        out.append(QLatin1String("\\n"));
-                    else if( (*i) == QLatin1Char('\r'))
-                        out.append(QLatin1String("\\r"));
-                    else if( (*i) == QLatin1Char('\t'))
-                        out.append(QLatin1String("\\t"));
-                    else if( (*i) == QLatin1Char('\f'))
-                        out.append(QLatin1String("\\f"));
-                    else if( (*i) == QLatin1Char('\\'))
-                        out.append(QLatin1String("\\\\"));
-                    else if( (*i) == QLatin1Char('/'))
-                        out.append(QLatin1String("\\/"));
-                    else
-                        out.append(*i);
-                }
-                return QLatin1String("\"")+out+QLatin1String("\"");
-            }
-            break;
-    }
-    return QString();
+#include <QTextCodec>
+#include <qnumeric.h>
+
+/*!
+ *  \class JsonReader
+ *  \reentrant
+ * 
+ *  \brief The JsonReader class provides a fast parser for reading
+ *  well-formed JSON into a QVariant.
+ * 
+ *  The parser converts JSON types into QVariant types. For example, JSON
+ *  arrays are translated into QVariantList and JSON objects are translated 
+ *  into QVariantMap. For example,
+ *  \code
+ *  JsonReader reader;
+ *  if (reader.parse(QString("{ \"id\": 123, \"class\": \"JsonReader\", \"authors\": [\"Denis\",\"Ettrich\",\"Girish\"] }"))) {
+ *    QVariant result = reader.result();
+ *    QVariantMap map = result.toMap(); // the JSON object
+ *    qDebug() << map.count(); // 3
+ *    qDebug() << map["id"].toInt(); // 123
+ *    qDebug() << map["class"].toString(); // "JsonReader"
+ *    QVariantList list = map["authors"].toList();
+ *    qDebug() << list[2].toString(); // "Girish"
+ } else {
+	 qDebug() << reader.errorString();
+ }
+ \endcode
+ 
+ As seen above, the reader converts the JSON into a QVariant with arbitrary nesting.
+ A complete listing of JSON to QVariant conversion is documented at parse().
+ 
+ JsonWriter can be used to convert a QVariant into JSON string.
+ */
+
+/*!
+ *  Constructs a JSON reader.
+ */
+JsonReader::JsonReader()
+{
 }
 
-static QVariantMap parseObject (QTextStream & s,bool & error);
-static QVariantList parseArray (QTextStream & s,bool & error);
-static QString parseString (QTextStream & s,bool & error);
-static QVariant parseLiteral (QTextStream & s,bool & error);
-
-QVariant JSON::parse(const QByteArray& string,bool * allerror){
-	QTextStream s(string);
-	return parse( s, allerror);
+/*!
+ *  Destructor
+ */
+JsonReader::~JsonReader()
+{
 }
 
-QVariant JSON::parse(QTextStream& s,bool * allerror) {
+/*!
+ *  Parses the JSON \a ba as a QVariant.
+ * 
+ *  If the parse succeeds, this function returns true and the QVariant can
+ *  be accessed using result(). If the parse fails, this function returns
+ *  false and the error message can be accessed using errorMessage().
+ * 
+ *  The encoding of \ba is auto-detected based on the pattern of nulls in the
+ *  initial 4 octets as described in "Section 3. Encoding" of RFC 2647. If an 
+ *  encoding could not be auto-detected, this function assumes UTF-8.
+ * 
+ *  The conversion from JSON type into QVariant type is as listed below:
+ *  \table
+ *  \row
+ *  \o false
+ *  \o QVariant::Bool with the value false.
+ *  \row
+ *  \o true
+ *  \o QVariant::Bool with the value true.
+ *  \row
+ *  \o null
+ *  \o QVariant::Invalid i.e QVariant()
+ *  \row
+ *  \o object
+ *  \o QVariant::Map i.e QVariantMap
+ *  \row
+ *  \o array
+ *  \o QVariant::List i.e QVariantList
+ *  \row
+ *  \o string
+ *  \o QVariant::String i.e QString
+ *  \row
+ *  \o number
+ *  \o QVariant::Double or QVariant::LongLong. If the JSON number contains a '.' or 'e' 
+ *     or 'E', QVariant::Double is used.
+ *  \endtable
+ * 
+ *  The byte array \ba may or may not contain a BOM.
+ */
+bool JsonReader::parse(const QByteArray &ba)
+{
+	int mib = 106; // utf-8
 	
-	bool lerror;
-	bool* error = allerror;
-	if (!error)
-		error = &lerror;
+	QTextCodec *codec = QTextCodec::codecForUtfText(ba, 0); // try BOM detection
+	if (!codec) {
+		if (ba.length() > 3) { // auto-detect
+			const char *data = ba.constData();
+			if (data[0] != 0) {
+				if (data[1] != 0)
+					mib = 106; // utf-8
+					else if (data[2] != 0)
+						mib = 1014; // utf16 le
+						else
+							mib = 1019; // utf32 le
+			} else if (data[1] != 0)
+				mib = 1013; // utf16 be
+				else
+					mib = 1018; // utf32 be
+		}
+		codec = QTextCodec::codecForMib(mib);
+	}
+	QString str = codec->toUnicode(ba);
+	return parse(str);
+}
+
+/*!
+ *  Parses the JSON string \a str as a QVariant.
+ * 
+ *  If the parse succeeds, this function returns true and the QVariant can
+ *  be accessed using result(). If the parse fails, this function returns
+ *  false and the error message can be accessed using errorMessage().
+ */
+bool JsonReader::parse(const QString &str)
+{
+	JsonLexer lexer(str);
+	JsonParser parser;
+	if (!parser.parse(&lexer)) {
+		m_errorString = parser.errorMessage();
+		m_result = QVariant();
+		return false;
+	}
+	m_errorString.clear();
+	m_result = parser.result();
+	return true;
+}
+
+/*!
+ *  Returns the result of the last parse() call.
+ * 
+ *  If parse() failed, this function returns an invalid QVariant.
+ */
+QVariant JsonReader::result() const
+{
+	return m_result;
+}
+
+/*!
+ *  Returns the error message for the last parse() call.
+ * 
+ *  If parse() succeeded, this functions return an empty string. The error message
+ *  should be used for debugging purposes only.
+ */
+QString JsonReader::errorString() const
+{
+	return m_errorString;
+}
+
+/*!
+ *  \class JsonWriter
+ *  \reentrant
+ * 
+ *  \brief The JsonWriter class converts a QVariant into a JSON string.
+ * 
+ *  The writer converts specific supported types stored in a QVariant into JSON.
+ *  For example,
+ *  \code
+ *    QVariantMap map;
+ *    map["id"] = 123;
+ *    map["class"] = "JsonWriter";
+ *    QVariantList list;
+ *    list << "Denis" << "Ettrich" << "Girish";
+ *    map["authors"] = list;
+ * 
+ *    JsonWriter writer;
+ *    if (writer.stringify(map)) {
+ *        QString json = writer.result();
+ *        qDebug() << json; // {"authors": ["Denis", "Ettrich", "Girish"], "class": "JsonWriter", "id": 123 }
+ } else {
+	 qDebug() << "Failed to stringify " << writer.errorString();
+ }
+ \endcode
+ 
+ The list of QVariant types that the writer supports is listed in stringify(). Note that
+ custom C++ types registered using Q_DECLARE_METATYPE are not supported.
+ */
+
+/*!
+ *  Creates a JsonWriter.
+ */
+JsonWriter::JsonWriter()
+: m_autoFormatting(false), m_autoFormattingIndent(4, QLatin1Char(' '))
+{
+}
+
+/*!
+ *  Destructor.
+ */
+JsonWriter::~JsonWriter()
+{
+}
+
+/*!
+ *  Enables auto formatting if \a enable is \c true, otherwise
+ *  disables it.
+ * 
+ *  When auto formatting is enabled, the writer automatically inserts
+ *  spaces and new lines to make the output more human readable.
+ * 
+ *  The default value is \c false.
+ */
+void JsonWriter::setAutoFormatting(bool enable)
+{
+	m_autoFormatting = enable;
+}
+
+/*!
+ *  Returns \c true if auto formattting is enabled, otherwise \c false.
+ */
+bool JsonWriter::autoFormatting() const
+{
+	return m_autoFormatting;
+}
+
+/*!
+ *  Sets the number of spaces or tabs used for indentation when
+ *  auto-formatting is enabled. Positive numbers indicate spaces,
+ *  negative numbers tabs.
+ * 
+ *  The default indentation is 4.
+ * 
+ *  \sa setAutoFormatting()
+ */
+void JsonWriter::setAutoFormattingIndent(int spacesOrTabs)
+{
+	m_autoFormattingIndent = QString(qAbs(spacesOrTabs), QLatin1Char(spacesOrTabs >= 0 ? ' ' : '\t'));
+}
+
+/*!
+ *  Retuns the numbers of spaces or tabs used for indentation when
+ *  auto-formatting is enabled. Positive numbers indicate spaces,
+ *  negative numbers tabs.
+ * 
+ *  The default indentation is 4.
+ * 
+ *  \sa setAutoFormatting()
+ */
+int JsonWriter::autoFormattingIndent() const
+{
+	return m_autoFormattingIndent.count(QLatin1Char(' ')) - m_autoFormattingIndent.count(QLatin1Char('\t'));
+}
+
+/*! \internal
+ *  Inserts escape character \ for characters in string as described in JSON specification.
+ */
+static QString escape(const QVariant &variant)
+{
+	QString str = variant.toString();
+	QString res;
+	res.reserve(str.length());
+	for (int i = 0; i < str.length(); i++) {
+		if (str[i] == QLatin1Char('\b')) {
+			res += QLatin1String("\\b");
+	} else if (str[i] == QLatin1Char('\f')) {
+		res += QLatin1String("\\f");
+} else if (str[i] == QLatin1Char('\n')) {
+	res += QLatin1String("\\n");
+} else if (str[i] == QLatin1Char('\r')) {
+	res += QLatin1String("\\r");
+} else if (str[i] == QLatin1Char('\t')) {
+	res += QLatin1String("\\t");
+} else if (str[i] == QLatin1Char('\"')) {
+	res += QLatin1String("\\\"");
+} else if (str[i] == QLatin1Char('\\')) {
+	res += QLatin1String("\\\\");
+} else if (str[i] == QLatin1Char('/')) {
+	res += QLatin1String("\\/");
+} else if (str[i].unicode() > 127) {
+	res += QLatin1String("\\u") + QString::number(str[i].unicode(), 16).rightJustified(4, QLatin1Char('0'));
+} else {
+	res += str[i];
+}
+ }
+ return res;
+ }
+
+/*! \internal
+*  Stringifies \a variant.
+*/
+void JsonWriter::stringify(const QVariant &variant, int depth)
+{
+	if (variant.type() == QVariant::List || variant.type() == QVariant::StringList) {
+		m_result += QLatin1Char('[');
+		QVariantList list = variant.toList();
+		for (int i = 0; i < list.count(); i++) {
+			if (i != 0) {
+				m_result += QLatin1Char(',');
+				if (m_autoFormatting)
+					m_result += QLatin1Char(' ');
+			}
+			stringify(list[i], depth+1);
+		}
+		m_result += QLatin1Char(']');
+	} else if (variant.type() == QVariant::Map) {
+		QString indent = m_autoFormattingIndent.repeated(depth);
+		QVariantMap map = variant.toMap();
+		if (m_autoFormatting && depth != 0) {
+			m_result += QLatin1Char('\n');
+			m_result += indent;
+			m_result += QLatin1String("{\n");
+		} else {
+			m_result += QLatin1Char('{');
+			}
+			for (QVariantMap::const_iterator it = map.constBegin(); it != map.constEnd(); ++it) {
+				if (it != map.constBegin()) {
+					m_result += QLatin1Char(',');
+					if (m_autoFormatting)
+						m_result += QLatin1Char('\n');
+				}
+				if (m_autoFormatting)
+					m_result += indent + QLatin1Char(' ');
+				m_result += QLatin1Char('\"') + escape(it.key()) + QLatin1String("\":");
+				stringify(it.value(), depth+1);
+			}
+			if (m_autoFormatting) {
+				m_result += QLatin1Char('\n');
+				m_result += indent;
+			}
+			m_result += QLatin1Char('}');
+	} else if (variant.type() == QVariant::String || variant.type() == QVariant::ByteArray) {
+		m_result += QLatin1Char('\"') + escape(variant) + QLatin1Char('\"');
+	} else if (variant.type() == QVariant::Double || (int)variant.type() == (int)QMetaType::Float) {
+		double d = variant.toDouble();
+		if (qIsFinite(d))
+			m_result += QString::number(variant.toDouble(), 'g', 15);
+		else
+			m_result += QLatin1String("null");
+	} else if (variant.type() == QVariant::Bool) {
+		m_result += variant.toBool() ? QLatin1String("true") : QLatin1String("false");
+	} else if (variant.type() == QVariant::Invalid) {
+		m_result += QLatin1String("null");
+	} else if (variant.type() == QVariant::ULongLong) {
+		m_result += QString::number(variant.toULongLong());
+	} else if (variant.type() == QVariant::LongLong) {
+		m_result += QString::number(variant.toLongLong());
+	} else if (variant.type() == QVariant::Int) {
+		m_result += QString::number(variant.toInt());
+	} else if (variant.type() == QVariant::UInt) {
+		m_result += QString::number(variant.toUInt());
+	} else if (variant.type() == QVariant::Char) {
+		QChar c = variant.toChar();
+		if (c.unicode() > 127)
+			m_result += QLatin1String("\"\\u") + QString::number(c.unicode(), 16).rightJustified(4, QLatin1Char('0')) + QLatin1Char('\"');
+		else
+			m_result += QLatin1Char('\"') + c + QLatin1Char('\"');
+	} else if (variant.canConvert<qlonglong>()) {
+		m_result += QString::number(variant.toLongLong());
+	} else if (variant.canConvert<QString>()) {
+		m_result += QLatin1Char('\"') + escape(variant) + QLatin1Char('\"');
+	} else {
+		if (!m_errorString.isEmpty())
+			m_errorString.append(QLatin1Char('\n'));
+		QString msg = QString::fromLatin1("Unsupported type %1 (id: %2)").arg(QString::fromUtf8(variant.typeName())).arg(variant.userType());
+		m_errorString.append(msg);
+		qWarning() << "JsonWriter::stringify - " << msg;
+		m_result += QLatin1String("null");
+	}
+}
+
+/*!
+*  Converts the variant \a var into a JSON string.
+* 
+*  The stringizer converts \a var into JSON based on the type of it's contents. The supported
+*  types and their conversion into JSON is as listed below:
+* 
+*  \table
+*  \row
+*  \o QVariant::List, QVariant::StringList
+*  \o JSON array []
+*  \row
+*  \o QVariant::Map
+*  \o JSON object {}
+*  \row
+*  \o QVariant::String, QVariant::ByteArray
+*  \o JSON string encapsulated in double quotes. String contents are escaped using '\' if necessary.
+*  \row
+*  \o QVariant::Double, QMetaType::Float
+*  \o JSON number with a precision 15. Infinity and NaN are converted into null.
+*  \row
+*  \o QVariant::Bool
+*  \o JSON boolean true and false
+*  \row
+*  \o QVariant::Invalid
+*  \o JSON null
+*  \row
+*  \o QVariant::ULongLong, QVariant::LongLong, QVariant::Int, QVariant::UInt, 
+*  \o JSON number
+*  \row
+*  \o QVariant::Char
+*  \o JSON string. Non-ASCII characters are converted into the \uXXXX notation.
+*  \endtable
+* 
+*  As a fallback, the writer attempts to convert a type not listed above into a long long or a
+*  QString using QVariant::canConvert. See the QVariant documentation for possible conversions.
+* 
+*  JsonWriter does not support stringizing custom user types stored in the QVariant. Any such
+*  value would be converted into JSON null.
+*/
+bool JsonWriter::stringify(const QVariant &var)
+{
+	m_errorString.clear();
+	m_result.clear();
+	stringify(var, 0 /* depth */);
+	return m_errorString.isEmpty();
+}
+
+/*!
+*  Returns the result of the last stringify() call.
+* 
+*  If stringify() failed, this function returns a null QString.
+*/
+QString JsonWriter::result() const
+{
+	return m_result;
+}
+
+/*!
+*  Returns the error message for the last stringify() call.
+* 
+*  If stringify() succeeded, this functions return an empty string. The error message
+*  should be used for debugging purposes only.
+*/
+QString JsonWriter::errorString() const
+{
+	return m_errorString;
+}
+
 	
-    s.skipWhiteSpace();
-    QChar c;
-    while(!s.atEnd() && !*error){
-        s>>c;
-        if (c==QLatin1Char('{')){
-            return parseObject(s,*error);
-        } else {
-			*error = true;
-            return QVariant();
-        }
-    }
-    return QVariant();
-}
-
-static QVariantMap parseObject (QTextStream & s,bool & error){
-    s.skipWhiteSpace();
-    QVariantMap o;
-    QString key;
-    bool atVal=false;
-
-    QChar c;
-    while(!s.atEnd() && !error){
-        s>>c;
-        if (c==QLatin1Char('}')){
-            return o;
-        } else if (c==QLatin1Char(',') || c==QLatin1Char(':')){
-            /*
-              They're syntactic sugar, since key:value come in bundles anyway
-              Could check for error handling. too lazy.
-            */
-        } else if (c==QLatin1Char('"')){
-            if(atVal){
-                o[key]=parseString(s,error);
-                atVal=false;
-            }else{
-                key=parseString(s,error);
-                atVal=true;
-            }
-        } else if (c==QLatin1Char('[')){
-            if(atVal){
-                o[key]=parseArray(s,error);
-                atVal=false;
-            }else{
-                error=true;
-                return QVariantMap();
-            }
-        } else if (c==QLatin1Char('{')){
-            if(atVal){
-                o[key]=parseObject(s,error);
-                atVal=false;
-            }else{
-                error=true;
-                return QVariantMap();
-            }
-        } else {
-            if(atVal){
-                o[key]=parseLiteral(s,error);
-                atVal=false;
-            }else{
-                error=true;
-                return QVariantMap();
-            }
-        }
-        s.skipWhiteSpace();
-    }
-    error=true;
-    return QVariantMap();
-}
-static QVariantList parseArray (QTextStream & s,bool & error){
-    s.skipWhiteSpace();
-    QVariantList l;
-    QChar c;
-    while(!s.atEnd() && !error){
-        s>>c;
-        if (c==QLatin1Char(']')){
-            return l;
-        } else if (c==QLatin1Char(',')){
-        } else if (c==QLatin1Char('"')){
-            l.append(QVariant(parseString(s,error)));
-        } else if (c==QLatin1Char('[')){
-            l.append(QVariant(parseArray(s,error)));
-        } else if (c==QLatin1Char('{')){
-            l.append(QVariant(parseObject(s,error)));
-        } else {
-            l.append(QVariant(parseLiteral(s,error)));
-        }
-        s.skipWhiteSpace();
-    }
-    error=true;
-    return QVariantList();
-}
-static QString parseString (QTextStream & s,bool & error){
-    QString str;
-    QChar c;
-    while(!s.atEnd() && !error){
-        s>>c;
-        if(c==QLatin1Char('"')){
-            return str;
-        }else if(c==QLatin1Char('\\')){
-            s>>c;
-            if(c==QLatin1Char('b')){
-                str.append(QLatin1Char('\b'));
-            }else if(c==QLatin1Char('f')){
-                str.append(QLatin1Char('\f'));
-            }else if(c==QLatin1Char('n')){
-                str.append(QLatin1Char('\n'));
-            }else if(c==QLatin1Char('r')){
-                str.append(QLatin1Char('\r'));
-            }else if(c==QLatin1Char('t')){
-                str.append(QLatin1Char('\t'));
-            }else if(c==QLatin1Char('f')){
-                str.append(QLatin1Char('\f'));
-            }else if(c==QLatin1Char('u')){
-                QString k;
-                for (int i = 0; i < 4; i++ ) {
-                    s >> c;
-                    k.append(c);
-                }
-                bool ok;
-                int i = k.toInt(&ok, 16);
-                if (ok)
-                    str.append(QLatin1Char(i));
-            }else{
-                str.append(c);
-            }
-        }else{
-            str.append(c);
-        }
-    }
-    error=true;
-    return QString();
-}
-static QVariant parseLiteral (QTextStream & s,bool & error){
-    s.seek(s.pos()-1);
-    QChar c;
-    while(!s.atEnd() && !error){
-        s>>c;
-        if (c==QLatin1Char('t')){
-            s>>c;//r
-            s>>c;//u
-            s>>c;//e
-            return true;
-        } else if (c==QLatin1Char('f')){
-            s>>c;//a
-            s>>c;//l
-            s>>c;//s
-            s>>c;//e
-            return false;
-        }else if (c==QLatin1Char('n')){
-            s>>c;//u
-            s>>c;//l
-            s>>c;//l
-            return QVariant();
-        }else if (c==QLatin1Char('-') || c.isDigit()){
-            QString n;
-            while(( c.isDigit()  || (c==QLatin1Char('.')) || (c==QLatin1Char('E')) || (c==QLatin1Char('e')) || (c==QLatin1Char('-')) || (c==QLatin1Char('+')) )){
-                n.append(c);
-                if(s.atEnd() ||  error)
-                    break;
-                s>>c;
-            }
-            s.seek(s.pos()-1);
-            if(n.contains(QLatin1Char('.'))) {
-                return n.toDouble();
-            } else {
-                bool ok = false;
-                int result = n.toInt(&ok);
-                if(ok) return result;
-                return n.toLongLong();
-            }
-        }
-    }
-    error=true;
-    return QVariant();
-}

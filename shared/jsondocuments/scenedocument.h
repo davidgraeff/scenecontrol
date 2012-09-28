@@ -40,10 +40,7 @@ public:
      * Constructor: Construct by a json document
      */
     SceneDocument(const QByteArray& jsondata);
-    /** 
-     * Constructor: Construct by a stream containing json
-     */
-    SceneDocument(QTextStream& jsonstream);
+
     
     /**
      * Creates a model item remove notification.

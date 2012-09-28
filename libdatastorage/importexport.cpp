@@ -68,8 +68,7 @@ int importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting,
             qWarning() << "\tFile to big!" << files[i] << file.size();
             continue;
         }
-        QTextStream stream(&file);
-        SceneDocument document(stream);
+        SceneDocument document(file.readAll());
 
 		if (verify && !verify->isValid(document, dir.absoluteFilePath(files[i]))) {
 			qWarning() << "Custom verification denied import!" << files[i];
