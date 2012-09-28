@@ -86,10 +86,11 @@ void Server::newClientConnection()
 	connect(serversocket, SIGNAL(disconnected()), this, SLOT(serverDisconnected()));
 	connect(serversocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(serverError(QAbstractSocket::SocketError)));
 
-	qDebug() << "Proxy connection from server" << QLatin1String("127.0.0.1") << "to client" << clientsocket->hostAddress();
-	
 	// Now try to connect to the server: If it fails the disconnect signal will clean up
-	serversocket->connectToHostEncrypted(QLatin1String("127.0.0.1"), ROOM_LISTENPORT);
+	if (m_disableSecureConnection)
+		serversocket->connectToHost(m_sceneserver.host(), m_sceneserver.port());
+	else
+		serversocket->connectToHostEncrypted(m_sceneserver.host(), m_sceneserver.port());
 }
 
 
@@ -104,7 +105,9 @@ void Server::sslErrors ( const QList<QSslError> & errors ) {
 
 void Server::pong( quint64 elapsedTime )
 {
-	qDebug() << "ping:" << elapsedTime << " ms" ;
+	QWsSocket *clientSocket = (QWsSocket *)sender();
+	qDebug().nospace() << "Connected SceneServer " << qPrintable(m_sceneserver.host()) << ":" << m_sceneserver.port() << " to client " << qPrintable(clientSocket->hostAddress())<<":"<<clientSocket->hostPort()
+	<< " with " << elapsedTime << "ms ping time" ;
 }
 
 void Server::processServerMessage() {
@@ -200,17 +203,18 @@ void Server::clientDisconnected() {
     qDebug() << "Client closed the connection" << clientSocket->hostAddress() << clientSocket->errorString() << clientSocket->error();
 }
 
-bool Server::startWebsocket() {
+bool Server::startWebsocket(const QString& sceneserver, int listenport, bool disableSecureConnection) {
+	m_sceneserver = QLatin1String("tcp://") + sceneserver;
+	m_disableSecureConnection = disableSecureConnection;
 	delete m_server;
     m_server = new QWsServer( this );
-	if ( ! m_server->listen( QHostAddress::Any, ROOM_WEBSOCKETPROXY_LISTENPORT ) )
+	if ( ! m_server->listen( QHostAddress::Any, listenport ) )
 	{
 		qWarning() << "Error: Can't launch server";
 		qWarning() << "QWsServer error :" << m_server->errorString();
 		return false;
 	}
 	
-	qDebug() << "WebsocketProxy port:" << QString::number(ROOM_WEBSOCKETPROXY_LISTENPORT);
 	connect( m_server, SIGNAL(newConnection()), this, SLOT(newClientConnection()) );
 	return true;
 }

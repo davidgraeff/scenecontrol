@@ -17,7 +17,7 @@ Socket::~Socket()
 {
 }
 
-Socket::Socket() {
+Socket::Socket() : m_disabledSecureConnections(false) {
     if (listen(QHostAddress::Any, ROOM_LISTENPORT)) {
         qDebug() << "SSL TCPSocket Server ready on port" << ROOM_LISTENPORT;
     }
@@ -109,7 +109,8 @@ void Socket::incomingConnection(int socketDescriptor)
 	}
 	
 	socket->ignoreSslErrors(expectedSslErrors);
-	socket->startServerEncryption();
+	if (!m_disabledSecureConnections)
+		socket->startServerEncryption();
 	qDebug() << "New connection" << socket->peerAddress();
 
 	// Notify plugins of new session
@@ -310,3 +311,7 @@ void StorageNotifierSocket::documentRemoved ( const QString& filename, SceneDocu
 }
 
 StorageNotifierSocket::StorageNotifierSocket ( int sessionid ) : m_sessionid(sessionid) {}
+
+void Socket::disableSecureConnections() {
+	m_disabledSecureConnections = true;
+}

@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
                "--export [PATH]: Export all documents from the database and store them in PATH or the working directory\n"
                "--import [PATH]: Import all documents from PATH or the working directory and store them in the database\n"
                "--overwrite: Overwrite existing documents while exporting or importing\n"
+			   "--nossl: Disable secure connections. For debug purposes only!\n"
                "--help: This help text\n"
                "--version: Version information, parseable for scripts. Quits after output.\n",
                ABOUT_SERVICENAME, ABOUT_VERSION, argv[0]);
@@ -122,6 +123,10 @@ int main(int argc, char *argv[])
         delete socket;
         return -1;
     }
+    if (cmdargs.contains("--nossl")) {
+		qWarning() << "SECURE CONNECTIONS ARE DISABLED. EVERYONE CAN CONTROL THIS SERVER NOW!";
+		socket->disableSecureConnections();
+	}
 
     // Write last start time to the log
     setup::writeLastStarttime();

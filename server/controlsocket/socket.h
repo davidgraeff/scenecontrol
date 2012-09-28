@@ -53,11 +53,17 @@ public:
 	 * or to a specific client.
 	 */
     void sendToClients (const QByteArray& rawdata, int sessionid = -1);
+	/**
+	 * Incoming connections are pure tcp and not ssl encrypted if you call this method.
+	 * For debug purposes only! SSL Clients are not able to connect after activing this.
+	 */
+    void disableSecureConnections();
 private:
     Socket ();
     ServiceController* m_servicecontroller;
     QMap<int, QSslSocket*> m_sockets;
 	QMap<int, StorageNotifierSocket*> m_notifiers;
+    bool m_disabledSecureConnections;
     virtual void	incomingConnection ( int socketDescriptor );
 	StorageNotifierSocket* notifier(int sessionid);
 private Q_SLOTS:

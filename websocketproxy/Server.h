@@ -14,7 +14,7 @@ class Server : public QObject
 public:
 	Server();
 	~Server();
-    bool startWebsocket();
+    bool startWebsocket(const QString& sceneserver, int listenport, bool disableSecureConnection);
 
 public Q_SLOTS:
 	// Debug output slots
@@ -33,6 +33,8 @@ private:
 	QWsServer * m_server;
 	QMap<QSslSocket*, QWsSocket*> m_server_to_client;
 	QMap<QWsSocket*, QSslSocket*> m_client_to_server;
+	QUrl m_sceneserver;
+	bool m_disableSecureConnection;
 };
 
 #endif
