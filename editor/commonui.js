@@ -74,13 +74,16 @@ function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
 			'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
 			'<select '+comon+' data-native-menu="false">';
 			
-			var dElements;
-			
 			var model = storageInstance.modelItems(doc.componentid_,doc.instanceid_,parameter.model);
+			if (!model || !model.data) {
+				console.warn("Model does not exist:", parameter.model)
+				result = false;
+				continue;
+			}
 			var elems = model.data;
-			//console.log("parameter_modelenum: "+paramid, parameter, elems);
 			var counter = 0;
 			var selected = 0;
+			var dElements;
 			for (var index in elems) {
 				if (elems.hasOwnProperty(index)) {
 					var key = elems[index][parameter.indexproperty];

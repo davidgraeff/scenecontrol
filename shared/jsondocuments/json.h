@@ -59,22 +59,8 @@ private:
 	void *reserved;
 };
 
-#include <QVariant>
-#include <QString>
-#include <QByteArray>
-// Convience methods
 class JSON {
 public:
-// 	static QVariant parse (const QByteArray& string, bool * error = 0) {
-// 		JsonReader r;
-// 		if (!r.parse(string)) {
-// 			qDebug() << r.errorString();
-// 			if (error)
-// 				*error = true;
-// 		}
-// 		return r.result();
-// 		
-// 	}
 	static QString  stringify (const QVariant& v) {
 		JsonWriter w;
 		if (!w.stringify(v))

@@ -17,7 +17,7 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< S
             // Get the right plugin process
             PluginProcess* plugin = PluginController::instance()->getPlugin (doc->componentUniqueID());
             if ( !plugin ) {
-                qWarning() <<"No plugin for action found:"<<doc;
+                qWarning() <<"No plugin for action found:"<<doc->getjson();
                 continue;
             }
 
@@ -26,7 +26,7 @@ RunningCollection::RunningCollection(const QString& collectionid, const QList< S
             // Get the right plugin process
             PluginProcess* plugin = PluginController::instance()->getPlugin (doc->componentUniqueID());
             if ( !plugin ) {
-                qWarning() <<"No plugin for condition found:"<<doc;
+				qWarning() <<"No plugin for condition found:"<<doc->getjson();
                 continue;
             }
 

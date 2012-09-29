@@ -67,11 +67,24 @@ Document = {
 	},
 	
 	remove: function(sceneDocument) {
-		console.log("Remove: ", sceneDocument)
-		websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeDocument","doc":sceneDocument});
+		if (!sceneDocument)
+			return;
+		if (sceneDocument.id_ == "GENERATEGUID") { // if temporary: only remove from storage cache
+			storageInstance.documentChanged(sceneDocument, true);
+			storageInstance.notifyDocumentChange(sceneDocument, true, true);
+		} else {
+			console.log("Remove: ", sceneDocument)
+			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeDocument","doc":sceneDocument});
+		}
 	},
 	
 	change: function(sceneDocument) {
+		if (!sceneDocument)
+			return;
+		if (sceneDocument.id_ == "GENERATEGUID") { // if temporary: remove from storage cache
+			storageInstance.documentChanged(sceneDocument, true);
+			storageInstance.notifyDocumentChange(sceneDocument, true);
+		}
 		console.log("Change: ", sceneDocument)
 		websocketInstance.write({"componentid_":"server","type_":"execute","method_":"changeDocument","doc":sceneDocument});
 	}

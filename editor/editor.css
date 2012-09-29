@@ -60,7 +60,7 @@ a.HeaderButton {
 	float:right;text-align:right;margin:.3em 0
 }
 
-a.hiddenButton {
+.hidden {
 	display:none;
 }
 
@@ -94,7 +94,7 @@ a.hiddenButton {
 		width: 35%;
 	}
 	.content-primary {
-		width: 60%;
+		width: 65%;
 		float: right;
 /*		margin-right: 1%;
 		padding-right: 1%;*/

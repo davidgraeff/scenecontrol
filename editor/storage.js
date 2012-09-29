@@ -77,19 +77,34 @@ function Storage() {
 		return that.models[componentid+instanceid+modelid];
 	}
 	
-	this.schemaForType = function(type) {
+	this.componentIDsFromConfigurationsByType = function(type) {
+		var hasSchema = {};
+		for (var index in this.schemas) {
+			if (this.schemas[index].targettype == type) {
+				var cid = this.schemas[index].componentid_;
+				if (hasSchema[cid])
+					continue;
+				hasSchema[cid] = 1;
+			}
+		}
+		// take all configurations where the plugins have schemas for the given type
 		var result = [];
-		for (var index in this.schemas)
-			if (this.schemas[index].targettype == type)
-				result.push(this.schemas[index]);
+		for (var index in this.configurations) {
+			if (hasSchema[this.configurations[index].componentid_]) {
+				result.push(
+					{componentid_:this.configurations[index].componentid_,
+					instanceid_:this.configurations[index].instanceid_}
+				);
+			}
+		}
 		return result;
 	}
 	
-	this.filterSchemaForPlugin = function(schemas, pluginid) {
+	this.schemaForPlugin = function(pluginid, type) {
 		var result = [];
-		for (var index in schemas)
-			if (schemas[index].componentid_ == pluginid)
-				result.push(schemas[index]);
+		for (var index in this.schemas)
+			if (this.schemas[index].componentid_ == pluginid && this.schemas[index].targettype == type)
+				result.push(this.schemas[index]);
 		return result;
 	}
 	
@@ -150,19 +165,21 @@ function Storage() {
 		}
 	};
 	
-	this.notifyDocumentChange = function(doc, removed) {
+	this.notifyDocumentChange = function(doc, removed_, temporary_) {
+		var flagObj = {"removed":removed_, "temporary":temporary_,"doc":doc};
+		
 		if (doc.type_=="scene") {
-			$(that).trigger("onscene", doc, removed);
+			$(that).trigger("onscene", flagObj);
 		} else if (doc.type_=="schemas") {
-			$(that).trigger("onschemas", doc, removed);
+			$(that).trigger("onschemas", flagObj);
 		} else if (doc.type_=="event") {
-			$(that).trigger("onevent", doc, removed);
+			$(that).trigger("onevent", flagObj);
 		} else if (doc.type_=="condition") {
-			$(that).trigger("oncondition", doc, removed);
+			$(that).trigger("oncondition", flagObj);
 		} else if (doc.type_=="action") {
-			$(that).trigger("onaction", doc, removed);
+			$(that).trigger("onaction", flagObj);
 		} else if (doc.type_=="configuration") {
-			$(that).trigger("onconfiguration", doc, removed);
+			$(that).trigger("onconfiguration", flagObj);
 		}
 	};
 	
@@ -181,7 +198,7 @@ function Storage() {
 			delete doc.method_;
 			delete doc.type_;
 			model.data[key] = doc;
-			$(that).trigger("model.change", doc.componentid_+doc.instanceid_+doc.id_, doc);
+			$(that).trigger("model.change", doc.componentid_+doc.instanceid_+doc.id_);
 		} else
 		if (doc.type_=="model.remove") {
 			var model = that.models[doc.componentid_+doc.instanceid_+doc.id_];
@@ -193,7 +210,7 @@ function Storage() {
 			delete doc.method_;
 			delete doc.type_;
 			delete model.data[key];
-			$(that).trigger("model.remove", doc.componentid_+doc.instanceid_+doc.id_, doc);
+			$(that).trigger("model.remove", doc.componentid_+doc.instanceid_+doc.id_);
 			
 		} else
 		if (doc.type_=="notification") {

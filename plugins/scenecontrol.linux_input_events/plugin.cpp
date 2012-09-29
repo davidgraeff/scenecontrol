@@ -90,6 +90,10 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
 }
 
 void plugin::inputevent ( const QString& id_, const QString& sceneid_, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
+	if (id_.isEmpty() ||sceneid_.isEmpty()) {
+		qWarning() << "Not registering event:" << id_ << sceneid_;
+		return;
+	}
 	QByteArray id__ = id_.toAscii();
     // Add to input events list
     EventInputStructure s;

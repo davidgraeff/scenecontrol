@@ -86,20 +86,20 @@ $(document).one('pageinit', function() {
 	});
 });
 
-$(storageInstance).on('onconfiguration.configpage', function(d, doc, removed) {
-	if (doc.componentid_==currentPluginid) {
-		if (!removed)
-			addConfigItem(doc);
+$(storageInstance).on('onconfiguration.configpage', function(d, flags) {
+	if (flags.doc.componentid_==currentPluginid) {
+		if (!flags.removed)
+			addConfigItem(flags.doc, flags.temporary);
 		else
-			removeConfigItem(doc);
+			removeConfigItem(flags.doc, flags.temporary);
 	}
 });
 
-function removeConfigItem(doc) {
+function removeConfigItem(doc, temporary) {
 	$('#'+doc.id_).remove();
 }
 
-function addConfigItem(doc) {
+function addConfigItem(doc, temporary) {
 	if (!doc)
 		return;
 	var schema = storageInstance.schemaForDocument(doc);
@@ -116,6 +116,8 @@ function addConfigItem(doc) {
 	var entry = {"configid":doc.id_, "componentid": doc.componentid_,"formid": formid, "name": doc.componentid_, "subname": doc.instanceid_, "typetheme":"d"};
 	var $elem = $(templateConfigServiceItem(entry));
 	var ok = createParameterForm($elem.children('ul'), schema, doc);
+	if (temporary && !ok)
+		return;
 	
 	// add or replace in dom
 	if ($('#'+formid).length) { // already there
@@ -136,9 +138,11 @@ function addConfigItem(doc) {
 function setPlugin(pluginid) {
 	if (pluginid === null) {
 		$("#btnAddConfiguration").addClass("ui-disabled");
+		$("#helptextconfig").removeClass("hidden");
 		return;
 	}
 	$("#btnAddConfiguration").removeClass("ui-disabled");
+	$("#helptextconfig").addClass("hidden");
 	$(".currentplugin").text(pluginid);
 	$("#configservices").children().remove();
 	

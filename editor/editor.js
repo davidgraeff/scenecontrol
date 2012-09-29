@@ -2,7 +2,6 @@ var selectedScenesCounter = 0;
 var sceneRenameFlag = false;
 var templateSceneItem;
 var templateSceneServiceItem;
-var filteredschemas;
 
 // All button click events
 $(document).one('pageinit', function() {
@@ -29,6 +28,7 @@ $(document).one('pageinit', function() {
 		$.mobile.changePage('config.html', {transition: 'slide'});
 	});
 	
+	////////////////// ADD SCENE ITEM //////////////////
 	$('#btnAddSceneItem').on('click.editorpage', function() {
 		$("#sceneitem_type_event").trigger("change");
 		$('#newsceneitempopup').popup("open");
@@ -45,30 +45,24 @@ $(document).one('pageinit', function() {
 			$(".newsceneitemtitle").text("Neue Aktion");
 		
 		$("#sceneitem_type").val(type);
-		filteredschemas = storageInstance.schemaForType(type);
+		var plugins = storageInstance.componentIDsFromConfigurationsByType(type);
 		$("#sceneitem_componentid").empty();
-		var temp = {};
-		for (var i =0;i<filteredschemas.length;++i) {
-			var cid = filteredschemas[i].componentid_;
-			if (temp[cid])
-				continue;
-			temp[cid] = 1;
-			$("#sceneitem_componentid").append("<option value='"+cid+"'>"+cid+"</option>");
+		for (var i =0;i<plugins.length;++i) {
+			var cid = plugins[i].componentid_;
+			var instance = plugins[i].instanceid_;
+			$("#sceneitem_componentid").append("<option data-instance='"+instance+"' value='"+cid+"'>"+cid+":"+instance+"</option>");
 		}
 		$("#sceneitem_componentid").prop("selectedIndex",0);
 		$("#sceneitem_componentid").trigger("change");
 	});
 	
 	$('#sceneitem_componentid').on('change.editorpage', function() {
+		var type = $("#sceneitem_type input[name='type_']:checked").val();
+		var pluginid = $("#sceneitem_componentid").val();
 		$("#sceneitem_method").empty();
-		var schemas = storageInstance.filterSchemaForPlugin(filteredschemas, $("#sceneitem_componentid").val());
-		var temp = {};
+		var schemas = storageInstance.schemaForPlugin(pluginid, type);
 		for (var i =0;i<schemas.length;++i) {
-			var cid = schemas[i].method_;
-			if (temp[cid])
-				continue;
-			temp[cid] = 1;
-			$("#sceneitem_method").append("<option value='"+cid+"'>"+schemas[i].name+"</option>");
+			$("#sceneitem_method").append("<option value='"+schemas[i].method_+"'>"+schemas[i].name+"</option>");
 		}
 		$("#sceneitem_method").prop("selectedIndex",0);
 		$("#sceneitem_method").trigger("change");
@@ -77,12 +71,16 @@ $(document).one('pageinit', function() {
 	$('#btnConfirmSceneitem').on('click.editorpage', function() {
 		var type = $("#sceneitem_type input[name='type_']:checked").val();
 		var componentid = $("#sceneitem_componentid").val();
+		var instanceid = $("#sceneitem_componentid option:selected").first().attr("data-instance");
 		var method = $("#sceneitem_method").val();
 		
-		var doc = {type_:type, componentid_:componentid, method_:method, id_:"GENERATEGUID"};
-		addSceneItem(doc, true);
+		var doc = {type_:type, componentid_:componentid, instanceid_:instanceid, method_:method, sceneid_: CurrentScene.id, id_:"GENERATEGUID"};
+		// Simulate a new document
+		storageInstance.documentChanged(doc, false);
+		storageInstance.notifyDocumentChange(doc, false, true);
 	});
 	
+	////////////////// SCENE TAGS //////////////////
 	$('#btnChangeTags').on('click.editorpage', function() {
 		$("#scenetags").val(CurrentScene.getTags());
 		$('#scenetagspopup').popup("open");
@@ -94,7 +92,31 @@ $(document).one('pageinit', function() {
 		CurrentScene.setTags(tags);
 		$('#scenetagspopup').popup("close");
 	});
+
+	////////////////// SET AND SELECT SCENES //////////////////
+	$("#scenelist").on('click.editorpage', '.btnSetScene', function() {
+		var sceneid = $(this).parent().parent().parent().attr("data-sceneid");
+		setscene(sceneid);
+	});
 	
+	$("#scenelist").on('click.editorpage', '.btnSelectScene', function() {
+		var $scenelistentry = $(this).parent();
+		if ($scenelistentry.attr('data-selected')=="1") { // is selected: deselect
+			$scenelistentry.removeClass("selectedSceneListItem");
+			$scenelistentry.attr('data-selected', "0");
+			--selectedScenesCounter;
+		} else {
+			$scenelistentry.addClass("selectedSceneListItem");
+			$scenelistentry.attr('data-selected', "1");
+			++selectedScenesCounter;
+		}
+		if (selectedScenesCounter)
+			$("#btnRemoveSelectedScenes").removeClass("ui-disabled");
+		else
+			$("#btnRemoveSelectedScenes").addClass("ui-disabled");
+	});
+	
+	////////////////// REMOVE SCENES //////////////////
 	$('#btnRemoveSelectedScenes').on('click.editorpage', function() {
 		$(".currentrmscene").text(selectedScenesCounter);
 		$('#removepopup').popup("open");
@@ -111,30 +133,7 @@ $(document).one('pageinit', function() {
 		});
 	});
 	
-	$("#scenelist").on('click.editorpage', '.btnSetScene', function() {
-		var sceneid = $(this).parent().parent().parent().attr("data-sceneid");
-		setscene(sceneid);
-	});
-	
-	$("#scenelist").on('click.editorpage', '.btnSelectScene', function() {
-		var sceneid = $(this).parent().parent().parent().attr("data-sceneid");
-		var item = document.getElementById("li" + sceneid);
-		if (item.getAttribute('data-selected')=="1") { // is selected: deselect
-			$(item).removeClass("selectedSceneListItem");
-			item.setAttribute('data-selected',"0");
-			--selectedScenesCounter;
-		} else {
-			$(item).addClass("selectedSceneListItem");
-			item.setAttribute('data-selected',"1");
-			++selectedScenesCounter;
-		}
-		if (selectedScenesCounter)
-			$("#btnRemoveSelectedScenes").removeClass("ui-disabled");
-		else
-			$("#btnRemoveSelectedScenes").addClass("ui-disabled");
-	});
-	
-	
+	////////////////// SCENE NAME AND ADD SCENE //////////////////
 	$('#btnChangeSceneName').on('click.editorpage', function() {
 		sceneRenameFlag = true;
 		$("#newscenename").val(CurrentScene.getName());
@@ -164,6 +163,7 @@ $(document).one('pageinit', function() {
 		$('#newscenenamepopup').popup("close");
 	});
 	
+	////////////////// SAVE SCENE ITEM AND REMOVE SCENE ITEM //////////////////
 	$("#righteditpanel").on('click.editorpage', '.btnSaveSceneitem', function() {
 		var $form = $(this).parent().parent().parent();
 		var docid = $form.attr("data-id")
@@ -179,7 +179,8 @@ $(document).one('pageinit', function() {
 			$form.find("input,select,label,textarea,.btnSaveSceneitem").addClass("ui-disabled");
 			Document.change(obj);
 		} else {
-			$.jGrowl("Incomplete: "+docid);
+			$.jGrowl("Incomplete: "+doctype+"."+componentid);
+			console.warn("Incomplete", obj, objdata)
 		}
 	});
 	
@@ -199,37 +200,50 @@ $(document).one('pageinit', function() {
 });
 
 
-$(storageInstance).on('onscene.editorpage', function(d, doc, removed) {
-	sceneChanged(doc, removed);
+$(storageInstance).on('onscene.editorpage', function(d, flags) {
+	sceneChanged(flags.doc, flags.removed);
 });
 
-$(storageInstance).on('onevent.editorpage', function(d, doc, removed) {
-	if (!removed)
-		addSceneItem(doc);
+$(storageInstance).on('onevent.editorpage', function(d, flags) {
+	if (flags.doc.sceneid_ != CurrentScene.id)
+		return;
+	
+	if (!flags.removed)
+		addSceneItem(flags.doc, flags.temporary);
 	else
-		removeSceneItem(doc);
+		removeSceneItem(flags.doc, flags.temporary);
 });
 
-$(storageInstance).on('oncondition.editorpage', function(d, doc, removed) {
-	if (!removed)
-		addSceneItem(doc);
+$(storageInstance).on('oncondition.editorpage', function(d, flags) {
+	if (flags.doc.sceneid_ != CurrentScene.id)
+		return;
+	
+	if (!flags.removed)
+		addSceneItem(flags.doc, flags.temporary);
 	else
-		removeSceneItem(doc);
+		removeSceneItem(flags.doc, flags.temporary);
 });
 
-$(storageInstance).on('onaction.editorpage', function(d, doc, removed) {
-	if (!removed)
-		addSceneItem(doc);
+$(storageInstance).on('onaction.editorpage', function(d, flags) {
+	if (flags.doc.sceneid_ != CurrentScene.id)
+		return;
+	
+	if (!flags.removed)
+		addSceneItem(flags.doc, flags.temporary);
 	else
-		removeSceneItem(doc);
+		removeSceneItem(flags.doc, flags.temporary);
 });
 
 function sceneChanged(doc, removed) {
-	// Remove the scene entry first
-	$("#li" + doc.id_).remove();
-	// if it just has been changed or wasn't in the list at all we need to add it
-	if (!removed) {
-		var entry = {"id":doc.id_, "name":doc.name, "counter":storageInstance.sceneItemCount(doc.id_)};
+	var $entries = $("#scenelist").find("li[data-sceneid='"+doc.id_+"']");
+	if (removed && $entries.length) {
+		// Remove the scene entry
+		$entries.remove();
+	} else {
+		// Remove the scene entry (TODO: Replace at same place)
+		$entries.remove();
+		// if it just has been changed or wasn't in the list at all we need to add it
+		var entry = {"sceneid":doc.id_, "name":doc.name, "counter":storageInstance.sceneItemCount(doc.id_)};
 		var categories = doc.categories;
 		// No categories: Add it to the general categories
 		if (categories.length == 0)
@@ -251,10 +265,10 @@ function sceneChanged(doc, removed) {
 }
 
 
-function removeSceneItem(doc) {
+function removeSceneItem(doc, temporary) {
 	var formid = doc.type_+"_"+doc.componentid_+"_"+doc.id_;
 	formid = formid.replace(/\./g,"_");
-	$('#'+formid).remove();
+	$('#'+formid).hide("slow", function(){ $(this).remove(); })
 }
 
 function addSceneItem(doc, temporary) {
@@ -278,11 +292,16 @@ function addSceneItem(doc, temporary) {
 		entry.subname = schema.name;
 		entry.typetheme= (doc.type_=="action")?"a":((doc.type_=="condition")?"b":"c");
 	}
-	if (temporary)
+	if (temporary) {
 		entry.typetheme= "d";
+		entry.name +=" (Neu, nicht gespeichert)"
+	}
 	
 	var $elem = $(templateSceneServiceItem(entry));
 	var ok = createParameterForm($elem.children('ul'), schema, doc);
+	
+	if (temporary && !ok)
+		return;
 	
 	// add or replace in dom
 	if ($('#'+formid).length) { // already there
@@ -293,8 +312,10 @@ function addSceneItem(doc, temporary) {
 	
 	// post-dom-adding stuff
 	$elem.trigger("create");
-	$elem.find(".btnSaveSceneitem").addClass("ui-disabled");
-	//if (temporary)
+	
+	if (!temporary)
+		$elem.find(".btnSaveSceneitem").addClass("ui-disabled");
+	
 	if (ok)
 		registerChangeNotifiers($elem.children('ul'), function($ulBase) {$ulBase.find(".btnSaveSceneitem").removeClass("ui-disabled");});
 }
@@ -303,12 +324,14 @@ function setscene(sceneid) {
 	if (sceneid === null) {
 		$("#btnAddSceneItem").addClass("ui-disabled");
 		$("#btnChangeTags").addClass("ui-disabled");
-		$("#btnChangeSceneName").addClass("hiddenButton");
+		$("#btnChangeSceneName").addClass("hidden");
+		$("#helptexteditor").removeClass("hidden");
 		return;
 	}
 	$("#btnAddSceneItem").removeClass("ui-disabled");
 	$("#btnChangeTags").removeClass("ui-disabled");
-	$("#btnChangeSceneName").removeClass("hiddenButton");
+	$("#btnChangeSceneName").removeClass("hidden");
+	$("#helptexteditor").addClass("hidden");
 	
 	$(".currentscene").text(storageInstance.scenes[storageInstance.unqiueSceneID(sceneid)].name);
 	$("#sceneservices").children().remove();
