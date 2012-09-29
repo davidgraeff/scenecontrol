@@ -46,7 +46,7 @@ private:
 
     void calculate_next_events();
     struct EventTimeStructure {
-        QString collectionuid;
+        QString sceneid;
         QDate date;
         QTime time;
         QBitArray days;

@@ -68,27 +68,27 @@ bool plugin::timespan ( const QString& current, const QString& lower, const QStr
     return true;
 }
 
-void plugin::eventDateTime ( const QString& _id, const QString& collection_, const QString& date, const QString& time) {
+void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time) {
     // remove from next events
-    m_timeout_events.remove ( _id );
+    m_timeout_events.remove ( id_ );
 
     // recalculate next event
     EventTimeStructure s;
-    s.collectionuid = collection_;
+    s.sceneid = sceneid_;
     s.date = QDate::fromString(date, QLatin1String("dd.MM.yyyy"));
     s.time = QTime::fromString(time, QLatin1String("h:m"));
-    m_remaining_events[_id] = s;
+    m_remaining_events[id_] = s;
     calculate_next_events();
 
     // property update
     SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
-    sc.setData("uid", _id);
+    sc.setData("uid", id_);
     changeProperty(sc.getData());
 }
 
-void plugin::eventPeriodic ( const QString& _id, const QString& collection_, const QString& time, const QVariantList& days) {
+void plugin::eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days) {
     // remove from next events
-    m_timeout_events.remove ( _id );
+    m_timeout_events.remove ( id_ );
 	
 	QVariantList days_ = days;
 	QBitArray converted(7);
@@ -101,15 +101,15 @@ void plugin::eventPeriodic ( const QString& _id, const QString& collection_, con
 // qDebug() << __FUNCTION__ << time << converted.testBit(0) << converted.testBit(1) << converted.testBit(2) << converted.testBit(3);
     // recalculate next event
     EventTimeStructure s;
-    s.collectionuid = collection_;
+    s.sceneid = sceneid_;
     s.time = QTime::fromString(time, QLatin1String("h:m"));
     s.days = converted;
-    m_remaining_events[_id] = s;
+    m_remaining_events[id_] = s;
     calculate_next_events();
 
     // property update
     SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
-    sc.setData("uid", _id);
+    sc.setData("uid", id_);
     changeProperty(sc.getData());
 }
 
@@ -154,7 +154,7 @@ void plugin::timeout() {
     // events triggered, propagate to server
     QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
     for (;i != m_remaining_events.end(); ++i) {
-        eventTriggered( i.key().toAscii(), i.value().collectionuid.toAscii() );
+        eventTriggered( i.key().toAscii(), i.value().sceneid.toAscii() );
     }
     m_timeout_events.clear();
 
@@ -182,7 +182,7 @@ void plugin::calculate_next_events() {
                 min_next_time[sec].insert ( eventid, eventtime );
                 removeEventids.insert ( eventid );
             } else if ( sec > -10 && sec < 10 ) {
-                eventTriggered ( eventid.toAscii(), eventtime.collectionuid.toAscii() );
+                eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
                 removeEventids.insert ( eventid );
             }
         } else if ( !eventtime.days.isEmpty() ) {
