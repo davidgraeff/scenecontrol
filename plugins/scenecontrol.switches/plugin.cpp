@@ -100,7 +100,7 @@ void plugin::setSwitch ( const QString& channel, bool value )
 	doc.setMethod("setSwitch");
 	doc.setData("channel",channel);
 	doc.setData("value",value);
-	callRemoteComponentMethod(doc.componentUniqueID().toUtf8(), doc.getData());
+	callRemoteComponentMethod(p.componentUniqueID, doc.getData());
 }
 
 void plugin::setSwitchName ( const QString& channel, const QString& name )
