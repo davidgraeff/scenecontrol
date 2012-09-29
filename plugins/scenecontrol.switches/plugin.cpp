@@ -35,9 +35,6 @@ int main(int argc, char* argv[]) {
 }
 
 plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
-    connect(&m_cacheTimer, SIGNAL(timeout()), SLOT(cacheToDevice()));
-    m_cacheTimer.setInterval(50);
-    m_cacheTimer.setSingleShot(true);
 }
 
 plugin::~plugin() {
@@ -97,7 +94,13 @@ void plugin::setSwitch ( const QString& channel, bool value )
     p.value = value;
     m_cache.insert(&p);
 
-    if (!m_cacheTimer.isActive()) m_cacheTimer.start();
+	SceneDocument doc;
+	doc.setComponentID(m_pluginid);
+	doc.setInstanceID(m_instanceid);
+	doc.setMethod("setSwitch");
+	doc.setData("channel",channel);
+	doc.setData("value",value);
+	callRemoteComponentMethod(doc.componentUniqueID().toUtf8(), doc.getData());
 }
 
 void plugin::setSwitchName ( const QString& channel, const QString& name )

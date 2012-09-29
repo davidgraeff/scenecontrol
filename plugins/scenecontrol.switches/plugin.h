@@ -48,8 +48,6 @@ private Q_SLOTS:
     bool getSwitch( const QString& channel ) const;
     bool isSwitchOn( const QString& channel, bool value );
     int countSwitchs();
-    
-    void cacheToDevice();
 private:
     struct iochannel {
         bool value;
@@ -62,7 +60,6 @@ private:
         }
     };
     QMap<QString,iochannel> m_ios;
-    QTimer m_cacheTimer;
     QSet<iochannel*> m_cache;
     QMap<QString, QString> m_namecache;
 };
