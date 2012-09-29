@@ -126,7 +126,7 @@ void plugin::readyRead()
 		doc.setData("channel",channelid);
 		doc.setData("value",value);
 		doc.setData("name",channelid);
-		sendDataToComponent("scenecontrol.switchesnull", doc.getData());
+		callRemoteComponentMethod("scenecontrol.switchesnull", doc.getData());
 	
         // update cache
         if(value)
@@ -209,7 +209,7 @@ void plugin::clear()
     doc.setMethod("clear");
 	doc.setComponentID(m_pluginid);
 	doc.setInstanceID(m_instanceid);
-    sendDataToComponent("scenecontrol.switchesnull", doc.getData());
+    callRemoteComponentMethod("scenecontrol.switchesnull", doc.getData());
 }
 
 void plugin::configChanged(const QByteArray &configid, const QVariantMap &data)

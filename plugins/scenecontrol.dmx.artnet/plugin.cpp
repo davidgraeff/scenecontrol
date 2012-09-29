@@ -52,7 +52,7 @@ void plugin::clear() {
     doc.setMethod("clear");
 	doc.setComponentID(m_pluginid);
 	doc.setInstanceID(m_instanceid);
-    sendDataToComponent("scenecontrol.ledsnull", doc.getData());
+    callRemoteComponentMethod("scenecontrol.ledsnull", doc.getData());
 }
 
 void plugin::initialize() {}
@@ -97,7 +97,7 @@ void plugin::ledChanged(QString channel, int value) {
 	doc.setData("channel",channel);
 	doc.setData("value",value);
 	doc.setData("name",QString());
-	sendDataToComponent("scenecontrol.ledsnull", doc.getData());
+	callRemoteComponentMethod("scenecontrol.ledsnull", doc.getData());
 }
 
 int plugin::getLed ( const QString& channel ) const {

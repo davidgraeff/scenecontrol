@@ -102,7 +102,7 @@ void AbstractPlugin::readyReadCommunication()
         // Retrieve method
         const QByteArray method = doc.method();
 
-        // Predefined methods
+        // Server callable methods
         if (method == "pluginid") {
 			SceneDocument transferdoc;
 			transferdoc.setMethod("pluginid");
@@ -121,7 +121,7 @@ void AbstractPlugin::readyReadCommunication()
             session_change(m_lastsessionid, doc.toBool("running"));
         } else if (method == "unregister_event") {
             unregister_event(doc.toString("eventid"));
-		} else if (method == "callslot") {
+		} else if (method == "callslot") { // server and other plugins callable methods
 			// Extract data document out of the transfered doc
 			SceneDocument dataDocument(variantdata.value(QLatin1String("doc")).toMap());
             // Prepare response
@@ -180,15 +180,23 @@ void AbstractPlugin::newConnectionCommunication()
     }
 }
 
+bool AbstractPlugin::callRemoteComponentMethod( const QByteArray& componentUniqueID, const QVariantMap& dataout )
+{
+    QVariantMap d;
+	d.insert(QLatin1String("doc"), dataout);
+	d.insert(QLatin1String("method_"), "callslot");
+	return sendDataToComponent(componentUniqueID, d);
+}
+
 bool AbstractPlugin::sendDataToComponent( const QByteArray& componentUniqueID, const QVariantMap& dataout )
 {
-    QLocalSocket* socket = getClientConnection(componentUniqueID);
-    if (!socket) {
-        qWarning() << "Failed to send data to" << componentUniqueID;
-        return false;
-    }
-    writeToSocket(socket, dataout);
-    return true;
+	QLocalSocket* socket = getClientConnection(componentUniqueID);
+	if (!socket) {
+		qWarning() << "Failed to send data to" << componentUniqueID;
+		return false;
+	}
+	writeToSocket(socket, dataout);
+	return true;
 }
 
 QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& componentUniqueID) {

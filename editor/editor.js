@@ -326,6 +326,8 @@ function setscene(sceneid) {
 		$("#btnChangeTags").addClass("ui-disabled");
 		$("#btnChangeSceneName").addClass("hidden");
 		$("#helptexteditor").removeClass("hidden");
+		$("#sceneservices").children().remove();
+		$(".currentscene").text("Keine Szene ausgewählt");
 		return;
 	}
 	$("#btnAddSceneItem").removeClass("ui-disabled");

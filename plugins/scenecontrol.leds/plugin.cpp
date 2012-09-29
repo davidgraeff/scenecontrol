@@ -141,7 +141,7 @@ void plugin::setLed ( const QString& channel, int value, int fade )
 	doc.setData("channel",channel);
 	doc.setData("value",value);
 	doc.setData("fade",fade);
-    sendDataToComponent(p.componentUniqueID, doc.getData());
+    callRemoteComponentMethod(p.componentUniqueID, doc.getData());
 }
 
 void plugin::setLedName ( const QString& channel, const QString& name, bool updateDatabase )
