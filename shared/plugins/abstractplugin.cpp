@@ -137,7 +137,6 @@ void AbstractPlugin::readyReadCommunication()
                 writeToSocket(socket, transferdoc.getData());
                 continue;
             }
-            qDebug() << "callslot of" << dataDocument.getjson() << methodId;
 			
             QVector<QVariant> argumentsInOrder(9);
             int params;
@@ -154,7 +153,7 @@ void AbstractPlugin::readyReadCommunication()
             QByteArray responseid = variantdata.value(QLatin1String("responseid_")).toByteArray();
             transferdoc.setData("responseid_", responseid);
             transferdoc.setData("response_",
-								invokeSlot(method, params, returntype,
+								invokeSlot(dataDocument.method(), params, returntype,
 											argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3],
 											argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]));
             if (responseid.size()) {
