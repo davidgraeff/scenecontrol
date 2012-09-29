@@ -8,7 +8,7 @@
  ****************************************************************************/
 
 #include "json.h"
-#include "jsonparser.cpp"
+#include "jsonparser.hpp"
 
 #include <QTextCodec>
 #include <qnumeric.h>
