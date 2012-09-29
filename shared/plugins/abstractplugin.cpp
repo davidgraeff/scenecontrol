@@ -121,13 +121,15 @@ void AbstractPlugin::readyReadCommunication()
             session_change(m_lastsessionid, doc.toBool("running"));
         } else if (method == "unregister_event") {
             unregister_event(doc.toString("eventid"));
-        } else {
+		} else if (method == "callslot") {
+			// Extract data document out of the transfered doc
+			SceneDocument dataDocument(doc.getData().value(QLatin1String("doc")).toMap());
             // Prepare response
 			SceneDocument transferdoc;
 			transferdoc.setMethod("methodresponse");
 			transferdoc.setComponentID(m_pluginid);
 			
-            int methodId = invokeHelperGetMethodId(method);
+			int methodId = invokeHelperGetMethodId(dataDocument.method());
             // If method not found call dataFromPlugin
             if (methodId == -1) {
                 qWarning() << "Method not found!" << method;
@@ -138,8 +140,8 @@ void AbstractPlugin::readyReadCommunication()
 
             QVector<QVariant> argumentsInOrder(9);
             int params;
-            if ((params = invokeHelperMakeArgumentList(methodId, variantdata, argumentsInOrder)) == -1) {
-				qWarning() << "Arguments list incompatible!" << method << methodId << variantdata << argumentsInOrder;
+			if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
+				qWarning() << "Arguments list incompatible!" << method << methodId << dataDocument.getData() << argumentsInOrder;
                 transferdoc.setData("error", "Arguments list incompatible!");
                 writeToSocket(socket, transferdoc.getData());
                 continue;

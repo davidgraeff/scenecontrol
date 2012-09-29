@@ -186,7 +186,7 @@ void Socket::readyRead() {
 				continue;
 			}
 			// Call the remote method of the plugin
-			plugin->callQtSlot ( doc.getData(), QByteArray(), sessionid );
+			plugin->callQtSlot ( doc, QByteArray(), sessionid );
 			continue;
 		}
 		

@@ -96,7 +96,7 @@ void RunningCollection::timeoutNextAction()
 
     while (lowerBound != upperBound) {
         const dataWithPlugin& dp = lowerBound.value();
-        dp.plugin->callQtSlot ( dp.doc->getData() );
+        dp.plugin->callQtSlot ( *dp.doc );
         ++lowerBound;
     }
 

@@ -98,7 +98,7 @@ void PluginProcess::setSocket(QLocalSocket* socket)
 	filter.setInstanceID(m_instanceid);
 	QList<SceneDocument*> events = DataStorage::instance()->requestAllOfType(SceneDocument::TypeEvent, filter.getData());
 	for (int i=0;i<events.size();++i)
-		callQtSlot(events[i]->getData());
+		callQtSlot(*events[i]);
 }
 
 QLocalSocket* PluginProcess::getSocket() {
@@ -253,13 +253,15 @@ void PluginProcess::session_change(int sessionid, bool running)
     writeToPlugin(doc.getData());
 }
 
-void PluginProcess::callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid, int sessionid) {
-    SceneDocument doc(methodAndArguments);
-    if (!doc.hasMethod()) {
-        qWarning() << "Call of qt slot without method" << methodAndArguments;
+void PluginProcess::callQtSlot(const SceneDocument& dataDocument, const QByteArray& responseid, int sessionid) {
+	if (!dataDocument.hasMethod()) {
+		qWarning() << "Call of qt slot without method" << dataDocument.getjson();
         return;
     }
-    doc.setid(QString::fromAscii(responseid));
+    SceneDocument doc;
+	doc.setMethod("callslot");
+	doc.setid(QString::fromAscii(responseid));
     doc.setSessionID(sessionid);
+	doc.setData("doc", dataDocument.getData());
     writeToPlugin(doc.getData());
 }

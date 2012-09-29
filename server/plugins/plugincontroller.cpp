@@ -134,7 +134,7 @@ void PluginController::doc_changed(const SceneDocument* doc) {
 		}
 
 		plugin->unregister_event ( doc->id() );
-		plugin->callQtSlot(doc->getData());
+		plugin->callQtSlot(*doc);
 		m_registeredevents.insert(doc->id(), plugin);
 	} else if (doc->checkType(SceneDocument::TypeConfiguration)) {
 		startPluginProcessByConfiguration(doc);

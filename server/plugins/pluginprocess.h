@@ -4,6 +4,7 @@
 #include <QLocalSocket>
 #include <QVariantMap>
 #include <QTimer>
+#include <shared/jsondocuments/scenedocument.h>
 
 class PluginController;
 
@@ -78,7 +79,7 @@ public Q_SLOTS:
     void session_change ( int sessionid, bool running );
     /// Proxy Method: Call Qt Slot of the plugin. The QVariantMap have to contain at least a method_ member
     /// Responses are asynchron and propagated through the signal qtSlotResponse
-    void callQtSlot(const QVariantMap& methodAndArguments, const QByteArray& responseid = QByteArray(), int sessionid = -1);
+    void callQtSlot(const SceneDocument& dataDocument, const QByteArray& responseid = QByteArray(), int sessionid = -1);
 Q_SIGNALS:
     void qtSlotResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid, const QString& instanceid);
 };
