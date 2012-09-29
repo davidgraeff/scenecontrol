@@ -132,7 +132,7 @@ void AbstractPlugin::readyReadCommunication()
 			int methodId = invokeHelperGetMethodId(dataDocument.method());
             // If method not found call dataFromPlugin
             if (methodId == -1) {
-                qWarning() << "Method not found!" << method;
+				qWarning() << "Method not found!" << dataDocument.method();
 				transferdoc.setData("error", "Method not found!");
                 writeToSocket(socket, transferdoc.getData());
                 continue;
@@ -141,7 +141,7 @@ void AbstractPlugin::readyReadCommunication()
             QVector<QVariant> argumentsInOrder(9);
             int params;
 			if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
-				qWarning() << "Arguments list incompatible!" << method << methodId << dataDocument.getData() << argumentsInOrder;
+				qWarning() << "Arguments list incompatible!" << dataDocument.method() << methodId << dataDocument.getData() << argumentsInOrder;
                 transferdoc.setData("error", "Arguments list incompatible!");
                 writeToSocket(socket, transferdoc.getData());
                 continue;
@@ -287,7 +287,7 @@ QVariant AbstractPlugin::invokeSlot(const QByteArray& methodname, int numParams,
     QVariant result(QVariant::nameToType(returntype));
     bool ok = QMetaObject::invokeMethod(this, methodname, QGenericReturnArgument(returntype,result.data()), QX_ARG(0), QX_ARG(1), QX_ARG(2), QX_ARG(3), QX_ARG(4), QX_ARG(5), QX_ARG(6), QX_ARG(7), QX_ARG(8));
     if (!ok) {
-        qWarning() << __FUNCTION__ << "failed";
+		qWarning() << __FUNCTION__ << "failed:"<<methodname;
     }
     return result;
 }
