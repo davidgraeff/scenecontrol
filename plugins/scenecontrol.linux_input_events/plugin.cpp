@@ -94,28 +94,29 @@ void plugin::inputevent ( const QString& id_, const QString& sceneid_, const QSt
 		qWarning() << "Not registering event:" << id_ << sceneid_;
 		return;
 	}
-	QByteArray id__ = id_.toAscii();
+	QByteArray eventID = id_.toAscii();
     // Add to input events list
     EventInputStructure s;
     s.collectionuid = sceneid_.toAscii();
     s.inputdevice = inputdevice.toAscii();
     s.kernelkeyname = kernelkeyname.toAscii();
     s.repeat = repeat;
-    m_events.insert(id__, s);
+	m_events.insert(eventID, s);
 
     // If device for this event already exists, register key
     InputDevice* inputdeviceObj = m_devices.value ( inputdevice.toAscii() );
     if ( !inputdeviceObj )
         return;
-    m_devices_by_eventsids.insert(id__, inputdeviceObj);
-    inputdeviceObj->registerKey ( id__, sceneid_, s.kernelkeyname, repeat );
-    qDebug() << "Register event" << kernelkeyname << inputdeviceObj->device()->devPath << id__;
+	m_devices_by_eventsids.insert(eventID, inputdeviceObj);
+	inputdeviceObj->registerKey ( eventID, sceneid_, s.kernelkeyname, repeat );
+	qDebug() << "Register event" << kernelkeyname << inputdeviceObj->device()->devPath << eventID;
 }
 
 void plugin::unregister_event ( const QString& eventid) {
     const QByteArray eventID = eventid.toAscii();
     m_events.remove(eventID);
     InputDevice* inputdevice = m_devices_by_eventsids.take ( eventID );
+	qDebug() << "Unregister event" << eventID;
     if ( inputdevice )
         inputdevice->unregisterKey (eventID );
 }
