@@ -123,7 +123,7 @@ void AbstractPlugin::readyReadCommunication()
             unregister_event(doc.toString("eventid"));
 		} else if (method == "callslot") {
 			// Extract data document out of the transfered doc
-			SceneDocument dataDocument(doc.getData().value(QLatin1String("doc")).toMap());
+			SceneDocument dataDocument(variantdata.value(QLatin1String("doc")).toMap());
             // Prepare response
 			SceneDocument transferdoc;
 			transferdoc.setMethod("methodresponse");
@@ -137,7 +137,8 @@ void AbstractPlugin::readyReadCommunication()
                 writeToSocket(socket, transferdoc.getData());
                 continue;
             }
-
+            qDebug() << "callslot of" << dataDocument.getjson() << methodId;
+			
             QVector<QVariant> argumentsInOrder(9);
             int params;
 			if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
