@@ -1,10 +1,10 @@
 #!/bin/sh
-DIR="$(dirname $0)"
+DIR="$(which sceneserver)"
 if [ $# -ne 1 ]
 then
 # start screen and connect to it
-screen -RmS server  $DIR/sceneserver
+screen -RmS server  $DIR
 else
 # start screen detachted
-screen -dmS server  $DIR/sceneserver
+screen -dmS server  $DIR
 fi
