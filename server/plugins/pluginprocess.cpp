@@ -33,7 +33,7 @@ void PluginProcess::startProcess()
     }
     m_filename = plugindir.absoluteFilePath(files[0]);
     m_pid = 0;
-    if (!QProcess::startDetached(m_filename, QStringList() << m_instanceid, QString(), &m_pid))
+    if (!QProcess::start(m_filename, QStringList() << m_instanceid, QString(), &m_pid))
         qWarning() << "Failed starting plugin process" << m_filename;
 
     // Waiting at most 7 seconds for a respond otherwise kill the connection
@@ -46,7 +46,7 @@ void PluginProcess::shutdown()
 {
 	m_timeout.stop();
     if (m_pid) {
-        if (kill(m_pid, SIGTERM)==1)
+        if (kill(m_pid, SIGTERM)!=0)
             kill(m_pid, SIGKILL);
         m_pid = 0;
     }
