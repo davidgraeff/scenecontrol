@@ -33,8 +33,13 @@ void PluginProcess::startProcess()
     }
     m_filename = plugindir.absoluteFilePath(files[0]);
     m_pid = 0;
-    if (!QProcess::start(m_filename, QStringList() << m_instanceid, QString(), &m_pid))
-        qWarning() << "Failed starting plugin process" << m_filename;
+    if (!QProcess::startDetached(m_filename, QStringList() << m_instanceid, QString(), &m_pid))
+		qWarning() << "Failed starting plugin process" << m_filename;
+	// 	{
+// 		QProcess a;
+// 		a.start(m_filename, QStringList() << m_instanceid, QString());
+// 		m_pid = a.pid();
+// 	}
 
     // Waiting at most 7 seconds for a respond otherwise kill the connection
 	connect(&m_timeout, SIGNAL(timeout()), SLOT(responseTimeout()));
