@@ -194,10 +194,13 @@ void rs232leds::panicTimeout() {
 		qDebug() << "panic timeout";
 	
 	if (!m_serial->isOpen()) {
+		qDebug() << "panic timeout_2";
 		m_panicTimer.stop();
 		QString devicename = m_serial->deviceName();
 		connectToLeds(devicename);
+		qDebug() << "panic timeout_2a";
 	}
+	qDebug() << "panic timeout_3";
 	
 }
 
