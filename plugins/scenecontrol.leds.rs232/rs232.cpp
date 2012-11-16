@@ -175,8 +175,8 @@ int rs232leds::countLeds() {
 
 void rs232leds::panicTimeout() {
     if ( !m_serial ) return;
-	const char t1[] = {0xff, 0xff, 0x00};
-    if ( !m_serial->isOpen() || m_serial->write ( t1, sizeof ( t1 ) ) == -1 ) {
+	const unsigned char t1[] = {0xff, 0xff, 0x00};
+    if ( !m_serial->isOpen() || m_serial->write ( (const char*)t1, sizeof ( t1 ) ) == -1 ) {
         if (m_connected) {
             m_connected = false;
             qWarning() << "Leds.RS232" << "Failed to reset panic counter. Try reconnection";
@@ -212,8 +212,8 @@ void rs232leds::connectToLeds ( const QString& device ) {
                                 | QxtSerialDevice::Stop1 | QxtSerialDevice::Bit8);
     connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
 
-	const char t1[] = {0xff, 0xff, (char)0xef};
-    if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1, sizeof ( t1 ) ) ) {
+	const unsigned char t1[] = {0xff, 0xff, 0xef};
+    if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( (const char*)t1, sizeof ( t1 ) ) ) {
         qWarning() << "Leds.RS232" << "rs232 error:" << m_serial->errorString();
     } else {
         qDebug() << "Leds.RS232" << "connected to"<<device;

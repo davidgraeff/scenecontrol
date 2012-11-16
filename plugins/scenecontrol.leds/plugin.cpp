@@ -212,11 +212,11 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
     }
 }
 
-void plugin::subpluginChange(const QByteArray& plugin_, const QString& channel, int value, const QString& name) {
+void plugin::subpluginChange(const QString& componentid_, const QString& instanceid_, const QString& channel, int value, const QString& name) {
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];
-    io.componentUniqueID = plugin_;
+	io.componentUniqueID = QString(componentid_+instanceid_).toUtf8();
     //p.moodlight = false;
     //p.fadeType = 1;
     io.channel = channel;
