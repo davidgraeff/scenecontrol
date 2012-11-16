@@ -61,7 +61,7 @@ function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
 			
 			for (var i=0;i<parameter.data.length;++i) {
 				var itemDomID = domid + i;
-				d+= '<input type="radio" name="'+paramid+'" id="'+itemDomID+'" data-type="'+parameter.type+'" value="'+parameter.data[i]+'" '+(i==doc[paramid]?'checked="checked"':'')+' />' +
+				d+= '<input type="radio" name="'+paramid+'" id="'+itemDomID+'" data-type="'+parameter.type+'" value="'+i+'" '+(i==doc[paramid]?'checked="checked"':'')+'>' +
 				'<label for="'+itemDomID+'">'+parameter.data[i]+'</label>';
 			}
 			
