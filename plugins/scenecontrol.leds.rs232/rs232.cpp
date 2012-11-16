@@ -188,12 +188,17 @@ void rs232leds::panicTimeout() {
 	m_panicTimeoutAck = false;
 	
 	const unsigned char t1[] = {0xff, 0xff, 0x00};
-	if ( !m_serial->isOpen() || m_serial->write ( (const char*)t1, sizeof ( t1 ) ) != sizeof ( t1 ) ) {
+	if (m_serial->write ( (const char*)t1, sizeof ( t1 ) ) != sizeof ( t1 ) ) {
 		qWarning() << "Leds.RS232" << "Failed to reset panic counter. Try reconnection";
+	} else
+		qDebug() << "panic timeout";
+	
+	if (!m_serial->isOpen()) {
 		m_panicTimer.stop();
 		QString devicename = m_serial->deviceName();
 		connectToLeds(devicename);
-    }
+	}
+	
 }
 
 void rs232leds::connectToLeds ( const QString& device ) {
@@ -222,7 +227,7 @@ void rs232leds::connectToLeds ( const QString& device ) {
     }
 
     // panic counter
-    m_panicTimer.setInterval ( 40000 );
+    m_panicTimer.setInterval ( 1000 );
     connect ( &m_panicTimer,SIGNAL ( timeout() ),SLOT ( panicTimeout() ) );
     m_panicTimer.start();
 }
