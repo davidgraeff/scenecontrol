@@ -193,10 +193,6 @@ void rs232leds::panicTimeout() {
 		m_panicTimer.stop();
 		QString devicename = m_serial->deviceName();
 		connectToLeds(devicename);
-		const unsigned char t1[] = {0xff, 0xff, 0xef};
-		if ( !m_serial->open ( QIODevice::ReadWrite ) || m_serial->write ( (const char*)t1,  sizeof ( t1 ) ) != sizeof ( t1 ) ) {
-            qWarning() << "Leds.RS232" << "rs232 init fehler";
-        }
     }
 }
 
