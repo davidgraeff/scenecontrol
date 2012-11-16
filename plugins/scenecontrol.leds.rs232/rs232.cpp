@@ -62,7 +62,8 @@ void rs232leds::readyRead() {
             }
         }
         if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
-            switch ( m_buffer[0] ) {
+			qDebug() << "Read" << m_buffer[0];
+			switch ( m_buffer[0] ) {
             case 'S': //sensors
                 if ( m_buffer.size() <2 ) break;
                 parseSensors ( m_buffer[1] );
@@ -72,20 +73,18 @@ void rs232leds::readyRead() {
                 parseCurtain ( m_buffer[1], m_buffer[2] );
                 break;
             case 'L': //leds
-                if ( m_buffer.size() <2 ) break;
+				if ( m_buffer.size() <2 || m_buffer.size() <m_buffer[1]+2 ) break;
 				parseLeds ( m_buffer.mid ( 2, m_buffer[1] ), m_buffer[1] );
                 break;
             case 'I': //init
                 if ( m_buffer.size() <2 ) break;
                 parseInit ( m_buffer[1] );
                 break;
-            case 'O': //panic timeout ack
+            case 'A': //panic timeout ack
                 m_panicTimeoutAck = true;
                 break;
             default:
                 qWarning()<< "Leds.RS232" << "command unknown: (Command, BufferSize)" << m_buffer[0] << m_buffer.size();
-                m_buffer.clear();
-                m_bufferpos = 0;
             }
             m_readState = ReadOK;
         }
