@@ -128,7 +128,7 @@ void rs232leds::parseLeds ( const QByteArray& data, int channels ) {
 void rs232leds::setCurtain ( unsigned int position ) {
     if ( !m_serial ) return;
     m_curtain_value = position;
-	const unsigned char t1[] = {0xdf, static_cast<unsigned char>(position)};
+	const unsigned char t1[] = {0xff, 0xff, 0xdf, static_cast<unsigned char>(position)};
 	if (m_serial->write ( (const char*)t1, sizeof ( t1 ) ) == sizeof ( t1 )) {
 		emit curtainChanged ( m_curtain_value, m_curtain_max );
 	}
@@ -166,7 +166,7 @@ void rs232leds::setLed ( const QString& channel, int value, int fade ) {
     default:
         break;
     };
-    const unsigned char t1[] = {cfade, static_cast<unsigned char>(channel.toUInt()), static_cast<unsigned char>(value)};
+	const unsigned char t1[] = {0xff, 0xff, cfade, static_cast<unsigned char>(channel.toUInt()), static_cast<unsigned char>(value)};
     m_serial->write ( (const char*)t1, sizeof ( t1 ) );
 }
 
@@ -176,14 +176,14 @@ int rs232leds::countLeds() {
 
 void rs232leds::panicTimeout() {
     if ( !m_serial ) return;
-    const char t1[] = {0x00};
+	const char t1[] = {0xff, 0xff, 0x00};
     if ( !m_serial->isOpen() || m_serial->write ( t1, sizeof ( t1 ) ) == -1 ) {
         if (m_connected) {
             m_connected = false;
             qWarning() << "Leds.RS232" << "Failed to reset panic counter. Try reconnection";
         }
         m_serial->close();
-        const unsigned char t1[] = {0xef};
+		const unsigned char t1[] = {0xff, 0xff, 0xef};
         if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( (const char*)t1,  sizeof ( t1 ) ) ) {
             qWarning() << "Leds.RS232" << "rs232 init fehler";
         }
@@ -213,7 +213,7 @@ void rs232leds::connectToLeds ( const QString& device ) {
                                 | QxtSerialDevice::Stop1 | QxtSerialDevice::Bit8);
     connect ( m_serial, SIGNAL ( readyRead() ), SLOT ( readyRead() ) );
 
-    const char t1[] = {(char)0xef};
+	const char t1[] = {0xff, 0xff, (char)0xef};
     if ( !m_serial->open ( QIODevice::ReadWrite ) || !m_serial->write ( t1, sizeof ( t1 ) ) ) {
         qWarning() << "Leds.RS232" << "rs232 error:" << m_serial->errorString();
     } else {
