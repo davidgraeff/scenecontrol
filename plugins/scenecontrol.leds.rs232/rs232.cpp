@@ -64,7 +64,7 @@ void rs232leds::readyRead() {
 		}
 	}
 	if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
-		qDebug() << "Read" << m_buffer[0];
+// 		qDebug() << "Read" << m_buffer[0];
 		switch ( m_buffer[0] ) {
 		case 'S': //sensors
 			if ( m_buffer.size() <2 ) break;
@@ -190,19 +190,15 @@ void rs232leds::panicTimeout() {
 	
 	const unsigned char t1[] = {0xff, 0xff, 0x00};
 	if (m_serial->write ( (const char*)t1, sizeof ( t1 ) ) != sizeof ( t1 ) ) {
-		qWarning() << "Leds.RS232" << "Failed to reset panic counter. Try reconnection";
-	} else
-		qDebug() << "panic timeout";
+		m_serial->close();
+	}
 	
 	if (!m_serial->isOpen()) {
-		qDebug() << "panic timeout_2";
+		qWarning() << "Leds.RS232" << "Failed to reset panic counter. Try reconnection";
 		m_panicTimer.stop();
 		QString devicename = m_serial->deviceName();
 		connectToLeds(devicename);
-		qDebug() << "panic timeout_2a";
 	}
-	qDebug() << "panic timeout_3";
-	
 }
 
 void rs232leds::connectToLeds ( const QString& device ) {
