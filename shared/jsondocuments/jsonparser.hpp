@@ -316,7 +316,7 @@ const short JsonGrammar::action_check [] = {
 		const ushort *uc = m_strdata.utf16();
 		const int l = m_strdata.length();
 		const int negative = (uc[m_pos] == L1C('-') ? ++m_pos, -1 : (uc[m_pos] == L1C('+') ? ++m_pos, 1 : 1));
-		qlonglong value = 0;
+		int value = 0; //qlonglong
 		for (; m_pos < l; ++m_pos) {
 			const ushort &c = uc[m_pos];
 			if (c == L1C('+') || c == L1C('-'))

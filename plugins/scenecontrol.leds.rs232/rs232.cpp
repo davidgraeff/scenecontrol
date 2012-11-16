@@ -220,7 +220,7 @@ void rs232leds::connectToLeds ( const QString& device ) {
     }
 
     // panic counter
-    m_panicTimer.setInterval ( 50000 );
+    m_panicTimer.setInterval ( 40000 );
     connect ( &m_panicTimer,SIGNAL ( timeout() ),SLOT ( panicTimeout() ) );
     m_panicTimer.start();
 }
