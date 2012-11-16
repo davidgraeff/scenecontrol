@@ -39,12 +39,14 @@ void rs232leds::disconnectLeds() {
 }
 
 void rs232leds::readyRead() {
-    QByteArray bytes;
-    bytes.resize ( m_serial->bytesAvailable() );
-    m_serial->read ( bytes.data(), bytes.size() );
-    m_buffer.append ( bytes );
-    m_readState = ReadOK;
-    if ( m_buffer.isEmpty() )
+	{
+		QByteArray bytes;
+		bytes.resize ( m_serial->bytesAvailable() );
+		m_serial->read ( bytes.data(), bytes.size() );
+		m_buffer.append ( bytes );
+	}
+
+	if ( m_buffer.isEmpty() )
 		return;
 
 	if ( m_readState==ReadOK ) {
@@ -64,31 +66,39 @@ void rs232leds::readyRead() {
 		}
 	}
 	if ( m_readState == ReadEnd && m_buffer.size() >1 ) {
+		bool finished = false;
 // 		qDebug() << "Read" << m_buffer[0];
 		switch ( m_buffer[0] ) {
 		case 'S': //sensors
 			if ( m_buffer.size() <2 ) break;
 			parseSensors ( m_buffer[1] );
+			finished = true;
 			break;
 		case 'M': //curtain motor
 			if ( m_buffer.size() <3 ) break;
 			parseCurtain ( m_buffer[1], m_buffer[2] );
+			finished = true;
 			break;
 		case 'L': //leds
 			if ( m_buffer.size() <2 || m_buffer.size() <m_buffer[1]+2 ) break;
 			parseLeds ( m_buffer.mid ( 2, m_buffer[1] ), m_buffer[1] );
+			finished = true;
 			break;
 		case 'I': //init
 			if ( m_buffer.size() <2 ) break;
 			parseInit ( m_buffer[1] );
+			finished = true;
 			break;
 		case 'A': //panic timeout ack
 			m_panicTimeoutAck = true;
+			finished = true;
 			break;
 		default:
 			qWarning()<< "Leds.RS232" << "command unknown: (Command, BufferSize)" << m_buffer[0] << m_buffer.size();
 		}
-		m_readState = ReadOK;
+		// only if all bytes for the last state have been received change the state to check for new packets
+		if (finished)
+			m_readState = ReadOK;
 	}
 }
 
