@@ -162,6 +162,10 @@ function serializeForm($form)
 				o = jQuery.extend(true, o, p);
 			} else if (type=="boolean") {
 				o[this.name] = (this.value=="1")?true:false;
+			} else if (type=="integer") {
+				o[this.name] = parseInt( this.value );
+			} else if (type=="enum") {
+				o[this.name] = parseInt( this.value );
 			} else
 				o[this.name] = this.value;
 		}
