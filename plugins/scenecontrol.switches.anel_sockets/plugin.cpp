@@ -113,7 +113,7 @@ void plugin::readyRead()
         m_ios[channelid].value = value;
 
         // send property
-        SceneDocument sc = SceneDocument::createModelChangeItem("switches");
+        SceneDocument sc = SceneDocument::createModelChangeItem("switches.anel_sockets");
         sc.setData("channel", channelid);
         sc.setData("value", value);
         changeProperty(sc.getData(), -1);
@@ -203,7 +203,7 @@ void plugin::clear()
     m_ios.clear();
     m_ios.clear();
 	
-	changeProperty(SceneDocument::createModelReset("switches", "channel").getData());
+	changeProperty(SceneDocument::createModelReset("switches.anel_sockets", "channel").getData());
 
     SceneDocument doc;
     doc.setMethod("clear");
@@ -223,11 +223,11 @@ void plugin::configChanged(const QByteArray &configid, const QVariantMap &data)
 
 void plugin::requestProperties(int sessionid)
 {
-    changeProperty(SceneDocument::createModelReset("switches", "channel").getData(), sessionid);
+    changeProperty(SceneDocument::createModelReset("switches.anel_sockets", "channel").getData(), sessionid);
     QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for(; i != m_ios.end(); ++i) {
         const plugin::iochannel str = i.value();
-        SceneDocument sc = SceneDocument::createModelChangeItem("switches");
+        SceneDocument sc = SceneDocument::createModelChangeItem("switches.anel_sockets");
         sc.setData("channel", i.key());
         sc.setData("value", str.value);
         changeProperty(sc.getData(), sessionid);
