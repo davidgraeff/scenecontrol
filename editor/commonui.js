@@ -109,6 +109,23 @@ function createParameterForm($ulBase, schema, doc, callbackInputChanged) {
 			'</li>';
 			
 			$ulBase.append(d);
+		} else if (parameter.type == "multienum") {
+			var d = '<li data-role="fieldcontain">' +
+			'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
+			'<select '+comon+' data-size="'+parameter.data.length+'" data-native-menu="false" multiple="multiple">';
+			var counter = 0;
+			var dataFromDoc = doc[paramid];
+			for (var index in parameter.data) {
+				var s = false;
+				if (dataFromDoc && dataFromDoc.length>counter && dataFromDoc[counter] === true)
+					s = true;
+				d += '<option value="'+counter+'" '+(s?'selected':'')+'>'+parameter.data[index]+'</option>';
+				++counter;
+			}
+			d += '</select>' +
+			'</li>';
+			
+			$ulBase.append(d);
 		} else {
 			$ulBase.append('<li>Unknown parameter: '+parameter.type+'</li>');
 			console.log("unknown parameter", parameter);
@@ -166,6 +183,22 @@ function serializeForm($form)
 				o[this.name] = parseInt( this.value );
 			} else if (type=="enum") {
 				o[this.name] = parseInt( this.value );
+			} else if (type=="multienum") {
+				var size = $form.find('[name='+this.name+']').attr('data-size');
+				console.log("save multienum", size);
+				var list = [];
+				for (var i=0;i<size;++i) {
+					console.log("save multienum item", i);
+					var c = false;
+					for (var j=0;j<this.value.length;++j) {
+						if (parseInt(this.value[j].value) == i) {
+							c = true;
+							break;
+						}
+					}
+					list[i] = c;
+				}
+				o[this.name] = list;
 			} else
 				o[this.name] = this.value;
 		}
