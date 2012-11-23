@@ -43,17 +43,18 @@ public Q_SLOTS:
     bool datespan ( const QString& current, const QString& lower, const QString& upper);
     bool timespan ( const QString& current, const QString& lower, const QString& upper);
 private:
-	/**
-	 * Return true if the event can be removed from the remaining events
-	 */
-	bool calculate_next_timer_timeout(int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime);
-    void calculate_next_events();
     struct EventTimeStructure {
         QString sceneid;
         QDate date;
         QTime time;
         QBitArray days;
     };
+	/**
+	 * Return true if the event can be removed from the remaining events
+	 */
+	bool calculate_next_timer_timeout(const int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime);
+    void calculate_next_events();
+
     // eventid -> structure for a time event
     QMap<QString, EventTimeStructure> m_remaining_events;
     QTimer m_timer;

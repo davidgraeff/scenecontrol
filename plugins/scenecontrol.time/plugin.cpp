@@ -147,7 +147,7 @@ void plugin::timeout() {
     calculate_next_events();
 }
 
-bool plugin::calculate_next_timer_timeout(int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime) {
+bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime) {
 	if ( seconds > 86400 ) {
 		if (nexttime==-1) nextTime = 86400;
 	} else if ( seconds > 10 ) {
@@ -157,9 +157,12 @@ bool plugin::calculate_next_timer_timeout(int seconds, int& nextTime, const QStr
 	} else if ( sec > -10 && sec < 10 ) {
 		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
 		eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
+		return true;
 	} else {
 		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << sec;
+		return true;
 	}
+	return false;
 }
 
 void plugin::calculate_next_events() {
