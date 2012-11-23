@@ -185,10 +185,9 @@ function serializeForm($form)
 				o[this.name] = parseInt( this.value );
 			} else if (type=="multienum") {
 				var size = $form.find('[name='+this.name+']').attr('data-size');
-				console.log("save multienum", size);
 				var list = [];
 				for (var i=0;i<size;++i) {
-					console.log("save multienum item", i);
+					console.log("save multienum item", i, this.value[i]);
 					var c = false;
 					for (var j=0;j<this.value.length;++j) {
 						if (parseInt(this.value[j].value) == i) {
@@ -198,6 +197,7 @@ function serializeForm($form)
 					}
 					list[i] = c;
 				}
+				console.log("save multienum", list.length, this.value);
 				o[this.name] = list;
 			} else
 				o[this.name] = this.value;
