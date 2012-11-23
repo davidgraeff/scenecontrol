@@ -75,7 +75,7 @@ void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const 
     // recalculate next event
     EventTimeStructure s;
     s.sceneid = sceneid_;
-    s.date = QDate::fromString(date, QLatin1String("dd.MM.yyyy"));
+    s.date = QDate::fromString(date, Qt::ISODate);
     s.time = QTime::fromString(time, QLatin1String("h:m"));
     m_remaining_events[id_] = s;
     calculate_next_events();
@@ -132,7 +132,7 @@ void plugin::unregister_event ( const QString& eventid) {
 void plugin::requestProperties(int sessionid) {
     if (!m_nextAlarm.isNull()) {
         SceneDocument s = SceneDocument::createNotification("nextalarm");
-        s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
+        s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         changeProperty(s.getData(), sessionid);
     } else {
@@ -224,7 +224,7 @@ void plugin::calculate_next_events() {
 
     if (!m_nextAlarm.isNull()) {
         SceneDocument s = SceneDocument::createNotification("nextalarm");
-        s.setData("date", m_nextAlarm.date().toString(QLatin1String("dd.MM.yyyy")));
+        s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
         s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         changeProperty(s.getData());
     } else {
