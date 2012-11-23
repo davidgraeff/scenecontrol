@@ -149,17 +149,17 @@ void plugin::timeout() {
 
 bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime) {
 	if ( seconds > 86400 ) {
-		if (nexttime==-1) nextTime = 86400;
+		if (nextTime==-1) nextTime = 86400;
 	} else if ( seconds > 10 ) {
-		qDebug() << "One-time alarm: Armed" << sec;
+		qDebug() << "One-time alarm: Armed" << seconds;
 		m_nextAlarm = datetime;
-		if (nexttime==-1 || sec<nexttime) nextTime = sec;
-	} else if ( sec > -10 && sec < 10 ) {
+		if (nextTime==-1 || seconds<nextTime) nextTime = seconds;
+	} else if ( seconds > -10 && seconds < 10 ) {
 		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
 		eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
 		return true;
 	} else {
-		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << sec;
+		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << seconds;
 		return true;
 	}
 	return false;
@@ -227,10 +227,7 @@ void plugin::calculate_next_events() {
         changeProperty(s.getData());
     }
 
-    if ( min_next_time.size() > 0 ) {
-        // add entry to next events
-        QMap<int, QMap<QString, EventTimeStructure> >::const_iterator i = min_next_time.lowerBound(0);
-        // start timer
-        m_timer.start ( i.key() * 1000 );
+    if ( nextTime != -1 ) {
+        m_timer.start ( nextTime * 1000 );
     }
 }
