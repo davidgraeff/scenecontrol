@@ -186,6 +186,7 @@ void plugin::calculate_next_events() {
                 eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
                 removeEventids.insert ( eventid );
             } else {
+		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << sec;
 		removeEventids.insert ( eventid );
 	    }
         } else if ( !eventtime.days.isEmpty() ) {
