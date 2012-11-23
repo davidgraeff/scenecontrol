@@ -38,8 +38,8 @@ public:
     virtual void requestProperties(int sessionid);
     virtual void unregister_event ( const QString& eventid);
 public Q_SLOTS:
-    void eventDateTime ( const QString& _id, const QString& collection_, const QString& date, const QString& time);
-    void eventPeriodic ( const QString& _id, const QString& collection_, const QString& time, const QVariantList& days);
+    void eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time);
+    void eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days);
     bool datespan ( const QString& current, const QString& lower, const QString& upper);
     bool timespan ( const QString& current, const QString& lower, const QString& upper);
 private:
