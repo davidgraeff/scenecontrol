@@ -43,11 +43,12 @@ plugin::~plugin() {
 }
 
 void plugin::initialize() {
-    calculate_next_events();
+    //calculate_next_events();
 }
 
 void plugin::clear() {
     m_timer.stop();
+	m_remaining_events.clear();
 }
 
 bool plugin::datespan ( const QString& current, const QString& lower, const QString& upper)  {
@@ -69,9 +70,6 @@ bool plugin::timespan ( const QString& current, const QString& lower, const QStr
 }
 
 void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time) {
-    // remove from next events
-    m_timeout_events.remove ( id_ );
-
     // recalculate next event
     EventTimeStructure s;
     s.sceneid = sceneid_;
@@ -87,9 +85,6 @@ void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const 
 }
 
 void plugin::eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days) {
-    // remove from next events
-    m_timeout_events.remove ( id_ );
-	
 	QVariantList days_ = days;
 	QBitArray converted(7);
 	while (days_.size()) {
@@ -114,9 +109,6 @@ void plugin::eventPeriodic ( const QString& id_, const QString& sceneid_, const 
 }
 
 void plugin::unregister_event ( const QString& eventid) {
-    // remove from next events
-    m_timeout_events.remove ( eventid );
-
     // remove from remaining events
     m_remaining_events.remove(eventid);
 
@@ -151,19 +143,27 @@ void plugin::requestProperties(int sessionid) {
 }
 
 void plugin::timeout() {
-    // events triggered, propagate to server
-    QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
-    for (;i != m_remaining_events.end(); ++i) {
-        eventTriggered( i.key().toAscii(), i.value().sceneid.toAscii() );
-    }
-    m_timeout_events.clear();
-
     // calculate next events
     calculate_next_events();
 }
 
+bool plugin::calculate_next_timer_timeout(int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime) {
+	if ( seconds > 86400 ) {
+		if (nexttime==-1) nextTime = 86400;
+	} else if ( seconds > 10 ) {
+		qDebug() << "One-time alarm: Armed" << sec;
+		m_nextAlarm = datetime;
+		if (nexttime==-1 || sec<nexttime) nextTime = sec;
+	} else if ( sec > -10 && sec < 10 ) {
+		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
+		eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
+	} else {
+		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << sec;
+	}
+}
+
 void plugin::calculate_next_events() {
-    QMap<int, QMap<QString, EventTimeStructure> > min_next_time;
+	int nextTime = 86400;
     QSet<QString> removeEventids;
 
     QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
@@ -174,21 +174,8 @@ void plugin::calculate_next_events() {
         if ( !eventtime.date.isNull() ) {
             const QDateTime datetime(eventtime.date, eventtime.time);
             const int sec = QDateTime::currentDateTime().secsTo ( datetime );
-            if ( sec > 86400 ) {
-                min_next_time[86400];
-            } else if ( sec > 10 ) {
-                qDebug() << "One-time alarm: Armed" << sec;
-                m_nextAlarm = datetime;
-                min_next_time[sec].insert ( eventid, eventtime );
-                removeEventids.insert ( eventid );
-            } else if ( sec > -10 && sec < 10 ) {
-		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
-                eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
-                removeEventids.insert ( eventid );
-            } else {
-		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << sec;
-		removeEventids.insert ( eventid );
-	    }
+			if (calculate_next_timer_timeout(sec, nextTime, eventid, eventtime))
+				removeEventids.insert ( eventid );
         } else if ( !eventtime.days.isEmpty() ) {
             QDateTime datetime = QDateTime::currentDateTime();
             datetime.setTime ( eventtime.time );
@@ -213,7 +200,8 @@ void plugin::calculate_next_events() {
                 datetime = datetime.addDays ( offsetdays );
                 m_nextAlarm = datetime;
                 const int sec = QDateTime::currentDateTime().secsTo ( datetime ) + 1;
-                min_next_time[sec].insert ( eventid, eventtime );
+				if (calculate_next_timer_timeout(sec, nextTime, eventid, eventtime))
+					removeEventids.insert ( eventid );
             }
         }
     }
@@ -239,7 +227,6 @@ void plugin::calculate_next_events() {
     if ( min_next_time.size() > 0 ) {
         // add entry to next events
         QMap<int, QMap<QString, EventTimeStructure> >::const_iterator i = min_next_time.lowerBound(0);
-        m_timeout_events = i.value();
         // start timer
         m_timer.start ( i.key() * 1000 );
     }
