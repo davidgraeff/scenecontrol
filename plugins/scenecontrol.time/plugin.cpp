@@ -182,9 +182,12 @@ void plugin::calculate_next_events() {
                 min_next_time[sec].insert ( eventid, eventtime );
                 removeEventids.insert ( eventid );
             } else if ( sec > -10 && sec < 10 ) {
+		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
                 eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
                 removeEventids.insert ( eventid );
-            }
+            } else {
+		removeEventids.insert ( eventid );
+	    }
         } else if ( !eventtime.days.isEmpty() ) {
             QDateTime datetime = QDateTime::currentDateTime();
             datetime.setTime ( eventtime.time );
