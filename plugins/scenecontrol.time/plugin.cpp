@@ -152,7 +152,6 @@ bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, cons
 		if (nextTime==-1) nextTime = 86400;
 	} else if ( seconds > 10 ) {
 		qDebug() << "One-time alarm: Armed" << seconds;
-		m_nextAlarm = datetime;
 		if (nextTime==-1 || seconds<nextTime) nextTime = seconds;
 	} else if ( seconds > -10 && seconds < 10 ) {
 		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
@@ -201,7 +200,6 @@ void plugin::calculate_next_events() {
 
             if ( offsetdays < 8 ) {
                 datetime = datetime.addDays ( offsetdays );
-                m_nextAlarm = datetime;
                 const int sec = QDateTime::currentDateTime().secsTo ( datetime ) + 1;
 				if (calculate_next_timer_timeout(sec, nextTime, eventid, eventtime))
 					removeEventids.insert ( eventid );
@@ -217,17 +215,15 @@ void plugin::calculate_next_events() {
         changeProperty(s.getData());
     }
 
-    if (!m_nextAlarm.isNull()) {
+    if ( nextTime != -1 ) {
+        m_timer.start ( nextTime * 1000 );
         SceneDocument s = SceneDocument::createNotification("nextalarm");
-        s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
-        s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
+		s.setData("seconds", nextTime);
+        //s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
+        //s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
         changeProperty(s.getData());
     } else {
         SceneDocument s = SceneDocument::createNotification("nextalarm");
         changeProperty(s.getData());
-    }
-
-    if ( nextTime != -1 ) {
-        m_timer.start ( nextTime * 1000 );
     }
 }
