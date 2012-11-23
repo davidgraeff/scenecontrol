@@ -161,46 +161,39 @@ function serializeForm($form)
 			return;
 		}
 		var type = $form.find('[name='+this.name+']').attr('data-type');
-		if (o[this.name] !== undefined) {
-			if (!o[this.name].push) {
-				o[this.name] = [o[this.name]];
-			}
-			o[this.name].push(this.value);
-		} else {
-			if (type=="rawdoc") {
-				var p = JSON.parse(this.value);
-				// security: do not allow server-used key names for raw fields
-				delete p.id_;
-				delete p.type_;
-				delete p.componentid_;
-				delete p.instanceid_;
-				delete p.method_;
-				delete p.sceneid_;
-				o = jQuery.extend(true, o, p);
-			} else if (type=="boolean") {
-				o[this.name] = (this.value=="1")?true:false;
-			} else if (type=="integer") {
-				o[this.name] = parseInt( this.value );
-			} else if (type=="enum") {
-				o[this.name] = parseInt( this.value );
-			} else if (type=="multienum") {
-				var size = $form.find('[name='+this.name+']').attr('data-size');
-				var list = [];
+		if (type=="rawdoc") {
+			var p = JSON.parse(this.value);
+			// security: do not allow server-used key names for raw fields
+			delete p.id_;
+			delete p.type_;
+			delete p.componentid_;
+			delete p.instanceid_;
+			delete p.method_;
+			delete p.sceneid_;
+			o = jQuery.extend(true, o, p);
+		} else if (type=="boolean") {
+			o[this.name] = (this.value=="1")?true:false;
+		} else if (type=="integer") {
+			o[this.name] = parseInt( this.value );
+		} else if (type=="enum") {
+			o[this.name] = parseInt( this.value );
+		} else if (type=="multienum") {
+			var size = $form.find('[name='+this.name+']').attr('data-size');
+			if (!o[this.name]) {
+				o[this.name] = [];
 				for (var i=0;i<size;++i) {
-					console.log("save multienum item", i, this.value[i]);
-					var c = false;
-					for (var j=0;j<this.value.length;++j) {
-						if (parseInt(this.value[j].value) == i) {
-							c = true;
-							break;
-						}
-					}
-					list[i] = c;
+					o[this.name][i] = false;
 				}
-				console.log("save multienum", list.length, this.value);
-				o[this.name] = list;
-			} else
-				o[this.name] = this.value;
+			}
+			//console.log("save multienum item", parseInt(this.value), o[this.name].length);
+			o[this.name][parseInt(this.value)] = true;
+		// } else if (o[this.name] !== undefined) {
+			// if (!o[this.name].push) {
+				// o[this.name] = [o[this.name]];
+			// }
+			// o[this.name].push(this.value);
+		} else {
+			o[this.name] = this.value;
 		}
 	});
 	return {"data":o,"invalid":invalidfields};
