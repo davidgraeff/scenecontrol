@@ -17,3 +17,8 @@ build/*
 *.lai
 *.la
 *.a
+
+/clients/LedControl/gen
+/clients/LedControl/bin
+/clients/ViewPagerIndicator-library/gen
+/clients/ViewPagerIndicator-library/bin
