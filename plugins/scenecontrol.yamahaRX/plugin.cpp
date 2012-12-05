@@ -114,7 +114,7 @@ void plugin::input(int inputchannel)
 			channel = "NET RADIO";
 			break;
 	}
-	QByteArray d = "<Power_Control><Power><Input><Input_Sel>"+channel+"</Input_Sel></Input></Power></Power_Control>";
+	QByteArray d = "<Input><Input_Sel>"+channel+"</Input_Sel></Input>";
 	sentToYamaha(yamahaPut(yamahaMainZone(d)));
 	
 }
@@ -144,10 +144,10 @@ void plugin::output(int outputconfiguration)
 			channel = "<Straight>Off</Straight><Sound_Program>Surround Decoder</Sound_Program>";
 			break;
 		case MOVIE:
-			channel = "<Straight>Off</Straight><Sound_Program>Sci-Fi</Sound_Program>";
+			channel = "<Straight>Off</Straight><Sound_Program>Standard</Sound_Program>";
 			break;
 		case MOVIE_SCIFI:
-			channel = "<Straight>Off</Straight><Sound_Program>Standard</Sound_Program>";
+			channel = "<Straight>Off</Straight><Sound_Program>Sci-Fi</Sound_Program>";
 			break;
 		case MUSIC_VIDEO:
 			channel = "<Straight>Off</Straight><Sound_Program>Music Video</Sound_Program>";
