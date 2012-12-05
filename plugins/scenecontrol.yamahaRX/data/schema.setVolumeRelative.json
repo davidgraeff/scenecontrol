@@ -1,5 +1,7 @@
 {
 	"type_":"schema", "targettype":"action",
 	"method_":"setVolumeRelative", "name":"Lautstärke setzen (Relativ)",
-	"parameters": {}
+	"parameters": {
+		"value":{"name":"Wert", "type":"integer", "min":-5, "max":5, "value":1,"step":1},
+	}
 }

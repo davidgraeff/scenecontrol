@@ -1,0 +1,11 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"input", "name":"Eingang",
+	"parameters": {
+		"inputchannel":{"name":"Eingang", "type":"enum", "value":0, "data":["HDMI1",
+		"HDMI2",
+		"AUDIO1",
+		"AUDIO2",
+		"NETRADIO"] }
+	}
+}
