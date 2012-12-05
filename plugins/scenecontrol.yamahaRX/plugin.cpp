@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 }
 
 plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
-    connect(&m_socket, SIGNAL(connected()), SLOT(hostconnected()));
+    //connect(&m_socket, SIGNAL(connected()), SLOT(hostconnected()));
     //connect(&m_socket, SIGNAL(disconnected()), SLOT(hostdisconnected()));
     //connect(&m_socket, SIGNAL(readyRead()), SLOT(readyRead()));
     connect(&m_socket, SIGNAL(error(QAbstractSocket::SocketError)), SLOT(error(QAbstractSocket::SocketError)));
