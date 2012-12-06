@@ -122,15 +122,10 @@ void plugin::unregister_event ( const QString& eventid) {
 }
 
 void plugin::requestProperties(int sessionid) {
-    if (!m_nextAlarm.isNull()) {
         SceneDocument s = SceneDocument::createNotification("nextalarm");
-        s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
-        s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
+		if (m_nextalarm.isValid())
+			s.setData("seconds", QDateTime::currentDateTime().secsTo(m_nextalarm));
         changeProperty(s.getData(), sessionid);
-    } else {
-        SceneDocument s = SceneDocument::createNotification("nextalarm");
-        changeProperty(s.getData(), sessionid);
-    }
 
     changeProperty(SceneDocument::createModelReset("time.alarms", "uid").getData(), sessionid);
 
@@ -148,7 +143,6 @@ void plugin::timeout() {
 }
 
 bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime) {
-	qDebug() << "calculate_next_timer_timeout" << seconds << nextTime << eventid;
 	if ( seconds > 86400 ) {
 		if (nextTime==-1) nextTime = 86400;
 	} else if ( seconds > 10 ) {
@@ -217,13 +211,14 @@ void plugin::calculate_next_events() {
     }
 
     if ( nextTime != -1 ) {
-        m_timer.start ( nextTime * 1000 );
         SceneDocument s = SceneDocument::createNotification("nextalarm");
 		s.setData("seconds", nextTime);
-        //s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
-        //s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
+		m_nextalarm = QDateTime::currentDateTime().addSecs(nextTime);
+		qDebug() << "next timer" << m_nextalarm.toString();
+		m_timer.start ( nextTime * 1000 );
         changeProperty(s.getData());
     } else {
+		m_nextalarm = QDateTime();
         SceneDocument s = SceneDocument::createNotification("nextalarm");
         changeProperty(s.getData());
     }

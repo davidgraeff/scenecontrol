@@ -58,7 +58,7 @@ private:
     // eventid -> structure for a time event
     QMap<QString, EventTimeStructure> m_remaining_events;
     QTimer m_timer;
-    QDateTime m_nextAlarm;
+	QDateTime m_nextalarm;
 private Q_SLOTS:
     void timeout();
 };
