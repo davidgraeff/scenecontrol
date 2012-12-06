@@ -148,6 +148,7 @@ void plugin::timeout() {
 }
 
 bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime) {
+	qDebug() << "calculate_next_timer_timeout" << seconds << nextTime << eventid;
 	if ( seconds > 86400 ) {
 		if (nextTime==-1) nextTime = 86400;
 	} else if ( seconds > 10 ) {
@@ -165,7 +166,7 @@ bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, cons
 }
 
 void plugin::calculate_next_events() {
-	int nextTime = 86400;
+	int nextTime = -1;
     QSet<QString> removeEventids;
 
     QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
