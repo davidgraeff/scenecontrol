@@ -147,14 +147,12 @@ bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, cons
 	if ( seconds > 86400 ) {
 		if (nextTime==-1) nextTime = 86400;
 	} else if ( seconds > 10 ) {
-		qDebug() << "One-time alarm: Armed" << seconds;
 		if (nextTime==-1 || seconds<nextTime) nextTime = seconds;
 	} else if ( seconds > -10 && seconds < 10 ) {
-		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
+		qDebug() << "Alarm: Triggered" << eventtime.sceneid;
 		eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
 		return true;
 	} else {
-		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << seconds;
 		return true;
 	}
 	return false;
@@ -172,13 +170,19 @@ void plugin::calculate_next_events() {
         if ( !eventtime.date.isNull() ) {
             const QDateTime datetime(eventtime.date, eventtime.time);
             const int sec = QDateTime::currentDateTime().secsTo ( datetime );
-			if (calculate_next_timer_timeout(sec, nextTime, eventid, eventtime))
-				removeEventids.insert ( eventid );
+		if (calculate_next_timer_timeout(sec, nextTime, eventid, eventtime))
+			removeEventids.insert ( eventid );
         } else if ( !eventtime.days.isEmpty() ) {
             QDateTime datetime = QDateTime::currentDateTime();
             datetime.setTime ( eventtime.time );
 			
             int dow = QDate::currentDate().dayOfWeek() - 1;
+            if ( eventtime.days.testBit(dow) ) {
+            	if (calculate_next_timer_timeout(QDateTime::currentDateTime().secsTo ( datetime ), nextTime, eventid, eventtime)) {
+            		removeEventids.insert ( eventid );
+            		continue;
+            	}		
+            }
             int offsetdays = 0;
 			
             // If it is too late for the alarm today then
@@ -206,12 +210,14 @@ void plugin::calculate_next_events() {
     // remove remaining events that are in the next event list
     foreach (QString uid, removeEventids) {
         m_remaining_events.remove ( uid );
+	qDebug() << "Alarm: Remove" << uid;
         SceneDocument s = SceneDocument::createModelRemoveItem("time.alarms");
         s.setData("uid", uid);
         changeProperty(s.getData());
     }
 
     if ( nextTime != -1 ) {
+    	qDebug() << "Alarm: Armed" << seconds;
         SceneDocument s = SceneDocument::createNotification("nextalarm");
 		s.setData("seconds", nextTime);
 		m_nextalarm = QDateTime::currentDateTime().addSecs(nextTime);
