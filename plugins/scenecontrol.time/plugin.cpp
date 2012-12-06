@@ -86,11 +86,12 @@ void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const 
 
 void plugin::eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days) {
 	QVariantList days_ = days;
+	if (days.size()<7)
+		return;
+	
 	QBitArray converted(7);
-	while (days_.size()) {
-		int day = days_.takeLast().toInt();
-		if (day>=0 && day < 7)
-			converted.setBit(day, true);
+	for (int i=0;i < 7;++i) {
+		converted.setBit(i, days.at(i).toBool());
 	}
 	
 // qDebug() << __FUNCTION__ << time << converted.testBit(0) << converted.testBit(1) << converted.testBit(2) << converted.testBit(3);
@@ -176,17 +177,17 @@ void plugin::calculate_next_events() {
         } else if ( !eventtime.days.isEmpty() ) {
             QDateTime datetime = QDateTime::currentDateTime();
             datetime.setTime ( eventtime.time );
-
+			
             int dow = QDate::currentDate().dayOfWeek() - 1;
             int offsetdays = 0;
-
+			
             // If it is too late for the alarm today then
             // try with the next weekday
             if ( QTime::currentTime() > eventtime.time ) {
                 dow = ( dow+1 ) % 7;
                 ++offsetdays;
             }
-
+			
             // Search for the next activated weekday
             for ( ; offsetdays < 8; ++offsetdays ) {
                 if ( eventtime.days.testBit(dow) ) break;
@@ -214,7 +215,6 @@ void plugin::calculate_next_events() {
         SceneDocument s = SceneDocument::createNotification("nextalarm");
 		s.setData("seconds", nextTime);
 		m_nextalarm = QDateTime::currentDateTime().addSecs(nextTime);
-		qDebug() << "next timer" << m_nextalarm.toString();
 		m_timer.start ( nextTime * 1000 );
         changeProperty(s.getData());
     } else {
