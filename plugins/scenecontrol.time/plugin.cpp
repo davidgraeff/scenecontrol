@@ -217,12 +217,12 @@ void plugin::calculate_next_events() {
     }
 
     if ( nextTime != -1 ) {
-    	qDebug() << "Alarm: Armed" << seconds;
         SceneDocument s = SceneDocument::createNotification("nextalarm");
 		s.setData("seconds", nextTime);
 		m_nextalarm = QDateTime::currentDateTime().addSecs(nextTime);
 		m_timer.start ( nextTime * 1000 );
         changeProperty(s.getData());
+    	qDebug() << "Alarm: Armed" << nextTime;
     } else {
 		m_nextalarm = QDateTime();
         SceneDocument s = SceneDocument::createNotification("nextalarm");
