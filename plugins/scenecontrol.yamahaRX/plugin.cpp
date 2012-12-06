@@ -38,13 +38,16 @@ void plugin::sentToYamaha(const QByteArray& content) {
 	t += "host: "+m_host.toUtf8()+":"+QByteArray::number(m_port)+"/YamahaRemoteControl/ctrl\r\n";
 	t += "Content-type: text/xml; charset=UTF-8\r\n";
 	t += "Content-length: "+QByteArray::number(content.size())+"\r\n";
-	t += "Connection: close\r\n\r\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+	t += "Connection: Keep-Alive\r\n\r\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 	t += content;
-	m_socket.connectToHost(m_host, m_port);
-	m_socket.waitForConnected(300);
+	if (m_socket.state()!=QAbstractSocket::ConnectedState && m_socket.state()!=QAbstractSocket::ConnectingState)
+		m_socket.connectToHost(m_host, m_port);
+	if (m_socket.state()==QAbstractSocket::ConnectingState)
+		m_socket.waitForConnected(300);
 	if (m_socket.state()==QAbstractSocket::ConnectedState)
 		m_socket.write(t);
-	m_socket.disconnectFromHost();
+	//m_socket.disconnectFromHost();
+	//m_socket.waitForDisconnected();
 }
 QByteArray& yamahaPut(QByteArray& content) {
 	content.insert(0,"<YAMAHA_AV cmd=\"PUT\">");
