@@ -48,6 +48,7 @@ private:
         QDate date;
         QTime time;
         QBitArray days;
+        bool triggerOnNextTimeout;
     };
 	/**
 	 * Return true if the event can be removed from the remaining events
