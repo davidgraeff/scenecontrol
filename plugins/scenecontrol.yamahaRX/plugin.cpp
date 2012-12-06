@@ -191,7 +191,7 @@ void plugin::hostdisconnected() {
 }
 void plugin::error(QAbstractSocket::SocketError e) {
   // Ignore "host not found" error
-    if (e != QAbstractSocket::ConnectionRefusedError && e != QAbstractSocket::HostNotFoundError)
+  if (e != QAbstractSocket::ConnectionRefusedError && e != QAbstractSocket::HostNotFoundError && e != QAbstractSocket::RemoteHostClosedError)
         qWarning() << "Socket error" << e;
 }
 
