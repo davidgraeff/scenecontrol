@@ -161,7 +161,7 @@ void plugin::output(int outputconfiguration)
 }
 
 void plugin::setVolume(int value) {
-	QByteArray d = "<Volume><Lvl><Val>"+QByteArray::number(value)+"</Val><Exp>1</Exp><Unit>db</Unit></Lvl></Volume>";
+	QByteArray d = "<Volume><Lvl><Val>"+QByteArray::number(value)+"</Val><Exp>1</Exp><Unit>dB</Unit></Lvl></Volume>";
 	sentToYamaha(yamahaPut(yamahaMainZone(d)));
 }
 
@@ -179,7 +179,7 @@ void plugin::setVolumeRelative(int value)
 	else if (value==3)
 		value = 2;
 	vs += QByteArray::number(value) + " dB";
-	QByteArray d = "<Volume><Lvl><Val>"+QByteArray::number(value)+"</Val><Exp></Exp><Unit></Unit></Lvl></Volume>";
+	QByteArray d = "<Volume><Lvl><Val>"+vs+"</Val><Exp></Exp><Unit></Unit></Lvl></Volume>";
 	sentToYamaha(yamahaPut(yamahaMainZone(d)));
 }
 
