@@ -2,6 +2,6 @@
 	"type_":"schema", "targettype":"action",
 	"method_":"setVolume", "name":"Lautstärke setzen",
 	"parameters": {
-		"value":{"name":"Wert", "type":"integer", "min":-800, "max":0, "value":-600,"step":5},
+		"value":{"name":"Wert", "type":"integer", "min":-800, "max":0, "value":-600,"step":5}
 	}
 }
