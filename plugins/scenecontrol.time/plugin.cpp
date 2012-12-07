@@ -154,16 +154,16 @@ void plugin::setupTimer() {
 		i.next();
 		int sec = QDateTime::currentDateTime().secsTo(i.key());
 		if (sec>0) {
-			// property update
-			SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
-			sc.setData("uid", i.value().eventid);
-			sc.setData("seconds", sec);
-			changeProperty(sc.getData());
+			SceneDocument s = SceneDocument::createNotification("nextalarm");
+			s.setData("seconds", sec);
+			changeProperty(s.getData());
+			qDebug()<<"Next alarm in"<<sec<<"s";
 			m_timer.start ( sec * 1000 );
 			break;
 		}
 		i.remove();
 	};
+	m_timer.stop();
 }
 
 void plugin::calculate_next_periodic_timeout(const plugin::EventTimeStructure& ts) {
@@ -194,5 +194,10 @@ void plugin::calculate_next_periodic_timeout(const plugin::EventTimeStructure& t
 
 void plugin::addToEvents(const QDateTime& nextTimeout, const plugin::EventTimeStructure& ts) {
 	mEvents.insert(nextTimeout, ts);
+	// property update
+	SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
+	sc.setData("uid", ts.eventid);
+	sc.setData("seconds", QDateTime::currentDateTime().secsTo(nextTimeout));
+	changeProperty(sc.getData());
 	setupTimer();
 }
