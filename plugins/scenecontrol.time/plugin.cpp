@@ -140,12 +140,14 @@ void plugin::timeout() {
 		i.next();
 		if (abs(QDateTime::currentDateTime().secsTo(i.key())) < 10) {
 			plugin::EventTimeStructure ts = i.value();
+			qDebug()<<"Alarm triggered"<<ts.sceneid;
 			eventTriggered(ts.eventid, ts.sceneid);
 			i.remove();
 			if (ts.periodic)
 				calculate_next_periodic_timeout(ts);
 		}
 	}
+	setupTimer();
 }
 
 void plugin::setupTimer() {
