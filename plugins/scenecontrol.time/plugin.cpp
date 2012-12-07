@@ -138,7 +138,7 @@ void plugin::timeout() {
 	QMutableMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
 	while(i.hasNext()) {
 		i.next();
-		if (QDateTime::currentDateTime().secsTo(i.key())) {
+		if (abs(QDateTime::currentDateTime().secsTo(i.key())) < 10) {
 			plugin::EventTimeStructure ts = i.value();
 			eventTriggered(ts.eventid, ts.sceneid);
 			i.remove();
