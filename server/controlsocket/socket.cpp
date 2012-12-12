@@ -200,6 +200,13 @@ void Socket::readyRead() {
 			sendToClients(s.getjson(), sessionid);
 		}
 		
+		else if ( doc.isMethod ( "requestProperty" ) && doc.getData().contains("property") )
+		{
+			SceneDocument property( doc.toMap("property") );
+			qDebug() << "property requested" << property.getjson();
+			PluginController::instance()->requestProperty ( property, sessionid );
+		}
+		
 		else if ( doc.isMethod ( "removeDocument" ) )
 		{
 			DataStorage::instance()->removeDocument(SceneDocument(v.toMap().value(QLatin1String("doc")).toMap()));

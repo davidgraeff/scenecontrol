@@ -78,6 +78,11 @@ public:
 	 */
     void requestAllProperties(int sessionid = -1);
 	/**
+	 * Request all properties from a plugin processes.
+	 */
+	void requestProperty ( const SceneDocument& property, int sessionid = -1 );
+	
+	/**
 	 * Get a list of all plugin ids. Example item: [plugin123, plugin234]
 	 */
 	QStringList pluginids() const;
