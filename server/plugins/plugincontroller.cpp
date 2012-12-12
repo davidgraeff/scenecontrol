@@ -224,6 +224,13 @@ void PluginController::requestAllProperties(int sessionid) {
 	}
 }
 
+void PluginController::requestProperty ( const SceneDocument& property, int sessionid ) {
+	PluginProcess* plugin = getPlugin(property->componentUniqueID());
+	if (plugin) {
+		plugin->requestProperties(sessionid);
+	}
+}
+
 QStringList PluginController::pluginids() const
 {
     return m_pluginlist;
