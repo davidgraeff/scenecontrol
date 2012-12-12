@@ -200,7 +200,7 @@ void Socket::readyRead() {
 			sendToClients(s.getjson(), sessionid);
 		}
 		
-		else if ( doc.isMethod ( "requestProperty" ) && doc.getData().contains("property") )
+		else if ( doc.isMethod ( "requestProperty" ) && doc.getData().contains(QLatin1String("property")) )
 		{
 			SceneDocument property( doc.toMap("property") );
 			qDebug() << "property requested" << property.getjson();
