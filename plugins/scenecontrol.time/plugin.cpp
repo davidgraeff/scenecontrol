@@ -151,6 +151,7 @@ void plugin::timeout() {
 }
 
 void plugin::setupTimer() {
+	m_timer.stop();
 	QMutableMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
 	while(i.hasNext()) {
 		i.next();
@@ -165,7 +166,6 @@ void plugin::setupTimer() {
 		}
 		i.remove();
 	};
-	m_timer.stop();
 }
 
 void plugin::calculate_next_periodic_timeout(const plugin::EventTimeStructure& ts) {
