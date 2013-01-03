@@ -119,8 +119,6 @@ void AbstractPlugin::readyReadCommunication()
             requestProperties(m_lastsessionid);
         } else if (method == "session_change") {
             session_change(m_lastsessionid, doc.toBool("running"));
-        } else if (method == "unregister_event") {
-            unregister_event(doc.toString("eventid"));
 		} else if (method == "callslot") { // server and other plugins callable methods
 			// Extract data document out of the transfered doc
 			SceneDocument dataDocument(variantdata.value(QLatin1String("doc")).toMap());

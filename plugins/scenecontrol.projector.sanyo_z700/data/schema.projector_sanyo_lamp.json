@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"action",
 	"method_":"projector_sanyo_lamp", "name":"Lampe",
+	"text":"Sanyo Z700 Projektorlampe eco Betrieb: {{eco}}.",
 	"parameters": {
 		"eco":{"name":"Eco", "type":"boolean"}
 	}

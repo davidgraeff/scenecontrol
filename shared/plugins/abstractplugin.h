@@ -45,13 +45,16 @@
  * (key, value)-pairs that you saved by the method changeConfig before.
  *
  * Events:
+ * An event can occur anytime and will trigger a scene execution.
  * If your plugin provides events (like current time == alarm time etc) you may
- * implement register_event and unregister_event and call eventTriggered if your
- * event is triggered.
+ * implement methods (QT slots) that expect the scene id to be executed. Call eventTriggered if your
+ * event is triggered. The server may unregister events (if the destination scene gets removed etc)
+ * by calling the exact same method but with an empty scene id.
  *
  * Conditions, Actions:
- * Just implement normal qt slots with up to 8 parameters
- * like "void dim_light(int id, int value)" or "bool isOn(int id)"
+ * Just implement methods (qt slots with up to 8 parameters)
+ * like "void dim_light(int id, int value)" or "bool isOn(int id)". Conditions may only
+ * return a boolean response value.
  */
 class AbstractPlugin: public QLocalServer {
     Q_OBJECT
@@ -139,19 +142,4 @@ public Q_SLOTS:
     virtual void requestProperties(int sessionid) {
         Q_UNUSED(sessionid);
     };
-
-    /**
-    * All events of a collection are registered by their specific plugin.
-    * A method of your plugin is called if an event
-    * of the collection referenced by "collectionuid" should be registered
-    * within your plugin.
-    * If internally the event is triggered, you should call eventTriggered to nofiy
-    * the server and execute the collection eventually.
-
-    * When collections get removed they unregister their events with this method. If collections are changed
-    * they will call unregister_event and register_event in sequence.
-    */
-    virtual void unregister_event ( const QString& eventid ) {
-        Q_UNUSED(eventid);
-    }
 };

@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"condition",
 	"method_":"timespan", "name":"Zeit?",
+	"text":"Ist Uhrzeit {{current}} zwischen {{lower}} und {{upper}}?",
 	"parameters": {
 		"current":{"name":"Vergleichszeit", "type":"time"},
 		"lower":{"name":"Mindest Zeitpunkt", "type":"time"},

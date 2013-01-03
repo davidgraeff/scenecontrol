@@ -70,6 +70,10 @@ bool plugin::timespan ( const QString& current, const QString& lower, const QStr
 }
 
 void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time) {
+	if (sceneid_.isEmpty()) {
+		removeEvent(id_);
+		return;
+	}
 	
     // recalculate next event
     EventTimeStructure s;
@@ -84,6 +88,11 @@ void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const 
 }
 
 void plugin::eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days) {
+	if (sceneid_.isEmpty()) {
+		removeEvent(id_);
+		return;
+	}
+	
 	if (days.size()<7)
 		return;
 	
@@ -101,7 +110,7 @@ void plugin::eventPeriodic ( const QString& id_, const QString& sceneid_, const 
 	calculate_next_periodic_timeout(s);
 }
 
-void plugin::unregister_event ( const QString& eventid) {
+void plugin::removeEvent ( const QString& eventid) {
 	SceneDocument s = SceneDocument::createModelRemoveItem("time.alarms");
 	QMutableMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
 	while(i.hasNext()) {

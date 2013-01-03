@@ -36,7 +36,6 @@ public:
     virtual void initialize();
     virtual void clear();
     virtual void requestProperties(int sessionid);
-    virtual void unregister_event ( const QString& eventid);
 public Q_SLOTS:
     void eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time);
     void eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days);
@@ -44,7 +43,8 @@ public Q_SLOTS:
     bool timespan ( const QString& current, const QString& lower, const QString& upper);
 	
 private:
-    struct EventTimeStructure {
+	void removeEvent ( const QString& eventid);
+	struct EventTimeStructure {
 		QString eventid;
         QString sceneid;
         QDate date;

@@ -1,5 +1,6 @@
 #include "plugins/plugincontroller.h"
 #include "plugins/pluginprocess.h"
+#include <scenecontrol.server/serverprovidedfunctions.h>
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/jsondocuments/json.h"
 #include "shared/utils/paths.h"
@@ -17,16 +18,40 @@
 #define __FUNCTION__ __FUNCTION__
 #define LOCALSOCKETNAMESPACE "sceneserver"
 
+StorageNotifierConfiguration::StorageNotifierConfiguration(PluginController* pluginController) : mPluginController(pluginController)
+{
+	
+}
+
+void StorageNotifierConfiguration::documentChanged(const QString& /*filename*/, SceneDocument* /*oldDoc*/, SceneDocument* newDoc)
+{
+	if (newDoc->isType(SceneDocument::TypeConfiguration)) {
+		mPluginController->startPluginProcessByConfiguration(newDoc);
+	}
+}
+
+void StorageNotifierConfiguration::documentRemoved(const QString& /*filename*/, SceneDocument* document)
+{
+	if (document->isType(SceneDocument::TypeConfiguration)) {
+		mPluginController->removePluginInstance(document->componentID(),document->instanceID());
+	}
+}
+
 static PluginController* plugincontroller_instance = 0;
+static int plugincontroller_nonew = 0;
 
 PluginController* PluginController::instance() {
-    if (!plugincontroller_instance) {
+	if (!plugincontroller_instance && !plugincontroller_nonew) {
         plugincontroller_instance = new PluginController();
     }
     return plugincontroller_instance;
 }
 
 PluginController::PluginController () : m_exitIfNoPluginProcess(false) {
+	// Listen to configuration document changes
+	mStorageNotifierConfiguration = new StorageNotifierConfiguration(this);
+	DataStorage::instance()->registerNotifier(mStorageNotifierConfiguration);
+	// Plugin communication socket
     connect(&m_comserver, SIGNAL(newConnection()), SLOT(newConnection()));
     const QString name = QLatin1String(LOCALSOCKETNAMESPACE)+QLatin1String(LOCALSOCKETNAMESPACE);
     m_comserver.removeServer(name);
@@ -37,9 +62,14 @@ PluginController::PluginController () : m_exitIfNoPluginProcess(false) {
 
 PluginController::~PluginController()
 {
+	delete mStorageNotifierConfiguration;
+	
     waitForPluginsAndExit();
+	
     // Delete all plugin processes
-    qDeleteAll(m_pluginprocesses);
+//     qDeleteAll(m_pluginprocesses);
+	
+	plugincontroller_nonew = 1;
 }
 
 bool PluginController::valid()
@@ -55,27 +85,18 @@ void PluginController::waitForPluginsAndExit()
 
     qDebug() << "Shutdown..." << m_pluginprocesses.size() << "Plugin processes";
     m_exitIfNoPluginProcess = true;
-    // Unregister all events
-    QMap<QString,PluginProcess*>::iterator i = m_registeredevents.begin();
-    for (;i!=m_registeredevents.end();++i) {
-        PluginProcess* executeplugin = i.value();
-        executeplugin->unregister_event ( i.key() );
-    }
-    m_registeredevents.clear();
     // Delete all plugin process objects
-	foreach(PluginProcess* p, m_plugins) {
-		p->shutdown();
-	}
+	
     m_plugins.clear();
-    QSet<PluginProcess*>::iterator i2 = m_pluginprocesses.begin();
-    while (m_pluginprocesses.end()!= i2) {
-        (*i2)->shutdown();
+	// We need a copy here because the original "m_pluginprocesses" will be modified while iterating
+	QSet<PluginProcess*> copy = m_pluginprocesses;
+	QSet<PluginProcess*>::iterator i2 = copy.begin();
+	while (copy.end()!= i2) {
+		PluginProcess* p = (*i2);
+        if (p)
+			p->shutdown();
         ++i2;
     }
-
-    // Exit if no plugin processes are loaded
-    if (m_pluginprocesses.isEmpty())
-        QCoreApplication::exit(0);
 }
 
 void PluginController::newConnection()
@@ -99,12 +120,17 @@ void PluginController::newConnection()
                 stream >> jsonData;
             }
 
-            PluginProcess* plugin = getPlugin(SceneDocument(jsonData).componentUniqueID());
+            SceneDocument doc(jsonData);
+            PluginProcess* plugin = getPlugin(doc.componentID(),doc.instanceID());
             if (!plugin) {
                 qWarning()<<"Socket auth failed: " << jsonData;
                 socket->deleteLater();
-            } else
-                plugin->setSocket(socket);
+            } else {
+				// Plugin process is valid now
+				plugin->setSocket(socket);
+				emit pluginInstanceLoaded(doc.componentID(),doc.instanceID());
+			}
+			
         } else {
             qWarning()<<"Socket tried to connect: No authentification" << socket->readAll();
             socket->deleteLater();
@@ -112,47 +138,19 @@ void PluginController::newConnection()
     }
 }
 
-QMap< QString, PluginProcess* >::iterator PluginController::getPluginIterator() {
-    return m_plugins.begin();
+PluginProcess* PluginController::getPlugin(const QString& pluginID, const QString& instanceID) {
+	PluginProcess* p = m_plugins.value(pluginID).value(instanceID);
+	if (p)
+		return p;
+	return 0;
 }
 
-PluginProcess* PluginController::nextPlugin(QMap< QString, PluginProcess* >::iterator& index) {
-    if (m_plugins.end()==index) return 0;
-    return (*(index++));
-}
-
-PluginProcess* PluginController::getPlugin(const QString& pluginUid) {
-    return m_plugins.value(pluginUid);
-}
-
-void PluginController::doc_changed(const SceneDocument* doc) {
-	if (doc->checkType(SceneDocument::TypeEvent)) {
-		PluginProcess* plugin = getPlugin ( doc->componentUniqueID());
-		if ( !plugin ) {
-			qWarning() <<"Plugins: Cannot register event. No plugin found:"<< doc->componentID() << doc->id();
-			return;
-		}
-
-		plugin->unregister_event ( doc->id() );
-		plugin->callQtSlot(*doc);
-		m_registeredevents.insert(doc->id(), plugin);
-	} else if (doc->checkType(SceneDocument::TypeConfiguration)) {
-		startPluginProcessByConfiguration(doc);
-	}
-}
-
-void PluginController::doc_removed(const SceneDocument* doc) {
-	if (doc->checkType(SceneDocument::TypeEvent)) {
-		PluginProcess* executeplugin = m_registeredevents.take ( doc->id() );
-		if ( executeplugin ) {
-	//         qDebug() << "Plugins: unregister event" << id << executeplugin;
-			executeplugin->unregister_event ( doc->id() );
-		}
-	} else if (doc->checkType(SceneDocument::TypeConfiguration)) {
-		PluginProcess* p = getPlugin(doc->componentUniqueID());
-		if (p)
-			p->deleteLater();
-	}
+QList< PluginProcess* > PluginController::getPlugins(const QString& pluginID, const QString instanceID)
+{
+	PluginProcess* p = m_plugins.value(pluginID).value(instanceID);
+	if (p)
+		return QList<PluginProcess*>() << p;
+	return m_plugins.value(pluginID).values();
 }
 
 void PluginController::scanPlugins() {
@@ -174,6 +172,7 @@ void PluginController::scanPlugins() {
 		qDebug() << "Plugin initial configurations:" << importdir.absolutePath();
 
 	m_pluginlist.clear();
+	//m_pluginlist.append(QLatin1String("server"));
 	
     for (int i=0;i<pluginfiles.size();++i) {
         const QString componentid = pluginfiles[i].mid(0, pluginfiles[i].lastIndexOf(QLatin1String("_plugin")));
@@ -189,7 +188,7 @@ void PluginController::scanPlugins() {
 		// Get all configurations of this plugin
 		SceneDocument filter;
 		filter.setComponentID( componentid );
-		QList<SceneDocument*> configurations = DataStorage::instance()->requestAllOfType(SceneDocument::TypeConfiguration, filter.getData());
+		QList<SceneDocument*> configurations = DataStorage::instance()->filteredDocuments(SceneDocument::TypeConfiguration, filter.getData());
 		for (int pi = 0; pi < configurations.size(); ++pi) {
 			startPluginProcessByConfiguration(configurations[pi]);
 		}
@@ -203,7 +202,7 @@ void PluginController::startPluginProcessByConfiguration ( const SceneDocument* 
 		return;
 	}
 
-	PluginProcess* p = getPlugin(configuration->componentUniqueID());
+	PluginProcess* p = getPlugin(configuration->componentID(),configuration->instanceID());
 	if (p) {
 		delete p;
 		qDebug() << "Restart Process" << configuration->componentUniqueID();
@@ -212,20 +211,24 @@ void PluginController::startPluginProcessByConfiguration ( const SceneDocument* 
 	
 	p = new PluginProcess( this, configuration->componentID(), configuration->instanceID());
 	m_pluginprocesses.insert( p );
-	m_plugins.insert(configuration->componentUniqueID(),p);
+	m_plugins[configuration->componentID()].insert(configuration->instanceID(),p);
 	p->startProcess();
 	p->configChanged(configuration->id(), configuration->getData());
 }
 
 void PluginController::requestAllProperties(int sessionid) {
-	QMap<QString,PluginProcess*>::iterator i = getPluginIterator();
-	while (PluginProcess* plugin = nextPlugin(i)) {
-		plugin->requestProperties(sessionid);
+	QMap<QString, QMap<QString,PluginProcess*> >::ConstIterator i = m_plugins.constBegin();
+	while (i!=m_plugins.end()) {
+		QMap<QString,PluginProcess*>::ConstIterator i2 = i.value().begin();
+		while (i2!=i.value().end()) {
+			PluginProcess* plugin = i2.value();
+			plugin->requestProperties(sessionid);
+		}
 	}
 }
 
 void PluginController::requestProperty ( const SceneDocument& property, int sessionid ) {
-	PluginProcess* plugin = getPlugin(property.componentUniqueID());
+	PluginProcess* plugin = getPlugin(property.componentID(),property.instanceID());
 	if (plugin) {
 		plugin->requestProperties(sessionid);
 	}
@@ -241,16 +244,62 @@ void PluginController::processFinished(PluginProcess* process) {
 		return;
 	m_plugins.remove(process->getPluginid()+process->getInstanceid());
     process->deleteLater();
-    // Remove all registered events of this plugin out of the map m_registeredevents
-    // (they are not active already due to removing the plugin process instance but to conserve memory)
-    QMutableMapIterator<QString, PluginProcess*> i = m_registeredevents;
-    while (i.hasNext()) {
-        i.next();
-        if (i.value() == process)
-            i.remove();
-    }
     qDebug() << "Plugin finished" << process->getPluginid();
     // Exit if no plugin processes are loaded
     if (m_pluginprocesses.isEmpty() && m_exitIfNoPluginProcess)
         QCoreApplication::exit(0);
+}
+
+void PluginController::removePluginInstance(const QString& pluginID, const QString instanceID) {
+	PluginProcess* p = getPlugin(pluginID, instanceID);
+	if (p)
+		p->deleteLater();
+}
+
+int PluginController::execute(const SceneDocument& data, const QByteArray responseID, QObject* responseCallbackObject)
+{
+	// Thread safe: Only one thread at a time may send data to a plugin process
+	QMutexLocker locker(&mExecuteMutex);
+	
+	if (data.componentID()==QLatin1String("server")) {
+		ServerProvidedFunctions::execute(data, responseID, responseCallbackObject, -1);
+		return 1;
+	}
+	
+	// Call the remote method of the plugin
+	int validCalls = 0;
+	QList<PluginProcess*> plugins = getPlugins(data.componentID(),data.instanceID());
+	foreach(PluginProcess* plugin, plugins) {
+		if (!plugin->isValid())
+			continue;
+		if (responseCallbackObject)
+			connect(plugin, SIGNAL(qtSlotResponse(QVariant,QByteArray,QString,QString)), responseCallbackObject,
+					SLOT(pluginResponse(QVariant,QByteArray,QString,QString)));
+		plugin->callQtSlot ( data, responseID );
+		++validCalls;
+	}
+	return validCalls;
+}
+
+int PluginController::execute(const SceneDocument& data, int sessionid)
+{
+	// Thread safe: Only one thread at a time may send data to a plugin process
+	QMutexLocker locker(&mExecuteMutex);
+	
+	if (data.componentID()==QLatin1String("server")) {
+		ServerProvidedFunctions::execute(data, QByteArray(), 0, sessionid);
+		return 1;
+	}
+	
+	// Call the remote method of the plugin
+	int validCalls = 0;
+	QList<PluginProcess*> plugins = getPlugins(data.componentID(),data.instanceID());
+	foreach(PluginProcess* plugin, plugins) {
+		if (!plugin->isValid())
+			continue;
+		
+		plugin->callQtSlot ( data, QByteArray(), sessionid );
+		++validCalls;
+	}
+	return validCalls;
 }

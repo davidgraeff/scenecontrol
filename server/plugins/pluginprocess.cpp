@@ -97,13 +97,6 @@ void PluginProcess::setSocket(QLocalSocket* socket)
 	for(;i!=m_configcache.end();++i)
 		configChanged(i.key(),i.value());
 	m_configcache.clear();
-	
-	SceneDocument filter;
-	filter.setComponentID(m_pluginid);
-	filter.setInstanceID(m_instanceid);
-	QList<SceneDocument*> events = DataStorage::instance()->requestAllOfType(SceneDocument::TypeEvent, filter.getData());
-	for (int i=0;i<events.size();++i)
-		callQtSlot(*events[i]);
 }
 
 QLocalSocket* PluginProcess::getSocket() {
@@ -124,6 +117,10 @@ QString PluginProcess::getInstanceid() {
 }
 
 bool PluginProcess::writeToPlugin(const QVariantMap& data) {
+	if (!m_pluginCommunication) {
+		qWarning()<<"Cannot write to plugin: Communication not established (yet)!";
+		return false;
+	}
     // check state. Sometimes write calls are one after each other and the
     // event system does not get a chance to check the socket state in between
     if (m_pluginCommunication->state()!=QLocalSocket::ConnectedState) {
@@ -187,7 +184,7 @@ void PluginProcess::readyReadPluginData()
                 continue;
             }
             //qDebug() << "eventTriggered";
-            CollectionController::instance()->requestExecutionByCollectionId(sceneid);
+            SceneController::instance()->startScene(sceneid, doc.id());
         } else {
             qWarning() << "Unknown data from plugin" << m_chunk;
         }
@@ -231,19 +228,6 @@ void PluginProcess::requestProperties(int sessionid) {
     SceneDocument doc;
     doc.setMethod("requestProperties");
     doc.setSessionID(sessionid);
-    writeToPlugin(doc.getData());
-}
-
-void PluginProcess::unregister_event(const QString& eventid) {
-    if (!m_pluginCommunication)
-        return;
-    if (eventid.isEmpty()) {
-        qWarning() << "unregister_event eventid empty!";
-        return;
-    }
-    SceneDocument doc;
-    doc.setMethod("unregister_event");
-	doc.setData("eventid", eventid);
     writeToPlugin(doc.getData());
 }
 

@@ -1,6 +1,7 @@
 {
-	"plugin_":"AUTO", "type_":"schema", "targettype":"action",
-	"member_":"moodlight", "name":"Stimmungslicht",
+	"type_":"schema", "targettype":"action",
+	"method_":"moodlight", "name":"Stimmungslicht",
+	"text":"Stimmungslicht auf Kanal {{channel}}: {{moodlight}}.",
 	"parameters": {
 		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"leds","indexproperty":"channel","textproperty":"name", "value":""},
 		"moodlight":{"name":"Stimmungslich", "type":"boolean", "value":false}

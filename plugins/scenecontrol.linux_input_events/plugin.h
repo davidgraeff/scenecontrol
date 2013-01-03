@@ -75,7 +75,6 @@ public:
     virtual void clear();
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
-    virtual void unregister_event ( const QString& eventid);
     virtual void session_change ( int sessionid, bool running );
 
 public Q_SLOTS:

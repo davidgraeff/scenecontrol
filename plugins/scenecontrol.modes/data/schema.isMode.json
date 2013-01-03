@@ -1,7 +1,0 @@
-{
-	"type_":"schema", "targettype":"condition",
-	"method_":"isMode", "name":"Modus?",
-	"parameters": {
-		"mode":{"name":"Modus", "type":"string", "value":""}
-	}
-}

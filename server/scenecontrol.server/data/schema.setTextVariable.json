@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"setTextVariable", "name":"Setze Textvariable",
+	"text":"Setze Textvariable {{name}} auf Wert {{value}}.",
+	"parameters": {
+		"name":{"name":"Name", "type":"string", "value":""},
+		"value":{"name":"Wert", "type":"string", "value":""}
+	}
+}

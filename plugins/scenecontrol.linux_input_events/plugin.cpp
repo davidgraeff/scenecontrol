@@ -90,8 +90,17 @@ void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) 
 }
 
 void plugin::inputevent ( const QString& id_, const QString& sceneid_, const QString& inputdevice, const QString& kernelkeyname, bool repeat) {
-	if (id_.isEmpty() ||sceneid_.isEmpty()) {
-		qWarning() << "Not registering event:" << id_ << sceneid_;
+	if (id_.isEmpty()) {
+		qWarning() << "Not (un)registering event:" << id_ << sceneid_;
+		return;
+	}
+	if (sceneid_.isEmpty()) {
+		const QByteArray eventID = id_.toAscii();
+		m_events.remove(eventID);
+		InputDevice* inputdevice = m_devices_by_eventsids.take ( eventID );
+		qDebug() << "Unregister event" << eventID;
+		if ( inputdevice )
+			inputdevice->unregisterKey (eventID );
 		return;
 	}
 	QByteArray eventID = id_.toAscii();
@@ -110,15 +119,6 @@ void plugin::inputevent ( const QString& id_, const QString& sceneid_, const QSt
 	m_devices_by_eventsids.insert(eventID, inputdeviceObj);
 	inputdeviceObj->registerKey ( eventID, sceneid_, s.kernelkeyname, repeat );
 	qDebug() << "Register event" << kernelkeyname << inputdeviceObj->device()->devPath << eventID;
-}
-
-void plugin::unregister_event ( const QString& eventid) {
-    const QByteArray eventID = eventid.toAscii();
-    m_events.remove(eventID);
-    InputDevice* inputdevice = m_devices_by_eventsids.take ( eventID );
-	qDebug() << "Unregister event" << eventID;
-    if ( inputdevice )
-        inputdevice->unregisterKey (eventID );
 }
 
 void plugin::session_change ( int sessionid, bool running ) {
