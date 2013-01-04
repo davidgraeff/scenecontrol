@@ -41,22 +41,29 @@ void Scene::rebuild(const SceneDocument* scenedoc)
 	mRootNode = SceneNode::createEmptyNode();
 	// we have to log all items and the referrenced items to determine all items without predecessor
 	QSet<QString> nextNodeItems, allItems;
+	QMap<QString, SceneDocument> itemsByUID;
 	// Look at every scene item
 	QVariantList l = mScenedoc->sceneItems();
 	foreach(const QVariant& sceneItemData, l) {
 		// Add scene item to the mUID2SceneNode list
-		SceneDocument sceneItem(sceneItemData.toMap());
+		SceneDocument sceneItem(sceneItemData);
 		QString uid = sceneItem.uid();
 		mUID2SceneNode.insert(uid, SceneNode::createNode(sceneItem.type(), sceneItem.id(), sceneItem.nextNodes(), sceneItem.nextAlternativeNodes()));
 		// Log to allItems and log all next nodes / alternative next nodes to nextNodeItems
 		allItems.insert(uid);
-		QList<QString> nextNodes = sceneItem.nextNodes() + sceneItem.nextAlternativeNodes();;
-		foreach(const QString& nn, nextNodes)
-			nextNodeItems.insert(nn);
+		itemsByUID.insert(uid, sceneItem);
+		QVariantList nextNodes = sceneItem.nextNodes() + sceneItem.nextAlternativeNodes();;
+		foreach(const QVariant& nn, nextNodes)
+			nextNodeItems.insert(SceneDocument(nn).uid());
 	}
+	
 	// Items without predecessor are added to the root node
 	allItems.subtract(nextNodeItems);
-	mRootNode->setNextNodes(allItems.toList());
+	QList<SceneDocument> rootItems;
+	foreach(const QString& uid, allItems) {
+		rootItems.append(itemsByUID.values(uid));
+	}
+	mRootNode->setNextNodes(rootItems);
 }
 
 void Scene::setEnabled(bool en) {

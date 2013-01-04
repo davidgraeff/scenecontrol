@@ -26,7 +26,7 @@ foreach(SceneDocument* scene, documents) {
 			vItem.setid(item->id());
 			vItem.setType(item->type());
 			if (lastItem.hasid() && lastItem.hasType())
-				vItem.setNextNodes(QStringList()<<lastItem.uid());
+				vItem.setNextNodes(QVariantList()<<lastItem.getData());
 			childs.append(vItem.getData());
 			lastItem = vItem;
 		}
@@ -38,7 +38,7 @@ foreach(SceneDocument* scene, documents) {
 			vItem.setid(item->id());
 			vItem.setType(item->type());
 			if (lastItem.hasid() && lastItem.hasType())
-				vItem.setNextNodes(QStringList()<<lastItem.uid());
+				vItem.setNextNodes(QVariantList()<<lastItem.getData());
 			childs.append(vItem.getData());
 			lastItem = vItem;
 		}
@@ -50,7 +50,7 @@ foreach(SceneDocument* scene, documents) {
 			vItem.setid(item->id());
 			vItem.setType(item->type());
 			if (lastItem.hasid() && lastItem.hasType())
-				vItem.setNextNodes(QStringList()<<lastItem.uid());
+				vItem.setNextNodes(QVariantList()<<lastItem.getData());
 			childs.append(vItem.getData());
 			lastItem = vItem;
 		}

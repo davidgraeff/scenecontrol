@@ -37,11 +37,11 @@ RunningScene::RunningScene(Scene* scene, SceneNode* node) : mScene(scene), mNode
 
 void RunningScene::run()
 {
-	const QList<QString> nextNodes = mNode->run();
+	const QList<SceneDocument> nextNodes = mNode->run();
 	if (mStopNextNodeExecution)
 		return;
-	foreach(const QString& nn, nextNodes) {
-		emit nextNode(mScene, nn);
+	foreach(const SceneDocument& nn, nextNodes) {
+		emit nextNode(mScene, nn.uid());
 	}
 	if (nextNodes.isEmpty())
 		emit noNextNode(mScene);

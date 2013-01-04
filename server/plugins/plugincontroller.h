@@ -81,7 +81,11 @@ public:
 		QMap<QString, QMap<QString,PluginProcess*> >::const_iterator i;
 		QMap<QString,PluginProcess*>::const_iterator j;
 	public:
-		iterator(PluginController* x) :p(x) {i = p->m_plugins.constBegin();j=i.value().begin();}
+		iterator(PluginController* x) :p(x) {
+			i = p->m_plugins.begin();
+			if (i!=p->m_plugins.end())
+				j=i.value().begin();
+		}
 		iterator(const iterator& mit) : p(mit.p),i(mit.i),j(mit.j) {}
 		iterator& operator++() {
 			if (i==p->m_plugins.end())
@@ -89,6 +93,8 @@ public:
 			++j;
 			if (j==i.value().end()) {
 				++i;
+				if (i==p->m_plugins.end())
+					return *this;
 				j=i.value().begin();
 			}
 			return *this;

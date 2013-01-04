@@ -4,24 +4,42 @@
 #include <qeventloop.h>
 #include <QElapsedTimer>
 
-SceneNode* SceneNode::createEmptyNode() {return new SceneNode(SceneDocument::TypeUnknown,QString(),QList<QString>(),QList<QString>());}
-SceneNode* SceneNode::createNode(SceneDocument::TypeEnum type, const QString& id, const QList<QString>& nextNodes, const QList<QString>& alternativeNextNodes) {
-	return new SceneNode(type, id, nextNodes, alternativeNextNodes);
+SceneNode* SceneNode::createEmptyNode() {return new SceneNode(SceneDocument::TypeUnknown,QString(),QList< SceneDocument >(),QList< SceneDocument >());}
+SceneNode* SceneNode::createNode(SceneDocument::TypeEnum type, const QString& id, const QVariantList& nextNodes, const QVariantList& alternativeNextNodes) {
+	QList<SceneDocument> nextNodesC;
+	foreach(const QVariant& v, nextNodes) {
+		SceneDocument s(v);
+		if (!s.hasid() || !s.hasType()) {
+			qWarning()<<"SceneNode::Create failed. Nextnode is invalid!"<< s.getjson();
+			continue;
+		}
+		nextNodesC.append(s);
+	}
+	QList<SceneDocument> alternativeNextNodesC;
+	foreach(const QVariant& v, alternativeNextNodes) {
+		SceneDocument s(v);
+		if (!s.hasid() || !s.hasType()) {
+			qWarning()<<"SceneNode::Create failed. Alternative nextnode is invalid!"<< s.getjson();
+			continue;
+		}
+		alternativeNextNodesC.append(s);
+	}
+	return new SceneNode(type, id, nextNodesC, alternativeNextNodesC);
 }
 
 SceneDocument::TypeEnum SceneNode::getType() const { return mType; }
 QString SceneNode::getID() const { return mID; }
 
-void SceneNode::setNextNodes(const QList<QString>& nextNodes)
+void SceneNode::setNextNodes(const QList<SceneDocument>& nextNodes)
 {
 	mNextNodes = nextNodes;
 }
 
-QList<QString> SceneNode::run() {
+QList<SceneDocument> SceneNode::run() {
 	SceneDocument doc = DataStorage::instance()->getDocumentCopy(SceneDocument::uid(mType,mID));
 	if (!doc.isValid()) {
 		qWarning() << "SceneNode::Run(): Document not valid!";
-		return QList<QString>();
+		return QList<SceneDocument>();
 	}
 	switch (doc.type()) {
 		case SceneDocument::TypeAction:
@@ -61,7 +79,7 @@ QList<QString> SceneNode::run() {
 		case SceneDocument::TypeEvent:
 			return mNextNodes;
 		default:
-			return QList<QString>();
+			return QList<SceneDocument>();
 	}
 }
 
@@ -87,4 +105,4 @@ void SceneNode::pluginResponse(const QVariant& response, const QByteArray& respo
 	mPluginResponseAvailable = 1;
 }
 
-SceneNode::SceneNode(SceneDocument::TypeEnum type, const QString& id, const QList<QString>& nextNodes, const QList<QString>& alternativeNextNodes) : mType(type), mID(id), mNextNodes(nextNodes), mNextAlternativeNodes(alternativeNextNodes) {}
+SceneNode::SceneNode(SceneDocument::TypeEnum type, const QString& id, const QList< SceneDocument >& nextNodes, const QList< SceneDocument >& alternativeNextNodes) : mType(type), mID(id), mNextNodes(nextNodes), mNextAlternativeNodes(alternativeNextNodes) {}

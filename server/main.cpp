@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
 	// load data storage and start plugin processes
 	datastorage->load();
-	
+
 	// load plugins and wait for a moment for the communication channels to settle
 	plugins->scanPlugins();
 	{

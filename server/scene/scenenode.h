@@ -34,26 +34,26 @@ public:
 	 * We do not store the scene document but only the unqiue id and all other information that
 	 * is provided by the scene
 	 */
-	static SceneNode* createNode(SceneDocument::TypeEnum type, const QString& id, const QList< QString >& nextNodes, const QList< QString >& alternativeNextNodes) ;
+	static SceneNode* createNode(SceneDocument::TypeEnum type, const QString& id, const QVariantList& nextNodes, const QVariantList& alternativeNextNodes) ;
 	
 	SceneDocument::TypeEnum getType() const;
 	QString getID() const;
 	
-	void setNextNodes(const QList<QString>& nextNodes);
+	void setNextNodes(const QList< SceneDocument >& nextNodes);
 	/**
 	 * Run this node and return next nodes
 	 */
-	QList<QString> run();
+	QList<SceneDocument> run();
 private Q_SLOTS:
 	void pluginResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid, const QString& instanceid) ;
 	void timeout() {}
 protected:
 	SceneDocument::TypeEnum mType;
 	QString mID;
-	QList<QString> mNextNodes;
-	QList<QString> mNextAlternativeNodes;
+	QList<SceneDocument> mNextNodes;
+	QList<SceneDocument> mNextAlternativeNodes;
 	QAtomicInt mPluginResponseAvailable;
 	bool mResponse;
-	explicit SceneNode(SceneDocument::TypeEnum type, const QString& id, const QList< QString >& nextNodes, const QList< QString >& alternativeNextNodes) ;
+	explicit SceneNode(SceneDocument::TypeEnum type, const QString& id, const QList< SceneDocument >& nextNodes, const QList< SceneDocument >& alternativeNextNodes) ;
 	public slots:
 };

@@ -217,13 +217,11 @@ void PluginController::startPluginProcessByConfiguration ( const SceneDocument* 
 }
 
 void PluginController::requestAllProperties(int sessionid) {
-	QMap<QString, QMap<QString,PluginProcess*> >::ConstIterator i = m_plugins.constBegin();
-	while (i!=m_plugins.end()) {
-		QMap<QString,PluginProcess*>::ConstIterator i2 = i.value().begin();
-		while (i2!=i.value().end()) {
-			PluginProcess* plugin = i2.value();
-			plugin->requestProperties(sessionid);
-		}
+	PluginController::iterator i = begin();
+	while (!i.eof()) {
+		PluginProcess* plugin (*i);
+		plugin->requestProperties(sessionid);
+		++i;
 	}
 }
 

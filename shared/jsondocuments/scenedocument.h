@@ -34,7 +34,8 @@ public:
     /** 
      * Constructor: Construct by an existing QVariantMap
      */
-    SceneDocument(const QVariantMap& map = QVariantMap());
+    SceneDocument(const QVariantMap& map);
+	SceneDocument(const QVariant& v = QVariant());
     /** 
      * Constructor: Construct by a json document
      */
@@ -225,16 +226,16 @@ public:
     }
     
     // Scene specific
-    QList<QString> nextNodes() const {
-		return m_map.value(QLatin1String("e")).toStringList();
+    QVariantList nextNodes() const {
+		return m_map.value(QLatin1String("e")).toList();
 	}
-	void setNextNodes(const QStringList& nextNodes) {
+	void setNextNodes(const QVariantList& nextNodes) {
 		m_map[QLatin1String("e")] = nextNodes;
 	}
-	QList<QString> nextAlternativeNodes() const {
-		return m_map.value(QLatin1String("eAlt")).toStringList();
+	QVariantList nextAlternativeNodes() const {
+		return m_map.value(QLatin1String("eAlt")).toList();
 	}
-	void setAlternativeNextNodes(const QStringList& nextNodes) {
+	void setAlternativeNextNodes(const QVariantList& nextNodes) {
 		m_map[QLatin1String("eAlt")] = nextNodes;
 	}
 	QVariantList sceneItems() const {
