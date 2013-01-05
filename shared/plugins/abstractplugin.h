@@ -67,6 +67,12 @@ public:
      */
     AbstractPlugin(const QString& pluginid, const QString& instanceid);
     virtual ~AbstractPlugin();
+	/**
+	 * If data from the server has been received you can get the clients id (session id)
+	 * that initiated the data request. This method returns -1 if no client, but the server
+	 * send data.
+	 */
+	int getLastSessionID();
 
     bool createCommunicationSockets();
     bool callRemoteComponentMethod( const QByteArray& componentUniqueID, const QVariantMap& dataout );

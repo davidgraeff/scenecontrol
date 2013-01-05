@@ -303,3 +303,4 @@ QString AbstractPlugin::pluginid() {
 QString AbstractPlugin::instanceid() {
     return m_instanceid;
 }
+int AbstractPlugin::getLastSessionID() {return m_lastsessionid;}

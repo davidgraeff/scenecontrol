@@ -97,6 +97,7 @@ void SceneController::startNode(Scene* scene, const QString& nodeUID)
 	else
 		node = scene->getNode(nodeUID);
 	
+	qDebug() << __FUNCTION__ << scene << nodeUID << node;
 	if (!node)
 		return;
 	

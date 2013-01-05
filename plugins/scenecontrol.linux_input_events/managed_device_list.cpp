@@ -85,48 +85,65 @@ void ManagedDeviceList::processDevice(struct udev_device *dev)
     // Ignore child devices
     //if (udev_device_get_property_value(dev, "ID_VENDOR_ID") == 0) return;
 
-    const char* attr = udev_device_get_property_value(dev, "RCTR_DEVICE");
-    if (!attr) {
-        return;
-    }
+//     const char* attr = udev_device_get_property_value(dev, "RCTR_DEVICE");
+//     if (!attr) {
+//         return;
+//     }
+	
 
-    struct udev_device * usbdev = udev_device_get_parent_with_subsystem_devtype(dev,"usb","usb_device");
-    if (usbdev == 0)
-        return;
+	struct udev_device * inputdev = udev_device_get_parent_with_subsystem_devtype(dev,"input",0);
+	if (inputdev == 0)
+		return;
+	
+//     struct udev_device * usbdev = udev_device_get_parent_with_subsystem_devtype(dev,"usb","usb_device");
+//     if (usbdev == 0)
+//         return;
 
     const char* action = udev_device_get_action(dev);
     const char* sys_path_t = udev_device_get_property_value(dev, "DEVPATH");
     if (!sys_path_t) return;
     const char* dev_path_t = udev_device_get_devnode(dev);
     if (!dev_path_t) return;
-    const QByteArray sys_path = sys_path_t;
+	const QByteArray name = udev_device_get_sysattr_value(inputdev, "name");
+	const QByteArray sys_path = sys_path_t;
     const QByteArray dev_path = dev_path_t;
+	const QByteArray product = udev_device_get_sysattr_value(inputdev, "id/product");
+	const QByteArray phys = udev_device_get_sysattr_value(inputdev, "phys");
+	
+	// Ignore sound device input events etc
+	if (product=="0000")
+		return;
 
     if (action && strcmp(action,"remove")==0) {
         /* get device */
-        ManagedDevice* device = m_devices.value(sys_path);
+		ManagedDevice* device = m_devices.value(phys);
         if (!device) return;
         emit deviceRemoved(device);
         m_devices.remove(sys_path);
     } else { // add device
-        ManagedDevice* device = m_devices.value(sys_path);
+		ManagedDevice* device = m_devices.value(phys);
         // if device already present, do nothing */
         if (device) return;
         // create new device object with settings
         device = new ManagedDevice();
         device->devPath = dev_path;
         device->sysPath = sys_path;
+		device->info = name;
+		device->udid = phys;
+//         device->info = QByteArray(udev_device_get_sysattr_value(usbdev,"product")) +
+//                        " - " + QByteArray(udev_device_get_sysattr_value(usbdev,"manufacturer")) +
+//                        " (" + dev_path + ")";
+//         device->udid = QByteArray(udev_device_get_sysattr_value(usbdev, "idVendor"))  +
+//                        QByteArray(udev_device_get_sysattr_value(usbdev, "idProduct")) +
+//                        QByteArray(udev_device_get_sysattr_value(usbdev, "serial"));
+//         if (device->udid.isEmpty())
+// 		device->udid = dev_path;
 
-        device->info = QByteArray(udev_device_get_sysattr_value(usbdev,"product")) +
-                       " - " + QByteArray(udev_device_get_sysattr_value(usbdev,"manufacturer")) +
-                       " (" + dev_path + ")";
-        device->udid = QByteArray(udev_device_get_sysattr_value(usbdev, "idVendor"))  +
-                       QByteArray(udev_device_get_sysattr_value(usbdev, "idProduct")) +
-                       QByteArray(udev_device_get_sysattr_value(usbdev, "serial"));
-        if (device->udid.isEmpty()) device->udid = dev_path;
-
+// 		qDebug() << "add" << dev_path << name << phys
+// 		<< product << udev_device_get_sysattr_value(inputdev, "id/vendor")<< udev_device_get_sysattr_value(inputdev, "id/version");
+		
         /* add to list */
-        m_devices.insert(sys_path, device);
+		m_devices.insert(phys, device);
 
         emit deviceAdded(device);
     }
@@ -145,7 +162,7 @@ void ManagedDeviceList::start() {
     {
         m_state = ValidWithoutMonitoring;
         qWarning() << "UDev monitor failed:" << errno;
-        // Add filter to only receive events for the usb subsystem
+        // Add filter to only receive events for the input subsystem
     } else if (udev_monitor_filter_add_match_subsystem_devtype (udev_mon, "input", NULL) != 0) {
         qWarning() << "UDev monitor filter failed:" << errno;
         udev_monitor_unref (udev_mon);

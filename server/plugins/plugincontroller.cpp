@@ -276,6 +276,7 @@ int PluginController::execute(const SceneDocument& data, const QByteArray respon
 		plugin->callQtSlot ( data, responseID );
 		++validCalls;
 	}
+
 	return validCalls;
 }
 

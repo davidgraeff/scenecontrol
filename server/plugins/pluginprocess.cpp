@@ -178,6 +178,8 @@ void PluginProcess::readyReadPluginData()
             // propagate changed property
             Socket::instance()->sendToClients(doc.getjson(), sessionid);
         } else if (method == "eventTriggered") {
+			qDebug() << __FUNCTION__ << "eventTriggered" << doc.getjson();
+			
             const QString sceneid = doc.sceneid();
             if (sceneid.isEmpty()) {
                 qWarning() << "Server: Request collection execution by event for" << m_pluginid << m_instanceid <<"but no sceneid provided";
