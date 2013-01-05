@@ -92,6 +92,6 @@ public Q_SLOTS:
 	 */
     void startScene ( const QString& sceneid, const QString entryPointItemID = QString() );
 	void stopScene (const QString& sceneid);
-	void startNode( Scene* scene, const QString& nodeUID);
+	bool startNode( Scene* scene, const QString& nodeUID);
 	void sceneFinished (Scene* scene);
 };

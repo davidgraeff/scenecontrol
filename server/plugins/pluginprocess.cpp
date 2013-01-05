@@ -178,15 +178,13 @@ void PluginProcess::readyReadPluginData()
             // propagate changed property
             Socket::instance()->sendToClients(doc.getjson(), sessionid);
         } else if (method == "eventTriggered") {
-			qDebug() << __FUNCTION__ << "eventTriggered" << doc.getjson();
-			
+			doc.setType(SceneDocument::TypeEvent);
             const QString sceneid = doc.sceneid();
             if (sceneid.isEmpty()) {
-                qWarning() << "Server: Request collection execution by event for" << m_pluginid << m_instanceid <<"but no sceneid provided";
+                qWarning() << "Server: Request scene execution by event for" << m_pluginid << m_instanceid <<"but no sceneid provided";
                 continue;
             }
-            //qDebug() << "eventTriggered";
-            SceneController::instance()->startScene(sceneid, doc.id());
+            SceneController::instance()->startScene(sceneid, doc.uid());
         } else {
             qWarning() << "Unknown data from plugin" << m_chunk;
         }

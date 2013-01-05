@@ -84,11 +84,12 @@ void SceneController::startScene ( const QString& sceneid, const QString entryPo
 	if (!scene)
 		return;
 	
-	RunningScenes::instance()->sceneThreadStarted(sceneid);
-	startNode(scene, entryPointItemID);
+	if (startNode(scene, entryPointItemID)) {
+		RunningScenes::instance()->sceneThreadStarted(sceneid);
+	}
 }
 
-void SceneController::startNode(Scene* scene, const QString& nodeUID)
+bool SceneController::startNode(Scene* scene, const QString& nodeUID)
 {
 	mRunningScenes.remove((RunningScene*)sender());
 	SceneNode* node = 0;
@@ -99,13 +100,14 @@ void SceneController::startNode(Scene* scene, const QString& nodeUID)
 	
 	qDebug() << __FUNCTION__ << scene << nodeUID << node;
 	if (!node)
-		return;
+		return false;
 	
 	RunningScene* rScene = new RunningScene(scene, node);
 	connect(rScene, SIGNAL(nextNode(Scene*,QString)), SLOT(startNode(Scene*,QString)));
 	connect(rScene, SIGNAL(noNextNode(Scene*)), SLOT(sceneFinished(Scene*)));
 	mRunningScenes.insert(rScene);
 	QThreadPool::globalInstance()->start(rScene);
+	return true;
 }
 
 void SceneController::stopScene(const QString& sceneid)
