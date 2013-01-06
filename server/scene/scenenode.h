@@ -44,6 +44,7 @@ public:
 	 * Run this node and return next nodes
 	 */
 	QList<SceneDocument> run();
+	QStringList getNextNodeUIDs();
 private Q_SLOTS:
 	void pluginResponse(const QVariant& response, const QByteArray& responseid, const QString& pluginid, const QString& instanceid) ;
 	void timeout() {}

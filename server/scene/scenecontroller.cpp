@@ -98,9 +98,9 @@ bool SceneController::startNode(Scene* scene, const QString& nodeUID)
 	else
 		node = scene->getNode(nodeUID);
 	
-	qDebug() << __FUNCTION__ << scene << nodeUID << node;
 	if (!node)
 		return false;
+// 	qDebug() << __FUNCTION__ << scene->scenedoc()->toString("name") << node->getNextNodeUIDs();
 	
 	RunningScene* rScene = new RunningScene(scene, node);
 	connect(rScene, SIGNAL(nextNode(Scene*,QString)), SLOT(startNode(Scene*,QString)));

@@ -35,10 +35,24 @@ void SceneNode::setNextNodes(const QList<SceneDocument>& nextNodes)
 	mNextNodes = nextNodes;
 }
 
+QStringList SceneNode::getNextNodeUIDs()
+{
+	QStringList s;
+	foreach(const SceneDocument& v, mNextNodes) {
+		s.append(v.uid());
+	}
+	return s;
+}
+
 QList<SceneDocument> SceneNode::run() {
+	// Root node?
+	if (mType==SceneDocument::TypeUnknown) {
+		return mNextNodes;
+	}
+	
 	SceneDocument doc = DataStorage::instance()->getDocumentCopy(SceneDocument::uid(mType,mID));
 	if (!doc.isValid()) {
-		qWarning() << "SceneNode::Run(): Document not valid!";
+		qWarning() << "SceneNode::Run(): Document not valid!" << mType << mID << doc.getjson();
 		return QList<SceneDocument>();
 	}
 	switch (doc.type()) {
