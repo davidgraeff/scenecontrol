@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"action",
 	"method_":"projector_sanyo_power", "name":"Ein/Ausschalten",
+	"text":"Sanyo Z700 Projektor: {{power}}.",
 	"parameters": {
 		"power":{"name":"Power", "type":"boolean"}
 	}

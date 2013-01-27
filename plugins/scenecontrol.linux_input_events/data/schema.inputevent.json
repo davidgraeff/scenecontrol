@@ -1,8 +1,9 @@
 {
 	"type_":"schema", "targettype":"event",
 	"method_":"inputevent", "name":"Bei Tastendruck",
+	"text":"Reagiere auf {{inputdevice}} bei Taste {{kernelkeyname}}. Wiederholen ist {{repeat}}.",
 	"parameters": {
-		"inputdevice":{"name":"Gerät", "type":"modelenum", "model":"inputdevice","indexproperty":"udid","textproperty":"info", "value":"", "notification":"input.device.key"},
+		"inputdevice":{"name":"Gerät", "type":"modelenum", "model":"inputdevice","indexproperty":"udid","textproperty":"info", "value":"", "onchange":"listenToInputEvents"},
 		"kernelkeyname":{"name":"Taste", "type":"string", "notification":"input.device.key","indexproperty":"kernelkeyname","textproperty":"kernelkeyname", "value":""},
 		"repeat":{"name":"Wiederholen", "type":"boolean", "value":false}
 	}

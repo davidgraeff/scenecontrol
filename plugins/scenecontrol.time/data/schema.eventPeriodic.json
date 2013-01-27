@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"event",
 	"method_":"eventPeriodic", "name":"Periodischer Alarm",
+	"text":"Bei {{time}} Uhr an den Tagen: {{days}}.",
 	"parameters": {
 		"time":{"name":"Zeit", "type":"time"},
 		"days":{"name":"Tage", "type":"multienum", "data":["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"]}

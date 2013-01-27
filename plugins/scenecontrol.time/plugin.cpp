@@ -48,7 +48,7 @@ void plugin::initialize() {
 
 void plugin::clear() {
     m_timer.stop();
-	m_remaining_events.clear();
+	mEvents.clear();
 }
 
 bool plugin::datespan ( const QString& current, const QString& lower, const QString& upper)  {
@@ -70,160 +70,145 @@ bool plugin::timespan ( const QString& current, const QString& lower, const QStr
 }
 
 void plugin::eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time) {
+	if (sceneid_.isEmpty()) {
+		removeEvent(id_);
+		return;
+	}
+	
     // recalculate next event
     EventTimeStructure s;
+	s.eventid = id_;
     s.sceneid = sceneid_;
     s.date = QDate::fromString(date, Qt::ISODate);
     s.time = QTime::fromString(time, QLatin1String("h:m"));
-    m_remaining_events[id_] = s;
-    calculate_next_events();
-
-    // property update
-    SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
-    sc.setData("uid", id_);
-    changeProperty(sc.getData());
+	QDateTime datetime(s.date, s.time);
+	if (QDateTime::currentDateTime()>datetime)
+		return;
+	addToEvents(datetime, s);
 }
 
 void plugin::eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days) {
-	QVariantList days_ = days;
-	QBitArray converted(7);
-	while (days_.size()) {
-		int day = days_.takeLast().toInt();
-		if (day>=0 && day < 7)
-			converted.setBit(day, true);
+	if (sceneid_.isEmpty()) {
+		removeEvent(id_);
+		return;
 	}
 	
-// qDebug() << __FUNCTION__ << time << converted.testBit(0) << converted.testBit(1) << converted.testBit(2) << converted.testBit(3);
+	if (days.size()<7)
+		return;
+	
+	QBitArray converted(7);
+	for (int i=0;i < 7;++i) {
+		converted.setBit(i, days.at(i).toBool());
+	}
+	
     // recalculate next event
     EventTimeStructure s;
+	s.eventid = id_;
     s.sceneid = sceneid_;
     s.time = QTime::fromString(time, QLatin1String("h:m"));
     s.days = converted;
-    m_remaining_events[id_] = s;
-    calculate_next_events();
-
-    // property update
-    SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
-    sc.setData("uid", id_);
-    changeProperty(sc.getData());
+	calculate_next_periodic_timeout(s);
 }
 
-void plugin::unregister_event ( const QString& eventid) {
-    // remove from remaining events
-    m_remaining_events.remove(eventid);
-
-    // recalculate next event
-    calculate_next_events();
-
-    // property update
-    SceneDocument s = SceneDocument::createModelRemoveItem("time.alarms");
-    s.setData("uid", eventid);
-    changeProperty(s.getData());
+void plugin::removeEvent ( const QString& eventid) {
+	SceneDocument s = SceneDocument::createModelRemoveItem("time.alarms");
+	QMutableMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
+	while(i.hasNext()) {
+		i.next();
+		if (i.value().eventid == eventid) {
+			// property update
+			s.setData("uid", eventid);
+			changeProperty(s.getData());
+			i.remove();
+		}
+	}
+	setupTimer();
 }
 
 void plugin::requestProperties(int sessionid) {
-    if (!m_nextAlarm.isNull()) {
-        SceneDocument s = SceneDocument::createNotification("nextalarm");
-        s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
-        s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
-        changeProperty(s.getData(), sessionid);
-    } else {
-        SceneDocument s = SceneDocument::createNotification("nextalarm");
-        changeProperty(s.getData(), sessionid);
-    }
+	SceneDocument s = SceneDocument::createNotification("nextalarm");
+	if (mEvents.size())
+		s.setData("seconds", QDateTime::currentDateTime().secsTo(mEvents.begin().key()));
+	changeProperty(s.getData(), sessionid);
 
-    changeProperty(SceneDocument::createModelReset("time.alarms", "uid").getData(), sessionid);
+	changeProperty(SceneDocument::createModelReset("time.alarms", "uid").getData(), sessionid);
 
-    QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
-    for (;i != m_remaining_events.end(); ++i) {
+	QMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
+	while(i.hasNext()) {
+		i.next();
         SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
-        sc.setData("uid", i.key());
+        sc.setData("uid", i.value().eventid);
+		sc.setData("seconds", QDateTime::currentDateTime().secsTo(i.key()));
         changeProperty(sc.getData(), sessionid);
     }
 }
 
 void plugin::timeout() {
-    // calculate next events
-    calculate_next_events();
-}
-
-bool plugin::calculate_next_timer_timeout(const int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime) {
-	if ( seconds > 86400 ) {
-		if (nextTime==-1) nextTime = 86400;
-	} else if ( seconds > 10 ) {
-		qDebug() << "One-time alarm: Armed" << seconds;
-		if (nextTime==-1 || seconds<nextTime) nextTime = seconds;
-	} else if ( seconds > -10 && seconds < 10 ) {
-		qDebug() << "One-time alarm: Triggered" << eventtime.sceneid;
-		eventTriggered ( eventid.toAscii(), eventtime.sceneid.toAscii() );
-		return true;
-	} else {
-		qDebug() << "One-time alarm: Remove" << eventtime.sceneid << seconds;
-		return true;
+	QMutableMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
+	while(i.hasNext()) {
+		i.next();
+		if (abs(QDateTime::currentDateTime().secsTo(i.key())) < 10) {
+			plugin::EventTimeStructure ts = i.value();
+			qDebug()<<"Alarm triggered"<<ts.sceneid;
+			eventTriggered(ts.eventid, ts.sceneid);
+			i.remove();
+			if (ts.periodic)
+				calculate_next_periodic_timeout(ts);
+		}
 	}
-	return false;
+	setupTimer();
 }
 
-void plugin::calculate_next_events() {
-	int nextTime = 86400;
-    QSet<QString> removeEventids;
+void plugin::setupTimer() {
+	m_timer.stop();
+	QMutableMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
+	while(i.hasNext()) {
+		i.next();
+		int sec = QDateTime::currentDateTime().secsTo(i.key());
+		if (sec>0) {
+			SceneDocument s = SceneDocument::createNotification("nextalarm");
+			s.setData("seconds", sec);
+			changeProperty(s.getData());
+			qDebug()<<"Next alarm in"<<sec<<"s";
+			m_timer.start ( sec * 1000 );
+			break;
+		}
+		i.remove();
+	};
+}
 
-    QMap<QString, EventTimeStructure>::iterator i = m_remaining_events.begin();
-    for (;i != m_remaining_events.end(); ++i) {
-      const QString& eventid = i.key();
-      const EventTimeStructure& eventtime = i.value();
-      
-        if ( !eventtime.date.isNull() ) {
-            const QDateTime datetime(eventtime.date, eventtime.time);
-            const int sec = QDateTime::currentDateTime().secsTo ( datetime );
-			if (calculate_next_timer_timeout(sec, nextTime, eventid, eventtime))
-				removeEventids.insert ( eventid );
-        } else if ( !eventtime.days.isEmpty() ) {
-            QDateTime datetime = QDateTime::currentDateTime();
-            datetime.setTime ( eventtime.time );
+void plugin::calculate_next_periodic_timeout(const plugin::EventTimeStructure& ts) {
+	QDateTime t;
+	QDateTime datetime = QDateTime::currentDateTime();
+	datetime.setTime ( ts.time );
+	
+	int dow = QDate::currentDate().dayOfWeek() - 1;
+	int offsetdays = 0;
+	
+	// If it is too late for the alarm today then
+	// try with the next weekday
+	if ( QTime::currentTime() > ts.time ) {
+		dow = ( dow+1 ) % 7;
+		++offsetdays;
+	}
+	
+	// Search for the next activated weekday
+	for ( ; offsetdays < 8; ++offsetdays ) {
+		if ( ts.days.testBit(dow) ) break;
+		dow = ( dow+1 ) % 7;
+	}
+	
+	if ( offsetdays < 8 ) {
+		addToEvents(datetime.addDays ( offsetdays ), ts);
+	}	
+}
 
-            int dow = QDate::currentDate().dayOfWeek() - 1;
-            int offsetdays = 0;
-
-            // If it is too late for the alarm today then
-            // try with the next weekday
-            if ( QTime::currentTime() > eventtime.time ) {
-                dow = ( dow+1 ) % 7;
-                ++offsetdays;
-            }
-
-            // Search for the next activated weekday
-            for ( ; offsetdays < 8; ++offsetdays ) {
-                if ( eventtime.days.testBit(dow) ) break;
-                dow = ( dow+1 ) % 7;
-            }
-
-            if ( offsetdays < 8 ) {
-                datetime = datetime.addDays ( offsetdays );
-                const int sec = QDateTime::currentDateTime().secsTo ( datetime ) + 1;
-				if (calculate_next_timer_timeout(sec, nextTime, eventid, eventtime))
-					removeEventids.insert ( eventid );
-            }
-        }
-    }
-
-    // remove remaining events that are in the next event list
-    foreach (QString uid, removeEventids) {
-        m_remaining_events.remove ( uid );
-        SceneDocument s = SceneDocument::createModelRemoveItem("time.alarms");
-        s.setData("uid", uid);
-        changeProperty(s.getData());
-    }
-
-    if ( nextTime != -1 ) {
-        m_timer.start ( nextTime * 1000 );
-        SceneDocument s = SceneDocument::createNotification("nextalarm");
-		s.setData("seconds", nextTime);
-        //s.setData("date", m_nextAlarm.date().toString(Qt::ISODate));
-        //s.setData("time", m_nextAlarm.time().toString(QLatin1String("hh:mm")));
-        changeProperty(s.getData());
-    } else {
-        SceneDocument s = SceneDocument::createNotification("nextalarm");
-        changeProperty(s.getData());
-    }
+void plugin::addToEvents(const QDateTime& nextTimeout, const plugin::EventTimeStructure& ts) {
+	mEvents.insert(nextTimeout, ts);
+	// property update
+	SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
+	sc.setData("uid", ts.eventid);
+	sc.setData("seconds", QDateTime::currentDateTime().secsTo(nextTimeout));
+	changeProperty(sc.getData());
+	setupTimer();
 }

@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"condition",
 	"method_":"datespan", "name":"Datum?",
+	"text":"Ist Datum {{current}} zwischen {{lower}} und {{upper}}?",
 	"parameters": {
 		"current":{"name":"Vergleichsdatum", "type":"date", "value":"", "placeholder":"01.01.2012"},
 		"lower":{"name":"Mindest Datum", "type":"date", "value":"", "placeholder":"01.01.2012"},

@@ -1,7 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"modeChange", "name":"Modus setzen",
-	"parameters": {
-		"mode":{"name":"Modus", "type":"string", "value":""}
-	}
-}

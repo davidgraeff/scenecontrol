@@ -73,8 +73,6 @@ public Q_SLOTS:
     /// Proxy Method: Request plugin properties. They are send from plugin to the server
     /// via the changeProperty method. This special request can be identified by the sessionid.
     void requestProperties(int sessionid);
-    /// Proxy Method: Unregister event
-    void unregister_event ( const QString& eventid );
     /// Proxy Method: Session started or finished
     void session_change ( int sessionid, bool running );
     /// Proxy Method: Call Qt Slot of the plugin. The QVariantMap have to contain at least a method_ member

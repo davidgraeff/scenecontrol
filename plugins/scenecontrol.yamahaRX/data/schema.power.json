@@ -1,0 +1,7 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"power", "name":"Power",
+	"parameters": {
+		"power":{"name":"Power", "type":"boolean", "value":false}
+	}
+}

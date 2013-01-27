@@ -3,24 +3,30 @@
 #include <QDebug>
 #include <QUuid>
 
+const char* const SceneDocument::typetext[] = {" ",
+"event","condition","action","scene","configuration","schema",
+"execute","remove","notification",
+"model","model.remove","model.change","model.reset",
+"error"," "};
+
 SceneDocument SceneDocument::createModelRemoveItem ( const char* id ) {
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
-	sc.setType(QLatin1String ( "model.remove" ));
+	sc.setType(TypeModelItemRemove);
     return sc;
 }
 
 SceneDocument SceneDocument::createModelChangeItem ( const char* id ) {
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
-	sc.setType(QLatin1String ( "model.change" ));
+	sc.setType(TypeModelItemChange);
     return sc;
 }
 
 SceneDocument SceneDocument::createModelReset ( const char* id, const char* key ) {
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
-	sc.setType(QLatin1String ( "model.reset" ));
+	sc.setType(TypeModelItemReset);
 	sc.setModelkey(key);
     return sc;
 }
@@ -28,7 +34,7 @@ SceneDocument SceneDocument::createModelReset ( const char* id, const char* key 
 SceneDocument SceneDocument::createNotification ( const char* id ) {
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
-	sc.setType(QLatin1String ( "notification" ));
+	sc.setType(TypeNotification);
     return sc;
 }
 
@@ -61,12 +67,31 @@ QVariantMap SceneDocument::toMap(const char* key) const {
     return m_map.value(QString::fromUtf8(key)).toMap();
 }
 
-SceneDocument::SceneDocument(const QVariantMap& map) : m_map(map) {}
+SceneDocument::SceneDocument(const QVariantMap& map) : m_map(map) {convertType();}
+SceneDocument::SceneDocument(const QVariant& v)  : m_map(v.toMap()) {convertType();}
 SceneDocument::SceneDocument(const QByteArray& jsondata) {
 	JsonReader r;
 	r.parse(jsondata);
 	m_map = r.result().toMap();
+	convertType();
 }
+
+void SceneDocument::convertType()
+{
+	QByteArray type = m_map.value(QLatin1String("type_")).toByteArray();
+	mType = TypeUnknown;
+	for (int i=0;i<TypeLAST;++i) {
+		if (strlen(typetext[i])==type.size() && strncmp(type,typetext[i],type.size())==0) {
+			mType = (TypeEnum)i;
+			break;
+		}
+	}
+}
+QString SceneDocument::typeString(const SceneDocument::TypeEnum t)
+{
+	return QString::fromAscii(typetext[t]);
+}
+
 
 bool SceneDocument::isValid() const {
   return !m_map.empty() && hasType() && hasid() && hasComponentID();
@@ -78,7 +103,7 @@ QByteArray SceneDocument::getjson() const {
 	return w.result().toUtf8() + "\n";
 }
 
-bool SceneDocument::correctTypes(const QVariantMap& types)
+bool SceneDocument::correctDataTypes(const QVariantMap& types)
 {
     if (types.empty())
       return true;

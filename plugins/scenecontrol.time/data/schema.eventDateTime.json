@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"event",
 	"method_":"eventDateTime", "name":"Alarmzeitpunkt",
+	"text":"Bei {{time}} Uhr am {{date}}.",
 	"parameters": {
 		"date":{"name":"Datum", "type":"date"},
 		"time":{"name":"Zeit", "type":"time"}

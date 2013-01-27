@@ -14,9 +14,9 @@
  * Example:
  * plugin.h: EventMap<int> m_events;
  * plugin.cpp (constructor)  : EventMap<int>(key_fieldname)
- * plugin.cpp (register_event)  : m_events.add(data, collectionuid);
- * plugin.cpp (unregister_event): m_events.remove(data);
- * plugin.cpp (event trigger)   : m_events.getUids(key);
+ * plugin.cpp (eventMethod, scene id valid)  : m_events.add(data, sceneid);
+ * plugin.cpp (eventMethod, scene id empty): m_events.remove(data);
+ * plugin.cpp (event trigger)   : m_events.data(key);
  */
 template <class T, char* MEMBER>
 class EventMap : private QMap<T, QMap<QString, SceneDocument > >

@@ -30,6 +30,9 @@ DataStorage::DataStorage() : m_listener(0), m_isLoading(false)
 DataStorage::~DataStorage()
 {
 	unload();
+	QSet<AbstractStorageNotifier*> copy = m_notifiers;
+	qDeleteAll(copy);
+	m_notifiers.clear();
 }
 
 DataStorage *DataStorage::instance()
@@ -49,8 +52,6 @@ void DataStorage::unload()
 	delete m_listener;
 	m_listener = 0;
 	m_cache.clear();
-	qDeleteAll(m_notifiers);
-	m_notifiers.clear();
 }
 
 void DataStorage::load()
@@ -58,13 +59,14 @@ void DataStorage::load()
 	unload();
 	if (!m_dir.exists() && !m_dir.mkpath(m_dir.absolutePath()))
 		return;
-
-	m_cache.insert(QLatin1String("action"), QList<SceneDocument*>());
-	m_cache.insert(QLatin1String("event"), QList<SceneDocument*>());
-	m_cache.insert(QLatin1String("condition"), QList<SceneDocument*>());
-	m_cache.insert(QLatin1String("scene"), QList<SceneDocument*>());
-	m_cache.insert(QLatin1String("configuration"), QList<SceneDocument*>());
 	
+	// Accepted documents for the cache
+		m_cache.insert(SceneDocument::TypeAction,QList<SceneDocument*>());
+		m_cache.insert(SceneDocument::TypeCondition,QList<SceneDocument*>());
+		m_cache.insert(SceneDocument::TypeEvent,QList<SceneDocument*>());
+		m_cache.insert(SceneDocument::TypeScene,QList<SceneDocument*>());
+		m_cache.insert(SceneDocument::TypeConfiguration,QList<SceneDocument*>());
+
 	// initiate a directory watcher
 	m_listener = new DataStorageWatcher();
 	connect(m_listener, SIGNAL(fileChanged(QString)), SLOT(reloadDocument(QString)));
@@ -89,11 +91,11 @@ void DataStorage::load()
 	}
 	m_isLoading = false;
 	
-	qDebug() << "Loaded actions:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeAction)).size();
-	qDebug() << "Loaded conditions:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeCondition)).size();
-	qDebug() << "Loaded events:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeEvent)).size();
-	qDebug() << "Loaded scenes:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeScene)).size();
-	qDebug() << "Loaded configurations:" << m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeConfiguration)).size();
+	qDebug() << "Loaded actions:" << m_cache.value(SceneDocument::TypeAction).size();
+	qDebug() << "Loaded conditions:" << m_cache.value(SceneDocument::TypeCondition).size();
+	qDebug() << "Loaded events:" << m_cache.value(SceneDocument::TypeEvent).size();
+	qDebug() << "Loaded scenes:" << m_cache.value(SceneDocument::TypeScene).size();
+	qDebug() << "Loaded configurations:" << m_cache.value(SceneDocument::TypeConfiguration).size();
 }
 
 QList< SceneDocument* > DataStorage::filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter) const {
@@ -125,17 +127,27 @@ QStringList DataStorage::directories(const QDir& dir) {
 	return d;
 }
 
-QList<SceneDocument*> DataStorage::requestAllOfType(SceneDocument::TypeEnum type, const QVariantMap& filter) const {
-	// special if id is known
-	const QString typetext = SceneDocument::stringFromTypeEnum(type);
-	if (filter.contains(SceneDocument::idkey()))
-		return m_index_typeid.values(SceneDocument::id(filter)+typetext);
-	// generic
-	return filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
+QList<SceneDocument*> DataStorage::filteredDocuments(SceneDocument::TypeEnum type, const QVariantMap& filter) const {
+	return filterEntries(m_cache.value(type), filter);
+}
+
+SceneDocument* DataStorage::getDocument(const QString& uid)
+{
+	return m_index_typeid.value(uid);
+}
+
+SceneDocument DataStorage::getDocumentCopy(const QString& uid)
+{
+	QMutexLocker locker(&mReadWriteLockMutex);
+	SceneDocument* doc = m_index_typeid.value(uid);
+	if (doc)
+		return SceneDocument(doc->getData());
+	else
+		return SceneDocument();
 }
 
 int DataStorage::changeDocumentsValue(SceneDocument::TypeEnum type, const QVariantMap& filter, const QString& key, const QVariantMap& value) {
-	QList<SceneDocument*> v = filterEntries(m_cache.value(SceneDocument::stringFromTypeEnum(type)), filter);
+	QList<SceneDocument*> v = filterEntries(m_cache.value(type), filter);
 	for (int i=0;i<v.size();++i) {
 		v[i]->getData().insert(key, value); 
 		storeDocument(*v[i], true);
@@ -162,15 +174,15 @@ bool DataStorage::removeDocument(const SceneDocument &doc)
 	}
 	
 	// Remove related documents
-	if (doc.checkType(SceneDocument::TypeScene)) {
+	if (doc.isType(SceneDocument::TypeScene)) {
 		const QString sceneid = doc.sceneid();
 		QList<SceneDocument*> v;
+		SceneDocument filterDoc;
+		filterDoc.setSceneid(doc.id());
 		
-		v = m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeAction));
-		for (int i=v.size()-1;i>=0;--i) removeDocument(*v[i]);
-		v = m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeCondition));
-		for (int i=v.size()-1;i>=0;--i) removeDocument(*v[i]);
-		v = m_cache.value(SceneDocument::stringFromTypeEnum(SceneDocument::TypeEvent));
+		v += filteredDocuments(SceneDocument::TypeAction, filterDoc.getData());
+		v += filteredDocuments(SceneDocument::TypeCondition, filterDoc.getData());
+		v += filteredDocuments(SceneDocument::TypeEvent, filterDoc.getData());
 		for (int i=v.size()-1;i>=0;--i) removeDocument(*v[i]);
 	}
 	
@@ -225,12 +237,13 @@ void DataStorage::reloadDocument( const QString& filename ) {
 	file.close();
 	
 	if (!doc->isValid()) {
-		qWarning() << "Document is not valid!" << filename;
+		qWarning() << "Document is not valid!" << doc->getjson();
 		delete doc;
 		return;
 	}
 	
 	if (!m_cache.contains(doc->type())) {
+		//qWarning() << "Document type not supported!" << doc->type();
 		delete doc;
 		return;
 	}
@@ -241,6 +254,7 @@ void DataStorage::reloadDocument( const QString& filename ) {
 		return;
 	}
 	
+	QMutexLocker locker(&mReadWriteLockMutex);
 	SceneDocument* olddoc = m_index_filename.take(filename);
 	if (olddoc) {
 		m_index_typeid.remove(olddoc->uid());
@@ -252,7 +266,6 @@ void DataStorage::reloadDocument( const QString& filename ) {
 				break;
 			}
 		}
-		delete olddoc;
 	}
 	
 	m_index_filename.insert(filename, doc);
@@ -260,21 +273,23 @@ void DataStorage::reloadDocument( const QString& filename ) {
 	m_cache[doc->type()].append(doc);
 	
 	// Do not notify if we are still in the initial loading process currently
-	if (m_isLoading)
-		return;
-	
-	emit doc_changed(doc);
-	
-	// notify StorageNotifiers
-	for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
-		(*it)->documentChanged(filename, doc);
+	if (!m_isLoading) {
+		// notify StorageNotifiers
+		for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
+			(*it)->documentChanged(filename, olddoc, doc);
+		}
 	}
+
+	// Delete old document
+	delete olddoc;
 }
 
 void DataStorage::removeFromCache( const QString& filename ) {
 	SceneDocument* olddoc = m_index_filename.take(filename);
 	if (!olddoc)
 		return;
+	
+	QMutexLocker locker(&mReadWriteLockMutex);
 	m_index_typeid.remove(olddoc->uid());
 	
 	QMutableListIterator<SceneDocument*> i(m_cache[olddoc->type()]);
@@ -285,8 +300,6 @@ void DataStorage::removeFromCache( const QString& filename ) {
 			break;
 		}
 	}
-	
-	emit doc_removed(olddoc);
 	
 	// notify StorageNotifiers
 	for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
@@ -299,6 +312,7 @@ void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 	QStringList dirs;
 	dirs.append(m_dir.absolutePath());	// add the user storage dir
 	
+	bool firstNotValidFlag = false;
 	while (dirs.size()) {
 		QDir currentdir(dirs.takeFirst());
 		dirs.append(directories(currentdir));
@@ -311,7 +325,11 @@ void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 			file.close();
 			
 			if (!doc.isValid()) {
-				qWarning() << "Document is not valid!" << currentdir.absoluteFilePath(files[i]);
+				if (!firstNotValidFlag) {
+					firstNotValidFlag = true;
+					qWarning() << "Invalid documents in" << currentdir.absolutePath();
+				}
+				qWarning() << "Document is not valid!" << files[i];
 				continue;
 			}
 			result.append(doc);
@@ -331,5 +349,5 @@ void DataStorage::unregisterNotifier ( QObject* obj ) {
 }
 
 QString DataStorage::storagePath(const SceneDocument& doc) {
-	return m_dir.absolutePath() + QLatin1String("/") + doc.type() + QLatin1String("/") + doc.componentID() + QLatin1String("/") + doc.filename();
+	return m_dir.absolutePath() + QLatin1String("/") + SceneDocument::typeString(doc.type()) + QLatin1String("/") + doc.componentID() + QLatin1String("/") + doc.filename();
 }

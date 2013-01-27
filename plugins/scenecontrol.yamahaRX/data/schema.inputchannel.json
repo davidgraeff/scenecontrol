@@ -1,0 +1,12 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"input", "name":"Eingang",
+	"text":"Yamaha Eingang {{inputchannel}} auswählen.",
+	"parameters": {
+		"inputchannel":{"name":"Eingang", "type":"enum", "value":0, "data":["HDMI1",
+		"HDMI2",
+		"AUDIO1",
+		"AUDIO2",
+		"NETRADIO"] }
+	}
+}

@@ -37,7 +37,7 @@ public:
 private:
 	int m_sessionid;
 	// Called by the DataStorage
-	virtual void documentChanged(const QString& filename, SceneDocument* document);
+	virtual void documentChanged(const QString& filename, SceneDocument* oldDoc, SceneDocument* newDoc);
 	// Called by the DataStorage
 	virtual void documentRemoved(const QString& filename, SceneDocument* document);
 };

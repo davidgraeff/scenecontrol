@@ -22,6 +22,7 @@
 #include <QString>
 #include <QByteArray>
 #include <QTextStream>
+#include <QStringList>
 
 /**
  * A scene document is the in-memory copy of a json document, technically implemented
@@ -29,18 +30,47 @@
  * scene document properties like "id_", "type_" or "componentid_".
  */
 class SceneDocument {
-private:
-    QVariantMap m_map;
 public:
     /** 
      * Constructor: Construct by an existing QVariantMap
      */
-    SceneDocument(const QVariantMap& map = QVariantMap());
+    SceneDocument(const QVariantMap& map);
+	SceneDocument(const QVariant& v = QVariant());
     /** 
      * Constructor: Construct by a json document
      */
     SceneDocument(const QByteArray& jsondata);
 
+	
+	enum TypeEnum {
+		TypeUnknown,
+		// Documents that are stored to disk and need to have an ID
+		TypeEvent,TypeCondition,TypeAction,TypeScene,
+		TypeConfiguration,TypeSchema,
+		
+		// Special types
+		TypeExecution, 	// Same as Action but is executed immediately and not stored
+		TypeRemove,	// Remove stored document
+		TypeNotification,// A notification
+		
+		TypeModelItem, TypeModelItemRemove,TypeModelItemChange,TypeModelItemReset,
+		
+		TypeError,
+		
+		TypeLAST
+	};
+	
+	static QString typeString(const TypeEnum t);
+	
+	bool isType(const TypeEnum t) const {
+		return (t==mType);
+	}
+	bool isOneOfType(const TypeEnum t[], int typeArraySize) const {
+		for(int i=0;i<typeArraySize;++i)
+			if (t[i]==mType) return true;
+			return false;
+	}
+	
     
     /**
      * Creates a model item remove notification.
@@ -91,9 +121,9 @@ public:
       * Return false if not all values can be converted. Return true and change the internal data if successful.
       * @param types Example: ("some_key":"int" , "some_other_key": "string")
       */
-    bool correctTypes(const QVariantMap& types);
+    bool correctDataTypes(const QVariantMap& types);
 	
-    /***************** Convinience Getter/Setter ******************/
+    /***************** Convenience Getter/Setter ******************/
     QString id() const {
         return m_map.value(QLatin1String("id_")).toString();
     }
@@ -101,6 +131,12 @@ public:
     QString uid() const {
         return m_map.value(QLatin1String("type_")).toString()+m_map.value(QLatin1String("id_")).toString();
     }
+    
+    static QString uid(SceneDocument::TypeEnum type, const QString& id)
+	{
+		return typeString(type)+id;
+	}
+	
     static QString id(const QVariantMap& data) {
         return data.value(QLatin1String("id_")).toString();
     }
@@ -136,14 +172,15 @@ public:
     }
 
     
-    void setType(const QString& type) {
-		m_map[QLatin1String("type_")] = type;
+    void setType(TypeEnum t) {
+		mType = t;
+		m_map[QLatin1String("type_")] = QByteArray(typetext[t]);
 	}
-    QString type() const {
-        return m_map.value(QLatin1String("type_")).toString();
+	TypeEnum type() const {
+		return mType;
     }
     bool hasType() const {
-        return m_map.contains(QLatin1String("type_"));
+        return mType!=TypeUnknown;
     }
     
     QString sceneid() const {
@@ -160,67 +197,7 @@ public:
         m_map[QLatin1String("key_")] = configurationkey;
     }
 
-    int actiondelay() const {
-        return m_map.value(QLatin1String("delay_"), 0).toInt();
-    }
-    
-    enum TypeEnum {
-        TypeUnknown,
-	// Documents that are stored to disk and need to have an ID
-        TypeEvent,
-        TypeCondition,
-        TypeAction,
-        TypeScene,
-        TypeConfiguration,
-        TypeSchema,
-	
-	// Special types
-        TypeExecution, 	// Same as Action but is executed immediately and not stored
-        TypeRemove,	// Remove stored document
-        TypeNotification,// A notification
-        TypeModelItem	// An item of a model
-    };
-
-    static QString stringFromTypeEnum(const TypeEnum t) {
-	switch (t) {
-	  case TypeEvent: return QLatin1String("event");
-	  case TypeCondition: return QLatin1String("condition");
-	  case TypeAction: return QLatin1String("action");
-	  case TypeScene: return QLatin1String("scene");
-	  case TypeConfiguration: return QLatin1String("configuration");
-	  case TypeSchema: return QLatin1String("schema");
-	  default:
-	    break;
-	};
-	return QString();
-    }
-    
-    bool checkType(const TypeEnum t) const {
-        const QByteArray type = m_map.value(QLatin1String("type_")).toByteArray();
-        return (
-			( t==TypeAction && type == "action") ||
-			( t==TypeCondition && type == "condition") ||
-			( t==TypeEvent && type == "event") ||
-			( t==TypeScene && type == "collection") ||
-			( t==TypeExecution && type == "execute") ||
-			( t==TypeRemove && type == "remove" ) ||
-			( t==TypeNotification && type == "notification" ) ||
-			( t==TypeModelItem && type == "model") ||
-			( t==TypeConfiguration &&type == "configuration")
-		);
-    }
-    
     QString filename() const {return id() + QLatin1String(".json"); }
-
-    bool isNegatedCondition() const {
-        return m_map.value(QLatin1String("conditionnegate_")).toBool();
-    }
-    QString conditionGroup() const {
-        QString cg = m_map.value(QLatin1String("conditiongroup_")).toString();
-        if (cg.isEmpty()) cg = QLatin1String("all");
-        return cg;
-    }
-
 
     bool isMethod(const char* id) const {
         return m_map.value(QLatin1String("method_")).toByteArray() == QByteArray(id);
@@ -235,6 +212,7 @@ public:
         return m_map.contains(QLatin1String("method_"));
     }
 
+    // User session specific
     int sessionid() const {
         return m_map.value(QLatin1String("sessionid_"),-1).toInt();
     }
@@ -246,12 +224,28 @@ public:
     void setSessionID(const int sessionid) {
         m_map[QLatin1String("sessionid_")] = sessionid;
     }
-
-    bool isQtSlotRespons() const {
-        return m_map.contains(QLatin1String("isrespons_"));
-    }
-
-    void setQtSlotRespons() {
-        m_map[QLatin1String("isrespons_")] = true;
-    }
+    
+    // Scene specific
+    QVariantList nextNodes() const {
+		return m_map.value(QLatin1String("e")).toList();
+	}
+	void setNextNodes(const QVariantList& nextNodes) {
+		m_map[QLatin1String("e")] = nextNodes;
+	}
+	QVariantList nextAlternativeNodes() const {
+		return m_map.value(QLatin1String("eAlt")).toList();
+	}
+	void setAlternativeNextNodes(const QVariantList& nextNodes) {
+		m_map[QLatin1String("eAlt")] = nextNodes;
+	}
+	QVariantList sceneItems() const {
+		return m_map.value(QLatin1String("v")).toList();
+	}
+	
+private:
+	QVariantMap m_map;
+	static const char* const typetext[];
+	TypeEnum mType;
+	void convertType();
 };
+

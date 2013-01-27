@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"condition",
+	"method_":"isTextVariableEqual", "name":"Ist Textvariable identisch",
+	"text":"Ist Textvariable {{name}} auf Wert {{value}}?",
+	"parameters": {
+		"name":{"name":"Name", "type":"string", "value":""},
+		"value":{"name":"Wert", "type":"string", "value":""}
+	}
+}

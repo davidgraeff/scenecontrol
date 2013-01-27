@@ -24,6 +24,7 @@
 #include <QDir>
 #include <QStringList>
 #include <QSet>
+#include <qmutex.h>
 
 class DataStorageWatcher;
 class AbstractStorageNotifier;
@@ -43,7 +44,6 @@ public:
 	 * Utility method: Build a list of subdirectories of the given dir with absolute paths.
 	 */
     static QStringList directories(const QDir& dir);
-public Q_SLOTS:
 	/**
 	 * Return the directory that all documents were loaded from.
 	 */
@@ -64,7 +64,12 @@ public Q_SLOTS:
      * Request all documents of a type. This will use the cache so
      * only types within the cache are allowed (event, condition, action, scene, configuration).
      */
-    QList<SceneDocument*> requestAllOfType(SceneDocument::TypeEnum type, const QVariantMap& filter = QVariantMap()) const;
+    QList<SceneDocument*> filteredDocuments(SceneDocument::TypeEnum type, const QVariantMap& filter = QVariantMap()) const;
+	SceneDocument* getDocument(const QString& uid);
+	/**
+	 * Thread safe method. Return an invalid SceneDocument if the requested one does not exist
+	 */
+	SceneDocument getDocumentCopy(const QString& uid);
 
     /**
      * Request all documents from the disk. Does not use the cache.
@@ -74,10 +79,19 @@ public Q_SLOTS:
 	/**
 	 * Register a notifier Object. Whenever storage documents are removed, created or edited
 	 * all registered StorageNotifier Objects will be notified.
+	 * Registered notifiers are removed automatically if they are deleted.
 	 */
 	void registerNotifier(AbstractStorageNotifier* notifier);
-    
-    /// Remove a document
+	/**
+	 * This method should not be called manually. It will be invoked
+	 * if a registered StorageNotifier Object gets deleted and will remove its reference
+	 * from m_notifiers.
+	 */
+	public Q_SLOTS: void unregisterNotifier(QObject * obj);
+public:
+    /**
+	 * Remove a document permanently from disc
+	 */
     bool removeDocument(const SceneDocument& doc);
 
     /**
@@ -87,8 +101,10 @@ public Q_SLOTS:
     bool storeDocument( const SceneDocument& doc, bool overwriteExisting = false );
 
     /**
-     * Change configurations of a given plugin (synchronous)
-     * \param category An arbitrary non empty word describing the configuration category of the values
+     * Change only one value of one or more documents (synchronous)
+	 * Specifiy documents by the type and filter arguments.
+	 * Set "value" to the "key" property of all matched documents.
+	 * Return number of changed documents.
      */
     int changeDocumentsValue(SceneDocument::TypeEnum type, const QVariantMap& filter, const QString& key, const QVariantMap& value);
     
@@ -99,18 +115,13 @@ public Q_SLOTS:
 private Q_SLOTS:
 	void reloadDocument(const QString &filename);
 	void removeFromCache(const QString &filename);
-	/**
-	 * This is not a public method and should not be called manually. It will be invoked
-	 * if a registered StorageNotifier Object gets deleted and will remove its reference
-	 * from m_notifiers.
-	 */
-	void unregisterNotifier(QObject * obj);
 private:
     DataStorage ();
     QDir m_dir;
+	QMutex mReadWriteLockMutex;
     DataStorageWatcher* m_listener;
     // data and indexes
-    QMap<QString, QList<SceneDocument*>> m_cache;
+    QMap<SceneDocument::TypeEnum, QList<SceneDocument*>> m_cache;
     QMap<QString, SceneDocument*> m_index_typeid;
 	QMap<QString, SceneDocument*> m_index_filename;
 	
@@ -119,12 +130,6 @@ private:
     
     QList<SceneDocument*> filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter = QVariantMap()) const;
 	QString storagePath(const SceneDocument& doc);
-
-Q_SIGNALS:
-	/// A document changed: only triggered if startChangeListener has been called
-    void doc_changed(const SceneDocument*);
-	/// A document has been removed: only triggered if startChangeListener has been called
-    void doc_removed(const SceneDocument*);
 };
 
 /**
@@ -134,7 +139,7 @@ class AbstractStorageNotifier: public QObject {
 	friend class DataStorage;
 private:
 	// Called by the DataStorage
-	virtual void documentChanged(const QString& filename, SceneDocument* document) = 0;
+	virtual void documentChanged(const QString& filename, SceneDocument* oldDoc, SceneDocument* newDoc) = 0;
 	// Called by the DataStorage
 	virtual void documentRemoved(const QString& filename, SceneDocument* document) = 0;
 };

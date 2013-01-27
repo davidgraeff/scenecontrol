@@ -36,23 +36,15 @@ public:
 public Q_SLOTS:
     // player
     void play();
-    void pause();
     void stop();
     void next();
     void prev();
-    void FastForward();
-    void rewind();
-    // gui control
-    void select();
-    void down();
-    void up();
-    void left();
-    void right();
-    void home();
-    void back();
-    // volume
-    void setVolume(int v);
-	void setVolumeRelative(int v);
+	void input(int inputchannel);
+	void output(int outputconfiguration);
+    void power(bool power);
+	void mute(bool mute);
+	void setVolume(int value);
+	void setVolumeRelative(int value);
 private Q_SLOTS:
     void readyRead();
     void hostconnected();
@@ -62,5 +54,5 @@ private:
     QString m_host;
     int m_port;
     QTcpSocket m_socket;
-
+	void sentToYamaha(const QByteArray& content);
 };

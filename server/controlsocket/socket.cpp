@@ -23,12 +23,12 @@ Socket::Socket() : m_disabledSecureConnections(false) {
     }
 }
 
-static Socket* websocket_instance = 0;
+static Socket* socketInstance = 0;
 Socket* Socket::instance()
 {
-    if (!websocket_instance)
-        websocket_instance = new Socket();
-    return websocket_instance;
+    if (!socketInstance)
+        socketInstance = new Socket();
+    return socketInstance;
 }
 
 void Socket::incomingConnection(int socketDescriptor)
@@ -115,9 +115,10 @@ void Socket::incomingConnection(int socketDescriptor)
 
 	// Notify plugins of new session
 	PluginController* pc = PluginController::instance();
-	QMap<QString,PluginProcess*>::iterator i = pc->getPluginIterator();
-	while (PluginProcess* plugin = pc->nextPlugin(i)) {
-		plugin->session_change(socketDescriptor, true);
+	PluginController::iterator i = pc->begin();
+	while (!i.eof()) {
+		(*i)->session_change(socketDescriptor, true);
+		++i;
 	}
 }
 
@@ -146,7 +147,7 @@ void Socket::readyRead() {
 			if (!r.parse(rawdata)) {
 				SceneDocument responsedoc;
 				responsedoc.setComponentID(QLatin1String("server"));
-				responsedoc.setType(QLatin1String("error"));
+				responsedoc.setType(SceneDocument::TypeError);
 				responsedoc.setid(QLatin1String("no_json"));
 				responsedoc.setData("msg", "Failed to parse json" + r.errorString().toUtf8());
 				serverSocket->write(responsedoc.getjson());
@@ -158,10 +159,10 @@ void Socket::readyRead() {
 		
 		// Analyse the scene document: We only accept TypeExecution
 		SceneDocument doc(v.toMap());
-		if ( !doc.checkType ( SceneDocument::TypeExecution ) ) {
+		if ( !doc.isType ( SceneDocument::TypeExecution ) ) {
 			SceneDocument responsedoc;
 			responsedoc.setComponentID(QLatin1String("server"));
-			responsedoc.setType(QLatin1String("error"));
+			responsedoc.setType(SceneDocument::TypeError);
 			responsedoc.setid(QLatin1String("no_execution_type"));
 			responsedoc.setData("msg", QLatin1String("No execution type"));
 			serverSocket->write(responsedoc.getjson());
@@ -173,20 +174,16 @@ void Socket::readyRead() {
 		// Handle the case where the incoming scene document is dedicated for a plugin
 		if ( doc.componentID() != QLatin1String ( "server" ))
 		{
-			// Try to execute the SceneDocument. Find a plugin for it first.
-			PluginProcess* plugin = PluginController::instance()->getPlugin ( doc.componentUniqueID() );
-			if ( !plugin )
+			if ( !PluginController::instance()->execute(doc, sessionid) )
 			{
 				SceneDocument responsedoc;
 				responsedoc.setComponentID(QLatin1String("server"));
-				responsedoc.setType(QLatin1String("error"));
+				responsedoc.setType(SceneDocument::TypeError);
 				responsedoc.setid(QLatin1String("plugin_not_found"));
 				responsedoc.setData("msg", QLatin1String("Plugin not found"));
 				serverSocket->write(responsedoc.getjson());
 				continue;
 			}
-			// Call the remote method of the plugin
-			plugin->callQtSlot ( doc, QByteArray(), sessionid );
 			continue;
 		}
 		
@@ -198,6 +195,13 @@ void Socket::readyRead() {
 			s.setData("plugins", PluginController::instance()->pluginids());
 			s.setComponentID(QLatin1String("PluginController"));
 			sendToClients(s.getjson(), sessionid);
+		}
+		
+		else if ( doc.isMethod ( "requestProperty" ) && doc.getData().contains(QLatin1String("property")) )
+		{
+			SceneDocument property( doc.toMap("property") );
+			qDebug() << "property requested" << property.getjson();
+			PluginController::instance()->requestProperty ( property, sessionid );
 		}
 		
 		else if ( doc.isMethod ( "removeDocument" ) )
@@ -234,13 +238,25 @@ void Socket::readyRead() {
 			// Create the response
 			SceneDocument s = SceneDocument::createNotification ( "registerNotifier" );
 			s.setComponentID ( QLatin1String ( "server" ) );
-			s.setData("notifierstate", true);
+			s.setData("notifierstate", true); // registered
+			sendToClients ( s.getjson(), sessionid );
+		}
+		
+		else if ( doc.isMethod ( "unregisterNotifier" ) )
+		{
+			// Unregister a StorageNotifier Object from the DataStorage
+			delete m_notifiers.take(sessionid);
+			
+			// Create the response
+			SceneDocument s = SceneDocument::createNotification ( "registerNotifier" );
+			s.setComponentID ( QLatin1String ( "server" ) );
+			s.setData("notifierstate", false); // unregistered
 			sendToClients ( s.getjson(), sessionid );
 		}
 		
 		else if ( doc.isMethod ( "runcollection" ) )
 		{
-			CollectionController::instance()->requestExecutionByCollectionId ( doc.sceneid() );
+			SceneController::instance()->startScene ( doc.sceneid() );
 		}
 
 		else if ( doc.isMethod ( "version" ) )
@@ -253,7 +269,7 @@ void Socket::readyRead() {
 		{
 			SceneDocument responsedoc;
 			responsedoc.setComponentID(QLatin1String("server"));
-			responsedoc.setType(QLatin1String("error"));
+			responsedoc.setType(SceneDocument::TypeError);
 			responsedoc.setid(QLatin1String("method_not_known"));
 			responsedoc.setData("msg", QLatin1String("Method not known"));
 			serverSocket->write(responsedoc.getjson());
@@ -269,11 +285,13 @@ void Socket::socketDisconnected() {
 
     // Notify plugins of finished session
     PluginController* pc = PluginController::instance();
-    QMap<QString,PluginProcess*>::iterator i = pc->getPluginIterator();
-    while (PluginProcess* plugin = pc->nextPlugin(i)) {
-        plugin->session_change(socketDescriptor, false);
-    }
+	PluginController::iterator i = pc->begin();
+	while (!i.eof()) {
+		(*i)->session_change(socketDescriptor, true);
+		++i;
+	}
 
+    // Remove DataStorage notifier
 	if (m_notifiers.contains(socketDescriptor)) {
 		delete m_notifiers.take(socketDescriptor);
 	}
@@ -317,12 +335,12 @@ StorageNotifierSocket* Socket::notifier ( int sessionid ) {
 	return s;
 }
 
-void StorageNotifierSocket::documentChanged ( const QString& filename, SceneDocument* document ) {
+void StorageNotifierSocket::documentChanged(const QString& filename, SceneDocument* /*oldDoc*/, SceneDocument* newDoc) {
 	// Create the response
 	SceneDocument s = SceneDocument::createNotification ( "documentChanged" );
 	s.setComponentID ( QLatin1String ( "datastorage" ) );
 	s.setData("filename", filename);
-	s.setData("document", document->getData());
+	s.setData("document", newDoc->getData());
 	Socket::instance()->sendToClients ( s.getjson(), m_sessionid );
 }
 

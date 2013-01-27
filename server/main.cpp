@@ -34,6 +34,7 @@
 #include <QProcess>
 #include <QSettings>
 #include <QDebug>
+#include <QElapsedTimer>
 
 bool exitByConsoleCommand = false;
 
@@ -43,9 +44,7 @@ static void catch_int(int )
     signal(SIGTERM, 0);
     exitByConsoleCommand = true;
     printf("\n");
-	PluginController* plugins = PluginController::instance();
-	plugins->waitForPluginsAndExit();
-	DataStorage::instance()->unload();
+	QCoreApplication::exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -71,7 +70,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // Set up the datastorage object. All documents are accessable through the datastorage.
+    // Set up the datastorage object. All documents are accessible through the datastorage.
     DataStorage* datastorage = DataStorage::instance();
 
 	if (cmdargs.contains("--export")) { // Export json documents from database
@@ -86,7 +85,7 @@ int main(int argc, char *argv[])
 			else
 				qDebug() << processedDocuments << "Documents exported to" << path;
 			return 0;
-	} else if (cmdargs.contains("--import")) { // Import json documents from database
+	} else if (cmdargs.contains("--import")) { // Import json documents to database
 			int index = cmdargs.indexOf("--import");
 			QString path = cmdargs.size()>index+1 ? QString::fromUtf8(cmdargs.at(index+1)) : QString();
 			if (path.trimmed().isEmpty() || path.startsWith(QLatin1String("--")))
@@ -139,16 +138,11 @@ int main(int argc, char *argv[])
     // Write last start time to the log
     setup::writeLastStarttime();
 
-    // CollectionController: Starts, stops collections
-    // and hold references to running collections.
-    CollectionController* collectioncontroller = CollectionController::instance();
+	// SceneController: Starts, stops scenes
+    SceneController* scenes = SceneController::instance();
 
     // PluginController: Start plugin processes and set up sockets for communication
     PluginController* plugins = PluginController::instance();
-
-    // connect objects
-    QObject::connect(datastorage, SIGNAL(doc_changed(const SceneDocument*)), plugins,  SLOT(doc_changed(const SceneDocument*)));
-    QObject::connect(datastorage, SIGNAL(doc_removed(const SceneDocument*)), plugins, SLOT(doc_removed(const SceneDocument*)));	
 
 	// Import json documents from install dir if no files are presend in the user storage dir
 	bool success;
@@ -164,7 +158,18 @@ int main(int argc, char *argv[])
 
 	// load data storage and start plugin processes
 	datastorage->load();
+
+	// load plugins and wait for a moment for the communication channels to settle
 	plugins->scanPlugins();
+	{
+		QElapsedTimer t;
+		t.start();
+		while (!t.hasExpired(500)) {
+			QCoreApplication::processEvents();
+		}
+	}
+	
+	scenes->load();
 
 	if (!cmdargs.contains("--no-event-loop") && plugins->valid()) { // Start event loop
 		exitcode = qapp.exec();
@@ -172,11 +177,10 @@ int main(int argc, char *argv[])
 	// one last event processing to free all deleteLater objects
 	qapp.processEvents();
 
-
-	delete plugins;
 	delete socket;
+	delete scenes;
+	delete plugins;
     delete datastorage;
-    delete collectioncontroller;
 
     // close log file. only console log is possible from here on
     logclose();

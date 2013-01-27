@@ -1,0 +1,8 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"stopscene", "name":"Scene stoppen",
+	"text":"Scene stoppen: {{sceneid}}.",
+	"parameters": {
+		"sceneid":{"name":"Szene", "type":"modelenum", "readonly":true, "model":"@scenes","indexproperty":"id_","textproperty":"name", "value":""}
+	}
+}

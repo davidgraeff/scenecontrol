@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"startscene", "name":"Scene starten",
+	"text":"Scene starten: {{sceneid}}. Einstiegspunkt: {{sceneitemid}}.",
+	"parameters": {
+		"sceneid":{"name":"Szene", "type":"modelenum", "readonly":true, "model":"@scenes","indexproperty":"id_","textproperty":"name", "value":""},
+		"sceneitemid":{"name":"Einstiegspunkt", "type":"string", "value":""}
+	}
+}

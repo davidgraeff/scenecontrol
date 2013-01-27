@@ -1,0 +1,7 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"mute", "name":"Volume Mute",
+	"parameters": {
+		"mute":{"name":"Mute", "type":"boolean", "value":false}
+	}
+}

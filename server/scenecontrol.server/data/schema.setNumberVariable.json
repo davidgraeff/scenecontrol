@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"setNumberVariable", "name":"Setze Nummernvariable",
+	"text":"Setze Nummernvariable {{name}} auf Wert {{value}}.",
+	"parameters": {
+		"name":{"name":"Name", "type":"string", "value":""},
+		"value":{"name":"Wert", "type":"integer", "value":0}
+	}
+}

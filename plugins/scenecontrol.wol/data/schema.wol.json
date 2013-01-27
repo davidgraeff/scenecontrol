@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"action",
 	"method_":"wol", "name":"WakeUpOnLan",
+	"text":"Gerät per WOL aufwecken: {{mac}}",
 	"parameters": {
 		"mac":{"name":"Modus", "type":"string", "value":""}
 	}

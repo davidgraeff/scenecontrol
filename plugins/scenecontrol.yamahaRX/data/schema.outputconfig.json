@@ -1,0 +1,14 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"output", "name":"Ausgang",
+	"text":"Yamaha Ausgangskonfiguration {{outputconfiguration}} auswählen.",
+	"parameters": {
+		"outputconfiguration":{"name":"Ausgang", "type":"enum", "value":0, "data":["STRAIGHT",
+		"CH2",
+		"CH7",
+		"SURROUND",
+		"MOVIE",
+		"MOVIE_SCIFI",
+		"MUSIC_VIDEO"] }
+	}
+}

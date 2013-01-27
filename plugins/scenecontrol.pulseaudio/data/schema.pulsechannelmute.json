@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"action",
 	"method_":"pulsechannelmute", "name":"Kanal muten",
+	"text":"Pulseaudio {{channel}} stumm: {{value}}.",
 	"parameters": {
 		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"pulse.channels","indexproperty":"sinkid","textproperty":"sinkid", "value":""},
 		"value":{"name":"Mute", "type":"boolean", "value":false}

@@ -109,7 +109,7 @@ bool VerifyImportDocument::isValid(SceneDocument& data, const QString& filename)
 		data.setComponentID(subdir);
 	if (!data.hasid()) // no identifier set?: use filename without extension and componentid
 		data.setid(QFileInfo(filename).completeBaseName());
-	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
+	if (data.isType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
 		return false;
 	return true;
 }
@@ -119,7 +119,7 @@ bool VerifyPluginDocument::isValid(SceneDocument& data, const QString& filename)
 		data.setComponentID(m_pluginid);
 	if (!data.hasid()) // no identifier set? use filename without extension and componentid
 		data.setid(QFileInfo(filename).completeBaseName());
-	if (data.checkType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
+	if (data.isType(SceneDocument::TypeConfiguration) && !data.hasComponentUniqueID()) // configurations need an instanceid
 		return false;
 	return true;
 }

@@ -1,6 +1,7 @@
 {
 	"type_":"schema", "targettype":"action",
 	"method_":"display", "name":"Bildschirm",
+	"text":"Bildschirm {{power}}",
 	"parameters": {
 		"power":{"name":"Power", "type":"enum", "data":["Aus","An","Umschalten"]}
 	}

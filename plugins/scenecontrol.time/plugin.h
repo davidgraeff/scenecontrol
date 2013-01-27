@@ -36,29 +36,29 @@ public:
     virtual void initialize();
     virtual void clear();
     virtual void requestProperties(int sessionid);
-    virtual void unregister_event ( const QString& eventid);
 public Q_SLOTS:
     void eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time);
     void eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days);
     bool datespan ( const QString& current, const QString& lower, const QString& upper);
     bool timespan ( const QString& current, const QString& lower, const QString& upper);
+	
 private:
-    struct EventTimeStructure {
+	void removeEvent ( const QString& eventid);
+	struct EventTimeStructure {
+		QString eventid;
         QString sceneid;
         QDate date;
         QTime time;
         QBitArray days;
+		bool periodic;
     };
-	/**
-	 * Return true if the event can be removed from the remaining events
-	 */
-	bool calculate_next_timer_timeout(const int seconds, int& nextTime, const QString& eventid, const EventTimeStructure& eventtime);
-    void calculate_next_events();
-
+	void calculate_next_periodic_timeout(const EventTimeStructure& ts);
+	void setupTimer();
+	void addToEvents(const QDateTime& nextTimeout, const EventTimeStructure& ts);
+	
     // eventid -> structure for a time event
-    QMap<QString, EventTimeStructure> m_remaining_events;
+	QMap<QDateTime, EventTimeStructure> mEvents;
     QTimer m_timer;
-    QDateTime m_nextAlarm;
 private Q_SLOTS:
     void timeout();
 };

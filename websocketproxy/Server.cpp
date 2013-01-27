@@ -143,7 +143,7 @@ void Server::processClientMessage( const QByteArray& message )
 		// send message to client
 		SceneDocument doc;
 		doc.setComponentID("websocketproxy");
-		doc.setType("error");
+		doc.setType(SceneDocument::TypeError);
 		doc.setid("no_json");
 		doc.setData("msg", "Failed to parse json" + r.errorString().toUtf8());
 		clientSocket->writeText(doc.getjson());
@@ -165,7 +165,7 @@ void Server::serverDisconnected() {
 	// send message to client
 	SceneDocument doc;
 	doc.setComponentID("websocketproxy");
-	doc.setType("error");
+	doc.setType(SceneDocument::TypeError);
 	doc.setid("server_disconnected");
 	doc.setData("msg", QLatin1String("Server disconnected"));
 	clientSocket->writeText(doc.getjson());
@@ -186,7 +186,7 @@ void Server::serverError ( QAbstractSocket::SocketError ) {
 	// send message to client
 	SceneDocument doc;
 	doc.setComponentID("websocketproxy");
-	doc.setType("error");
+	doc.setType(SceneDocument::TypeError);
 	doc.setid("server_error");
 	doc.setData("msg", "Server error: "+serverSocket->errorString().toUtf8());
 
