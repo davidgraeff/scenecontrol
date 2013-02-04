@@ -153,17 +153,17 @@ in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
 generieren zu lassen den Befehl "make package" nutzen. Fertige monolitische DEB
 Pakete lassen sich im Downloadbereich herunterladen.
 
-Work in Progress: 3. Quartal 2012:
-* Plugin: yamahaRX
+Work in Progress: 1. Quartal 2013:
 * Plugin: dmx/artnet
+* Plugins Aufspaltung in verschiedene Repositories (generisch/3rd-party)
+* AndroidApp: eigenes Repository
+* Fetch/Install scripts
+* HTML5 Editor: Abschließen der Canvas2D Nutzung für Scene-Darstellung
 
-ToDo: 4. Quartal 2012:
+ToDo: 2. Quartal 2013:
 * Dokumentation unter www.sceneserver.de.vu inkl. Architekturschaubildern :D
-* HTML5 Editor: Evaluierung des JS Toolkits läuft
 * SessionProxy
-* Leds/Schalter Android App
-* Beamer Android App
-* Alarm Android App
+* Android App: Modulare Plugin Unterstützung statt monolitischer Block?, Bugfixes
 
 Benötigte Bibliotheken für den Server ohne Plugins:
 ===================================================
