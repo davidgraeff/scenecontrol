@@ -1,18 +1,20 @@
 Purpose:
 --------
-This directory contains the html5/js application that allows you to edit
-the events-conditions-actions correlations in an easy, intuitive manner.
-Its primary targets are desktop pcs and tablet computer with at least
-800px width.
+This web application allows you to modify scenes, scene items (events,
+conditions, actions) and plugin configurations in an easy manner.
+Primary targets are desktop pcs and tablet computers (at least 800px width).
 
-How to run it:
---------------
-You should have started your SceneServer™ already. For this webapplication
-to work you may also start the WebSocketProxy. It will make the TCP Control-
-socket of the SceneServer™ compatible to the web world.
+How to run this web application:
+--------------------------------
+The SceneServer™ is used to retrieve and store configuration documents. Because
+a web application can not access a raw socket directly, a websocket is used.
+The SceneServer™ and the WebSocketProxy have to be started therefore.
 You may either host these static html pages via a html server like apache or
 lihttpd and browse to the corresponding address or start the index.html
-directly from your filesystem. All traffic to the WebSocketProxy and between
-the WebSocketProxy and the SceneServer™ is secured by ssl.
+directly from your filesystem. 
+
+Security:
+---------
+All traffic to the WebSocketProxy and between the WebSocketProxy and
+the SceneServer™ is secured by SSL.
 If you additionally use the SessionProxy you have to authentificate first.
-Youe session will expire automatically after 5 minutes of inactivity.
