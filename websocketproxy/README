@@ -1,5 +1,5 @@
-Description:
-------------
-Über den Websocketsproxy können sich über https Webclients über das WebSocket Protokoll mit dem SceneServer verbinden
-und das JSON Kommandointerface des SceneServers nutzen.
-
+Purpose:
+--------
+Translate between the raw tcp socket of the SceneServer™ and the provided websocket.
+Communication is secured by SSL. Add the Websocketsproxy certificate to your browsers
+certificate store to prevent/detect man-in-the-middle attacks.
