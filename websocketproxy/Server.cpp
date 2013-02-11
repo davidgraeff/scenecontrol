@@ -91,7 +91,7 @@ void Server::newClientConnection()
 	m_client_to_server.insert(clientsocket,serversocket);
 	
 	// Connect signals
-	connect( clientsocket, SIGNAL(frameReceivedText(QByteArray)), this, SLOT(processClientMessage(QByteArray)) );
+	connect( clientsocket, SIGNAL(readyRead()), this, SLOT(processClientMessage()) );
 	connect( clientsocket, SIGNAL(disconnected()), this, SLOT(clientDisconnected()) );
 	connect( clientsocket, SIGNAL(pong(quint64)), this, SLOT(pong(quint64)) );
 	
@@ -142,16 +142,18 @@ void Server::processServerMessage() {
     }
 }
 
-void Server::processClientMessage( const QByteArray& message )
+void Server::processClientMessage()
 {
 	QWsSocket *clientSocket = (QWsSocket *)sender();
-	if (!message.length())
+	QWsSocketFrame frame = clientSocket->readFrame();
+	
+	if (frame.binary || frame.data.isEmpty())
 		return;
 	
 	// json parsing
 	JsonReader r;
 	QVariant v;
-	if (!r.parse(message)) {
+	if (!r.parse(frame.data)) {
 		qWarning()<<"Invalid document client->server";
 		// send message to client
 		SceneDocument doc;
@@ -165,7 +167,7 @@ void Server::processClientMessage( const QByteArray& message )
 
 	QSslSocket* serverSocket = m_client_to_server.value(clientSocket);
 	Q_ASSERT(serverSocket);
-	serverSocket->write(message+"\n");
+	serverSocket->write(frame.data+"\n");
 }	
 
 void Server::serverDisconnected() {

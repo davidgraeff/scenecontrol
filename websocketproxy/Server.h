@@ -23,7 +23,7 @@ public Q_SLOTS:
 	// new client connection slot
  	void newClientConnection();
 	// message passing
-	void processClientMessage( const QByteArray& message );
+	void processClientMessage();
 	void processServerMessage();
 	// disconnection
 	void serverDisconnected();
