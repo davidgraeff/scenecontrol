@@ -5,9 +5,6 @@
 (function (window) {
 	"use strict";
 
-	var selectedScenesCounter = 0;
-	var sceneRenameFlag = false;
-	var templateSceneItem;
 	var templateSceneServiceItem;
 
 	$(websocketInstance).on('onclose', function() {
@@ -20,14 +17,7 @@
 		if (!websocketInstance.connected)
 			window.location = 'index.html';
 		$(document).off(".editorpage");
-		$.mobile.loading( 'show', { theme: "b", text: "Verarbeite Dokumente", textonly: false });
-	// 	templateSceneServiceItem = Handlebars.compile($("#sceneitem-service-template").html());
-		templateSceneItem = Handlebars.compile($("#sceneitem-template").html());
-		$("#btnRemoveSelectedScenes").addClass("ui-disabled");
-		SceneUIHelper.setscene(null);
-		for (var index in storageInstance.scenes) {
-			SceneUIHelper.sceneChanged(storageInstance.scenes[index], false);
-		}
+		
 		$('#editor').one('pageshow', function(event) {
 			$.mobile.loading( 'hide' );
 		});
@@ -87,9 +77,7 @@
 			var method = $("#sceneitem_method").val();
 			
 			var doc = {type_:type, componentid_:componentid, instanceid_:instanceid, method_:method, sceneid_: CurrentScene.id, id_:"GENERATEGUID"};
-			// Simulate a new document
-			storageInstance.documentChanged(doc, false);
-			storageInstance.notifyDocumentChange(doc, false, true);
+			Document.createSceneItem(CurrentScene.id, doc);
 		});
 		
 		////////////////// SCENE TAGS //////////////////
@@ -104,57 +92,11 @@
 			CurrentScene.setTags(tags);
 			$('#scenetagspopup').popup("close");
 		});
-
-		////////////////// SET AND SELECT SCENES //////////////////
-		$("#scenelist").on('click.editorpage', '.btnSetScene', function() {
-			var sceneid = $(this).parent().parent().parent().attr("data-sceneid");
-			SceneUIHelper.setscene(sceneid);
-		});
 		
-		$("#scenelist").on('click.editorpage', '.btnSelectScene', function() {
-			var $scenelistentry = $(this).parent();
-			if ($scenelistentry.attr('data-selected')=="1") { // is selected: deselect
-				$scenelistentry.removeClass("selectedSceneListItem");
-				$scenelistentry.attr('data-selected', "0");
-				--selectedScenesCounter;
-			} else {
-				$scenelistentry.addClass("selectedSceneListItem");
-				$scenelistentry.attr('data-selected', "1");
-				++selectedScenesCounter;
-			}
-			if (selectedScenesCounter)
-				$("#btnRemoveSelectedScenes").removeClass("ui-disabled");
-			else
-				$("#btnRemoveSelectedScenes").addClass("ui-disabled");
-		});
-		
-		////////////////// REMOVE SCENES //////////////////
-		$('#btnRemoveSelectedScenes').on('click.editorpage', function() {
-			$(".currentrmscene").text(selectedScenesCounter);
-			$('#removepopup').popup("open");
-		});
-		
-		$('#btnRemoveSelectedScenesConfirm').on('click.editorpage', function() {
-			$('#removepopup').popup("close");
-			$("#btnRemoveSelectedScenes").addClass("ui-disabled");
-			selectedScenesCounter = 0;
-			$("#scenelist").find("[data-selected='1']").removeClass("selectedSceneListItem").addClass("ui-disabled").each(function(index,elem){
-				var sceneid = elem.getAttribute('data-sceneid');
-				var doc = storageInstance.scenes[sceneid];
-				Document.remove(doc);
-			});
-		});
-		
-		////////////////// SCENE NAME AND ADD SCENE //////////////////
+		////////////////// SCENE NAME //////////////////
 		$('#btnChangeSceneName').on('click.editorpage', function() {
-			sceneRenameFlag = true;
+			SceneUIHelper.sceneRenameFlag = true;
 			$("#newscenename").val(CurrentScene.getName());
-			$('#newscenenamepopup').popup("open");
-			$("#newscenename").delay(300).focus();
-		});
-		
-		$('#btnAddScene').on('click.editorpage', function() {
-			sceneRenameFlag = false;
 			$('#newscenenamepopup').popup("open");
 			$("#newscenename").delay(300).focus();
 		});
@@ -165,7 +107,7 @@
 				$.jGrowl("Name nicht gültig. A-Za-z0-9 sind zugelassen!");
 				return;
 			}
-			if (!sceneRenameFlag) { // create new scene
+			if (!SceneUIHelper.sceneRenameFlag) { // create new scene
 				Document.createScene(name);
 			} else { // just rename old scene
 				$("#li"+CurrentScene.id).addClass("ui-disabled");
@@ -198,7 +140,7 @@
 
 			$.jGrowl("Removing...");
 			$form.find("input,select,label,textarea,.btnSaveSceneitem,.btnRemoveSceneitem").addClass("ui-disabled");
-			Document.remove(CurrentSceneItem.item);
+			Document.removeFromScene(CurrentScene.id, CurrentSceneItem.item);
 		});
 		
 		var shift= null;
@@ -260,7 +202,7 @@
 			sceneCanvas.selectedObject = sceneCanvas.selectObject(mouse.x, mouse.y);
 			
 			if (sceneCanvas.selectedObject != null && sceneCanvas.selectedObject instanceof Node) {
-				SceneUIHelper.showSceneItemDialog(sceneCanvas.selectedObject.data, false);
+				SceneItemsUIHelper.showSceneItemDialog(sceneCanvas.selectedObject.data, false);
 			}
 		};
 		
@@ -282,7 +224,7 @@
 				sceneCanvas.draw(canvas);
 			} else if (movingObject) {
 				sceneCanvas.selectedObject.setAnchorPoint(e.pageX - $canvas.offset().left, e.pageY - $canvas.offset().top);
-				snapNode();
+				sceneCanvas.snapNode();
 				sceneCanvas.draw(canvas);
 			} else if (originalMouse != null) { // move nodes
 				var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top}; 
@@ -333,89 +275,13 @@
 		});
 	});
 
-
-	$(storageInstance).on('onscene.editorpage', function(d, flags) {
-		SceneUIHelper.sceneChanged(flags.doc, flags.removed);
-	});
-
-	$(storageInstance).on('onevent.editorpage', function(d, flags) {
-		if (flags.doc.sceneid_ != CurrentScene.id)
-			return;
-		
-		//TODO
-	// 	if (!flags.removed)
-	// 		addSceneItem(flags.doc, flags.temporary);
-	// 	else
-	// 		removeSceneItem(flags.doc, flags.temporary);
-	});
-
-	$(storageInstance).on('oncondition.editorpage', function(d, flags) {
-		if (flags.doc.sceneid_ != CurrentScene.id)
-			return;
-		
-		//TODO
-	// 	if (!flags.removed)
-	// 		addSceneItem(flags.doc, flags.temporary);
-	// 	else
-	// 		removeSceneItem(flags.doc, flags.temporary);
-	});
-
-	$(storageInstance).on('onaction.editorpage', function(d, flags) {
-		if (flags.doc.sceneid_ != CurrentScene.id)
-			return;
-		
-		//TODO
-	// 	if (!flags.removed)
-	// 		addSceneItem(flags.doc, flags.temporary);
-	// 	else
-	// 		removeSceneItem(flags.doc, flags.temporary);
-	});
-
 	$(storageInstance).on('onnotification.editorpage', function(d, doc) {
 		if (CurrentSceneItem.item==null)
 			return;
 		CurrentSceneItem.notification($("#sceneitemform"),doc);
 	});
 
-	var SceneUIHelper = {
-		sceneChanged: function(doc, removed) {
-			console.log("changed scene", removed, doc);
-			var $entries = $("#scenelist").find("li[data-sceneid='"+doc.id_+"']");
-			if (removed) {
-				// Remove the scene entry
-				if ($entries.length) $entries.remove();
-			} else {
-				// Remove the scene entry (TODO: Replace at same place)
-				$entries.remove();
-				// if it just has been changed or wasn't in the list at all we need to add it
-				var entry = {"sceneid":doc.id_, "name":doc.name, "counter":doc.v.length};
-				var categories = doc.categories;
-				// No categories: Add it to the general categories
-				if (categories.length == 0)
-					$("#scenelist_cat_none").after(templateSceneItem(entry));
-				// one or multiple categories: add 
-					else
-						for (var i=0;i<categories.length;++i) {
-							var trimmedCat = categories[i].replace(" ", "_").replace(".", "_");
-							if (!$("#scenelist_cat_"+trimmedCat).length)
-								$("#scenelist_cat_none").before('<li id="scenelist_cat_'+trimmedCat+'" data-role="list-divider">'+categories[i]+'</li>');
-							$("#scenelist_cat_"+trimmedCat).after(templateSceneItem(entry));
-						}
-			}
-			$('#scenelist').listview('refresh');
-			CurrentScene.checkscene(doc.id_, removed);
-			if (!CurrentScene.isValid()) {
-				SceneUIHelper.setscene(null);
-			}
-		},
-
-		/*
-		function removeSceneItem(doc, temporary) {
-			var formid = doc.type_+"_"+doc.componentid_+"_"+doc.id_;
-			formid = formid.replace(/\./g,"_");
-			$('#'+formid).hide("slow", function(){ $(this).remove(); })
-		}*/
-
+	var SceneItemsUIHelper = {
 		showSceneItemDialog: function(doc, temporary) {
 			if (!doc)
 				return;
@@ -445,31 +311,6 @@
 			$("#sceneitemform").trigger("change");
 			
 			$('#sceneitemedit').popup("open");
-		},
-
-		setscene: function(sceneid) {
-			var scene = storageInstance.scenes[sceneid];
-			if (sceneid === null || scene === null) {
-				$("#btnAddSceneItem").addClass("ui-disabled");
-				$("#btnChangeTags").addClass("ui-disabled");
-				$("#btnChangeSceneName").addClass("ui-disabled");
-				$("#helptexteditor").removeClass("hidden");
-		// 		$("#sceneservices").children().remove();
-				$(".currentscene").text("Keine Szene ausgewählt");
-				return;
-			}
-			$("#btnAddSceneItem").removeClass("ui-disabled");
-			$("#btnChangeTags").removeClass("ui-disabled");
-			$("#btnChangeSceneName").removeClass("ui-disabled");
-			$("#helptexteditor").addClass("hidden");
-
-			$(".currentscene").text(scene.name);
-			$("#sceneservices").children().remove();
-			CurrentScene.set(sceneid);
-
-			var canvas = document.getElementById('canvas');
-			sceneCanvas.load(scene, canvas.width, canvas.getContext('2d'));
-			sceneCanvas.draw(canvas);
 		}
 	};
 })(window);

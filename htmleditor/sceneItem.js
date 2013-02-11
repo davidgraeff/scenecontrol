@@ -78,7 +78,7 @@
 		snapNode: function() {
 			if (this.selectedObject instanceof Node) {
 				for (var i = 0; i < this.nodes.length; i++) {
-					this.nodes[i].snap(selectedObject);
+					this.nodes[i].snap(this.selectedObject);
 				}
 			}
 		},
@@ -145,4 +145,39 @@
 		}
 	};
 
+	// unlink all event handlers of namespace sceneitems
+	$(document).off(".sceneitems"); 
+	// connect event handlers
+	$(storageInstance).on('onevent.sceneitems', function(d, flags) {
+		if (flags.doc.sceneid_ != CurrentScene.id)
+			return;
+		
+		//TODO
+		// 	if (!flags.removed)
+		// 		addSceneItem(flags.doc, flags.temporary);
+		// 	else
+		// 		removeSceneItem(flags.doc, flags.temporary);
+	});
+
+	$(storageInstance).on('oncondition.sceneitems', function(d, flags) {
+		if (flags.doc.sceneid_ != CurrentScene.id)
+			return;
+		
+		//TODO
+		// 	if (!flags.removed)
+		// 		addSceneItem(flags.doc, flags.temporary);
+		// 	else
+		// 		removeSceneItem(flags.doc, flags.temporary);
+	});
+
+	$(storageInstance).on('onaction.sceneitems', function(d, flags) {
+		if (flags.doc.sceneid_ != CurrentScene.id)
+			return;
+		
+		//TODO
+		// 	if (!flags.removed)
+		// 		addSceneItem(flags.doc, flags.temporary);
+		// 	else
+		// 		removeSceneItem(flags.doc, flags.temporary);
+	});
 })(window);

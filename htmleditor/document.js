@@ -30,7 +30,19 @@
 				websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeDocument","doc":sceneDocument});
 			}
 		},
+ 
+		removeFromScene: function(sceneID, sceneItemDocument) {
+			//TODO
+		},
 		
+		createSceneItem: function(sceneID, sceneItemDocument) {
+			//TODO
+			// Simulate a new document
+			storageInstance.documentChanged(doc, false);
+			storageInstance.notifyDocumentChange(doc, false, true);
+			
+		},
+			
 		change: function(sceneDocument) {
 			if (!sceneDocument)
 				return;
@@ -379,14 +391,13 @@
 			var dataout = {};
 			var invalidfields = [];
 			var a = $form.serializeArray();
-			console.log("form ",a );
 			
 			$.each(a, function() {
 				var $elem = $form.find('[name='+this.name+'][internal-data-type]');
 				var type = $elem.attr('internal-data-type');
 				var value = $elem.val();
 				var size = $elem.attr('data-size');
-				console.log("form element", this.name, value);
+
 				if (!CurrentSceneItem.serializeElement(dataout, type, value, this.name, size)) {
 					invalidfields.push(this.name);
 				}
