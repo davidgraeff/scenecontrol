@@ -69,11 +69,16 @@
 	window.Link = function (a, b) {
 		this.nodeA = a;
 		this.nodeB = b;
+		this.enabled = true;
 		
 		// make anchor point relative to the locations of nodeA and nodeB
 		this.parallelPart = 0.5; // percentage from nodeA to nodeB
 		this.perpendicularPart = 0; // pixels from line between nodeA and nodeB
 	}
+	
+	Link.prototype.setEnable = function(b) {
+		this.enabled = b;
+	};
 	
 	Link.prototype.getAnchorPoint = function() {
 		var dx = this.nodeB.x - this.nodeA.x;
@@ -203,8 +208,13 @@
 		this.textPadding = 10;
 		this.headerHeight = 25 + 2 * this.textPadding;
 		this.cachetext = [];
+		this.enabled = true;
 	}
 
+	Node.prototype.setEnable = function(b) {
+		this.enabled = b;
+	};
+	
 	Node.prototype.snap = function(otherNode) {
 		if (this == otherNode) return;
 		
@@ -270,7 +280,6 @@
 	};
 
 	Node.prototype.draw = function(c) {
-		c.save();
 		c.font = this.fontsize+'px "Times New Roman", serif';
 		var w2 = this.width/2;
 		var h2 = this.height/2;
@@ -325,8 +334,6 @@
 				c.fillText(this.cachetext[i], x, y + (i + 1) * this.fontsize);
 			};
 		}
-		
-		c.restore();
 	};
 
 	Node.prototype.closestPointOnShape = function(x, y) {

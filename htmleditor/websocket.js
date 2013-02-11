@@ -17,7 +17,7 @@
 		
 		this.setHostAndPort = function(hostAndPort) {
 			localStorage.setItem("hostAndPort", hostAndPort);
-			that.url = "ws://"+hostAndPort;
+			that.url = "wss://"+hostAndPort;
 		}
 		this.requestAllDocuments = function() {
 			this.write({"componentid_":"server", "type_":"execute", "method_":"fetchAllDocuments"});
@@ -45,13 +45,25 @@
 			that.socket_di.send(data+"\n");
 		}
 		
+		this.checkConnected = function() {
+			if (that.connected == false) {
+				if (that.socket_di)
+					that.socket_di.close();
+				$(that).trigger('onerror');
+			}
+		}
+		
 		this.reconnect = function() {
 			if (that.connected || !that.url) return true;
-			if (that.socket_di) socket_di.close();
+			if (that.socket_di) {
+				that.socket_di.close();
+			}
 			
-			that.socket_di = new WebSocket(that.url, "roomcontrol-protocol");
 			try {
+				window.setTimeout( that.checkConnected, 1500 );
+				that.socket_di = new WebSocket(that.url, "roomcontrol-protocol");
 				that.socket_di.onopen = function() {
+					console.log("conn2", that.connected);
 					that.connected = true;
 					$(that).trigger('onopen');
 				} 
@@ -66,13 +78,19 @@
 				} 
 				
 				that.socket_di.onclose = function(){
+					var v = that.connected;
 					that.connected = false;
-					$(that).trigger('onclose');
+					if (v==true)
+						$(that).trigger('onclose');
 				}
 			} catch(exception) {
-				console.log("websocket exception");
+				var v = that.connected;
+				that.connected = false;
+				if (v==true)
+					$(that).trigger('onclose');
+				
+				$(that).trigger('onerror');
 			}
-			//console.log(this);
 			return true;
 		}
 	}

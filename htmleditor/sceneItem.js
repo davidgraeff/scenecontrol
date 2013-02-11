@@ -10,31 +10,62 @@
 		* Based on Finite State Machine Designer (http://madebyevan.com/fsm/)
 		* License: MIT License, Finite State Machine Designer Copyright (c) 2010 Evan Wallace
 		*/
+		canvas: null,
+		ctx: null,
 		nodes: [],
 		links: [],
 		
 		selectedObject: null, // either a Link or a Node
 		currentLink: null, // a Link
+		bgPattern: null,
+ 
+		setCanvas: function(canvas) {
+			this.canvas = canvas;
+			this.ctx = canvas.getContext('2d');
+			var image = new Image();
+			image.src = "brushed-silver-metallic-background.jpg";
+			this.bgPattern = this.ctx.createPattern(image, "repeat");
+		},
 		
-		draw: function(canvas) {
-			var c = canvas.getContext('2d');
-			c.clearRect(0, 0, canvas.width, canvas.height);
+		draw: function() {
+			var c = this.ctx;
+			c.save();
+			if (this.bgPattern==null)
+				c.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			else {
+				c.fillStyle = this.bgPattern;
+				c.fillRect(0, 0, this.canvas.width, this.canvas.height);
+			}
+			c.restore();
 			c.save();
 			
 			for (var i = 0; i < this.nodes.length; i++) {
-				c.strokeStyle = (this.nodes[i] == this.selectedObject) ? 'blue' : 'gray';
+				c.save();
+				c.strokeStyle = 'gray';
+				if (!this.nodes[i].enabled) {
+					c.globalAlpha = 0.4;
+				} else if (this.nodes[i] == this.selectedObject) {
+					c.strokeStyle = 'blue';
+				}
 				//c.fillStyle = (this == this.selectedObject) ? 'blue' : 'black';
 				this.nodes[i].draw(c);
+				c.restore();
 			}
 			for (var i = 0; i < this.links.length; i++) {
+				c.save();
 				c.lineWidth = 1;
+				if (!this.links[i].enabled)
+					c.globalAlpha = 0.4;
 				c.fillStyle = c.strokeStyle = (this.links[i] == this.selectedObject) ? 'blue' : 'black';
 				this.links[i].draw(c);
+				c.restore();
 			}
 			if (this.currentLink != null) {
+				c.save();
 				c.lineWidth = 1;
 				c.fillStyle = c.strokeStyle = 'black';
 				this.currentLink.draw(c);
+				c.restore();
 			}
 			
 			c.restore();
@@ -54,18 +85,30 @@
 			return null;
 		},
  
-		removeSelected: function() {
+		disable: function(sceneItemDocument) {
 			for (var i = 0; i < this.nodes.length; i++) {
-				if (this.nodes[i] == this.selectedObject) {
+				if (this.nodes[i].data == sceneItemDocument) {
+					this.nodes[i].setEnable(false);
+				}
+			}
+			for (var i = 0; i < this.links.length; i++) {
+				if (this.links[i].nodeA.data == sceneItemDocument || this.links[i].nodeB.data == sceneItemDocument) {
+					this.links[i].setEnable(false);
+				}
+			}
+		},
+
+		removeNode: function(node) {
+			for (var i = 0; i < this.nodes.length; i++) {
+				if (this.nodes[i] == node) {
 					this.nodes.splice(i--, 1);
 				}
 			}
 			for (var i = 0; i < this.links.length; i++) {
-				if (this.links[i] == this.selectedObject || this.links[i].node == this.selectedObject || this.links[i].nodeA == this.selectedObject || links[i].nodeB == this.selectedObject) {
+				if (this.links[i] == node || this.links[i].node == node || this.links[i].nodeA == node || this.links[i].nodeB == node) {
 					this.links.splice(i--, 1);
 				}
 			}
-			this.selectedObject = null;
 		},
 		
 		moveNodes: function(x, y) {
@@ -83,18 +126,38 @@
 			}
 		},
 
-		indexOfSceneItem: function(sceneItem) {
+		indexOfSceneItem: function(sceneItemDocument) {
 			for (var i = 0; i < this.nodes.length; i++) {
 				var node = this.nodes[i].data;
-				if (node.type_==sceneItem.type_ && node.id_==sceneItem.id_)
+				if (node.type_==sceneItemDocument.type_ && node.id_==sceneItemDocument.id_)
 					return i;
 			}
 			return -1;
 		},
-		
-		load: function(scene, maxX, canvasContext) {
+ 
+		sceneitemchanged: function(sceneItemDocument, temp) {
+			var i = this.indexOfSceneItem(sceneItemDocument);
+			if (i==-1) {
+				return;
+			}
+			var node = this.nodes[i];
+			node.setData(this.ctx, sceneItemDocument);
+			node.setEnable(true);
+			this.draw();
+		},
+ 
+		clear: function() {
 			this.nodes = [];
 			this.links = [];
+			this.currentLink = null;
+			
+			this.draw();
+		},
+ 
+		load: function(scene, maxX) {
+			this.nodes = [];
+			this.links = [];
+			this.currentLink = null;
 			
 			//var sceneDocuments = storageInstance.documentsForScene(sceneid);
 			// 	console.log("load scene", scene);
@@ -109,7 +172,7 @@
 					continue;
 				}
 				var node = new Node();
-				node.setData(canvasContext, sceneItem);
+				node.setData(this.ctx, sceneItem);
 				this.nodes.push(node);
 				
 				if (sceneNode.draw_ == null) {
@@ -142,6 +205,8 @@
 					this.links.push(link);
 				}
 			}
+			
+			this.draw();
 		}
 	};
 
@@ -152,32 +217,23 @@
 		if (flags.doc.sceneid_ != CurrentScene.id)
 			return;
 		
-		//TODO
-		// 	if (!flags.removed)
-		// 		addSceneItem(flags.doc, flags.temporary);
-		// 	else
-		// 		removeSceneItem(flags.doc, flags.temporary);
+		if (!flags.removed)
+			sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
 	});
 
 	$(storageInstance).on('oncondition.sceneitems', function(d, flags) {
 		if (flags.doc.sceneid_ != CurrentScene.id)
 			return;
 		
-		//TODO
-		// 	if (!flags.removed)
-		// 		addSceneItem(flags.doc, flags.temporary);
-		// 	else
-		// 		removeSceneItem(flags.doc, flags.temporary);
+		if (!flags.removed)
+			sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
 	});
 
 	$(storageInstance).on('onaction.sceneitems', function(d, flags) {
 		if (flags.doc.sceneid_ != CurrentScene.id)
 			return;
 		
-		//TODO
-		// 	if (!flags.removed)
-		// 		addSceneItem(flags.doc, flags.temporary);
-		// 	else
-		// 		removeSceneItem(flags.doc, flags.temporary);
+		if (!flags.removed)
+			sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
 	});
 })(window);

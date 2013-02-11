@@ -114,8 +114,8 @@
 				$("#btnChangeTags").addClass("ui-disabled");
 				$("#btnChangeSceneName").addClass("ui-disabled");
 				$("#helptexteditor").removeClass("hidden");
-		// 		$("#sceneservices").children().remove();
 				$(".currentscene").text("Keine Szene ausgewählt");
+				sceneCanvas.clear();
 				return;
 			}
 			$("#btnAddSceneItem").removeClass("ui-disabled");
@@ -129,7 +129,6 @@
 
 			var canvas = document.getElementById('canvas');
 			sceneCanvas.load(scene, canvas.width, canvas.getContext('2d'));
-			sceneCanvas.draw(canvas);
 		}
 	};
 })(window);

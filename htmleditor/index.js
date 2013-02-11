@@ -11,6 +11,15 @@
 		});
 	});
 
+	$(websocketInstance).on('onclose', function() {
+		window.location = window.location.href.replace( /#.*/, "");
+	});
+	
+	$(websocketInstance).on('onerror', function() {
+		$.jGrowl("Keine Verbindung zum Server<br/>Läuft der Websocketproxy?");
+		$.mobile.loading( 'hide' );
+	});
+	
 	$(websocketInstance).on('onopen', function() {
 		websocketInstance.requestAllDocuments();
 		websocketInstance.registerNotifier();

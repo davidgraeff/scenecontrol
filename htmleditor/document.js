@@ -14,7 +14,7 @@
 			Document.change(newscene);
 		},
 		
-		createConfig: function(instanceid, componentid) {
+		createConfig: function(instanceid, componentid) {ee
 			var newconfig = {"id_":"GENERATEGUID", "componentid_":componentid, "type_": "configuration","instanceid_": instanceid};
 			Document.change(newconfig);
 		},
@@ -32,7 +32,24 @@
 		},
  
 		removeFromScene: function(sceneID, sceneItemDocument) {
-			//TODO
+			var sceneDocument = storageInstance.scenes[CurrentScene.id];
+			if (!sceneDocument)
+				return;
+			
+			var modified = false;
+			for (var j = sceneDocument.v.length-1;j>=0;--j) {
+				if (sceneDocument.v[j].id_ == sceneItemDocument.id_ && sceneDocument.v[j].type_ == sceneItemDocument.type_) {
+					sceneDocument.v.splice(j, 1);
+					modified = true;
+					break;
+				}
+			}
+			
+			if (modified) {
+				console.log("removeFromScene:", sceneDocument, sceneItemDocument);
+				//remove(sceneItemDocument);
+				//Document.change(sceneDocument);
+			}
 		},
 		
 		createSceneItem: function(sceneID, sceneItemDocument) {
@@ -117,18 +134,6 @@
 			CurrentScene.id = sceneid;
 		},
 		
-		newevent: function() {
-			
-		},
-
-		newcondition: function() {
-			
-		},
-
-		newaction: function() {
-			
-		},
-
 		isValid: function() {
 			return (CurrentScene.id !== null);
 		},
