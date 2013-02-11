@@ -291,17 +291,19 @@ void DataStorage::removeFromCache( const QString& filename ) {
 	if (!olddoc)
 		return;
 	
-	QMutexLocker locker(&mReadWriteLockMutex);
-	m_index_typeid.remove(olddoc->uid());
-	
-	QMutableListIterator<SceneDocument*> i(m_cache[olddoc->type()]);
-	while (i.hasNext()) {
-		i.next();
-		if (i.value() == olddoc) {
-			i.remove();
-			break;
+	{ // remove document: this is secured by the mutex locker
+		QMutexLocker locker(&mReadWriteLockMutex);
+		m_index_typeid.remove(olddoc->uid());
+		
+		QMutableListIterator<SceneDocument*> i(m_cache[olddoc->type()]);
+		while (i.hasNext()) {
+			i.next();
+			if (i.value() == olddoc) {
+				i.remove();
+				break;
+			}
 		}
-	}
+	} // mutex unlocked
 	
 	// notify StorageNotifiers
 	for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
