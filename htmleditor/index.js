@@ -6,7 +6,7 @@
 		
 		$('#btnConnectToServer').on('click', function() {
 			$.mobile.loading( 'show', { theme: "b", text: "Lade Dokumente", textonly: false });
-			websocketInstance.setHostAndPort($("#servernameandport").val());
+			websocketInstance.setHostAndPort($("#servernameandport").val(), false);
 			websocketInstance.reconnect();
 		});
 	});

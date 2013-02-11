@@ -15,9 +15,9 @@
 			return v ? v : "127.0.0.1:3102";
 		}
 		
-		this.setHostAndPort = function(hostAndPort) {
+		this.setHostAndPort = function(hostAndPort, useWSS) {
 			localStorage.setItem("hostAndPort", hostAndPort);
-			that.url = "wss://"+hostAndPort;
+			that.url = ((useWSS)?"wss://":"ws://")+hostAndPort;
 		}
 		this.requestAllDocuments = function() {
 			this.write({"componentid_":"server", "type_":"execute", "method_":"fetchAllDocuments"});
