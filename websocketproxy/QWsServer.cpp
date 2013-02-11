@@ -244,13 +244,20 @@ void QWsServer::incomingConnection( int socketDescriptor )
 	 * addPendingConnection( wsSocket );
 	 *   emit newConnection();*/
 	
-	
-	qDebug() << "New tcp connection";
 	if (_encrypted && !sslCertificate.isNull() && !sslKey.isNull())
 	{
 		QSslSocket *sslSocket = new QSslSocket(this);
+		connect(sslSocket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrors(QList<QSslError>)));
 		sslSocket->setLocalCertificate(sslCertificate);
 		sslSocket->setPrivateKey(sslKey);
+		// ignore some ssl errors
+		QList<QSslError> expectedSslErrors;
+		QSslError error(QSslError::SelfSignedCertificate);
+		QSslError error2(QSslError::HostNameMismatch);
+		expectedSslErrors.append(error);
+		expectedSslErrors.append(error2);
+		sslSocket->ignoreSslErrors(expectedSslErrors);
+		
 		if (sslSocket->setSocketDescriptor(socketDescriptor))
 		{
 			qDebug() << "Trying to start encryption";
@@ -270,6 +277,21 @@ void QWsServer::incomingConnection( int socketDescriptor )
 			onTcpConnectionReady(tcpSocket);
 		else
 			delete tcpSocket;
+	}
+}
+
+void QWsServer::sslErrors ( const QList<QSslError> & errors ) {
+	QSslSocket *socket = (QSslSocket*)sender();
+	QList<QSslError> filteredErrors(errors);
+	for (int i=filteredErrors.size()-1;i>=0;--i) {
+		QSslError& e = filteredErrors[i];
+		if (e.error() == QSslError::SelfSignedCertificate) {
+			filteredErrors.removeAt(i);
+			continue;
+		}
+		// Error
+		qWarning() << "SSL Error:" << e.errorString();
+		socket->disconnectFromHost();
 	}
 }
 

@@ -41,6 +41,7 @@ private slots:
 	void onTcpConnectionReady(QAbstractSocket *socket);
 	void closeTcpConnection();
 	void dataReceived();
+	void sslErrors ( const QList<QSslError> & errors );
 	
 private:
 	// blocking some functions
