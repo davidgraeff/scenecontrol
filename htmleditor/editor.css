@@ -74,7 +74,8 @@ a.HeaderButton {
 	top:0em;
 	bottom:0em;
 	padding-top: 20px;
-	padding-right:0px
+	padding-right:0px;
+	margin-bottom: 50px;
 }
 
 .content-primary {

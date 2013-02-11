@@ -8,8 +8,6 @@
 	<body>
 		<div data-role='page' id='editor' data-title='SceneControl' data-theme='d'>
 			<script src="editor.js"></script>
-			<script src="sceneItem.js"></script>
-			<script src="sceneItemsCanvasGraph.js"></script>
 			
 			<div data-role='content'>
 				<!-- Left: Scene list -->
@@ -31,7 +29,16 @@
 				<!-- Right: Scene items -->
 				<div class='content-primary' id='righteditpanel'>
 					<div data-role="header" data-theme='d' id="sceneheader">
-						<h1>Szene: <span class="currentscene">Keine Szene ausgewählt</span> <a href="#" id="btnChangeSceneName">(Namen ändern)</a></h1>
+						<div class="ui-grid-a ui-bar">
+							<div class="ui-block-a"><h1>Szene: <span class="currentscene">Keine Szene ausgewählt</span></h1></div>
+							
+							<div class="ui-block-b"><div style="float:right" data-role="controlgroup" data-type="horizontal">
+								<a id="btnChangeSceneName" data-role="button" data-icon="edit" data-mini="true">Namen ändern</a>
+								<a id="btnChangeTags" data-role="button" data-icon="edit" data-mini="true">Kategorien</a>
+								<a id="btnAddSceneItem" data-role="button" data-icon="plus" data-mini="true">Element hinzufügen</a>
+							</div></div>
+							
+						</div>
 					</div>
 					<div id="helptexteditor">
 						<h3>Scene-Editor</h3>
@@ -55,21 +62,26 @@
 					<canvas id="canvas">
 						<span class="error">Your browser does not support<br>the HTML5 &lt;canvas&gt; element</span>
 					</canvas>
-					<div data-role="footer" data-theme='d' id="scenefooter"> 
-						<div class="ui-grid-a ui-bar">
-						<div class="ui-block-a"><div data-role="controlgroup" data-type="horizontal">
+				</div><!-- rightside -->
+
+			</div><!-- /content -->
+			<div data-role="footer" data-position="fixed" data-theme='d' id="scenefooter"> 
+				<div class="ui-grid-a ui-bar">
+					<div class="ui-block-a">
+						<div data-role="controlgroup" data-type="horizontal">
 						<a id="btnAddScene" data-role="button" data-icon="plus" data-mini="true" data-inline="true">Neue Szene</a>
 						<a id="btnRemoveSelectedScenes" data-role="button" data-icon="delete" data-mini="true" data-inline="true">Markierte entfernen</a>
-						<a id="btnGotoConfig" data-role="button" data-icon="gear" data-mini="true" data-inline="true">Plugin Einrichtung</a>
-						</div></div>
-						<div class="ui-block-b"><span style="float:right"><div data-role="controlgroup" data-type="horizontal">
-						<a id="btnChangeTags" data-role="button" data-icon="plus" data-mini="true">Kategorien</a>
-						<a id="btnAddSceneItem" data-role="button" data-icon="plus" data-mini="true">Element hinzufügen</a>
-						</div></span></div>
 						</div>
-					</div> 
-				</div><!-- rightside -->
-			</div><!-- /content -->
+					</div>
+					<div class="ui-block-b">
+						<span style="float:right">
+							<div data-role="controlgroup" data-type="horizontal">
+							<a id="btnGotoConfig" data-role="button" data-icon="gear" data-mini="true" data-inline="true">Plugin Einrichtung</a>
+							</div>
+						</span>
+					</div>
+				</div>
+			</div>  <!-- /footer -->
 			
 			<!-- Remove scene confirmation popup -->
 			<div data-role="popup" id="removepopup" data-overlay-theme="a">
@@ -91,7 +103,7 @@
 				</div>
 				<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
 					<form><input type="text" placeholder="Name" id="newscenename" name="newscenename" value=""  /></form>
-					<a id="btnConfirmScenename" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Szene erstellen</a>  
+					<a id="btnConfirmScenename" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Namen bestätigen</a>  
 				</div>
 			</div>
 			<div data-role="popup" id="sceneitemedit" data-overlay-theme="a">
