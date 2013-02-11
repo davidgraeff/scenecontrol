@@ -13,25 +13,25 @@
 
 #define __FUNCTION__ __FUNCTION__
 
-Socket::~Socket()
+ControlServerSocket::~ControlServerSocket()
 {
 }
 
-Socket::Socket() : m_disabledSecureConnections(false) {
+ControlServerSocket::ControlServerSocket() : m_disabledSecureConnections(false) {
     if (listen(QHostAddress::Any, ROOM_LISTENPORT)) {
         qDebug() << "SSL TCPSocket Server ready on port" << ROOM_LISTENPORT;
     }
 }
 
-static Socket* socketInstance = 0;
-Socket* Socket::instance()
+static ControlServerSocket* socketInstance = 0;
+ControlServerSocket* ControlServerSocket::instance()
 {
     if (!socketInstance)
-        socketInstance = new Socket();
+        socketInstance = new ControlServerSocket();
     return socketInstance;
 }
 
-void Socket::incomingConnection(int socketDescriptor)
+void ControlServerSocket::incomingConnection(int socketDescriptor)
 {
     QSslSocket *socket = new QSslSocket;
     if (!socket->setSocketDescriptor(socketDescriptor)) {
@@ -95,11 +95,11 @@ void Socket::incomingConnection(int socketDescriptor)
 				qWarning() << "sslCert invalid" << fileCert.fileName();
 			} else {
 				socket->addCaCertificate(sslCert);
+				// We allow self signed certificates
 				QSslError error(QSslError::SelfSignedCertificate, sslCert);
 				expectedSslErrors.append(error);
 				QSslError error2(QSslError::HostNameMismatch, sslCert);
 				expectedSslErrors.append(error2);
-				qDebug() << "Add client ssl certificate" << fileCert.fileName();
 			}
 		}
 		else
@@ -111,7 +111,8 @@ void Socket::incomingConnection(int socketDescriptor)
 	socket->ignoreSslErrors(expectedSslErrors);
 	if (!m_disabledSecureConnections)
 		socket->startServerEncryption();
-	qDebug() << "New connection" << socket->peerAddress();
+	//qDebug() << "Add client ssl certificate" << fileCert.fileName();
+	//qDebug() << "New connection" << socket->peerAddress();
 
 	// Notify plugins of new session
 	PluginController* pc = PluginController::instance();
@@ -122,16 +123,22 @@ void Socket::incomingConnection(int socketDescriptor)
 	}
 }
 
-void Socket::sslErrors ( const QList<QSslError> & errors ) {
+void ControlServerSocket::sslErrors ( const QList<QSslError> & errors ) {
+	QSslSocket *socket = (QSslSocket*)sender();
 	QList<QSslError> filteredErrors(errors);
-	for (int i=filteredErrors.size()-1;i>=0;--i)
-		if (filteredErrors[i].error() == QSslError::SelfSignedCertificate)
+	for (int i=filteredErrors.size()-1;i>=0;--i) {
+		QSslError& e = filteredErrors[i];
+		if (e.error() == QSslError::SelfSignedCertificate) {
 			filteredErrors.removeAt(i);
-	if (filteredErrors.size())
-		qWarning() << "SSL Errors" << filteredErrors;
+			continue;
+		}
+		// Error
+		qWarning() << "SSL Error:" << e.errorString();
+		socket->disconnectFromHost();
+	}
 }
 
-void Socket::readyRead() {
+void ControlServerSocket::readyRead() {
     QSslSocket *serverSocket = (QSslSocket *)sender();
     while (serverSocket->canReadLine()) {
 		// Create a SceneDocument out of the raw data
@@ -277,7 +284,7 @@ void Socket::readyRead() {
     }
 }
 
-void Socket::socketDisconnected() {
+void ControlServerSocket::socketDisconnected() {
     QSslSocket *socket = (QSslSocket *)sender();
     const int socketDescriptor = socket->socketDescriptor();
     m_sockets.remove(socketDescriptor);
@@ -299,7 +306,7 @@ void Socket::socketDisconnected() {
     qDebug() << "socket closed" << socketDescriptor << socket->errorString() << socket->error();
 }
 
-void Socket::sendToClients(const QByteArray& rawdata, int sessionid) {
+void ControlServerSocket::sendToClients(const QByteArray& rawdata, int sessionid) {
     if (rawdata.isEmpty()) {
 		qWarning() << "No data or no newline as last character:" << rawdata;
 		return;
@@ -326,7 +333,7 @@ void Socket::sendToClients(const QByteArray& rawdata, int sessionid) {
 }
 
 
-StorageNotifierSocket* Socket::notifier ( int sessionid ) {
+StorageNotifierSocket* ControlServerSocket::notifier ( int sessionid ) {
 	StorageNotifierSocket* s = m_notifiers[sessionid];
 	if (!s) {
 		s = new StorageNotifierSocket(sessionid);
@@ -341,7 +348,7 @@ void StorageNotifierSocket::documentChanged(const QString& filename, SceneDocume
 	s.setComponentID ( QLatin1String ( "datastorage" ) );
 	s.setData("filename", filename);
 	s.setData("document", newDoc->getData());
-	Socket::instance()->sendToClients ( s.getjson(), m_sessionid );
+	ControlServerSocket::instance()->sendToClients ( s.getjson(), m_sessionid );
 }
 
 void StorageNotifierSocket::documentRemoved ( const QString& filename, SceneDocument* document ) {
@@ -350,11 +357,11 @@ void StorageNotifierSocket::documentRemoved ( const QString& filename, SceneDocu
 	s.setComponentID ( QLatin1String ( "datastorage" ) );
 	s.setData("filename", filename);
 	s.setData("document", document->getData());
-	Socket::instance()->sendToClients ( s.getjson(), m_sessionid );
+	ControlServerSocket::instance()->sendToClients ( s.getjson(), m_sessionid );
 }
 
 StorageNotifierSocket::StorageNotifierSocket ( int sessionid ) : m_sessionid(sessionid) {}
 
-void Socket::disableSecureConnections() {
+void ControlServerSocket::disableSecureConnections() {
 	m_disabledSecureConnections = true;
 }

@@ -42,11 +42,11 @@ private:
 	virtual void documentRemoved(const QString& filename, SceneDocument* document);
 };
 
-class Socket: public QTcpServer {
+class ControlServerSocket: public QTcpServer {
     Q_OBJECT
 public:
-    static Socket* instance();
-    virtual ~Socket();
+    static ControlServerSocket* instance();
+    virtual ~ControlServerSocket();
 
 	/**
 	 * Send a document as json formated string to all connected clients (sessionid==-1)
@@ -59,7 +59,7 @@ public:
 	 */
     void disableSecureConnections();
 private:
-    Socket ();
+    ControlServerSocket ();
     ServiceController* m_servicecontroller;
     QMap<int, QSslSocket*> m_sockets;
 	QMap<int, StorageNotifierSocket*> m_notifiers;

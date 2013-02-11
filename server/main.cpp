@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     arg(QCoreApplication::applicationPid());
 
     // create network socket for controlling the server
-    Socket* socket = Socket::instance();
+    ControlServerSocket* socket = ControlServerSocket::instance();
     if (!socket->isListening()) {
         qWarning() << "TCP Socket initalizing failed. Maybe another instance is already running";
         delete socket;

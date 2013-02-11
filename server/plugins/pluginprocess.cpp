@@ -176,7 +176,7 @@ void PluginProcess::readyReadPluginData()
             const int sessionid = doc.sessionid();
 			doc.removeSessionID();
             // propagate changed property
-            Socket::instance()->sendToClients(doc.getjson(), sessionid);
+            ControlServerSocket::instance()->sendToClients(doc.getjson(), sessionid);
         } else if (method == "eventTriggered") {
 			doc.setType(SceneDocument::TypeEvent);
             const QString sceneid = doc.sceneid();

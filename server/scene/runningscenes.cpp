@@ -36,5 +36,5 @@ void RunningScenes::updateList() {
 	doc.setData("running",list);
 	doc.setComponentID(QLatin1String("CollectionController"));
 	//TODO: Thread issue -> use qt signal slot
-	Socket::instance()->sendToClients(doc.getjson(), -1);
+	ControlServerSocket::instance()->sendToClients(doc.getjson(), -1);
 }
