@@ -254,23 +254,25 @@ void DataStorage::reloadDocument( const QString& filename ) {
 		return;
 	}
 	
-	QMutexLocker locker(&mReadWriteLockMutex);
 	SceneDocument* olddoc = m_index_filename.take(filename);
-	if (olddoc) {
-		m_index_typeid.remove(olddoc->uid());
-		QMutableListIterator<SceneDocument*> i(m_cache[doc->type()]);
-		while (i.hasNext()) {
-			i.next();
-			if (i.value() == olddoc) {
-				i.remove();
-				break;
+	{ // add document: this is secured by the mutex locker
+		QMutexLocker locker(&mReadWriteLockMutex);
+		if (olddoc) {
+			m_index_typeid.remove(olddoc->uid());
+			QMutableListIterator<SceneDocument*> i(m_cache[doc->type()]);
+			while (i.hasNext()) {
+				i.next();
+				if (i.value() == olddoc) {
+					i.remove();
+					break;
+				}
 			}
 		}
-	}
-	
-	m_index_filename.insert(filename, doc);
-	m_index_typeid.insert(doc->uid(), doc);
-	m_cache[doc->type()].append(doc);
+		
+		m_index_filename.insert(filename, doc);
+		m_index_typeid.insert(doc->uid(), doc);
+		m_cache[doc->type()].append(doc);
+	} // mutex unlocked
 	
 	// Do not notify if we are still in the initial loading process currently
 	if (!m_isLoading) {

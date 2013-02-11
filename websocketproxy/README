@@ -3,3 +3,11 @@ Purpose:
 Translate between the raw tcp socket of the SceneServer™ and the provided websocket.
 Communication is secured by SSL. Add the Websocketsproxy certificate to your browsers
 certificate store to prevent/detect man-in-the-middle attacks.
+
+Changes:
+* Fix no-implicit string->ascii converting issue
+* write -> writeText, writeBinary method signature changes
+
+Originated from
+* https://github.com/ruslansalikhov/QtWebsocket (WSS) [copy from commit# 12223ab8fa8cd609f16cac3cc10f5d4ad0b7326b]
+* https://github.com/ant-lafarge/QtWebsocket (Original implementation)

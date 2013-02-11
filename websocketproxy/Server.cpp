@@ -7,10 +7,43 @@ Server::Server() : m_server(0) {}
 
 Server::~Server() {}
 
+QSslKey Server::readKey(const QString& fileKeyString)
+{
+	QFile fileKey(fileKeyString);
+	if (fileKey.open(QIODevice::ReadOnly))
+	{
+		QByteArray key = fileKey.readAll();
+		fileKey.close();
+		return QSslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
+	}
+	else
+	{
+		qWarning() << fileKey.errorString();
+		return QSslKey();
+	}
+}
+
+QSslCertificate Server::readCertificate(const QString& filename)
+{
+	QFile fileCert(filename);
+	if (fileCert.open(QIODevice::ReadOnly))
+	{
+		QByteArray cert = fileCert.readAll();
+		fileCert.close();
+		return QSslCertificate(cert);
+	}
+	else
+	{
+		qWarning() << fileCert.errorString();
+		return QSslCertificate();
+	}
+}
+
+
 void Server::newClientConnection()
 {
 	// Get the client socket
-	QWsSocket * clientsocket = m_server->nextPendingConnection();
+	QWsSocket * clientsocket = m_server->nextPendingWsConnection();
 
 	// send ping
 	clientsocket->ping();
@@ -22,39 +55,19 @@ void Server::newClientConnection()
 	serversocket->setProtocol(QSsl::SslV3);
 	serversocket->setPeerVerifyMode(QSslSocket::VerifyNone);
 
-	// Add client key: Currently not used
-	QFile fileKey(setup::certificateFile("clients/websocketproxy.key"));
-	if (fileKey.open(QIODevice::ReadOnly))
-	{
-		QByteArray key = fileKey.readAll();
-		fileKey.close();
-		QSslKey sslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
-		if (key.isNull()) {
-			qWarning() << "key invalid";
-		} else
-			serversocket->setPrivateKey(sslKey);
-	}
-	else
-	{
-		qWarning() << fileKey.errorString();
-	}
+	// Add client key
+	QSslKey sslKey = readKey(setup::certificateFile("clients/websocketproxy.key"));
+	if (sslKey.isNull()) {
+		qWarning() << "SSL key invalid:" << setup::certificateFile("clients/websocketproxy.key");
+	} else
+		serversocket->setPrivateKey(sslKey);
 
 	// Set public certificate
-	QFile fileCert(setup::certificateFile("clients/websocketproxy.crt"));
-	if (fileCert.open(QIODevice::ReadOnly))
-	{
-		QByteArray cert = fileCert.readAll();
-		fileCert.close();
-		QSslCertificate sslCert(cert);
-		if (sslCert.isNull()) {
-			qWarning() << "sslCert invalid";
-		} else
-			serversocket->setLocalCertificate(sslCert);
-	}
-	else
-	{
-		qWarning() << fileCert.errorString();
-	}
+	QSslCertificate sslCert = readCertificate(setup::certificateFile("clients/websocketproxy.crt"));
+	if (sslCert.isNull()) {
+		qWarning() << "SSL Certificate invalid:" << setup::certificateFile("clients/websocketproxy.crt");
+	} else
+		serversocket->setLocalCertificate(sslCert);
 	
 	// Add public certificate of the server to the trusted hosts
 	QFile fileCertServer(setup::certificateFile("server.crt"));
@@ -70,7 +83,7 @@ void Server::newClientConnection()
 	}
 	else
 	{
-		qWarning() << fileCert.errorString();
+		qWarning() << fileCertServer.errorString();
 	}
 
 	// add to lists
@@ -216,6 +229,19 @@ bool Server::startWebsocket(const QString& sceneserver, int listenport, bool dis
 	m_disableSecureConnection = disableSecureConnection;
 	delete m_server;
     m_server = new QWsServer( this );
+	// Add client key
+	QSslKey sslKey = readKey(setup::certificateFile("clients/websocketproxy.key"));
+	// Set public certificate
+	QSslCertificate sslCert = readCertificate(setup::certificateFile("clients/websocketproxy.crt"));
+	
+	if (sslKey.isNull()) {
+		qWarning() << "SSL key invalid: "<<setup::certificateFile("clients/websocketproxy.key");
+	}
+	if (sslCert.isNull()) {
+		qWarning() << "SSL Certificate invalid:" << setup::certificateFile("clients/websocketproxy.crt");
+	}
+	
+	m_server->setCertificate(sslCert, sslKey);
 	if ( ! m_server->listen( QHostAddress::Any, listenport ) )
 	{
 		qWarning() << "Error: Can't launch server";
