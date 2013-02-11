@@ -28,6 +28,6 @@ add_library(PluginLib OBJECT ${SRCS_SHARED_PLUGINS} ${SRCS_SHARED_PLUGINS_MOCS} 
 add_subdirectory(libdatastorage)
 add_subdirectory(server)
 add_subdirectory(plugins)
-add_subdirectory(clients/editor)
+add_subdirectory(htmleditor)
 add_subdirectory(tools/startonboot)
 add_subdirectory(websocketproxy)
