@@ -224,24 +224,29 @@ void Server::clientDisconnected() {
     qDebug() << "Client closed the connection" << clientSocket->hostAddress() << clientSocket->errorString() << clientSocket->error();
 }
 
-bool Server::startWebsocket(const QString& sceneserver, int listenport, bool disableSecureConnection) {
+bool Server::startWebsocket(const QString& sceneserver, int listenport, bool disableSecureConnection, bool disableSecureWebsocket) {
 	m_sceneserver = QLatin1String("tcp://") + sceneserver;
 	m_disableSecureConnection = disableSecureConnection;
+	m_disableSecureWebsocket = disableSecureWebsocket;
 	delete m_server;
     m_server = new QWsServer( this );
-	// Add client key
-	QSslKey sslKey = readKey(setup::certificateFile("clients/websocketproxy.key"));
-	// Set public certificate
-	QSslCertificate sslCert = readCertificate(setup::certificateFile("clients/websocketproxy.crt"));
 	
-	if (sslKey.isNull()) {
-		qWarning() << "SSL key invalid: "<<setup::certificateFile("clients/websocketproxy.key");
-	}
-	if (sslCert.isNull()) {
-		qWarning() << "SSL Certificate invalid:" << setup::certificateFile("clients/websocketproxy.crt");
+	if (!m_disableSecureWebsocket) {
+		// Add client key
+		QSslKey sslKey = readKey(setup::certificateFile("clients/websocketproxy.key"));
+		// Set public certificate
+		QSslCertificate sslCert = readCertificate(setup::certificateFile("clients/websocketproxy.crt"));
+		
+		if (sslKey.isNull()) {
+			qWarning() << "SSL key invalid: "<<setup::certificateFile("clients/websocketproxy.key");
+		}
+		if (sslCert.isNull()) {
+			qWarning() << "SSL Certificate invalid:" << setup::certificateFile("clients/websocketproxy.crt");
+		}
+		
+		m_server->setCertificate(sslCert, sslKey);
 	}
 	
-	m_server->setCertificate(sslCert, sslKey);
 	if ( ! m_server->listen( QHostAddress::Any, listenport ) )
 	{
 		qWarning() << "Error: Can't launch server";

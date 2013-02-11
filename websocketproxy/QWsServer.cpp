@@ -250,12 +250,11 @@ void QWsServer::incomingConnection( int socketDescriptor )
 		connect(sslSocket, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(sslErrors(QList<QSslError>)));
 		sslSocket->setLocalCertificate(sslCertificate);
 		sslSocket->setPrivateKey(sslKey);
+		sslSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
 		// ignore some ssl errors
 		QList<QSslError> expectedSslErrors;
-		QSslError error(QSslError::SelfSignedCertificate);
-		QSslError error2(QSslError::HostNameMismatch);
-		expectedSslErrors.append(error);
-		expectedSslErrors.append(error2);
+		expectedSslErrors.append(QSslError(QSslError::SelfSignedCertificate));
+		expectedSslErrors.append(QSslError(QSslError::HostNameMismatch));
 		sslSocket->ignoreSslErrors(expectedSslErrors);
 		
 		if (sslSocket->setSocketDescriptor(socketDescriptor))
