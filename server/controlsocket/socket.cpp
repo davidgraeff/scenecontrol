@@ -315,8 +315,8 @@ void ControlServerSocket::socketDisconnected() {
 		delete m_notifiers.take(socketDescriptor);
 	}
 	
-	if (socket->error() != QAbstractSocket::RemoteHostClosedError)
-		qDebug() << "Unexpected socket close:" << socket->error();
+	if (socket->error() != QAbstractSocket::RemoteHostClosedError && socket->error() != QAbstractSocket::UnknownSocketError)
+		qWarning() << "Socket close:" << socket->errorString();
 }
 
 void ControlServerSocket::sendToClients(const QByteArray& rawdata, int sessionid) {
