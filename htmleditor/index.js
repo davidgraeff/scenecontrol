@@ -27,7 +27,23 @@
 	});
 
 	$(storageInstance).on('onloadcomplete', function() {
-		$.mobile.changePage('editor.html', {transition: 'slide'});
+		$.mobile.changePage('scenelist.html', {transition: 'none'});
 		$.mobile.loading( 'hide' );
 	});
 })(document, websocketInstance, storageInstance);
+
+// jquery plugin for handlebars
+(function($) {
+	var compiled = {};
+	$.fn.handlebarsAfter = function(template, data) {
+		var ctx;
+		if (compiled[template]!=null)
+			ctx = compiled[template];
+		else {
+			ctx = Handlebars.compile($(template).html());
+			compiled[template] = ctx;
+		}
+		
+		this.after(ctx(data));
+	};
+})(jQuery);

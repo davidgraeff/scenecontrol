@@ -1,131 +1,11 @@
 /**
- * Document Module - Allows to create/modify/remove documents. Store information
- * about the current active scene and scene item.
- * Available as window.Document, window.CurrentScene, CurrentSceneItem.
+ * Document Module - Store information about the current active scene and scene item.
+ * Available as window.CurrentScene, CurrentSceneItem.
  * Uses modules: Websocket, Storage
  */
 (function (window) {
 	"use strict";
 
-	// Global methods for documents
-	window.Document = {
-		createScene: function(name) {
-			var newscene = {"id_":"GENERATEGUID", "componentid_":"server", "type_": "scene","v":[],"categories": [],"enabled": true,"name": name};
-			Document.change(newscene);
-		},
-		
-		createConfig: function(instanceid, componentid) {ee
-			var newconfig = {"id_":"GENERATEGUID", "componentid_":componentid, "type_": "configuration","instanceid_": instanceid};
-			Document.change(newconfig);
-		},
-		
-		remove: function(sceneDocument) {
-			if (!sceneDocument)
-				return;
-			if (sceneDocument.id_ == "GENERATEGUID") { // if temporary: only remove from storage cache
-				storageInstance.documentChanged(sceneDocument, true);
-				storageInstance.notifyDocumentChange(sceneDocument, true, true);
-			} else {
-				console.log("Remove: ", sceneDocument)
-				websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeDocument","doc":sceneDocument});
-			}
-		},
- 
-		removeFromScene: function(sceneID, sceneItemDocument) {
-			var sceneDocument = storageInstance.scenes[CurrentScene.id];
-			if (!sceneDocument)
-				return;
-			
-			var modified = false;
-			for (var j = sceneDocument.v.length-1;j>=0;--j) {
-				if (sceneDocument.v[j].id_ == sceneItemDocument.id_ && sceneDocument.v[j].type_ == sceneItemDocument.type_) {
-					sceneDocument.v.splice(j, 1);
-					modified = true;
-					break;
-				}
-			}
-			
-			if (modified) {
-				console.log("removeFromScene:", sceneDocument, sceneItemDocument);
-				//remove(sceneItemDocument);
-				//Document.change(sceneDocument);
-			}
-		},
-		
-		createSceneItem: function(sceneID, sceneItemDocument) {
-			//TODO
-			// Simulate a new document
-			storageInstance.documentChanged(doc, false);
-			storageInstance.notifyDocumentChange(doc, false, true);
-			
-		},
-			
-		change: function(sceneDocument) {
-			if (!sceneDocument)
-				return;
-			if (sceneDocument.id_ == "GENERATEGUID") { // if temporary: remove from storage cache
-				storageInstance.documentChanged(sceneDocument, true);
-				storageInstance.notifyDocumentChange(sceneDocument, true, true);
-			}
-			console.log("Change: ", sceneDocument)
-			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"changeDocument","doc":sceneDocument});
-		}
-	};
-	
-	window.SceneItem = {
-		text: function(sceneItem, schema) {
-			// create a copy of the scene item
-			var sceneItemCopy = {};
-			$.extend(true, sceneItemCopy, sceneItem);
-			// extend the object: replace enum integers by their text representations, fill in model data etc
-			for (var paramid in schema.parameters) {
-				var parameter = schema.parameters[paramid];
-				if (parameter.type == "boolean") {
-					sceneItemCopy[paramid] = sceneItemCopy[paramid] ? "An" : "Aus";
-				} else if (parameter.type == "enum") {
-					for (var i=0;i<parameter.data.length;++i) {
-						if (i==sceneItemCopy[paramid]) {
-							sceneItemCopy[paramid] = parameter.data[i];
-							break;
-						}
-					}
-				} else if (parameter.type == "multienum") {
-					var counter = 0;
-					var dataFromDoc = sceneItemCopy[paramid];
-					var resultString = "";
-					for (var index in parameter.data) {
-						if (dataFromDoc && dataFromDoc.length>counter && dataFromDoc[counter] === true) {
-							resultString += parameter.data[index] + " ";
-						}
-						++counter;
-					}
-					sceneItemCopy[paramid] = resultString;
-				} else if (parameter.type == "modelenum") {
-					var model = storageInstance.modelItems(sceneItemCopy.componentid_,sceneItemCopy.instanceid_,parameter.model);
-					if (!model || !model.data) {
-						continue;
-					}
-					var elems = model.data;
-					for (var index in elems) {
-						if (elems.hasOwnProperty(index)) {
-							var modelitem = elems[index];
-							var key = modelitem[parameter.indexproperty];
-							var value = modelitem[parameter.textproperty];
-							if (key==sceneItemCopy[paramid]) {
-								sceneItemCopy[paramid] = value; // show value instead of key
-								break;
-							}
-						}
-					}
-				}
-			}
-			// create a template object that we pass in the context (properties from the scene item).
-			// All {{SOMETHING}} tags are replaced by corresponding values.
-			var template = Handlebars.compile(schema.text);
-			return template(sceneItemCopy);
-		}
-	};
-	
 	// current scene object
 	window.CurrentScene = {
 		id: null,
@@ -151,7 +31,7 @@
 		rename: function(name) {
 			var scene = storageInstance.scenes[CurrentScene.id];
 			scene.name = name;
-			Document.change(scene);
+			websocketInstance.updateDocument(scene);
 		},
 		
 		getName: function() {
@@ -166,7 +46,7 @@
 		setTags: function(taglist) {
 			var scene = storageInstance.scenes[CurrentScene.id];
 			scene.categories = taglist;
-			Document.change(scene);
+			websocketInstance.updateDocument(scene);
 		}
 	};
 
@@ -384,7 +264,7 @@
 		notification: function($form, doc) {
 			var a = $form.serializeArray();
 			$.each(a, function() {
-				$elem = $form.find('[name='+this.name+']');
+				var $elem = $form.find('[name='+this.name+']');
 				if ($elem.data("notification")==doc.id_) {
 					var textprop = $elem.data("paramdata").textproperty;
 					$elem.val(doc[textprop]);
@@ -448,4 +328,57 @@
 		}
 	};
 
+	window.SceneItem = {
+		text: function(sceneItem, schema) {
+			// create a copy of the scene item
+			var sceneItemCopy = {};
+			$.extend(true, sceneItemCopy, sceneItem);
+			// extend the object: replace enum integers by their text representations, fill in model data etc
+			for (var paramid in schema.parameters) {
+				var parameter = schema.parameters[paramid];
+				if (parameter.type == "boolean") {
+					sceneItemCopy[paramid] = sceneItemCopy[paramid] ? "An" : "Aus";
+				} else if (parameter.type == "enum") {
+					for (var i=0;i<parameter.data.length;++i) {
+						if (i==sceneItemCopy[paramid]) {
+							sceneItemCopy[paramid] = parameter.data[i];
+							break;
+						}
+					}
+				} else if (parameter.type == "multienum") {
+					var counter = 0;
+					var dataFromDoc = sceneItemCopy[paramid];
+					var resultString = "";
+					for (var index in parameter.data) {
+						if (dataFromDoc && dataFromDoc.length>counter && dataFromDoc[counter] === true) {
+							resultString += parameter.data[index] + " ";
+						}
+						++counter;
+					}
+					sceneItemCopy[paramid] = resultString;
+				} else if (parameter.type == "modelenum") {
+					var model = storageInstance.modelItems(sceneItemCopy.componentid_,sceneItemCopy.instanceid_,parameter.model);
+					if (!model || !model.data) {
+						continue;
+					}
+					var elems = model.data;
+					for (var index in elems) {
+						if (elems.hasOwnProperty(index)) {
+							var modelitem = elems[index];
+							var key = modelitem[parameter.indexproperty];
+							var value = modelitem[parameter.textproperty];
+							if (key==sceneItemCopy[paramid]) {
+								sceneItemCopy[paramid] = value; // show value instead of key
+								break;
+							}
+						}
+					}
+				}
+			}
+			// create a template object that we pass in the context (properties from the scene item).
+			// All {{SOMETHING}} tags are replaced by corresponding values.
+			var template = Handlebars.compile(schema.text);
+			return template(sceneItemCopy);
+		}
+	};
 })(window);

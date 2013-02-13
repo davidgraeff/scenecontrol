@@ -8,7 +8,7 @@ SceneNode* SceneNode::createEmptyNode() {return new SceneNode(SceneDocument::Typ
 SceneNode* SceneNode::createNode(SceneDocument::TypeEnum type, const QString& id, const QVariantList& nextNodes, const QVariantList& alternativeNextNodes) {
 	QList<SceneDocument> nextNodesC;
 	foreach(const QVariant& v, nextNodes) {
-		SceneDocument s(v);
+		SceneDocument s(v.toMap());
 		if (!s.hasid() || !s.hasType()) {
 			qWarning()<<"SceneNode::Create failed. Nextnode is invalid!"<< s.getjson();
 			continue;
@@ -17,7 +17,7 @@ SceneNode* SceneNode::createNode(SceneDocument::TypeEnum type, const QString& id
 	}
 	QList<SceneDocument> alternativeNextNodesC;
 	foreach(const QVariant& v, alternativeNextNodes) {
-		SceneDocument s(v);
+		SceneDocument s(v.toMap());
 		if (!s.hasid() || !s.hasType()) {
 			qWarning()<<"SceneNode::Create failed. Alternative nextnode is invalid!"<< s.getjson();
 			continue;

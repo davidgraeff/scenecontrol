@@ -31,17 +31,6 @@
  */
 class SceneDocument {
 public:
-    /** 
-     * Constructor: Construct by an existing QVariantMap
-     */
-    SceneDocument(const QVariantMap& map);
-	SceneDocument(const QVariant& v = QVariant());
-    /** 
-     * Constructor: Construct by a json document
-     */
-    SceneDocument(const QByteArray& jsondata);
-
-	
 	enum TypeEnum {
 		TypeUnknown,
 		// Documents that are stored to disk and need to have an ID
@@ -60,18 +49,21 @@ public:
 		TypeLAST
 	};
 	
-	static QString typeString(const TypeEnum t);
+	/***************** Constructor and hash ******************/
+	/** 
+     * Constructor: Construct by an existing QVariantMap
+     */
+    SceneDocument(const QVariantMap& map);
+	SceneDocument() {}
+    /** 
+     * Constructor: Construct by a json document
+     */
+    SceneDocument(const QByteArray& jsondata, const QByteArray& hash);
+
+	const QByteArray getHash() ;
+	QString filename() const ;
 	
-	bool isType(const TypeEnum t) const {
-		return (t==mType);
-	}
-	bool isOneOfType(const TypeEnum t[], int typeArraySize) const {
-		for(int i=0;i<typeArraySize;++i)
-			if (t[i]==mType) return true;
-			return false;
-	}
-	
-    
+	/***************** For Model messages/Notification ******************/
     /**
      * Creates a model item remove notification.
      * \param id Notification id. Must be the same as documented in the plugin xml file.
@@ -97,9 +89,12 @@ public:
      */
     static SceneDocument createNotification(const char* id) ;
 
-	void checkIfIDneedsGUID();
+	QByteArray modelkey() const ;
+	void setModelkey(const QByteArray& configurationkey) ;
+	
     /***************** Is valid ******************/
-    bool isValid() const;
+	void checkIfIDneedsGUID();
+	bool isValid() const;
     /***************** Export to json ******************/
     QByteArray getjson() const;
     
@@ -123,129 +118,62 @@ public:
       */
     bool correctDataTypes(const QVariantMap& types);
 	
-    /***************** Convenience Getter/Setter ******************/
-    QString id() const {
-        return m_map.value(QLatin1String("id_")).toString();
-    }
-    // Unique id: type+id
-    QString uid() const {
-        return m_map.value(QLatin1String("type_")).toString()+m_map.value(QLatin1String("id_")).toString();
-    }
+    /***************** Convenience: Access ID + UID ******************/
+    QString id() const ;
+	void setid(const QString& id) ;
+	bool hasid() const ;
+	QString uid() const ; // Unique id: type+id
+	static QString uid(SceneDocument::TypeEnum type, const QString& id);
+    static QString id(const QVariantMap& data) ;
+    static QString idkey() ;
+
+	/***************** Convenience: Access componentID + instanceID ******************/
+	QString componentID() const ;
+    void setComponentID(const QString& pluginid) ;
+    bool hasComponentID() const ;
+    bool hasComponentUniqueID() const ;
+    QString componentUniqueID() const;
     
-    static QString uid(SceneDocument::TypeEnum type, const QString& id)
-	{
-		return typeString(type)+id;
-	}
+    QString instanceID() const;
+    void setInstanceID(const QString& instanceid) ;
+
+	/***************** Convenience: Access type ******************/
+    void setType(TypeEnum t) ;
+	TypeEnum type() const ;
+    bool hasType() const ;
+	static QString typeString(const TypeEnum t);
+	bool isType(const TypeEnum t) const ;
+	bool isOneOfType(int typeArraySize, ...) const ;
 	
-    static QString id(const QVariantMap& data) {
-        return data.value(QLatin1String("id_")).toString();
-    }
-    static QString idkey() { return QLatin1String("id_"); }
-    void setid(const QString& id) {
-      m_map[QLatin1String("id_")] = id;
-    }
-    bool hasid() const {
-        return m_map.contains(QLatin1String("id_"));
-    }
+	/***************** Convenience: Access sceneID (for scene items) ******************/
+    QString sceneid() const ;
+    void setSceneid(const QString& collectionid) ;
 
-    QString componentID() const {
-        return m_map.value(QLatin1String("componentid_")).toString();
-    }
-    void setComponentID(const QString& pluginid) {
-        m_map[QLatin1String("componentid_")] = pluginid;
-    }
-    bool hasComponentID() const {
-		return m_map.contains(QLatin1String("componentid_"));
-	}
-    bool hasComponentUniqueID() const {
-		return m_map.contains(QLatin1String("componentid_")) && m_map.contains(QLatin1String("instanceid_"));
-	}
-    QString componentUniqueID() const{
-        return m_map.value(QLatin1String("componentid_")).toString()+m_map[QLatin1String("instanceid_")].toString();
-    }
+	/***************** Convenience: Access method ******************/
+	bool isMethod(const char* id) const ;
+    QByteArray method() const ;
+    void setMethod(const QByteArray& methodname) ;
+    bool hasMethod() const ;
+
+	/***************** Convenience: User session specific ******************/
+    int sessionid() const ;
+    void removeSessionID() ;
+    void setSessionID(const int sessionid) ;
     
-    QString instanceID() const{
-        return m_map[QLatin1String("instanceid_")].toString();
-    }
-    void setInstanceID(const QString& instanceid) {
-        m_map[QLatin1String("instanceid_")] = instanceid;
-    }
-
-    
-    void setType(TypeEnum t) {
-		mType = t;
-		m_map[QLatin1String("type_")] = QByteArray(typetext[t]);
-	}
-	TypeEnum type() const {
-		return mType;
-    }
-    bool hasType() const {
-        return mType!=TypeUnknown;
-    }
-    
-    QString sceneid() const {
-        return m_map.value(QLatin1String("sceneid_")).toString();
-    }
-    void setSceneid(const QString& collectionid) {
-        m_map[QLatin1String("sceneid_")] = collectionid;
-    }
-
-    QByteArray modelkey() const {
-        return m_map.value(QLatin1String("key_")).toByteArray();
-    }
-    void setModelkey(const QByteArray& configurationkey) {
-        m_map[QLatin1String("key_")] = configurationkey;
-    }
-
-    QString filename() const {return id() + QLatin1String(".json"); }
-
-    bool isMethod(const char* id) const {
-        return m_map.value(QLatin1String("method_")).toByteArray() == QByteArray(id);
-    }
-    QByteArray method() const {
-        return m_map.value(QLatin1String("method_")).toByteArray();
-    }
-    void setMethod(const QByteArray& methodname) {
-        m_map[QLatin1String("method_")] = methodname;
-    }
-    bool hasMethod() const {
-        return m_map.contains(QLatin1String("method_"));
-    }
-
-    // User session specific
-    int sessionid() const {
-        return m_map.value(QLatin1String("sessionid_"),-1).toInt();
-    }
-
-    void removeSessionID() {
-        m_map.remove(QLatin1String("sessionid_"));
-    }
-
-    void setSessionID(const int sessionid) {
-        m_map[QLatin1String("sessionid_")] = sessionid;
-    }
-    
-    // Scene specific
-    QVariantList nextNodes() const {
-		return m_map.value(QLatin1String("e")).toList();
-	}
-	void setNextNodes(const QVariantList& nextNodes) {
-		m_map[QLatin1String("e")] = nextNodes;
-	}
-	QVariantList nextAlternativeNodes() const {
-		return m_map.value(QLatin1String("eAlt")).toList();
-	}
-	void setAlternativeNextNodes(const QVariantList& nextNodes) {
-		m_map[QLatin1String("eAlt")] = nextNodes;
-	}
-	QVariantList sceneItems() const {
-		return m_map.value(QLatin1String("v")).toList();
-	}
+	/***************** Convenience: Scene specific ******************/
+    QVariantList nextNodes() const ;
+	void setNextNodes(const QVariantList& nextNodes) ;
+	QVariantList nextAlternativeNodes() const ;
+	void setAlternativeNextNodes(const QVariantList& nextNodes) ;
+	QVariantList sceneItems() const ;
+	void removeSceneItem(SceneDocument* sceneItemDoc);
+	void addSceneItem(SceneDocument* sceneItemDoc);
 	
 private:
 	QVariantMap m_map;
 	static const char* const typetext[];
 	TypeEnum mType;
+	QByteArray mHash;
 	void convertType();
 };
 

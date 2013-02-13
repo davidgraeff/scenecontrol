@@ -15,35 +15,6 @@
 #newsceneitempopup {
 	min-width: 360px;
 }
-/*.content-primary {
-	-moz-column-width: 11cm;
-	-moz-column-gap: 20px;
-	-webkit-column-width: 11cm;
-	-webkit-column-gap: 20px;
-	column-width: 10cm;
-	column-gap: 20px;
-}
-
-form.itemform {
-	width:100%;
-	margin-top:0px;
-}*/
-
-/*form.itemform {
-	float:left;
-	width:10cm;
-	margin-top:0px;
-}
-form.itemform > ul {
-	float:right;
-	width:9.8cm;
-	background:#fff;
-}
-
-form.itemform > ul > li {
-	padding-top: 0.2em !important;
-	padding-bottom: 0.2em !important;
-}*/
 
 .selectedSceneListItem {
 	background: #396B9E;
@@ -57,101 +28,26 @@ form.itemform > ul > li {
 }
 
 @media only screen and (min-width: 1025px){
-	.ui-page {
+	.ui-page,.ui-footer {
 		width: 960px !important;
 		margin: 0 auto !important;
-		position: relative !important;
+	}
+	.ui-page {
 		border-right: 5px #666 outset !important;
 		border-left: 5px #666 outset !important;
+		position: relative !important;
 	}
 	.ui-overlay-d{
 		background: #333;
 	}
 }
-
+/*
 a.HeaderButton {
 	float:right;text-align:right;margin:.3em 0
-}
+}*/
 
 .hidden {
 	display:none;
 }
 
-/* site layout */
-
-.content-secondary {
-	text-align: left;
-	overflow-y:scroll;
-	overflow-x:hidden;
-	position:fixed;
-	top:0em;
-	bottom:0em;
-	padding-top: 20px;
-	padding-right:0px;
-	margin-bottom: 50px;
-}
-
-.content-primary {
-	top: 0em;
-	bottom: 0em;
-	position: fixed;
-	right: 0em;
-/*	background-color:lightgray;*/
-}
-
-#canvas { outline: none; cursor: default; }
-
-@media all and (min-width: 650px) {
-	
-	.type-home .ui-content,
-	.type-interior > .ui-content {
-		padding: 0;
-	}
-	.type-interior > .ui-content {
-		background-position: 45%;
-		overflow: hidden;
-	}
-	.content-primary {
-		width: 65%;
-	}
-	.content-secondary {
-		width: 34%;
-	}
-	
-	.content-primary ul:first-child {
-		margin-top: 0;
-	}
-	
-	.content-secondary h2 {
-		position: absolute;
-		left: -9999px;
-	}
-	.type-interior .content-primary {
-		padding: 1.5em 6% 3em 0;
-		margin: 0;
-	}
-}
-@media all and (min-width: 750px) {
-	.content-primary {
-		width: 65%;
-	}	
-	.content-secondary {
-		width: 34%;
-	}
-	.type-interior > .ui-content {
-		background-position: 34%;
-	}
-}
-
-@media all and (min-width: 1200px) {
-	.type-interior .content-secondary {
-		margin: 0;
-		padding: 0;
-	}
-	.content-primary {
-		width: 70%;
-	}
-	.content-secondary {
-		width: 29%;
-	}
-}
+#canvas { outline: none; cursor: default; padding: 0px; width:100%; height: 90% }

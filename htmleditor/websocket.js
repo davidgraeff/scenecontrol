@@ -39,6 +39,33 @@
 			this.write({"componentid_":"server", "type_":"execute", "method_":"runcollection"});
 		}
 		
+		this.createScene = function(name) {
+			var newscene = {"id_":"GENERATEGUID", "componentid_":"server", "type_": "scene","v":[],"categories": [],"enabled": true,"name": name};
+			websocketInstance.write(newscene);
+		}
+		
+		this.createSceneItem = function(sceneDocument, sceneItemDocument) {
+			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"addSceneItemDocument","scene":sceneDocument,"sceneitem":sceneItemDocument});
+		}
+		
+		this.removeSceneItem = function(sceneDocument, sceneItemDocument) {
+			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeSceneItemDocument","scene":sceneDocument,"sceneitem":sceneItemDocument});
+		}
+		
+		this.createConfig = function(instanceid, componentid) {ee
+			var newconfig = {"id_":"GENERATEGUID", "componentid_":componentid, "type_": "configuration","instanceid_": instanceid};
+			websocketInstance.write(newconfig);
+		}
+		
+		this.remove = function(sceneDocument) {
+			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeDocument","doc":sceneDocument});
+		}
+		
+		this.updateDocument = function(sceneDocument) {
+			//console.log("Change: ", sceneDocument)
+			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"changeDocument","doc":sceneDocument});
+		}
+		
 		this.write = function(data) {
 			if (typeof data == "object")
 				data = JSON.stringify(data);
@@ -63,7 +90,6 @@
 				window.setTimeout( that.checkConnected, 1500 );
 				that.socket_di = new WebSocket(that.url, "roomcontrol-protocol");
 				that.socket_di.onopen = function() {
-					console.log("conn2", that.connected);
 					that.connected = true;
 					$(that).trigger('onopen');
 				} 

@@ -98,7 +98,7 @@ public:
       * Store a document given by data on disk.
       * @param doc Have to be valid. Refer to the documentation.
       */
-    bool storeDocument( const SceneDocument& doc, bool overwriteExisting = false );
+    SceneDocument* storeDocument( const SceneDocument& odoc, bool overwriteExisting = false );
 
     /**
      * Change only one value of one or more documents (synchronous)
@@ -112,8 +112,19 @@ public:
       * Return true if document with type and id is already stored
       */
     bool contains(const SceneDocument &doc) const;
+	/**
+	 * Create a scene item and add it to the scene
+	 * @param scene_uid The scene have to exist
+	 */
+	void createSceneItem(const QString& scene_uid, const SceneDocument& sceneitem);
+	/**
+	 * Remove a scene item from an existing scene and remove the sceneitem document
+	 * @param scene_uid The scene have to exist
+	 * @param sceneitem_uid The scene item have to exist
+	 */
+	void removeSceneItem(const QString& scene_uid, const QString& sceneitem_uid);
 private Q_SLOTS:
-	void reloadDocument(const QString &filename);
+	SceneDocument* reloadDocument(const QString& filename);
 	void removeFromCache(const QString &filename);
 private:
     DataStorage ();

@@ -9,6 +9,7 @@
 #include <QUuid>
 #include <QUrl>
 #include <qfile.h>
+#include <QCryptographicHash>
 
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/jsondocuments/json.h"
@@ -173,13 +174,14 @@ bool DataStorage::removeDocument(const SceneDocument &doc)
 		return false;
 	}
 	
+	removeFromCache(d.fileName());
+	
 	// Remove related documents
 	if (doc.isType(SceneDocument::TypeScene)) {
-		const QString sceneid = doc.sceneid();
-		QList<SceneDocument*> v;
 		SceneDocument filterDoc;
 		filterDoc.setSceneid(doc.id());
 		
+		QList<SceneDocument*> v;
 		v += filteredDocuments(SceneDocument::TypeAction, filterDoc.getData());
 		v += filteredDocuments(SceneDocument::TypeCondition, filterDoc.getData());
 		v += filteredDocuments(SceneDocument::TypeEvent, filterDoc.getData());
@@ -189,26 +191,53 @@ bool DataStorage::removeDocument(const SceneDocument &doc)
 	return true;
 }
 
-bool DataStorage::storeDocument(const SceneDocument& odoc, bool overwriteExisting)
+void DataStorage::removeFromCache( const QString& filename ) {
+	SceneDocument* olddoc = m_index_filename.take(filename);
+	if (!olddoc) {
+		return;
+	}
+	
+	{ // remove document: this is secured by the mutex locker
+		QMutexLocker locker(&mReadWriteLockMutex);
+		m_index_typeid.remove(olddoc->uid());
+		
+		QMutableListIterator<SceneDocument*> i(m_cache[olddoc->type()]);
+		while (i.hasNext()) {
+			i.next();
+			if (i.value() == olddoc) {
+				i.remove();
+				break;
+			}
+		}
+	} // mutex unlocked
+	
+	// notify StorageNotifiers
+	for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
+		(*it)->documentRemoved(filename, olddoc);
+	}
+	
+	delete olddoc;
+}
+SceneDocument* DataStorage::storeDocument(const SceneDocument& odoc, bool overwriteExisting)
 {
 	SceneDocument doc(odoc.getData());
 	doc.checkIfIDneedsGUID();
 	
 	if (!doc.isValid()) {
 		qWarning() << "storeDocument: Cannot store an invalid document";
-		return false;
+		return 0;
 	}
 
 	QFile f(storagePath(doc));
 	if (f.exists() && !overwriteExisting)
-		return true;
+		return getDocument(doc.uid()); // return existing copy
 	
 	// create dir if neccessary and add it to the watched directories
 	QDir dir(QFileInfo(f.fileName()).absolutePath());
 	if (!dir.exists()) {
 		if (!dir.mkpath(dir.absolutePath())) {
 			qWarning() << "storeDocument: Cannot create path" << dir.absolutePath();
-			return false;
+			return 0;
 		}
 		if (m_listener)
 			m_listener->watchdir(dir.absolutePath());
@@ -217,12 +246,35 @@ bool DataStorage::storeDocument(const SceneDocument& odoc, bool overwriteExistin
 	// Write to disc
 	if (!f.open(QFile::WriteOnly|QFile::Truncate)) {
 		qWarning() << "storeDocument: could not open document for write";
-		return false;
+		return 0;
 	}
 	f.write(doc.getjson());
 	f.close();
 
-	return true;
+	return reloadDocument(f.fileName());
+}
+
+void DataStorage::createSceneItem(const QString& scene_uid, const SceneDocument& sceneitem)
+{
+	SceneDocument* scene = getDocument(scene_uid);
+	if (!scene)
+		return;
+	
+	SceneDocument* sceneItemDoc = storeDocument(sceneitem, true);
+	scene->addSceneItem(sceneItemDoc);
+	storeDocument(*scene, true);
+}
+
+void DataStorage::removeSceneItem(const QString& scene_uid, const QString& sceneitem_uid)
+{
+	SceneDocument* scene = getDocument(scene_uid);
+	SceneDocument* sceneItemDoc = getDocument(sceneitem_uid);
+	if (!scene || !sceneItemDoc)
+		return;
+	
+	removeDocument(*sceneItemDoc);
+	scene->removeSceneItem(sceneItemDoc);
+	storeDocument(*scene, true);
 }
 
 bool DataStorage::contains(const SceneDocument& doc) const
@@ -230,31 +282,42 @@ bool DataStorage::contains(const SceneDocument& doc) const
 	return m_index_typeid.contains(doc.uid());
 }
 
-void DataStorage::reloadDocument( const QString& filename ) {
+SceneDocument* DataStorage::reloadDocument( const QString& filename ) {
 	QFile file(filename);
 	file.open(QFile::ReadOnly);
-	SceneDocument* doc = new SceneDocument(file.readAll());
+	const QByteArray filedata = file.readAll();
 	file.close();
 	
+	// compute hash
+	const QByteArray hash = QCryptographicHash::hash(filedata,QCryptographicHash::Md5);
+	SceneDocument* olddoc = m_index_filename.value(filename);
+	// nothing do do if hash is the same
+	if (olddoc && olddoc->getHash() == hash)
+		return olddoc;
+	
+	m_index_filename.remove(filename);
+	
+	// otherwise: create new document
+	SceneDocument* doc = new SceneDocument(filedata, hash);
+	
 	if (!doc->isValid()) {
-		qWarning() << "Document is not valid!" << doc->getjson();
+		qWarning() << "Document is not valid!" << filename << doc->getjson();
 		delete doc;
-		return;
+		return 0;
 	}
 	
 	if (!m_cache.contains(doc->type())) {
 		//qWarning() << "Document type not supported!" << doc->type();
 		delete doc;
-		return;
+		return 0;
 	}
 	
 	if (filename != storagePath(*doc)) {
 		qWarning() << "Storage location does not match content!" << filename;
 		delete doc;
-		return;
+		return 0;
 	}
 	
-	SceneDocument* olddoc = m_index_filename.take(filename);
 	{ // add document: this is secured by the mutex locker
 		QMutexLocker locker(&mReadWriteLockMutex);
 		if (olddoc) {
@@ -284,34 +347,9 @@ void DataStorage::reloadDocument( const QString& filename ) {
 
 	// Delete old document
 	delete olddoc;
+	return doc;
 }
 
-void DataStorage::removeFromCache( const QString& filename ) {
-	SceneDocument* olddoc = m_index_filename.take(filename);
-	if (!olddoc)
-		return;
-	
-	{ // remove document: this is secured by the mutex locker
-		QMutexLocker locker(&mReadWriteLockMutex);
-		m_index_typeid.remove(olddoc->uid());
-		
-		QMutableListIterator<SceneDocument*> i(m_cache[olddoc->type()]);
-		while (i.hasNext()) {
-			i.next();
-			if (i.value() == olddoc) {
-				i.remove();
-				break;
-			}
-		}
-	} // mutex unlocked
-	
-	// notify StorageNotifiers
-	for (auto it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
-		(*it)->documentRemoved(filename, olddoc);
-	}
-	
-	delete olddoc;
-}
 void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 	QStringList dirs;
 	dirs.append(m_dir.absolutePath());	// add the user storage dir
@@ -325,7 +363,10 @@ void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 		for (int i = 0; i < files.size(); ++i) {
 			QFile file(currentdir.absoluteFilePath(files[i]));
 			file.open(QFile::ReadOnly);
-			SceneDocument doc(file.readAll());
+			const QByteArray filedata = file.readAll();
+			file.close();
+			const QByteArray hash = QCryptographicHash::hash(filedata,QCryptographicHash::Md5);
+			SceneDocument doc(filedata, hash);
 			file.close();
 			
 			if (!doc.isValid()) {

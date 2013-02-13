@@ -2,6 +2,7 @@
 #include "json.h"
 #include <QDebug>
 #include <QUuid>
+#include <stdarg.h>
 
 const char* const SceneDocument::typetext[] = {" ",
 "event","condition","action","scene","configuration","schema",
@@ -68,8 +69,8 @@ QVariantMap SceneDocument::toMap(const char* key) const {
 }
 
 SceneDocument::SceneDocument(const QVariantMap& map) : m_map(map) {convertType();}
-SceneDocument::SceneDocument(const QVariant& v)  : m_map(v.toMap()) {convertType();}
-SceneDocument::SceneDocument(const QByteArray& jsondata) {
+SceneDocument::SceneDocument(const QByteArray& jsondata, const QByteArray& hash) {
+	mHash = hash;
 	JsonReader r;
 	r.parse(jsondata);
 	m_map = r.result().toMap();
@@ -134,4 +135,143 @@ bool SceneDocument::correctDataTypes(const QVariantMap& types)
 void SceneDocument::checkIfIDneedsGUID() {
 	if (id()==QLatin1String("GENERATEGUID"))
 		setid(QUuid::createUuid().toString().replace(QLatin1String("{"),QString()).replace(QLatin1String("}"),QString()));
+}
+QString SceneDocument::id() const {
+    return m_map.value(QLatin1String("id_")).toString();
+}
+QString SceneDocument::uid() const {
+    return m_map.value(QLatin1String("type_")).toString()+m_map.value(QLatin1String("id_")).toString();
+}
+QString SceneDocument::uid(SceneDocument::TypeEnum type, const QString& id) {
+	return typeString(type)+id;
+}
+QString SceneDocument::id(const QVariantMap& data) {
+    return data.value(QLatin1String("id_")).toString();
+}
+QString SceneDocument::idkey() { return QLatin1String("id_"); }
+void SceneDocument::setid(const QString& id) {
+  m_map[QLatin1String("id_")] = id;
+}
+bool SceneDocument::hasid() const {
+    return m_map.contains(QLatin1String("id_"));
+}
+QString SceneDocument::componentID() const {
+    return m_map.value(QLatin1String("componentid_")).toString();
+}
+void SceneDocument::setComponentID(const QString& pluginid) {
+    m_map[QLatin1String("componentid_")] = pluginid;
+}
+bool SceneDocument::hasComponentID() const {
+	return m_map.contains(QLatin1String("componentid_"));
+}
+bool SceneDocument::hasComponentUniqueID() const {
+	return m_map.contains(QLatin1String("componentid_")) && m_map.contains(QLatin1String("instanceid_"));
+}
+QString SceneDocument::componentUniqueID() const {
+    return m_map.value(QLatin1String("componentid_")).toString()+m_map[QLatin1String("instanceid_")].toString();
+}
+QString SceneDocument::instanceID() const {
+    return m_map[QLatin1String("instanceid_")].toString();
+}
+void SceneDocument::setInstanceID(const QString& instanceid) {
+    m_map[QLatin1String("instanceid_")] = instanceid;
+}
+void SceneDocument::setType(SceneDocument::TypeEnum t) {
+	mType = t;
+	m_map[QLatin1String("type_")] = QByteArray(typetext[t]);
+}
+SceneDocument::TypeEnum SceneDocument::type() const {
+return mType;
+  }
+bool SceneDocument::hasType() const {
+    return mType!=TypeUnknown;
+}
+QString SceneDocument::sceneid() const {
+    return m_map.value(QLatin1String("sceneid_")).toString();
+}
+void SceneDocument::setSceneid(const QString& collectionid) {
+    m_map[QLatin1String("sceneid_")] = collectionid;
+}
+QByteArray SceneDocument::modelkey() const {
+    return m_map.value(QLatin1String("key_")).toByteArray();
+}
+void SceneDocument::setModelkey(const QByteArray& configurationkey) {
+    m_map[QLatin1String("key_")] = configurationkey;
+}
+QString SceneDocument::filename() const {return id() + QLatin1String(".json"); }
+bool SceneDocument::isMethod(const char* id) const {
+    return m_map.value(QLatin1String("method_")).toByteArray() == QByteArray(id);
+}
+QByteArray SceneDocument::method() const {
+    return m_map.value(QLatin1String("method_")).toByteArray();
+}
+void SceneDocument::setMethod(const QByteArray& methodname) {
+    m_map[QLatin1String("method_")] = methodname;
+}
+bool SceneDocument::hasMethod() const {
+    return m_map.contains(QLatin1String("method_"));
+}
+int SceneDocument::sessionid() const {
+    return m_map.value(QLatin1String("sessionid_"),-1).toInt();
+}
+void SceneDocument::removeSessionID() {
+    m_map.remove(QLatin1String("sessionid_"));
+}
+void SceneDocument::setSessionID(const int sessionid) {
+    m_map[QLatin1String("sessionid_")] = sessionid;
+}
+QVariantList SceneDocument::nextNodes() const {
+	return m_map.value(QLatin1String("e")).toList();
+}
+void SceneDocument::setNextNodes(const QVariantList& nextNodes) {
+	m_map[QLatin1String("e")] = nextNodes;
+}
+QVariantList SceneDocument::nextAlternativeNodes() const {
+	return m_map.value(QLatin1String("eAlt")).toList();
+}
+void SceneDocument::setAlternativeNextNodes(const QVariantList& nextNodes) {
+	m_map[QLatin1String("eAlt")] = nextNodes;
+}
+QVariantList SceneDocument::sceneItems() const {
+	return m_map.value(QLatin1String("v")).toList();
+}
+void SceneDocument::addSceneItem(SceneDocument* sceneItemDoc)
+{
+	QVariantList v = m_map.value(QLatin1String("v")).toList();
+	QVariantMap sceneItem;
+	sceneItem[QLatin1String("id_")] = sceneItemDoc->id();
+	sceneItem[QLatin1String("type_")] = typeString(sceneItemDoc->type());
+	v.append(sceneItem);
+	m_map[QLatin1String("v")] = v;
+}
+void SceneDocument::removeSceneItem(SceneDocument* sceneItemDoc)
+{
+	QVariantList v = m_map.value(QLatin1String("v")).toList();
+	for (int i=v.size()-1;i>=0;--i) {
+		QVariantMap sceneItem = v[i].toMap();
+		if (sceneItem.value(QLatin1String("id_")).toString() == sceneItemDoc->id() &&
+			sceneItem.value(QLatin1String("type_")).toString() == typeString(sceneItemDoc->type())) {
+			v.removeAt(i);
+		}
+	}
+	m_map[QLatin1String("v")] = v;
+}
+
+const QByteArray SceneDocument::getHash() {return mHash;}
+bool SceneDocument::isType(const SceneDocument::TypeEnum t) const {
+	return (t==mType);
+}
+bool SceneDocument::isOneOfType(int typeArraySize, ...) const {
+	va_list params; // Zugriffshandle für Parameter
+	SceneDocument::TypeEnum par;     // Parameterinhalt
+	va_start(params, typeArraySize); // Zugriff vorbereiten
+
+	bool r = false;
+	for(int i=0;i<typeArraySize;++i) {
+		par = (SceneDocument::TypeEnum)va_arg(params, int); // hole den Parameter
+		if (par==mType) { r = true; break; }
+	}
+	
+	va_end(params); // Zugriff abschließen
+	return r;
 }

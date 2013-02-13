@@ -46,7 +46,7 @@ void Scene::rebuild(const SceneDocument* scenedoc)
 	QVariantList l = mScenedoc->sceneItems();
 	foreach(const QVariant& sceneItemData, l) {
 		// Add scene item to the mUID2SceneNode list
-		SceneDocument sceneItem(sceneItemData);
+		SceneDocument sceneItem(sceneItemData.toMap());
 		QString uid = sceneItem.uid();
 		mUID2SceneNode.insert(uid, SceneNode::createNode(sceneItem.type(), sceneItem.id(), sceneItem.nextNodes(), sceneItem.nextAlternativeNodes()));
 		// Log to allItems and log all next nodes / alternative next nodes to nextNodeItems
@@ -54,7 +54,7 @@ void Scene::rebuild(const SceneDocument* scenedoc)
 		itemsByUID.insert(uid, sceneItem);
 		QVariantList nextNodes = sceneItem.nextNodes() + sceneItem.nextAlternativeNodes();;
 		foreach(const QVariant& nn, nextNodes)
-			nextNodeItems.insert(SceneDocument(nn).uid());
+			nextNodeItems.insert(SceneDocument(nn.toMap()).uid());
 	}
 	
 	// Items without predecessor are added to the root node

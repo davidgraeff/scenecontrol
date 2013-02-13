@@ -6,16 +6,13 @@
 	"use strict";
 
 	var selectedScenesCounter = 0;
-	var sceneRenameFlag = false;
-	var templateSceneItem;
 
 	// All button click events
 	$(document).one('pageinit', function() {
 		$.mobile.loading( 'show', { theme: "b", text: "Verarbeite Dokumente", textonly: false });
 
-		templateSceneItem = Handlebars.compile($("#sceneitem-template").html());
 		$("#btnRemoveSelectedScenes").addClass("ui-disabled");
-		SceneUIHelper.setscene(null);
+		
 		for (var index in storageInstance.scenes) {
 			SceneUIHelper.sceneChanged(storageInstance.scenes[index], false);
 		}
@@ -23,7 +20,8 @@
 		////////////////// SET AND SELECT SCENES //////////////////
 		$("#scenelist").on('click.editorpage', '.btnSetScene', function() {
 			var sceneid = $(this).parent().parent().parent().attr("data-sceneid");
-			SceneUIHelper.setscene(sceneid);
+			CurrentScene.set(sceneid);
+			$.mobile.changePage('sceneitems.html', {transition: 'none'});
 		});
 		
 		$("#scenelist").on('click.editorpage', '.btnSelectScene', function() {
@@ -56,30 +54,42 @@
 			$("#scenelist").find("[data-selected='1']").removeClass("selectedSceneListItem").addClass("ui-disabled").each(function(index,elem){
 				var sceneid = elem.getAttribute('data-sceneid');
 				var doc = storageInstance.scenes[sceneid];
-				Document.remove(doc);
+				websocketInstance.remove(doc);
 			});
 		});
 		
 		////////////////// ADD SCENE //////////////////
 		$('#btnAddScene').on('click.editorpage', function() {
-			SceneUIHelper.sceneRenameFlag = false;
-			$('#newscenenamepopup').popup("open");
+			$('#newscenepopup').popup("open");
 			$("#newscenename").delay(300).focus();
 		});
 		
+		$('#btnConfirmNewScenename').on('click.sceneitemspage', function() {
+			var name = storageInstance.escapeInputForJson($("#newscenename").val());
+			if (name.length == 0) {
+				$.jGrowl("Name nicht gültig. A-Za-z0-9 sind zugelassen!");
+				return;
+			}
+			SceneUIHelper.sceneLastAdded = name;
+			websocketInstance.createScene(name);
+			$("#newscenename").val('');
+			$('#newscenepopup').popup("close");
+		});
 	});
 
-	$(storageInstance).on('onscene.editorpage', function(d, flags) {
+	$(storageInstance).on('onscene.sceneitemspage', function(d, flags) {
+		if (flags.temporary)
+			return;
+		console.log("onscene", flags);
 		SceneUIHelper.sceneChanged(flags.doc, flags.removed);
 	});
 	
 	
 	window.SceneUIHelper = {
-		sceneRenameFlag: false,
- 
+		sceneLastAdded: null,
 		sceneChanged: function(doc, removed) {
 			var $entries = $("#scenelist").find("li[data-sceneid='"+doc.id_+"']");
-			if (removed) {
+			if (removed==true) {
 				// Remove the scene entry
 				if ($entries.length) $entries.remove();
 			} else {
@@ -89,46 +99,32 @@
 				var entry = {"sceneid":doc.id_, "name":doc.name, "counter":doc.v.length};
 				var categories = doc.categories;
 				// No categories: Add it to the general categories
-				if (categories.length == 0)
-					$("#scenelist_cat_none").after(templateSceneItem(entry));
+				if (categories.length == 0) {
+					$("#scenelist_cat_none").handlebarsAfter("#sceneitem-template", entry);
+				}
 				// one or multiple categories: add 
-					else
-						for (var i=0;i<categories.length;++i) {
-							var trimmedCat = categories[i].replace(" ", "_").replace(".", "_");
-							if (!$("#scenelist_cat_"+trimmedCat).length)
-								$("#scenelist_cat_none").before('<li id="scenelist_cat_'+trimmedCat+'" data-role="list-divider">'+categories[i]+'</li>');
-							$("#scenelist_cat_"+trimmedCat).after(templateSceneItem(entry));
-						}
+				else
+					for (var i=0;i<categories.length;++i) {
+						var trimmedCat = categories[i].replace(" ", "_").replace(".", "_");
+						if (!$("#scenelist_cat_"+trimmedCat).length)
+							$("#scenelist_cat_none").before('<li id="scenelist_cat_'+trimmedCat+'" data-role="list-divider">'+categories[i]+'</li>');
+						$("#scenelist_cat_"+trimmedCat).handlebarsAfter("#sceneitem-template", entry);
+					}
 			}
 			$('#scenelist').listview('refresh');
-			CurrentScene.checkscene(doc.id_, removed);
-			if (!CurrentScene.isValid()) {
-				SceneUIHelper.setscene(null);
+			if (SceneUIHelper.sceneLastAdded) {
+				var $entries = $("#scenelist").find("li[data-sceneid='"+doc.id_+"']");
+				if (!removed && SceneUIHelper.sceneLastAdded == doc.name) {
+					$.mobile.silentScroll($entries.first().offset().top);
+					var properties = {
+						paddingTop:    '10px',
+						paddingBottom: '10px'
+					};
+
+					$entries.pulse(properties,{duration : 1000, pulses:2});
+				}
+				SceneUIHelper.sceneLastAdded = null;
 			}
-		},
-
-		setscene: function(sceneid) {
-			var scene = storageInstance.scenes[sceneid];
-			if (sceneid === null || scene === null) {
-				$("#btnAddSceneItem").addClass("ui-disabled");
-				$("#btnChangeTags").addClass("ui-disabled");
-				$("#btnChangeSceneName").addClass("ui-disabled");
-				$("#helptexteditor").removeClass("hidden");
-				$(".currentscene").text("Keine Szene ausgewählt");
-				sceneCanvas.clear();
-				return;
-			}
-			$("#btnAddSceneItem").removeClass("ui-disabled");
-			$("#btnChangeTags").removeClass("ui-disabled");
-			$("#btnChangeSceneName").removeClass("ui-disabled");
-			$("#helptexteditor").addClass("hidden");
-
-			$(".currentscene").text(scene.name);
-			$("#sceneservices").children().remove();
-			CurrentScene.set(sceneid);
-
-			var canvas = document.getElementById('canvas');
-			sceneCanvas.load(scene, canvas.width, canvas.getContext('2d'));
 		}
 	};
 })(window);

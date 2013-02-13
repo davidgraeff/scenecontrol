@@ -40,56 +40,64 @@ void DataStorageWatcher::readnotify() {
 	QSocketNotifier* mSn = (QSocketNotifier*)sender();
 	mSn->setEnabled(false);
 	
-	    int buffSize = 0;
-    ioctl(m_inotify_fd, FIONREAD, (char *) &buffSize);
-    QVarLengthArray<char, 4096> buffer(buffSize);
-    buffSize = read(m_inotify_fd, buffer.data(), buffSize);
-    char *at = buffer.data();
-    char * const end = at + buffSize;
+    int buffSize = 0;
+	while(1) {
+		ioctl(m_inotify_fd, FIONREAD, (char *) &buffSize);
+		if (buffSize<=0)
+			break;
+		
+		QVarLengthArray<char, 4096> buffer(buffSize);
+		buffSize = read(m_inotify_fd, buffer.data(), buffSize);
+		
+		if (buffSize<=0)
+			break;
+		
+		char *at = buffer.data();
+		char * const end = at + buffSize;
 
-    QHash<int, inotify_event *> eventForId;
-    while (at < end) {
-        inotify_event *event = reinterpret_cast<inotify_event *>(at);
+		QHash<int, inotify_event *> eventForId;
+		while (at < end) {
+			inotify_event *event = reinterpret_cast<inotify_event *>(at);
 
-        if (eventForId.contains(event->wd))
-            eventForId[event->wd]->mask |= event->mask;
-        else
-            eventForId.insert(event->wd, event);
+			if (eventForId.contains(event->wd))
+				eventForId[event->wd]->mask |= event->mask;
+			else
+				eventForId.insert(event->wd, event);
 
-        at += sizeof(inotify_event) + event->len;
-    }
+			at += sizeof(inotify_event) + event->len;
+		}
 
-    QHash<int, inotify_event *>::const_iterator it = eventForId.constBegin();
-    while (it != eventForId.constEnd()) {
-        const inotify_event &event = **it;
-        ++it;
+		QHash<int, inotify_event *>::const_iterator it = eventForId.constBegin();
+		while (it != eventForId.constEnd()) {
+			const inotify_event &event = **it;
+			++it;
 
-        int id = event.wd;
-        QString path = idToPath.value(id);
-        if (path.isEmpty()) {
-			continue;
-        }
-
-
-        if ((event.mask & (IN_DELETE_SELF | IN_MOVE_SELF | IN_UNMOUNT)) != 0) {
-            pathToID.remove(path);
-            idToPath.remove(id);
-            inotify_rm_watch(m_inotify_fd, event.wd);
-			// dir removed; do nothing
-        } else {
-			// emit something
-			if (event.mask & IN_ISDIR)
+			int id = event.wd;
+			QString path = idToPath.value(id);
+			if (path.isEmpty()) {
 				continue;
-			//qDebug() << "inotify " << path << event.name;
-			if (event.mask & IN_CREATE)
-				emit fileChanged(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
-			else if (event.mask & IN_CLOSE_WRITE)
-				emit fileChanged(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
-			else if (event.mask & IN_DELETE)
-				emit fileRemoved(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
-        }
-    }
-    
+			}
+
+
+			if ((event.mask & (IN_DELETE_SELF | IN_MOVE_SELF | IN_UNMOUNT)) != 0) {
+				pathToID.remove(path);
+				idToPath.remove(id);
+				inotify_rm_watch(m_inotify_fd, event.wd);
+				// dir removed; do nothing
+			} else {
+				// emit something
+				if (event.mask & IN_ISDIR)
+					continue;
+				//qDebug() << "inotify " << path << event.name;
+				if (event.mask & IN_CREATE)
+					emit fileChanged(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
+				else if (event.mask & IN_CLOSE_WRITE)
+					emit fileChanged(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
+				else if (event.mask & IN_DELETE)
+					emit fileRemoved(QDir(path).absoluteFilePath(QString::fromUtf8(event.name)));
+			}
+		}
+	}
 	mSn->setEnabled(true);
 }
 

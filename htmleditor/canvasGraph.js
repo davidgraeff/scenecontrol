@@ -285,29 +285,27 @@
 		var h2 = this.height/2;
 		
 		// draw main rectangle
+
 		c.lineWidth = 2;
-		c.roundRect(this.x-w2, this.y-h2, this.width, this.height, 10);
-		c.stroke();
-		
-		{ // shadow
-		c.save();
 		c.fillStyle = 'white';
+		c.save();
 		c.shadowColor = '#999';
 		c.shadowBlur = 10;
 		c.shadowOffsetX = 3;
 		c.shadowOffsetY = 3;
+		c.roundRect(this.x-w2, this.y-h2, this.width, this.height, 10);
 		c.fill();
 		c.restore();
-		}
+		c.stroke();
 		
 		// clip to the outer rectangle
-		c.clip();
 		
 		{ // gradient
 		c.save();
-		var lingrad = c.createLinearGradient(0, 0, 0, this.headerHeight);
-		lingrad.addColorStop(0, '#F0F0F0');
-		lingrad.addColorStop(1, '#DDD');
+		c.clip();
+		var lingrad = c.createLinearGradient(0, this.y-h2, 0, this.y+h2);
+		lingrad.addColorStop(0.0, 'white');
+		lingrad.addColorStop(1.0, 'blue');
 		c.fillStyle = lingrad;
 		c.fillRect(this.x-w2, this.y-h2, this.width, this.headerHeight);
 		// 		c.stroke();
@@ -317,9 +315,18 @@
 		// draw outer line again
 		c.stroke();
 		
+		c.shadowColor = '#999';
+		c.shadowBlur = 5;
+		c.shadowOffsetX = 2;
+		c.shadowOffsetY = 2;
+		
 		{ // Draw title
 		c.fillStyle = 'black';
 		c.fillText(this.data.type_, this.x-w2+this.textPadding, this.y-h2+this.headerHeight/2);
+		c.save();
+		c.font = (this.fontsize-5)+'px "Times New Roman", serif';
+		c.fillText(this.data.componentid_, this.x-w2+this.textPadding, this.y-h2+this.headerHeight/2+12);
+		c.restore();
 		}
 		
 		{

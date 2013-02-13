@@ -221,6 +221,18 @@ void ControlServerSocket::readyRead() {
 			DataStorage::instance()->storeDocument(SceneDocument(v.toMap().value(QLatin1String("doc")).toMap()), true);
 		}
 		
+		else if ( doc.isMethod ( "createSceneItem" ) )
+		{
+			DataStorage::instance()->createSceneItem(SceneDocument(v.toMap().value(QLatin1String("scene")).toMap()).uid(),
+													 SceneDocument(v.toMap().value(QLatin1String("sceneitem")).toMap()));
+		}
+		
+		else if ( doc.isMethod ( "removeSceneItem" ) )
+		{
+			DataStorage::instance()->removeSceneItem(SceneDocument(v.toMap().value(QLatin1String("scene")).toMap()).uid(),
+													 SceneDocument(v.toMap().value(QLatin1String("sceneitem")).toMap()).uid());
+		}
+		
 		else if ( doc.isMethod ( "fetchAllDocuments" ) )
 		{
 			// Convert all SceneDocuments to QVariantMaps and store them in a QVariantList

@@ -7,6 +7,7 @@
 #include <QUuid>
 #include <QUrl>
 #include <qfile.h>
+#include <QCryptographicHash>
 
 #include "shared/jsondocuments/scenedocument.h"
 #include "shared/jsondocuments/json.h"
@@ -68,7 +69,11 @@ int importFromJSON(DataStorage& ds, const QString& path, bool overwriteExisting,
             qWarning() << "\tFile to big!" << files[i] << file.size();
             continue;
         }
-        SceneDocument document(file.readAll());
+        const QByteArray filedata = file.readAll();
+		file.close();
+		const QByteArray hash = QCryptographicHash::hash(filedata,QCryptographicHash::Md5);
+		SceneDocument document(filedata, hash);
+		file.close();
 
 		if (verify && !verify->isValid(document, dir.absoluteFilePath(files[i]))) {
 			qWarning() << "Custom verification denied import!" << files[i];

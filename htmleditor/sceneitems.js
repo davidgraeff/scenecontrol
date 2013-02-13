@@ -9,11 +9,12 @@
 
 	// All button click events
 	$(document).one('pageinit', function() {
-		if (!websocketInstance.connected)
+		var scene = storageInstance.scenes[CurrentScene.id];
+		
+		if (!websocketInstance.connected || scene==null)
 			window.location = 'index.html';
-		$(document).off(".editorpage");
-		
-		
+		$(document).off(".sceneitemspage");
+				
 		var shift= null;
 		var originalMouse= null;
 		var scrollMaxX= null;
@@ -29,20 +30,20 @@
 		});
 		
 		$('#configpage').one('pagebeforechange', function(event) {
-			$(document).off(".editorpage");
+			$(document).off(".sceneitemspage");
 		});
 		
-		$('#btnGotoConfig').on('click.editorpage', function() {
-			$.mobile.changePage('config.html', {transition: 'slide'});
+		$('#btnBackScenes').on('click.sceneitemspage', function() {
+			$.mobile.changePage('scenelist.html', {transition: 'none'});
 		});
 		
 		////////////////// ADD SCENE ITEM //////////////////
-		$('#btnAddSceneItem').on('click.editorpage', function() {
+		$('#btnAddSceneItem').on('click.sceneitemspage', function() {
 			$("#sceneitem_type_event").trigger("change");
 			$('#newsceneitempopup').popup("open");
 		});
 		
-		$("#sceneitem_type input[name='type_']").on('change.editorpage', function() {
+		$("#sceneitem_type input[name='type_']").on('change.sceneitemspage', function() {
 			var type = $("#sceneitem_type input[name='type_']:checked").val();
 			
 			if (type=="event")
@@ -64,7 +65,7 @@
 			$("#sceneitem_componentid").trigger("change");
 		});
 		
-		$('#sceneitem_componentid').on('change.editorpage', function() {
+		$('#sceneitem_componentid').on('change.sceneitemspage', function() {
 			var type = $("#sceneitem_type input[name='type_']:checked").val();
 			var pluginid = $("#sceneitem_componentid").val();
 			$("#sceneitem_method").empty();
@@ -76,23 +77,23 @@
 			$("#sceneitem_method").trigger("change");
 		});
 		
-		$('#btnConfirmSceneitem').on('click.editorpage', function() {
+		$('#btnConfirmSceneitem').on('click.sceneitemspage', function() {
 			var type = $("#sceneitem_type input[name='type_']:checked").val();
 			var componentid = $("#sceneitem_componentid").val();
 			var instanceid = $("#sceneitem_componentid option:selected").first().attr("data-instance");
 			var method = $("#sceneitem_method").val();
 			
 			var doc = {type_:type, componentid_:componentid, instanceid_:instanceid, method_:method, sceneid_: CurrentScene.id, id_:"GENERATEGUID"};
-			Document.createSceneItem(CurrentScene.id, doc);
+			websocketInstance.createSceneItem(CurrentScene.id, doc);
 		});
 		
 		////////////////// SCENE TAGS //////////////////
-		$('#btnChangeTags').on('click.editorpage', function() {
+		$('#btnChangeTags').on('click.sceneitemspage', function() {
 			$("#scenetags").val(CurrentScene.getTags());
 			$('#scenetagspopup').popup("open");
 		});
 		
-		$('#btnConfirmScenetags').on('click.editorpage', function() {
+		$('#btnConfirmScenetags').on('click.sceneitemspage', function() {
 			var tags = $("#scenetags").val().split(",");
 			$("#li"+CurrentScene.id).addClass("ui-disabled");
 			CurrentScene.setTags(tags);
@@ -100,31 +101,27 @@
 		});
 		
 		////////////////// SCENE NAME //////////////////
-		$('#btnChangeSceneName').on('click.editorpage', function() {
+		$('#btnChangeSceneName').on('click.sceneitemspage', function() {
 			SceneUIHelper.sceneRenameFlag = true;
-			$("#newscenename").val(CurrentScene.getName());
-			$('#newscenenamepopup').popup("open");
-			$("#newscenename").delay(300).focus();
+			$("#editscenename").val(CurrentScene.getName());
+			$('#editscenenamepopup').popup("open");
+			$("#editscenename").delay(300).focus();
 		});
 		
-		$('#btnConfirmScenename').on('click.editorpage', function() {
-			var name = storageInstance.escapeInputForJson($("#newscenename").val());
+		$('#btnConfirmEditScenename').on('click.sceneitemspage', function() {
+			var name = storageInstance.escapeInputForJson($("#editscenename").val());
 			if (name.length == 0) {
 				$.jGrowl("Name nicht gültig. A-Za-z0-9 sind zugelassen!");
 				return;
 			}
-			if (!SceneUIHelper.sceneRenameFlag) { // create new scene
-				Document.createScene(name);
-			} else { // just rename old scene
-				$("#li"+CurrentScene.id).addClass("ui-disabled");
-				CurrentScene.rename(name);
-			}
-			$("#newscenename").val('');
-			$('#newscenenamepopup').popup("close");
+			$("#li"+CurrentScene.id).addClass("ui-disabled");
+			CurrentScene.rename(name);
+			$("#editscenename").val('');
+			$('#editscenenamepopup').popup("close");
 		});
 		
 		////////////////// SAVE SCENE ITEM AND REMOVE SCENE ITEM //////////////////
-		$("#btnSaveSceneItem").on('click.editorpage', function() {
+		$("#btnSaveSceneItem").on('click.sceneitemspage', function() {
 			var $form = $("#sceneitemform");
 
 			var objdata = CurrentSceneItem.serializeForm($form);
@@ -135,7 +132,7 @@
 				$form.find("input,select,label,textarea,.btnSaveSceneitem").addClass("ui-disabled");
 				sceneCanvas.disable(CurrentSceneItem.item);
 				sceneCanvas.draw();
-				Document.change(obj);
+				websocketInstance.updateDocument(obj);
 				$('#sceneitemedit').popup("close");
 			} else {
 				$.jGrowl("Incomplete: "+CurrentSceneItem.item.type_+"."+CurrentSceneItem.item.componentid_);
@@ -143,7 +140,7 @@
 			}
 		});
 		
-		$("#btnRemoveSceneItem").on('click.editorpage', function() {
+		$("#btnRemoveSceneItem").on('click.sceneitemspage', function() {
 			var $form = $("#sceneitemform");
 
 			$.jGrowl("Removing...");
@@ -152,17 +149,21 @@
 			sceneCanvas.disable(CurrentSceneItem.item);
 			sceneCanvas.draw();
 			
-			Document.removeFromScene(CurrentScene.id, CurrentSceneItem.item);
+			websocketInstance.removeSceneItem(CurrentScene.id, CurrentSceneItem.item);
 			$('#sceneitemedit').popup("close");
 		});
 
+		sceneCanvas.init = false;
 		sceneCanvas.setCanvas(canvas);
 		
 		function resizecanvas() {
-			canvas.width=$("#righteditpanel").width();
-			canvas.height = $("#righteditpanel").height()-$("#sceneheader").height()-$("#scenefooter").height()-10;
-			console.log("resize ",canvas.width);
-			sceneCanvas.draw();
+			canvas.width=parseInt($canvas.css('width'));
+			canvas.height = parseInt($canvas.css('height'));
+			if (!sceneCanvas.init) {
+				SceneItemsUIHelper.load(scene);
+				sceneCanvas.init = true;
+			} else
+				sceneCanvas.draw();
 		}
 		
 		$(window).resize(function() {resizecanvas();});
@@ -272,12 +273,22 @@
 		});
 	});
 
-	$(storageInstance).on('onnotification.editorpage', function(d, doc) {
+	// for getting propteries from the server and provide them in the edit dialogs
+	$(storageInstance).on('onnotification.sceneitemspage', function(d, doc) {
 		if (CurrentSceneItem.item==null)
 			return;
 		CurrentSceneItem.notification($("#sceneitemform"),doc);
 	});
 
+	$(storageInstance).on('onscene.editorpage', function(d, flags) {
+		CurrentScene.checkscene(flags.doc.id_, flags.removed);
+		if (!CurrentScene.isValid()) {
+			$.mobile.changePage('scenelist.html', {transition: 'none'});
+		} else {
+			SceneItemsUIHelper.load(flags.doc);
+		}
+	});
+	
 	var SceneItemsUIHelper = {
 		showSceneItemDialog: function(doc, temporary) {
 			if (!doc)
@@ -308,6 +319,19 @@
 			$("#sceneitemform").trigger("change");
 			
 			$('#sceneitemedit').popup("open");
+		},
+ 
+		load: function(scene) {
+			$("#btnAddSceneItem").removeClass("ui-disabled");
+			$("#btnChangeTags").removeClass("ui-disabled");
+			$("#btnChangeSceneName").removeClass("ui-disabled");
+			
+			$(".currentscene").text(scene.name);
+			$("#sceneservices").children().remove();
+			CurrentScene.set(scene.id_);
+			
+			sceneCanvas.load(scene);
 		}
 	};
+	
 })(window);

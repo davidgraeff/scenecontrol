@@ -38,6 +38,7 @@
 			}
 			c.restore();
 			c.save();
+			c.translate(0.5, 0.5)
 			
 			for (var i = 0; i < this.nodes.length; i++) {
 				c.save();
@@ -154,7 +155,7 @@
 			this.draw();
 		},
  
-		load: function(scene, maxX) {
+		load: function(scene) {
 			this.nodes = [];
 			this.links = [];
 			this.currentLink = null;
@@ -180,7 +181,7 @@
 						startx += node.width;
 						starty += node.height;
 					}
-					if (startx>maxX) {
+					if (startx>this.canvas.width) {
 						startx = node.width;
 						starty += node.height+padding;
 					}
@@ -207,6 +208,27 @@
 			}
 			
 			this.draw();
+		},
+		
+		getGraph: function() {
+			var backup = { 'v': [] };
+			for (var i = 0; i < this.nodes.length; i++) {
+				var node = this.nodes[i];
+				
+				var backupNode = {id_:node.data.id_, type_:node.data.type_, draw_:{'x': node.x,'y': node.y}, e:[]};
+				for (var l = 0; l < this.links.length; l++) {
+					var link = this.links[l];
+					if (link.nodeA!=this.nodes[i])
+						continue;
+					var otherNode = this.nodes.indexOf(link.nodeB);
+					if (otherNode == null)
+						continue;
+					var backupLink = {id_:otherNode.data.id_, type_:otherNode.data.type_};
+					backupNode.e.push(backupLink);
+				}
+				backup.v.push(backupNode);
+			}
+			return backup;
 		}
 	};
 

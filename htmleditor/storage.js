@@ -227,19 +227,19 @@
 					$(that).trigger("onloadcomplete");
 				} else if (doc.id_=="documentChanged")  {
 					that.documentChanged(doc.document, false);
-					that.notifyDocumentChange(doc.document, false);
+					that.notifyDocumentChange(doc.document, false, false);
 					// update scene
-					if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition") {
-						var scenedoc = that.scenes[doc.document.sceneid_]
-						if (scenedoc)
-							that.notifyDocumentChange(scenedoc, false);
-					}
+// 					if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition") {
+// 						var scenedoc = that.scenes[doc.document.sceneid_]
+// 						if (scenedoc)
+// 							that.notifyDocumentChange(scenedoc, false, false);
+// 					}
 				} else if (doc.id_=="documentRemoved")  {
 					that.documentChanged(doc.document, true);
-					that.notifyDocumentChange(doc.document, true);
+					that.notifyDocumentChange(doc.document, true, false);
 					// update scene
-					if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
-						that.notifyDocumentChange(doc.document.sceneid_, false);
+// 					if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
+// 						that.notifyDocumentChange(doc.document.sceneid_, false);
 				} else if (doc.id_=="registerNotifier")  {
 					console.log("Document notifier registered:", doc.notifierstate);
 				} else if (doc.id_=="plugins" && doc.componentid_=="PluginController")  {
@@ -251,6 +251,8 @@
 				}
 			} else if (doc.type_=="serverresponse") {
 				console.warn("Server response:" + doc.msg)
+			} else {
+				console.warn("Response type unknown:", doc)
 			}
 		});
 		
