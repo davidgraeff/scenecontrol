@@ -303,7 +303,7 @@
 		CurrentSceneItem.notification($("#sceneitemform"),doc);
 	});
 
-	$(storageInstance).on('onscene.editorpage', function(d, flags) {
+	$(storageInstance).on('onscene.sceneitemspage', function(d, flags) {
 		CurrentScene.checkscene(flags.doc.id_, flags.removed);
 		if (!CurrentScene.isValid()) {
 			$.mobile.changePage('scenelist.html', {transition: 'none'});
