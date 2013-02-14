@@ -96,25 +96,24 @@ Aktionsmethoden und können vom SceneServer direkt genutzt werden.
 
 Datenspeicherung:
 -----------------
-Ereignisse, Bedingungen, Aktionen und Szenen werden als JSON Objekte direkt auf dem Dateisystem hinterlegt, da
-nach umfangreicher Evaluierung von dokumentbasierten Datenbanken diese keine weiteren Vorteile nach sich ziehen. Durch
-Betriebssystemroutinen kann der SceneServer über Änderungen an den Dateien informiert werden. Übliche Dateiverwaltungs-
-werkzeuge ermöglichen das manuelle Replizieren oder regelmäßige sichern der Daten und auf Dateisystemebene vorhandene
-Konsistenzdaten sorgen für die nötige Datensicherheit auf Dateiebene.
-
-Beispiel: Ereignisse, Bedingungen und Aktionen:
------------------------------------------------
-Ein Ereignis kann das Eintreten eines gewissen Zeitpunktes sein,
-eine Bedingung könnte den aktuellen Steckdosenzustand meinen,
-eine Aktion löst eine Veränderung aus etwa das Ändern der Lichwerte von Leuchtdioden.
+Ereignisse, Bedingungen, Aktionen und Szenen werden als JSON Objekte direkt auf dem Dateisystem hinterlegt. Die
+Datenspeicherung ist jedoch durch eine eigene Bibliothek gekapselt um weitere Datenspeicherungssysteme leichter
+nutzbar zu machen. Die Speicherung auf dem Dateisystem bietet jedoch bereits das Erfassen von Änderungen der Daten durch
+Drittanwendungen sowie die Nutzung üblicher Dateiverwaltungswerkzeuge. Manuelles Replizieren sowie
+regelmäßige Sicherungen können auf Dateiebene genutzt werden (Dropbox, github, ...).
 
 Szenen:
 -------
-Ereignisse, Bedingungen und Aktionen machen erst Sinn, sobald diese zusammengefasst werden können.
-Dies geschieht durch Szenen. Sobald ein, an eine Szene gebundenes, Ereignis auftritt,
-werden die Bedingungen geprüft und dann ggfs. die in die Szene eingebundenen Aktionen,
-evtl. mit eingestellter zeitlicher Verzögerung, ausgeführt.
+Eine Szene definiert sich durch einen Namen, gfs. zugewiesene Kategorien und Szenenelementen.
+Szenenelemente sind Ereignisse, Bedingungen und Aktionen, welche als gerichteter Graph organisiert sind.
+Ein Graph enthält Knoten und Kanten, welche die Knoten verbinden. Übertragen auf eine Szene
+sind dadurch i.d.R. Ereignisse über Kanten mit Bedingungen verknüpft, welche wiederum mit
+Aktionen verbunden sind. Eine solche Kette von Szenenelementen heißt hier Ereigniskette.
+Eine Szene kann mehrere Ereignisketten enthalten.
 
+Ein Beispiel: Ein Ereignis kann das Eintreten eines gewissen Zeitpunktes sein,
+eine daran angebundene Bedingung könnte einen Steckdosenzustand prüfen,
+eine darauf folgende Aktion löst etwa das Ändern der Lichwerte von Leuchtdioden aus.
 
 Anwendungsgebiete:
 ==================
@@ -123,18 +122,28 @@ Anwendungsgebiete:
 3. Intelligenter Raum
 4. Automatisiertes Heimkino
 
-Grafisches Programm zur Gestaltung von Profilen:
-================================================
+Grafisches Programm zur Verwaltung von Szenen:
+==============================================
 Um Ereignisse, Bedingungen und Aktionen in Szenen grafisch zu gestalten befindet
-sich eine HTML5/JS Browser Anwendung im Ordner "editor".
-Diese greift per Webdav Protokoll auf die JSON Ressourcen zu. Entsprechend müssen
-die JSON Ressourcen in einem Ordner liegen, der sowohl vom SceneServer als auch
-von einem Http Server mit WebDav Unterstützung ausgelesen und verändert werden kann.
-Wenn der WebSocketProxy und optional der SessionProxy aktiv ist, können Aktionen
-auf dem SceneServer über die Html Oberfläche ausgelöst werden. Außerdem wird das
+sich eine HTML5/JS Browser Anwendung im Ordner "htmleditor".
+Der SceneServer und der WebSocketProxy müssen laufen. Außerdem wird das
 Erstellen und Parametriesieren von Ereignissen und Bedingungen erleichert, da
 mögliche Parameter direkt vom SceneServer abgefragt werden können.
 
+Weiterentwicklung:
+==================
+Work in Progress: 1. Quartal 2013:
+* Plugin: dmx/artnet
+* Fetch/Install scripts
+
+ToDo: 2. Quartal 2013:
+* Dokumentation inkl. Architekturschaubildern
+* SessionProxy
+* Android App: Modulare Plugin Unterstützung statt monolitischer Block?, Bugfixes
+
+Fertige Binaries:
+=================
+* Ubuntu 12.04, 12.10, 13.04 (x86, x64, ARM_Hf): https://launchpad.net/~david-graeff/+archive/scenecontrol
 
 Software bauen:
 ===============
@@ -150,36 +159,14 @@ verwendet werden, ansonsten lässt sich das Projekt auch mit der VS IDE bauen.
 
 Unter Linux: Hier bietet sich das Erstellen lassen von Makefiles an. Anschließend
 in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
-generieren zu lassen den Befehl "make package" nutzen. Fertige monolitische DEB
-Pakete lassen sich im Downloadbereich herunterladen.
+generieren zu lassen den Befehl "make package" nutzen.
 
-Work in Progress: 1. Quartal 2013:
-* Plugin: dmx/artnet
-* Plugins Aufspaltung in verschiedene Repositories (generisch/3rd-party)
-* AndroidApp: eigenes Repository
-* Fetch/Install scripts
-* HTML5 Editor: Abschließen der Canvas2D Nutzung für Scene-Darstellung
-
-ToDo: 2. Quartal 2013:
-* Dokumentation unter www.sceneserver.de.vu inkl. Architekturschaubildern :D
-* SessionProxy
-* Android App: Modulare Plugin Unterstützung statt monolitischer Block?, Bugfixes
-
-Benötigte Bibliotheken für den Server ohne Plugins:
-===================================================
-Kernprozess:
-------------
-Name          Ubuntu Paket          Beschreibung
-* Qt4           libqt4-dev            Qt4 Framework
-
-SessionProxy:
--------------
-Name          Ubuntu Paket          Beschreibung
-* PAM           libpam0g-dev          Benutzerauthentifizierung
-
-Plugins:
---------
-Name          Ubuntu Paket          Beschreibung
-* *PA:Pulseaudio -
-* PA:GLib       -
-* Linux_input_events:udev  -
+Abhängigkeiten:
+---------------
+| Name        | Ubuntu Paket           | Beschreibung  | Komponenten
+| ------------- |:-------------:| -----:| -----:|
+| Qt4      | libqt4-dev | Qt4 Framework | Kernprozess
+| SSL      | libssl-dev | Sichere Verbindung | Kernprozess, Kontrollsocket
+| PAM      | libpam0g-dev      |   Benutzerauthentifizierung | SessionProxy
+| Pulseaudio | libpulse-dev      |    Pulseaudio | Plugin: Pulseaudio
+| UDEV | libudev-dev      |    Linux Input Events | Plugin: Linux_input_events
