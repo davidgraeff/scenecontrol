@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
 
-make && exit 0
+make -j2 && exit 0
