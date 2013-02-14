@@ -31,7 +31,7 @@
 #include <libdatastorage/datastorage.h>
 
 class PluginController;
-class StorageNotifierConfiguration: public AbstractStorageNotifier {
+class StorageNotifierConfiguration: public AbstractStorageNotifierInterface {
 public:
 	StorageNotifierConfiguration(PluginController* pluginController);
 private:

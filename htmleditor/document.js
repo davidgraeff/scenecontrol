@@ -225,10 +225,10 @@
 					$elem.data("paramdata", parameter);
 					$elem.data("paramid", paramid);
 					$elem.on('input', function() {
-						CurrentSceneItem.propertyOnChange($(this), $(this).data("paramdata").onchange, $(this).data("paramid"));
+						CurrentSceneItem.propertyOnChange($(this).data("paramdata").onchange, $(this).attr('internal-data-type'), $(this).val(), $(this).data("paramid"));
 					});
 					$elem.on('change', function() {
-						CurrentSceneItem.propertyOnChange($(this), $(this).data("paramdata").onchange, $(this).data("paramid"));
+						CurrentSceneItem.propertyOnChange($(this).data("paramdata").onchange, $(this).attr('internal-data-type'), $(this).val(), $(this).data("paramid"));
 					});
 				}
 				
@@ -243,11 +243,11 @@
 			return result;
 		},
 		
-		propertyOnChange: function($elem, destMethod, paramid) {
-			var o = {"method_":destMethod,"type_":"execute","componentid_":CurrentSceneItem.item.componentid_, "instanceid_":CurrentSceneItem.item.instanceid_};
-			CurrentSceneItem.serializeElement($elem, paramid, o);
+		propertyOnChange: function(destMethod, type, value, name) {
+			var dataout = {"method_":destMethod,"type_":"execute","componentid_":CurrentSceneItem.item.componentid_, "instanceid_":CurrentSceneItem.item.instanceid_};
+			CurrentSceneItem.serializeElement(dataout, type, value, name);
 	// 		console.log("propertyOnChange "+paramid, destMethod, o);
-			websocketInstance.write(o);
+			websocketInstance.write(dataout);
 		},
 		
 		registerChangeNotifiers: function($ulBase, callbackInputChanged) {
@@ -281,7 +281,7 @@
 				var $elem = $form.find('[name='+this.name+'][internal-data-type]');
 				var type = $elem.attr('internal-data-type');
 				var value = $elem.val();
-				var size = $elem.attr('data-size');
+				var size = $elem.attr('data-size'); // only for multi enums
 
 				if (!CurrentSceneItem.serializeElement(dataout, type, value, this.name, size)) {
 					invalidfields.push(this.name);
@@ -315,7 +315,7 @@
 			} else if (type=="multienum") {
 				if (!o[name]) {
 					o[name] = [];
-					for (var i=0;i<size;++i) {
+					for (var i=0;i<datasize;++i) {
 						o[name][i] = false;
 					}
 				}

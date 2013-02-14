@@ -32,7 +32,7 @@ class SceneDocument;
  * may be started by calling start. The execution is done in another thread to make the application
  * more robust to plugin delays and to allow wanted delay actions.
  */
-class Scene: public AbstractStorageNotifier {
+class Scene: public AbstractStorageNotifierInterface {
     Q_OBJECT
 public:
 	Scene(const SceneDocument* scenedoc);

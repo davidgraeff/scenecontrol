@@ -17,28 +17,17 @@
 		
 		selectedObject: null, // either a Link or a Node
 		currentLink: null, // a Link
-		bgPattern: null,
  
 		setCanvas: function(canvas) {
 			this.canvas = canvas;
 			this.ctx = canvas.getContext('2d');
-			var image = new Image();
-			image.src = "brushed-silver-metallic-background.jpg";
-			this.bgPattern = this.ctx.createPattern(image, "repeat");
 		},
 		
 		draw: function() {
 			var c = this.ctx;
+			c.clearRect(0, 0, this.canvas.width, this.canvas.height);
 			c.save();
-			if (this.bgPattern==null)
-				c.clearRect(0, 0, this.canvas.width, this.canvas.height);
-			else {
-				c.fillStyle = this.bgPattern;
-				c.fillRect(0, 0, this.canvas.width, this.canvas.height);
-			}
-			c.restore();
-			c.save();
-			c.translate(0.5, 0.5)
+			c.translate(0.5, 0.5);
 			
 			for (var i = 0; i < this.nodes.length; i++) {
 				c.save();
@@ -111,6 +100,14 @@
 				}
 			}
 		},
+ 
+		removeLink: function(link) {
+			for (var i = 0; i < this.links.length; i++) {
+				if (this.links[i] == link) {
+					this.links.splice(i--, 1);
+				}
+			}
+		},
 		
 		moveNodes: function(x, y) {
 			for (var i = 0; i < this.nodes.length; i++) {
@@ -129,8 +126,8 @@
 
 		indexOfSceneItem: function(sceneItemDocument) {
 			for (var i = 0; i < this.nodes.length; i++) {
-				var node = this.nodes[i].data;
-				if (node.type_==sceneItemDocument.type_ && node.id_==sceneItemDocument.id_)
+				var nodedata = this.nodes[i].data;
+				if (nodedata.type_==sceneItemDocument.type_ && nodedata.id_==sceneItemDocument.id_)
 					return i;
 			}
 			return -1;
@@ -156,6 +153,7 @@
 		},
  
 		load: function(scene) {
+			this.scene = scene;
 			this.nodes = [];
 			this.links = [];
 			this.currentLink = null;
@@ -210,8 +208,13 @@
 			this.draw();
 		},
 		
+		store: function() {
+			this.scene.v = this.getGraph();
+			websocketInstance.updateDocument(this.scene);
+		},
+		
 		getGraph: function() {
-			var backup = { 'v': [] };
+			var v = [];
 			for (var i = 0; i < this.nodes.length; i++) {
 				var node = this.nodes[i];
 				
@@ -221,14 +224,16 @@
 					if (link.nodeA!=this.nodes[i])
 						continue;
 					var otherNode = this.nodes.indexOf(link.nodeB);
-					if (otherNode == null)
+					if (otherNode == -1)
 						continue;
+					otherNode = this.nodes[otherNode];
+
 					var backupLink = {id_:otherNode.data.id_, type_:otherNode.data.type_};
 					backupNode.e.push(backupLink);
 				}
-				backup.v.push(backupNode);
+				v.push(backupNode);
 			}
-			return backup;
+			return v;
 		}
 	};
 

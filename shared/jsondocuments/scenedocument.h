@@ -168,6 +168,7 @@ public:
 	QVariantList sceneItems() const ;
 	void removeSceneItem(SceneDocument* sceneItemDoc);
 	void addSceneItem(SceneDocument* sceneItemDoc);
+	void setSceneItems(const QVariantList& sceneitemList);
 	
 private:
 	QVariantMap m_map;

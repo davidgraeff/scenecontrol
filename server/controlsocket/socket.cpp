@@ -221,15 +221,15 @@ void ControlServerSocket::readyRead() {
 			DataStorage::instance()->storeDocument(SceneDocument(v.toMap().value(QLatin1String("doc")).toMap()), true);
 		}
 		
-		else if ( doc.isMethod ( "createSceneItem" ) )
+		else if ( doc.isMethod ( "addSceneItemDocument" ) )
 		{
-			DataStorage::instance()->createSceneItem(SceneDocument(v.toMap().value(QLatin1String("scene")).toMap()).uid(),
+			DataStorage::instance()->createSceneItem(v.toMap().value(QLatin1String("scene_id")).toString(),
 													 SceneDocument(v.toMap().value(QLatin1String("sceneitem")).toMap()));
 		}
 		
-		else if ( doc.isMethod ( "removeSceneItem" ) )
+		else if ( doc.isMethod ( "removeSceneItemDocument" ) )
 		{
-			DataStorage::instance()->removeSceneItem(SceneDocument(v.toMap().value(QLatin1String("scene")).toMap()).uid(),
+			DataStorage::instance()->removeSceneItem(v.toMap().value(QLatin1String("scene_id")).toString(),
 													 SceneDocument(v.toMap().value(QLatin1String("sceneitem")).toMap()).uid());
 		}
 		

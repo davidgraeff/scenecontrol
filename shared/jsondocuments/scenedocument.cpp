@@ -235,6 +235,10 @@ void SceneDocument::setAlternativeNextNodes(const QVariantList& nextNodes) {
 QVariantList SceneDocument::sceneItems() const {
 	return m_map.value(QLatin1String("v")).toList();
 }
+void SceneDocument::setSceneItems(const QVariantList& sceneitemList)
+{
+	m_map[QLatin1String("v")] = sceneitemList;
+}
 void SceneDocument::addSceneItem(SceneDocument* sceneItemDoc)
 {
 	QVariantList v = m_map.value(QLatin1String("v")).toList();
@@ -248,9 +252,10 @@ void SceneDocument::removeSceneItem(SceneDocument* sceneItemDoc)
 {
 	QVariantList v = m_map.value(QLatin1String("v")).toList();
 	for (int i=v.size()-1;i>=0;--i) {
-		QVariantMap sceneItem = v[i].toMap();
-		if (sceneItem.value(QLatin1String("id_")).toString() == sceneItemDoc->id() &&
-			sceneItem.value(QLatin1String("type_")).toString() == typeString(sceneItemDoc->type())) {
+		const QVariantMap sceneItem = v[i].toMap();
+		const QString id = sceneItem.value(QLatin1String("id_")).toString();
+		const QString type_ = sceneItem.value(QLatin1String("type_")).toString();
+		if (id == sceneItemDoc->id() && (type_.isEmpty() || type_ == typeString(sceneItemDoc->type()))) {
 			v.removeAt(i);
 		}
 	}

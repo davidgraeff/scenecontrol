@@ -219,7 +219,7 @@
 		if (this == otherNode) return;
 		
 		if (Math.abs(otherNode.x - this.x) < canvasConfig.snapToPadding) {
-			node.x = this.nodes[i].x;
+			otherNode.x = this.x;
 		}
 		
 		if (Math.abs(otherNode.y - this.y) < canvasConfig.snapToPadding) {
@@ -285,24 +285,23 @@
 		var h2 = this.height/2;
 		
 		// draw main rectangle
-
-		c.lineWidth = 2;
-		c.fillStyle = 'white';
 		c.save();
-		c.shadowColor = '#999';
-		c.shadowBlur = 10;
-		c.shadowOffsetX = 3;
-		c.shadowOffsetY = 3;
+		c.shadowOffsetX = 2;
+		c.shadowOffsetY = 2;
+		c.shadowBlur = 5;
+		c.shadowColor = c.strokeStyle;
+		c.fillStyle = 'rgba(255,255,255,0.9)';
 		c.roundRect(this.x-w2, this.y-h2, this.width, this.height, 10);
 		c.fill();
 		c.restore();
-		c.stroke();
 		
-		// clip to the outer rectangle
+		// draw outer line
+		c.lineWidth = 1;
+		c.stroke();
 		
 		{ // gradient
 		c.save();
-		c.clip();
+		c.clip(); // clip to the outer rectangle
 		var lingrad = c.createLinearGradient(0, this.y-h2, 0, this.y+h2);
 		lingrad.addColorStop(0.0, 'white');
 		lingrad.addColorStop(1.0, 'blue');

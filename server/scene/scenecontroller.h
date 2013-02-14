@@ -32,7 +32,7 @@ class Scene;
 class SceneNode;
 class SceneController;
 
-class StorageNotifierScenes: public AbstractStorageNotifier {
+class StorageNotifierScenes: public AbstractStorageNotifierInterface {
 public:
 	StorageNotifierScenes(SceneController* sceneController);
 private:

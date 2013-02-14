@@ -27,7 +27,7 @@
 #include <qmutex.h>
 
 class DataStorageWatcher;
-class AbstractStorageNotifier;
+class AbstractStorageNotifierInterface;
 
 /**
  * Access to documents. It provides signals for changed or removed documents and
@@ -81,7 +81,7 @@ public:
 	 * all registered StorageNotifier Objects will be notified.
 	 * Registered notifiers are removed automatically if they are deleted.
 	 */
-	void registerNotifier(AbstractStorageNotifier* notifier);
+	void registerNotifier(AbstractStorageNotifierInterface* notifier);
 	/**
 	 * This method should not be called manually. It will be invoked
 	 * if a registered StorageNotifier Object gets deleted and will remove its reference
@@ -116,13 +116,15 @@ public:
 	 * Create a scene item and add it to the scene
 	 * @param scene_uid The scene have to exist
 	 */
-	void createSceneItem(const QString& scene_uid, const SceneDocument& sceneitem);
+	void createSceneItem(const QString& scene_id, const SceneDocument& sceneitem);
 	/**
-	 * Remove a scene item from an existing scene and remove the sceneitem document
+	 * Remove a scene item from an existing scene and remove the sceneitem document.
+	 * The scene has to be disabled from execution before calling this method
+	 * for the case that the to-be-removed scene item is an event.
 	 * @param scene_uid The scene have to exist
 	 * @param sceneitem_uid The scene item have to exist
 	 */
-	void removeSceneItem(const QString& scene_uid, const QString& sceneitem_uid);
+	void removeSceneItem(const QString& scene_id, const QString& sceneitem_uid);
 private Q_SLOTS:
 	SceneDocument* reloadDocument(const QString& filename);
 	void removeFromCache(const QString &filename);
@@ -136,17 +138,19 @@ private:
     QMap<QString, SceneDocument*> m_index_typeid;
 	QMap<QString, SceneDocument*> m_index_filename;
 	
-	QSet<AbstractStorageNotifier*> m_notifiers;
+	QSet<AbstractStorageNotifierInterface*> m_notifiers;
     bool m_isLoading;
     
     QList<SceneDocument*> filterEntries(const QList< SceneDocument* >& source, const QVariantMap& filter = QVariantMap()) const;
 	QString storagePath(const SceneDocument& doc);
+	
+	bool removeNotExistingSceneItems(SceneDocument* scene);
 };
 
 /**
  * AbstractStorageNotifier
  */
-class AbstractStorageNotifier: public QObject {
+class AbstractStorageNotifierInterface: public QObject {
 	friend class DataStorage;
 private:
 	// Called by the DataStorage

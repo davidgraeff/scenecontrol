@@ -132,6 +132,7 @@ void Scene::documentRemoved(const QString& /*filename*/, SceneDocument* document
 		SceneDocument oE(document->getData());
 		oE.setSceneid(QString());
 		PluginController::instance()->execute(oE);
+		mUID2SceneNode.remove(document->uid());
 	}
 }
 

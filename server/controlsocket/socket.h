@@ -31,7 +31,7 @@
 class ServiceController;
 
 
-class StorageNotifierSocket: public AbstractStorageNotifier {
+class StorageNotifierSocket: public AbstractStorageNotifierInterface {
 public:
 	StorageNotifierSocket(int sessionid);
 private:

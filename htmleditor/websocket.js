@@ -44,12 +44,13 @@
 			websocketInstance.write(newscene);
 		}
 		
-		this.createSceneItem = function(sceneDocument, sceneItemDocument) {
-			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"addSceneItemDocument","scene":sceneDocument,"sceneitem":sceneItemDocument});
+		this.createSceneItem = function(scene_id, sceneItemDocument) {
+			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"addSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
 		}
 		
-		this.removeSceneItem = function(sceneDocument, sceneItemDocument) {
-			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeSceneItemDocument","scene":sceneDocument,"sceneitem":sceneItemDocument});
+		this.removeSceneItem = function(scene_id, sceneItemDocument) {
+			console.log("removeSceneItem", scene_id, sceneItemDocument);
+			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
 		}
 		
 		this.createConfig = function(instanceid, componentid) {ee

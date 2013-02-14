@@ -31,7 +31,7 @@ DataStorage::DataStorage() : m_listener(0), m_isLoading(false)
 DataStorage::~DataStorage()
 {
 	unload();
-	QSet<AbstractStorageNotifier*> copy = m_notifiers;
+	QSet<AbstractStorageNotifierInterface*> copy = m_notifiers;
 	qDeleteAll(copy);
 	m_notifiers.clear();
 }
@@ -72,10 +72,7 @@ void DataStorage::load()
 	m_listener = new DataStorageWatcher();
 	connect(m_listener, SIGNAL(fileChanged(QString)), SLOT(reloadDocument(QString)));
 	connect(m_listener, SIGNAL(fileRemoved(QString)), SLOT(removeFromCache(QString)));
-	
-	// enable the watcher
-	m_listener->setEnabled(true);
-	
+
 	m_isLoading = true;
 	QStringList dirs;
 	dirs.append(m_dir.absolutePath());	// add the user storage dir
@@ -90,7 +87,30 @@ void DataStorage::load()
 			reloadDocument(currentdir.absoluteFilePath(files[i]));
 		}
 	}
+	
+	{ // check consistency
+		QList<SceneDocument*> sceneItems = m_cache.value(SceneDocument::TypeCondition) + m_cache.value(SceneDocument::TypeAction) +m_cache.value(SceneDocument::TypeEvent);
+		QList<SceneDocument*> scenes = m_cache.value(SceneDocument::TypeScene);
+		for(int i=sceneItems.size()-1;i>=0;--i) {
+			// if the scene item references a scene that does not exist
+			if (!m_index_typeid.contains(SceneDocument::uid(SceneDocument::TypeScene, sceneItems[i]->sceneid()))) {
+				qWarning()<<"Consistency error: Remove scene item"<<sceneItems[i]->getjson();
+				removeDocument(*sceneItems[i]);
+			}
+		}
+		for(int i=scenes.size()-1;i>=0;--i) {
+			SceneDocument* scenedoc = scenes[i];
+			if (removeNotExistingSceneItems(scenedoc)) {
+				qWarning()<<"Consistency error: Resulting scene"<<scenedoc->getjson();
+				storeDocument(*scenedoc, true);
+			}
+		}
+	}
 	m_isLoading = false;
+	
+	// enable the watcher
+	m_listener->setEnabled(true);
+	
 	
 	qDebug() << "Loaded actions:" << m_cache.value(SceneDocument::TypeAction).size();
 	qDebug() << "Loaded conditions:" << m_cache.value(SceneDocument::TypeCondition).size();
@@ -154,6 +174,56 @@ int DataStorage::changeDocumentsValue(SceneDocument::TypeEnum type, const QVaria
 		storeDocument(*v[i], true);
 	}
 	return v.size();
+}
+
+bool DataStorage::removeNotExistingSceneItems(SceneDocument* scene)
+{
+	QVariantList sceneitemList = scene->sceneItems();
+	bool modified = false;
+	for(int j=sceneitemList.size()-1;j>=0;--j) {
+		SceneDocument sceneitem(sceneitemList[j].toMap());
+		// if referenced scene item does not exist, remove it from the scene
+		if (!m_index_typeid.contains(sceneitem.uid())) {
+			if (m_isLoading) qWarning()<<"Consistency error: Remove scene item"<<sceneitem.uid()<<"from scene"<<scene->uid();
+			sceneitemList.removeAt(j);
+			modified = true;
+			continue;
+		}
+		bool sceneItemModified = false;
+		// check links between nodes
+		QVariantList nextnodes = sceneitem.nextNodes();
+		for(int k=nextnodes.size()-1;k>=0;--k) {
+			SceneDocument linkedNode(nextnodes[k].toMap());
+			// if referenced scene item does not exist, remove it from the scene
+			if (!m_index_typeid.contains(linkedNode.uid())) {
+				if (m_isLoading) qWarning()<<"Consistency error: Remove link to scene item"<<linkedNode.uid()<<"from scene"<<scene->uid();
+				nextnodes.removeAt(k);
+				modified = true;
+				sceneItemModified = true;
+			}
+		}
+		sceneitem.setNextNodes(nextnodes);
+		// check alternative links between nodes
+		nextnodes = sceneitem.nextAlternativeNodes();
+		for(int k=nextnodes.size()-1;k>=0;--k) {
+			SceneDocument linkedNode(nextnodes[k].toMap());
+			// if referenced scene item does not exist, remove it from the scene
+			if (!m_index_typeid.contains(linkedNode.uid())) {
+				if (m_isLoading) qWarning()<<"Consistency error: Remove alternative link to scene item"<<linkedNode.uid()<<"from scene"<<scene->uid();
+				nextnodes.removeAt(k);
+				modified = true;
+				sceneItemModified = true;
+			}
+		}
+		sceneitem.setAlternativeNextNodes(nextnodes);
+		if (sceneItemModified) {
+			sceneitemList[j] = sceneitem.getData();
+		}
+	}
+	if (modified) {
+		scene->setSceneItems(sceneitemList);
+	}
+	return modified;
 }
 
 bool DataStorage::removeDocument(const SceneDocument &doc)
@@ -254,9 +324,9 @@ SceneDocument* DataStorage::storeDocument(const SceneDocument& odoc, bool overwr
 	return reloadDocument(f.fileName());
 }
 
-void DataStorage::createSceneItem(const QString& scene_uid, const SceneDocument& sceneitem)
+void DataStorage::createSceneItem(const QString& scene_id, const SceneDocument& sceneitem)
 {
-	SceneDocument* scene = getDocument(scene_uid);
+	SceneDocument* scene = getDocument(SceneDocument::uid(SceneDocument::TypeScene,scene_id));
 	if (!scene)
 		return;
 	
@@ -265,16 +335,16 @@ void DataStorage::createSceneItem(const QString& scene_uid, const SceneDocument&
 	storeDocument(*scene, true);
 }
 
-void DataStorage::removeSceneItem(const QString& scene_uid, const QString& sceneitem_uid)
+void DataStorage::removeSceneItem(const QString& scene_id, const QString& sceneitem_uid)
 {
-	SceneDocument* scene = getDocument(scene_uid);
+	SceneDocument* scene = getDocument(SceneDocument::uid(SceneDocument::TypeScene,scene_id));
 	SceneDocument* sceneItemDoc = getDocument(sceneitem_uid);
 	if (!scene || !sceneItemDoc)
 		return;
 	
 	removeDocument(*sceneItemDoc);
-	scene->removeSceneItem(sceneItemDoc);
-	storeDocument(*scene, true);
+	if (removeNotExistingSceneItems(scene))
+		storeDocument(*scene, true);
 }
 
 bool DataStorage::contains(const SceneDocument& doc) const
@@ -382,7 +452,7 @@ void DataStorage::fetchAllDocuments(QList< SceneDocument >& result) const {
 	}
 }
 
-void DataStorage::registerNotifier ( AbstractStorageNotifier* notifier ) {
+void DataStorage::registerNotifier ( AbstractStorageNotifierInterface* notifier ) {
 	Q_ASSERT(notifier);
 	m_notifiers.insert(notifier);
 	// Autoremove the notifier if it gets deleted
@@ -390,7 +460,7 @@ void DataStorage::registerNotifier ( AbstractStorageNotifier* notifier ) {
 }
 
 void DataStorage::unregisterNotifier ( QObject* obj ) {
-	m_notifiers.remove((AbstractStorageNotifier*)obj);
+	m_notifiers.remove((AbstractStorageNotifierInterface*)obj);
 }
 
 QString DataStorage::storagePath(const SceneDocument& doc) {

@@ -158,7 +158,7 @@
 		
 		function resizecanvas() {
 			canvas.width=parseInt($canvas.css('width'));
-			canvas.height = parseInt($canvas.css('height'));
+			canvas.height = $canvas.parent().height()-50; // - header
 			if (!sceneCanvas.init) {
 				SceneItemsUIHelper.load(scene);
 				sceneCanvas.init = true;
@@ -170,16 +170,17 @@
 		setTimeout( resizecanvas, 500 );
 		
 		$canvas.mousedown(function(e) {
+			if (e.which!=1)
+				return;
+			
 			// set focus to canvas (to get key strokes)
 			$canvas.attr("tabindex", "0");
 			// mouse position
 			var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top};
-			if (originalMouse == null)
-				originalMouse = mouse;
-			movingObject = false;
-			
+
 			sceneCanvas.selectedObject = sceneCanvas.selectObject(mouse.x, mouse.y);
 			
+			movingObject = false;
 			if (sceneCanvas.selectedObject != null) {
 				if (shift && sceneCanvas.selectedObject instanceof Node) {
 					$canvas.css('cursor', 'pointer');
@@ -192,6 +193,7 @@
 					}
 				}
 			} else {
+				originalMouse = mouse;
 				$canvas.css('cursor', 'move');
 			}
 			sceneCanvas.draw();
@@ -209,8 +211,15 @@
 			var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top};
 			sceneCanvas.selectedObject = sceneCanvas.selectObject(mouse.x, mouse.y);
 			
-			if (sceneCanvas.selectedObject != null && sceneCanvas.selectedObject instanceof Node && sceneCanvas.selectedObject.enabled) {
+			if (sceneCanvas.selectedObject == null)
+				return;
+			
+			if (sceneCanvas.selectedObject instanceof Node && sceneCanvas.selectedObject.enabled) {
 				SceneItemsUIHelper.showSceneItemDialog(sceneCanvas.selectedObject.data, false);
+			} else if (sceneCanvas.selectedObject instanceof Link) {
+				sceneCanvas.removeLink(sceneCanvas.selectedObject);
+				sceneCanvas.draw();
+				sceneCanvas.store();
 			}
 		};
 		
@@ -243,17 +252,31 @@
 			}
 		});
 		
-		$(document).mouseup(function(e) {
+		$canvas.mouseout(function () {
+			if (movingObject)
+				sceneCanvas.store();
+			sceneCanvas.currentLink = null;
+			sceneCanvas.draw();
 			movingObject = false;
 			originalMouse = null;
+			$canvas.css('cursor', 'default');
+		});
+		
+		$(document).mouseup(function(e) {
 			if (sceneCanvas.currentLink != null) {
 				if (!(sceneCanvas.currentLink instanceof TemporaryLink)) {
 					sceneCanvas.selectedObject = sceneCanvas.currentLink;
 					sceneCanvas.links.push(sceneCanvas.currentLink);
+					movingObject = true; // reuse as indication for sceneCanvas.store()
 				}
 				sceneCanvas.currentLink = null;
 				sceneCanvas.draw();
 			}
+			if (movingObject || originalMouse)
+				sceneCanvas.store();
+			
+			movingObject = false;
+			originalMouse = null;
 			$canvas.css('cursor', 'default');
 		});
 		
@@ -331,6 +354,7 @@
 			CurrentScene.set(scene.id_);
 			
 			sceneCanvas.load(scene);
+			$.jGrowl("Szene geladen: "+scene.name,{life:800,animateClose:null});
 		}
 	};
 	
