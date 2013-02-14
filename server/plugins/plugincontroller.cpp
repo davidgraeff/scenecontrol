@@ -172,7 +172,6 @@ void PluginController::scanPlugins() {
 		qDebug() << "Plugin initial configurations:" << importdir.absolutePath();
 
 	m_pluginlist.clear();
-	//m_pluginlist.append(QLatin1String("server"));
 	
     for (int i=0;i<pluginfiles.size();++i) {
         const QString componentid = pluginfiles[i].mid(0, pluginfiles[i].lastIndexOf(QLatin1String("_plugin")));
@@ -193,10 +192,21 @@ void PluginController::scanPlugins() {
 			startPluginProcessByConfiguration(configurations[pi]);
 		}
 	}
+	
+	// special handling for the server
+	m_pluginlist.append(QLatin1String("scenecontrol.server"));
+	// Install missing files for this plugin first
+	if (importdirfound && importdir.cd( QLatin1String("scenecontrol.server") )) {
+		Datastorage::VerifyPluginDocument verifier( QLatin1String("scenecontrol.server") );
+		Datastorage::importFromJSON(*DataStorage::instance(), importdir.absolutePath(), false, &verifier);
+	}
 }
 
 void PluginController::startPluginProcessByConfiguration ( const SceneDocument* configuration )
 {
+	if (configuration->componentID()==QLatin1String("scenecontrol.server"))
+		return;
+	
 	if (!configuration->hasComponentUniqueID()) {
 		qWarning() << "Server: Document incomplete. PluginID or PluginInstance is missing!" << configuration->getData();
 		return;
