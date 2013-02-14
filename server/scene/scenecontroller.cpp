@@ -16,9 +16,10 @@ StorageNotifierScenes::StorageNotifierScenes(SceneController* sceneController) :
 
 }
 
-void StorageNotifierScenes::documentChanged(const QString& /*filename*/, SceneDocument* /*oldDoc*/, SceneDocument* newDoc)
+void StorageNotifierScenes::documentChanged(const QString& /*filename*/, SceneDocument* oldDoc, SceneDocument* newDoc)
 {
 	if (newDoc->isType(SceneDocument::TypeScene)) {
+		if (oldDoc) mSceneController->removeScene(oldDoc);
 		mSceneController->addOrChangeScene(newDoc);
 	}
 }

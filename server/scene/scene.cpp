@@ -113,11 +113,13 @@ const SceneDocument* Scene::scenedoc() const
 
 void Scene::documentChanged(const QString& /*filename*/, SceneDocument* oldDoc, SceneDocument* newDoc)
 {
-	if (oldDoc && newDoc->isType(SceneDocument::TypeEvent) && mUID2SceneNode.contains(newDoc->uid())) {
-		// unregister
-		SceneDocument oE(oldDoc->getData());
-		oE.setSceneid(QString());
-		PluginController::instance()->execute(oE);
+	if (newDoc->isType(SceneDocument::TypeEvent) && mUID2SceneNode.contains(newDoc->uid())) {
+		if (oldDoc) {
+			// unregister
+			SceneDocument oE(oldDoc->getData());
+			oE.setSceneid(QString());
+			PluginController::instance()->execute(oE);
+		}
 		
 		// register
 		if (mEnabled && newDoc)
