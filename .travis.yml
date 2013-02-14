@@ -1,5 +1,7 @@
 before_install:
-  - sudo apt-get install cmake libqt4-dev
+  - sudo add-apt-repository ppa:czchen/travis-ci -y
+  - sudo apt-get update -y
+  - sudo apt-get install cmake libqt4-dev -y
 before_script: ./travis-ci/configure.sh
 script: ./travis-ci/make.sh
 language: cpp
