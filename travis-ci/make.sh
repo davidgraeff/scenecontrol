@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
 
-make -j2 && exit 0
+cd build && make -j2 && exit 0
