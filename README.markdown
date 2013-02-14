@@ -4,42 +4,7 @@ Eine Plugin orientierte Steuersoftware für die Heimautomatisierung. Einige auf 
 der Entwickler abgestimmten Plugins sowie generische Plugins sind bereits vorhanden.
 Diese README gibt erste Hintergrundinformationen.
 
-Unterstützte Plattformen:
-=========================
-* Windows ab Vista (Qt4;OpenSSL;Windows API: CryptProtectData, CryptUnprotectData, LogonUser)
-* Linux ab 2.6.22 (Qt4;OpenSSL;pam)
-
-Mitgelieferte Plugins:
-======================
-Generische Plugins:
--------------------
-* Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
-* DMX/ArtNet: Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware Umsetzung IP-->DMX notwendig.
-* Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
-* Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
-* Time: Bietet feste und periodische Zeitereignisse an.
-* WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.
-
-Generisches Plugins (Betriebssystemabhängig):
----------------------------------------------
-* Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
-
-Softwareabhängige Plugins:
---------------------------
-* MPD: Steuert den Music Player Daemon.
-* XBMC: Steuert das XBox Media Center.
-* Pulseaudio (linux only): Steuert Lautstärkekanäle des Pulseaudio daemons.
-
-Hardwareabhängige Plugins:
---------------------------
-* Anel sockets: Steuert Steckdosenleisten von der Firma anel (http://www.anel-elektronik.de/).
-* Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
-
-Plugins für mitgelieferte Tools:
---------------------------------
-* RemoteSystem: Ermöglicht Steuerbefehle an alle Windows Computer im selben Subnetzwerk,
-  welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
-  Zugehöriges Projekt: https://github.com/davidgraeff/windows_net_control
+[![Build Status](https://travis-ci.org/davidgraeff/scenecontrol.png?branch=master)](https://travis-ci.org/davidgraeff/scenecontrol)
 
 Architektur:
 ============
@@ -126,20 +91,39 @@ Grafisches Programm zur Verwaltung von Szenen:
 ==============================================
 Um Ereignisse, Bedingungen und Aktionen in Szenen grafisch zu gestalten befindet
 sich eine HTML5/JS Browser Anwendung im Ordner "htmleditor".
-Der SceneServer und der WebSocketProxy müssen laufen. Außerdem wird das
-Erstellen und Parametriesieren von Ereignissen und Bedingungen erleichert, da
-mögliche Parameter direkt vom SceneServer abgefragt werden können.
+Der SceneServer und der WebSocketProxy müssen laufen.
 
-Weiterentwicklung:
-==================
-Work in Progress: 1. Quartal 2013:
-* Plugin: dmx/artnet
-* Fetch/Install scripts
+Mitgelieferte Plugins:
+======================
+Generische Plugins:
+-------------------
+* Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden
+* DMX/ArtNet: Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware Umsetzung IP-->DMX notwendig.
+* Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen
+* Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.
+* Time: Bietet feste und periodische Zeitereignisse an.
+* WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.
 
-ToDo: 2. Quartal 2013:
-* Dokumentation inkl. Architekturschaubildern
-* SessionProxy
-* Android App: Modulare Plugin Unterstützung statt monolitischer Block?, Bugfixes
+Generisches Plugins (Betriebssystemabhängig):
+---------------------------------------------
+* Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).
+
+Softwareabhängige Plugins:
+--------------------------
+* MPD: Steuert den Music Player Daemon.
+* XBMC: Steuert das XBox Media Center.
+* Pulseaudio (linux only): Steuert Lautstärkekanäle des Pulseaudio daemons.
+
+Hardwareabhängige Plugins (in eigenem Repository):
+--------------------------------------------------
+* Anel sockets: Steuert Steckdosenleisten von der Firma anel (http://www.anel-elektronik.de/).
+* Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.
+
+Plugins für mitgelieferte Tools:
+--------------------------------
+* RemoteSystem: Ermöglicht Steuerbefehle an alle Windows Computer im selben Subnetzwerk,
+  welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
+  Zugehöriges Projekt: https://github.com/davidgraeff/windows_net_control
 
 Fertige Binaries:
 =================
@@ -164,9 +148,19 @@ generieren zu lassen den Befehl "make package" nutzen.
 Abhängigkeiten:
 ---------------
 | Name        | Ubuntu Paket           | Beschreibung  | Komponenten
-| ------------- |:-------------:| -----:| -----:|
+| ------------- |:-------------:| -----:| -----|
 | Qt4      | libqt4-dev | Qt4 Framework | Kernprozess
 | SSL      | libssl-dev | Sichere Verbindung | Kernprozess, Kontrollsocket
 | PAM      | libpam0g-dev      |   Benutzerauthentifizierung | SessionProxy
 | Pulseaudio | libpulse-dev      |    Pulseaudio | Plugin: Pulseaudio
 | UDEV | libudev-dev      |    Linux Input Events | Plugin: Linux_input_events
+
+Weiterentwicklung:
+------------------
+| Zeitraum        | Komponente        | Beschreibung
+| ------------- |-------------| -----|
+| 1. Quartal 2013 |  Plugin: dmx/artnet | libartnet Unterstützung um DMX Lampen nutzen zu können
+| 1. Quartal 2013 | Build Scripts | Script um 3rd Party Repositories vor dem Build zu integrieren
+| 2. Quartal 2013 | Dokumentation | Strukturierte Webseite, Architekturschaubilder, Screenshots
+| 2. Quartal 2013 | SessionProxy | Authentifizierung für den Control Socket
+| 2. Quartal 2013 | Android App |  Modulare Plugin Unterstützung statt monolitischer Block
