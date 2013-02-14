@@ -269,7 +269,7 @@ int PluginController::execute(const SceneDocument& data, const QByteArray respon
 	// Thread safe: Only one thread at a time may send data to a plugin process
 	QMutexLocker locker(&mExecuteMutex);
 	
-	if (data.componentID()==QLatin1String("server")) {
+	if (data.componentID()==QLatin1String("scenecontrol.server")) {
 		ServerProvidedFunctions::execute(data, responseID, responseCallbackObject, -1);
 		return 1;
 	}
