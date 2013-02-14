@@ -1,0 +1,262 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Scenecontrol by davidgraeff</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Scenecontrol</h1>
+        <p>A plugin extendable software for home automation / domotics requiering a small always-on pc like the raspberry pi. Use your modern webbrowser to simply configure events-conditions-actions correlations. Easily extendable functionality through a true plugin architecture.</p>
+
+        <p class="view"><a href="https://github.com/davidgraeff/scenecontrol">View the Project on GitHub <small>davidgraeff/scenecontrol</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/davidgraeff/scenecontrol/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/davidgraeff/scenecontrol/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/davidgraeff/scenecontrol">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>Heimautomatisierungssoftware:</h1>
+
+<p>Eine Plugin orientierte Steuersoftware für die Heimautomatisierung. Einige auf die Bedürfnisse
+der Entwickler abgestimmten Plugins sowie generische Plugins sind bereits vorhanden.
+Diese README gibt erste Hintergrundinformationen.</p>
+
+<p><a href="https://travis-ci.org/davidgraeff/scenecontrol"><img src="https://travis-ci.org/davidgraeff/scenecontrol.png?branch=master" alt="Build Status"></a></p>
+
+<h1>Architektur:</h1>
+
+<h2>Kernprozess:</h2>
+
+<p>Der ausführende Kernprozess wird im weiteren SceneServer genannt.
+Der SceneServer baut nach dem Start eine Verbindung zur Datenhaltung auf und fordert alle Plugin Konfigurationen an.
+Eine Plugin Konfiguration enthält die benötigten Parameter um eine bestimmte Plugin Instanz
+erfolgreich starten zu können. Es können also jederzeit mehrfache Instanzen eines Plugins gestartet werden.
+Plugin Instanzen laufen in eigenen Prozessen und können untereinander oder mit dem SceneServer kommunizieren.</p>
+
+<p>Sobald ein Pluginprozess angelaufen und eine Verbindung zum Server hergestellt worden ist, werden aus der Datenhaltung
+alle auf diese Plugin Instanz registrierten Ereignisse angefordert and an die Plugin Instanz weitergereicht.</p>
+
+<p>Sobald ein Ereignis entsprechend der Ereignisdaten eintritt, wird der SceneServer informiert und lädt aus der Datenhaltung
+die mit dem Ereignisdaten verbundenen Profile und damit wiederum verbundene Bedingungsdaten und Aktionsdaten.</p>
+
+<p>Wenn alle betroffenen Plugin Instanzen die Bedingungen anhand der Bedinungsdaten mit positiver Rückmeldung
+evaluiert haben, werden die Aktionsdaten an die zuständigen Plugin Instanzen zur Ausführung gesendet.</p>
+
+<p>Über einen TCP Port i.d.R. Port 3101 können per JSON kodierte Nachrichten an den Prozess abgesetzt werden.
+Der Server selber bietet keine Session/Sicherheitsverwaltung an und bietet außer direkter Sockets keine andere
+Kontrollmöglichkeit an. Diese Funktionalitäten können mit zusätzlichen Proxy Prozessen abgedeckt werden.</p>
+
+<p>Durch die Trennung in Prozesse mit fest gelegtem, eingegrenztem Aufgabenbereich ist die Ausfallsicherheit der
+gesamten Architektur besonders hoch und für den 24/7 Betrieb ausgelegt.</p>
+
+<h2>Websocketsproxy:</h2>
+
+<p>Über den Websocketsproxy können sich über https Webclients über das WebSocket Protokoll mit dem SceneServer verbinden
+und das JSON Kommandointerface des SceneServers nutzen.</p>
+
+<h2>SessionProxy:</h2>
+
+<p>Der SessionProxy handelt mit dem SceneServer einen neuen Port für das JSON Kommandointerface aus und öffnet selber
+den JSON Kommandointerface Port. Somit werden effektiv alle neuen Verbindungen über den SessionProxy ablaufen.
+Alle Verbindungen erfordern ab dann eine Authentifizierung gegenüber den auf dem Betriebssystem vorhandenen Benutzern.
+Zugriffsrechte werden durch Gruppenmitgliedschaften des angegeben Benutzers geregelt und müssen in der SessionProxy
+Konfiguration gesondert angegeben werden.
+Ein Beispiel: Ein Nutzer wählt über die Android App eine Szene zur Ausführung aus.
+Der SessionProxy wird diese Ausführungsanfrage nur an den SceneServer weiterleiten, wenn der Nutzer sich als "abc"
+beim Start der Android App authorisiert hat.</p>
+
+<h2>Plugin und Plugin&lt;-&gt;SceneServer Kommunikation:</h2>
+
+<p>Plugins sind als eigene Prozesse modelliert, welche selbstständig eine Kommunikationsverbindung zum Server aufbauen müssen.
+Da viele Qt Container und Basisklassen serialisiert werden können, wird ein einfaches QDataStream basiertes Protokoll für
+die Kommunikation zwischen Plugin Prozess und SceneServer verwendet. Unter Windows werden NamedPipes, unter Linux/MacOS
+UnixSockets verwendet.
+Plugins können Eigenschaften (properties) besitzen und auf Eigenschaftsänderungen des Servers oder anderer Plugins
+reagieren.
+Ein Plugin muss ein C++/Qt PluginInterface implementieren. Entsprechend markierte Funktionen dienen als Ereignis, Bedingungs- oder
+Aktionsmethoden und können vom SceneServer direkt genutzt werden.</p>
+
+<h2>Datenspeicherung:</h2>
+
+<p>Ereignisse, Bedingungen, Aktionen und Szenen werden als JSON Objekte direkt auf dem Dateisystem hinterlegt. Die
+Datenspeicherung ist jedoch durch eine eigene Bibliothek gekapselt um weitere Datenspeicherungssysteme leichter
+nutzbar zu machen. Die Speicherung auf dem Dateisystem bietet jedoch bereits das Erfassen von Änderungen der Daten durch
+Drittanwendungen sowie die Nutzung üblicher Dateiverwaltungswerkzeuge. Manuelles Replizieren sowie
+regelmäßige Sicherungen können auf Dateiebene genutzt werden (Dropbox, github, ...).</p>
+
+<h2>Szenen:</h2>
+
+<p>Eine Szene definiert sich durch einen Namen, gfs. zugewiesene Kategorien und Szenenelementen.
+Szenenelemente sind Ereignisse, Bedingungen und Aktionen, welche als gerichteter Graph organisiert sind.
+Ein Graph enthält Knoten und Kanten, welche die Knoten verbinden. Übertragen auf eine Szene
+sind dadurch i.d.R. Ereignisse über Kanten mit Bedingungen verknüpft, welche wiederum mit
+Aktionen verbunden sind. Eine solche Kette von Szenenelementen heißt hier Ereigniskette.
+Eine Szene kann mehrere Ereignisketten enthalten.</p>
+
+<p>Ein Beispiel: Ein Ereignis kann das Eintreten eines gewissen Zeitpunktes sein,
+eine daran angebundene Bedingung könnte einen Steckdosenzustand prüfen,
+eine darauf folgende Aktion löst etwa das Ändern der Lichwerte von Leuchtdioden aus.</p>
+
+<h1>Anwendungsgebiete:</h1>
+
+<ol>
+<li>Intelligenter Wecker</li>
+<li>Energiesparsystem</li>
+<li>Intelligenter Raum</li>
+<li>Automatisiertes Heimkino</li>
+</ol><h1>Grafisches Programm zur Verwaltung von Szenen:</h1>
+
+<p>Um Ereignisse, Bedingungen und Aktionen in Szenen grafisch zu gestalten befindet
+sich eine HTML5/JS Browser Anwendung im Ordner "htmleditor".
+Der SceneServer und der WebSocketProxy müssen laufen.</p>
+
+<h1>Mitgelieferte Plugins:</h1>
+
+<h2>Generische Plugins:</h2>
+
+<ul>
+<li>Leds: Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden</li>
+<li>DMX/ArtNet: Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware Umsetzung IP--&gt;DMX notwendig.</li>
+<li>Switches: Generisches Steckdosen Plugin zur Verwaltung aller angemeldeten Steckdosen</li>
+<li>Modes: Bietet eine frei änderbare Variable an um den Modus des Servers (etwa Musiksteuerung, Videosteuerung) zu markieren.</li>
+<li>Time: Bietet feste und periodische Zeitereignisse an.</li>
+<li>WOL: Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs, sofern die Zielnetzwerkkarte dies unterstützt.</li>
+</ul><h2>Generisches Plugins (Betriebssystemabhängig):</h2>
+
+<ul>
+<li>Linux Input Events (linux only): Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).</li>
+</ul><h2>Softwareabhängige Plugins:</h2>
+
+<ul>
+<li>MPD: Steuert den Music Player Daemon.</li>
+<li>XBMC: Steuert das XBox Media Center.</li>
+<li>Pulseaudio (linux only): Steuert Lautstärkekanäle des Pulseaudio daemons.</li>
+</ul><h2>Hardwareabhängige Plugins (in eigenem Repository):</h2>
+
+<ul>
+<li>Anel sockets: Steuert Steckdosenleisten von der Firma anel (<a href="http://www.anel-elektronik.de/">http://www.anel-elektronik.de/</a>).</li>
+<li>Projector Sanyo Z700: Steuert den Sanyo Projector Z700 über das serielle Interface.</li>
+</ul><h2>Plugins für mitgelieferte Tools:</h2>
+
+<ul>
+<li>RemoteSystem: Ermöglicht Steuerbefehle an alle Windows Computer im selben Subnetzwerk,
+welche die mitgelieferte Clientsoftware gestartet haben, abzusetzen.
+Zugehöriges Projekt: <a href="https://github.com/davidgraeff/windows_net_control">https://github.com/davidgraeff/windows_net_control</a>
+</li>
+</ul><h1>Fertige Binaries:</h1>
+
+<ul>
+<li>Ubuntu 12.04, 12.10, 13.04 (x86, x64, ARM_Hf): <a href="https://launchpad.net/%7Edavid-graeff/+archive/scenecontrol">https://launchpad.net/~david-graeff/+archive/scenecontrol</a>
+</li>
+</ul><h1>Software bauen:</h1>
+
+<p>Es wird CMake (<a href="http://www.cmake.org">www.cmake.org</a>) benötigt. Im CMake-Gui Programm kann grafisch
+der Quellcodeordner und ein davon unabhängiger BUILD-Ordner angegeben werden.
+CMake versucht alle benötigten Abhängigkeiten und den angegebenen C++ Compiler
+zu finden. Im nachfolgendem Abschnitt sind die Abhängigkeiten noch einmal
+aufgeführt. Nach dem Generierungsschritt liegen (je nach Auswahl) Visual Studio
+Projektdateien, Makefiles, usw vor.</p>
+
+<p>Unter Windows: Hier wird VisualStudio 10+ empfohlen. Auf der Konsole kann nmake
+verwendet werden, ansonsten lässt sich das Projekt auch mit der VS IDE bauen.</p>
+
+<p>Unter Linux: Hier bietet sich das Erstellen lassen von Makefiles an. Anschließend
+in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
+generieren zu lassen den Befehl "make package" nutzen.</p>
+
+<h2>Abhängigkeiten:</h2>
+
+<table>
+<tr>
+<th>Name</th>
+<th align="center">Ubuntu Paket</th>
+<th align="right">Beschreibung</th>
+<th>Komponenten</th>
+</tr>
+<tr>
+<td>Qt4</td>
+<td align="center">libqt4-dev</td>
+<td align="right">Qt4 Framework</td>
+<td>Kernprozess</td>
+</tr>
+<tr>
+<td>SSL</td>
+<td align="center">libssl-dev</td>
+<td align="right">Sichere Verbindung</td>
+<td>Kernprozess, Kontrollsocket</td>
+</tr>
+<tr>
+<td>PAM</td>
+<td align="center">libpam0g-dev</td>
+<td align="right">Benutzerauthentifizierung</td>
+<td>SessionProxy</td>
+</tr>
+<tr>
+<td>Pulseaudio</td>
+<td align="center">libpulse-dev</td>
+<td align="right">Pulseaudio</td>
+<td>Plugin: Pulseaudio</td>
+</tr>
+<tr>
+<td>UDEV</td>
+<td align="center">libudev-dev</td>
+<td align="right">Linux Input Events</td>
+<td>Plugin: Linux_input_events</td>
+</tr>
+</table><h2>Weiterentwicklung:</h2>
+
+<table>
+<tr>
+<th>Zeitraum</th>
+<th>Komponente</th>
+<th>Beschreibung</th>
+</tr>
+<tr>
+<td>1. Quartal 2013</td>
+<td>Plugin: dmx/artnet</td>
+<td>libartnet Unterstützung um DMX Lampen nutzen zu können</td>
+</tr>
+<tr>
+<td>1. Quartal 2013</td>
+<td>Build Scripts</td>
+<td>Script um 3rd Party Repositories vor dem Build zu integrieren</td>
+</tr>
+<tr>
+<td>2. Quartal 2013</td>
+<td>Dokumentation</td>
+<td>Strukturierte Webseite, Architekturschaubilder, Screenshots</td>
+</tr>
+<tr>
+<td>2. Quartal 2013</td>
+<td>SessionProxy</td>
+<td>Authentifizierung für den Control Socket</td>
+</tr>
+<tr>
+<td>2. Quartal 2013</td>
+<td>Android App</td>
+<td>Modulare Plugin Unterstützung statt monolitischer Block</td>
+</tr>
+</table>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/davidgraeff">davidgraeff</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
