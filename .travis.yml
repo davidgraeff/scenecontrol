@@ -1,7 +1,7 @@
 before_install:
   - sudo apt-get install cmake libqt4-dev
-before_script: ./.travis-ci/configure.sh
-script: ./.travis-ci/make.sh
+before_script: ./travis-ci/configure.sh
+script: ./travis-ci/make.sh
 language: cpp
 compiler:
   - clang
