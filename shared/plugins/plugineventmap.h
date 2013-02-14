@@ -35,7 +35,7 @@ EventMap<T,MEMBER>::EventMap () : m_fieldname ( QString::fromAscii(MEMBER) ) { }
 
 template <class T, char* MEMBER>
 void EventMap<T,MEMBER>::add ( const SceneDocument& doc, const QString& collectionuid ) {
-    T key = doc.getData().value ( m_fieldname ).value<T>();
+    T key = doc.getData().template value ( m_fieldname ).value<T>();
     QMap<QString, SceneDocument > datas = QMap<T, QMap<QString, SceneDocument > >::take ( key );
     SceneDocument docm(doc);
 	docm.setSceneid(collectionuid);
