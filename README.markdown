@@ -1,5 +1,3 @@
-Heimautomatisierungssoftware:
-=============================
 Eine Plugin orientierte Steuersoftware für die Heimautomatisierung. Alle weiteren Informationen, die Roadmap
 und Downloads befinden sich auf der [Webseite](http://davidgraeff.github.com/scenecontrol)  dieses Projekts.
 
@@ -12,18 +10,21 @@ Anwendungsgebiete:
 * Intelligenter Raum
 * Automatisiertes Heimkino
 
-Grafisches Oberfläche für Scene Control:
-========================================
+Scene Control Editor:
+=====================
 Um Ereignisse, Bedingungen und Aktionen in Szenen grafisch zu organisieren und zu erstellen befindet
 sich eine Web-Anwendung im Ordner "htmleditor".
+![Alt text](http://davidgraeff.github.com/scenecontrol/images/editor-feb-2013.jpg)
 
 Android-App:
 ============
 Einige Plugins, sowie die Basisfunktionalität des SceneServers können von einer
 Android App gesteuert werden.
+![Alt text](http://davidgraeff.github.com/scenecontrol/images/androidapp.jpg)
 
 Abhängigkeiten:
----------------
+============
+
 | Name        | Ubuntu Paket           | Beschreibung  | Komponenten
 | ------------- |:-------------:| -----:| -----|
 | Qt4      | libqt4-dev | Qt4 Framework | Kernprozess
