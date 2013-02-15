@@ -101,7 +101,7 @@ header {
   position:fixed;
 }
 
-header > ul {
+header ul.getit {
   list-style:none;
   height:40px;
   
@@ -113,7 +113,7 @@ header > ul {
   width:270px;
 }
 
-header li {
+header ul.getit li {
   width:89px;
   float:left;
   border-right:1px solid #d2d2d2;
@@ -124,13 +124,13 @@ header li {
   
 }
 
-header li:hover {
+header ul.getit li:hover {
   background: #ccc;
   background: -webkit-linear-gradient(top, #D0D0D0 0%,#dddddd 100%);
   background: linear-gradient(top, #D0D0D0 0%,#dddddd 100%);
 }
 
-header ul a {
+header ul.getit a {
   line-height:1;
   font-size:11px;
   color:#999;
@@ -145,17 +145,17 @@ strong {
   font-weight:700;
 }
 
-header ul li + li {
+header ul.getit li + li {
   width:88px;
   border-left:1px solid #fff;
 }
 
-header ul li + li + li {
+header ul.getit li + li + li {
   border-right:none;
   width:89px;
 }
 
-header ul a strong {
+header ul.getit a strong {
   font-size:14px;
   display:block;
   color:#222;
@@ -187,6 +187,77 @@ float: right;
 	border-bottom: 1px blue dotted;
 }
 
+      .gh-ico {
+        width: 22px;
+        height: 22px;
+        margin-right: 4px;
+        vertical-align: top;
+        background: url(../images/github-icons.png) no-repeat 0 0;
+        opacity: .65;
+        background-position: 0 -20px;
+        display: inline-block;
+      }
+      #latest-commits-widget{
+        border:1px solid #cacaca;
+        overflow-x:hidden;
+        font:13px helvetica, arial, freesans, clean, sans-serif;
+        background:#dedede
+      }
+      #latest-commits-widget a,#latest-commits-widget a:visited{
+        color:#4183C4
+      }
+      #latest-commits-widget a:hover{
+        text-decoration:underline
+      }
+      #latest-commits-header{
+        background-color:#e1e1e1;
+        background-image:-webkit-linear-gradient(top, #f1f1f1, #e1e1e1);
+        background-image:linear-gradient(center top, #f1f1f1 0%, #e1e1e1 100%);
+        border-bottom:1px solid #CACACA;
+        color:#52595d;
+        height:25px;
+        margin: 0;
+        padding:5px 0 0 5px;
+        text-shadow:1px 0 1px rgba(255, 255, 255, .7);
+        font-size:1.3em;
+        font-weight:bold
+      }
+      #latest-commits-header h4 {
+        margin: 0;
+        display: inline-block;
+      }
+      #latest-commits-widget ul#commit-history{
+        padding-left: 0;
+        margin: 0;
+      }
+      #latest-commits-widget > ul#commit-history > li{
+        list-style-type: none;
+        background-color:#e1e1e1;
+        background-image:-webkit-linear-gradient(top, #f1f1f1, #e1e1e1);
+        background-image:linear-gradient(center top, #f1f1f1 0%, #e1e1e1 100%);
+        border-bottom:1px solid #CACACA;
+        padding:5px;
+        width: 100%;
+      }
+      #latest-commits-widget ul#commit-history li .commit-message{font-size:.8em;text-decoration:none; line-height: 1.3em;}
+      #latest-commits-widget ul#commit-history li .commit-message:hover{text-decoration:underline}
+      #latest-commits-widget ul#commit-history li .commit-sha{color:#999;font-size:.8em}
+      #latest-commits-widget ul#commit-history li .commit-date{color:#444;font-size:.8em}
+      #latest-commits-widget ul#commit-history li .commit-author-info a,#latest-commits-widget ul#commit-history li .commit-author-info a:visited{color:#444;text-decoration:none}
+
+      #latest-commits-widget ul#commit-history li .commit-avatar{
+        margin-right:10px;
+		margin-top:5px;
+        height:50px;width:50px;border-radius:4px;border:1px solid #dedede;
+      }
+
+
+      #latest-commits-widget ul#commit-history li .commit-author-info {
+        padding-top: 5px;
+        width: 500px;
+      }
+      .left { float: left;}
+      
 @media print, screen and (max-width: 960px) {
   
   div.wrapper {

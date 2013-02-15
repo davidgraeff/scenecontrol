@@ -7,6 +7,7 @@
 
     <link rel="stylesheet" href="stylesheets/styles.css">
 	<link rel="stylesheet" href="stylesheets/tipTip.css">
+	<link rel="stylesheet" href="stylesheets/gh-fork-ribbon.css" />
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
@@ -14,25 +15,40 @@
     <![endif]-->
 	<!-- BEGIN JavaScript -->
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.timeago.js"></script>
+    <script type="text/javascript" src="github-latest-commits.js"></script>
 	<script type="text/javascript" src="jquery.tipTip.minified.js"></script>
 	<script type="text/javascript" src="code.js"></script>
   </head>
   <body>
+	  <div class="github-fork-ribbon-wrapper right">
+        <div class="github-fork-ribbon">
+            <a href="https://github.com/simonwhitaker/github-fork-ribbon-css">Fork me on GitHub</a>
+        </div>
+    </div>
     <div class="wrapper">
       <header>
         <h1>SceneControl <a href="https://travis-ci.org/davidgraeff/scenecontrol"><img src="https://travis-ci.org/davidgraeff/scenecontrol.png?branch=master" alt="Build Status"></a></h1>
 
 <p>Leicht zu bedienende Steuerungssoftware für eine einfach erweiterbare Heimautomatisierung.</p>
 
-        <ul>
+        <ul class="getit">
           <li><a href="https://github.com/davidgraeff/scenecontrol/zipball/master">Download <strong>ZIP File</strong></a></li>
           <li><a href="https://launchpad.net/%7Edavid-graeff/+archive/scenecontrol">Packet für <strong>Ubuntu</strong></a></li>
           <li><a href="https://github.com/davidgraeff/scenecontrol">View On <strong>GitHub</strong></a></li>
         </ul>
 
-        <iframe src="http://tylerlh.github.com/github-latest-commits-widget/?username=davidgraeff&repo=scenecontrol&limit=1"
-  allowtransparency="true" frameborder="0" scrolling="no" width="100%" ></iframe>
-  
+		<div id="latest-commits-widget"  data-username="davidgraeff" data-repo="scenecontrol" data-limit="1">
+			<div id="latest-commits-header">
+				<div class="gh-ico"></div>
+				<h4>Latest Commits</h4>
+			</div>
+			<ul id="commit-history"></ul>
+		</div>
+
+		<p style="margin-top:10px">
+		<iframe src="http://ghbtns.com/github-btn.html?user=davidgraeff&repo=scenecontrol&type=watch&count=true"  allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
+		</p>
       </header>
 
       <section>
@@ -40,9 +56,9 @@
       <h1>Steuerungssoftware für Heimautomatisierung</h1>
    <p>
 		
-		SceneControl ist als Plugin Architektur für Heimautomatisierungsaufgaben über ein always-on System wie z.B. den Rasberry PI konzipiert.
-		Über einen Editor im Webbrowser werden einfach Ereignisse, Bedingungen und Aktionen in Szenen verknüpft. Es existiert eine Android App, die
-		neben den Plugins zusätzlich oder exklusiv zur Steuerung verwendet werden kann
+	   SceneControl erfüllt Heimautomatisierungsaufgaben über eine robuste Prozess/Plugin Architektur. Ein <em>Always-ON</em> System wie z.B. der Rasberry PI wird vorausgesetzt.
+		Über einen Editor im Webbrowser werden einfach Ereignisse, Bedingungen und Aktionen über Szenen verknüpft.
+		Einige Plugins, sowie die Basisfunktionalität von SceneControl kann von einer Android App gesteuert werden. 
 	</p>
 	
 <table>
