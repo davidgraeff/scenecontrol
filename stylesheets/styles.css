@@ -1,10 +1,10 @@
 @import url(https://fonts.googleapis.com/css?family=Lato:300italic,700italic,300,700);
 
 body {
-  padding:50px;
+  padding:20px;
   font:14px/1.5 Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color:#777;
   font-weight:300;
+/*  background-size: 100% auto;*/
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -101,19 +101,11 @@ header {
   position:fixed;
 }
 
-header ul {
+header > ul {
   list-style:none;
   height:40px;
   
   padding:0;
-  
-  background: #eee;
-  background: -moz-linear-gradient(top, #f8f8f8 0%, #dddddd 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f8f8f8), color-stop(100%,#dddddd));
-  background: -webkit-linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
-  background: -o-linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
-  background: -ms-linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
-  background: linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
   
   border-radius:5px;
   border:1px solid #d2d2d2;
@@ -126,6 +118,16 @@ header li {
   float:left;
   border-right:1px solid #d2d2d2;
   height:40px;
+  background: #eee;
+  background: -webkit-linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
+  background: linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
+  
+}
+
+header li:hover {
+  background: #ccc;
+  background: -webkit-linear-gradient(top, #D0D0D0 0%,#dddddd 100%);
+  background: linear-gradient(top, #D0D0D0 0%,#dddddd 100%);
 }
 
 header ul a {
@@ -160,7 +162,7 @@ header ul a strong {
 }
 
 section {
-  width:500px;
+  width:550px;
   float:right;
   padding-bottom:50px;
 }
@@ -177,10 +179,12 @@ hr {
 }
 
 footer {
-  width:270px;
-  float:left;
-  position:fixed;
-  bottom:50px;
+width: 500px;
+float: right;
+}
+
+.tooltip {
+	border-bottom: 1px blue dotted;
 }
 
 @media print, screen and (max-width: 960px) {
