@@ -5,3 +5,61 @@ header: Download
 group: navigation
 ---
 {% include JB/setup %}
+
+
+<h1>Software bauen</h1>
+
+<p>Es wird CMake (<a href="http://www.cmake.org">www.cmake.org</a>) benötigt. Im CMake-Gui Programm kann grafisch
+der Quellcodeordner und ein davon unabhängiger BUILD-Ordner angegeben werden.
+CMake versucht alle benötigten Abhängigkeiten und den angegebenen C++ Compiler
+zu finden. Im nachfolgendem Abschnitt sind die Abhängigkeiten noch einmal
+aufgeführt. Nach dem Generierungsschritt liegen (je nach Auswahl) Visual Studio
+Projektdateien, Makefiles, usw vor.</p>
+
+<p>Unter Windows: Hier wird VisualStudio 10+ empfohlen. Auf der Konsole kann nmake
+verwendet werden, ansonsten lässt sich das Projekt auch mit der VS IDE bauen.</p>
+
+<p>Unter Linux: Hier bietet sich das Erstellen lassen von Makefiles an. Anschließend
+in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
+generieren zu lassen den Befehl "make package" nutzen.</p>
+
+	<h2>Abhängigkeiten</h2>
+
+		<table>
+		<tr>
+		<th>Name</th>
+		<th align="center">Ubuntu Paket</th>
+		<th align="right">Beschreibung</th>
+		<th>Komponenten</th>
+		</tr>
+		<tr>
+		<td>Qt4</td>
+		<td align="center">libqt4-dev</td>
+		<td align="right">Qt4 Framework</td>
+		<td>Kernprozess</td>
+		</tr>
+		<tr>
+		<td>SSL</td>
+		<td align="center">libssl-dev</td>
+		<td align="right">Sichere Verbindung</td>
+		<td>Kernprozess, Kontrollsocket</td>
+		</tr>
+		<tr>
+		<td>PAM</td>
+		<td align="center">libpam0g-dev</td>
+		<td align="right">Benutzerauthentifizierung</td>
+		<td>SessionProxy</td>
+		</tr>
+		<tr>
+		<td>Pulseaudio</td>
+		<td align="center">libpulse-dev</td>
+		<td align="right">Pulseaudio</td>
+		<td>Plugin: Pulseaudio</td>
+		</tr>
+		<tr>
+		<td>UDEV</td>
+		<td align="center">libudev-dev</td>
+		<td align="right">Linux Input Events</td>
+		<td>Plugin: Linux_input_events</td>
+		</tr>
+		</table>
