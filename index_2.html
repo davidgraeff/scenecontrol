@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>SceneControl {% if page.title %} - {{ page.title }} {% endif %}</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="css/tipTip.css">
+	<link rel="stylesheet" href="css/gh-fork-ribbon.css" />
+    <link rel="stylesheet" href="css/pygment_trac.css">
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery.timeago.js"></script>
+    <script type="text/javascript" src="js/github-latest-commits.js"></script>
+	<script type="text/javascript" src="js/jquery.tipTip.minified.js"></script>
+	<script type="text/javascript" src="js/code.js"></script>
+  </head>
+<body>
+  <div id="wrapper">
+    <header>
+		<h1>SceneControl <a href="https://travis-ci.org/davidgraeff/scenecontrol"><img src="https://travis-ci.org/davidgraeff/scenecontrol.png?branch=master" alt="Build Status"></a></h1>
+
+		<p>Leicht zu bedienende Steuerungssoftware für eine einfach erweiterbare Heimautomatisierung.</p>
+
+		<ul class="getit headerbuttons">
+			<li><a href="https://github.com/davidgraeff/scenecontrol/zipball/master">Download <strong>ZIP File</strong></a></li>
+			<li><a href="https://launchpad.net/%7Edavid-graeff/+archive/scenecontrol">Packet für <strong>Ubuntu</strong></a></li>
+			<li><a href="https://github.com/davidgraeff/scenecontrol">View On <strong>GitHub</strong></a></li>
+		</ul>
+
+		<div class="headerbuttons" id="latest-commits-widget"  data-username="davidgraeff" data-repo="scenecontrol" data-limit="1">
+			<div id="latest-commits-header">
+				<div class="gh-ico"></div>
+				<h4>Letzte Änderung</h4>
+			</div>
+			<ul id="commit-history"></ul>
+		</div>
+
+		<p class="headerbuttons" style="margin-top:10px">
+		<iframe src="http://ghbtns.com/github-btn.html?user=davidgraeff&repo=scenecontrol&type=watch&count=true"  allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
+		</p>
+    <header>
+    <nav role="navigation">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/portfolio/">Portfolio</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/contact">Contact</a></li>
+      </ul>
+    </nav>
+    {{ content }}
+      <footer>
+		  <p>This project is maintained by <a href="https://github.com/davidgraeff">David Gräff</a><br/><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+  </div>
+</body>
+</html>
