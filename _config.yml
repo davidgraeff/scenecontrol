@@ -9,8 +9,8 @@ pygments: true
 # Themes are encouraged to use these universal variables 
 # so be sure to set them if your theme uses them.
 #
-title : Jekyll Bootstrap
-tagline: Site Tagline
+title : SceneControl
+tagline: Home Automation
 author :
   name : David Gräff
   email : david.graeff@web.remove.de

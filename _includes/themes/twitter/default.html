@@ -14,7 +14,10 @@
     <!-- Le styles -->
     <link href="{{ ASSET_PATH }}/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ ASSET_PATH }}/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
-
+    <link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="css/tipTip.css">
+	<link rel="stylesheet" href="css/gh-fork-ribbon.css" />
+	
     <!-- Le fav and touch icons -->
   <!-- Update these with your own images
     <link rel="shortcut icon" href="images/favicon.ico">
@@ -51,9 +54,8 @@
       </div>
 
       <footer>
-        <p>&copy; {{ site.author.name }} {{ site.time | date: '%Y' }}
-          Theme by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
-        </p>
+		  <p>This project is maintained by <a href="https://github.com/davidgraeff">{{ site.author.name }}</a>&copy; {{ site.time | date: '%Y' }}<br/>
+		  <small>Hosted on GitHub Pages &mdash; Theme by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a></small></p>
       </footer>
 
     </div> <!-- /container -->
