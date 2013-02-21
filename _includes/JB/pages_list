@@ -23,7 +23,7 @@ Usage:
 {% if site.JB.pages_list.provider == "custom" %}
   {% include custom/pages_list %}
 {% else %}
-  {% sorted_for node in pages_list sort_by:weight %}
+  {% for node in pages_list %}
     {% if node.title != null %}
       {% if group == null or group == node.group %}
       	{% if page.url == node.url %}
@@ -33,7 +33,7 @@ Usage:
       	{% endif %}
       {% endif %}
     {% endif %}
-  {% endsorted_for %}
+  {% endfor %}
 {% endif %}
 {% assign pages_list = nil %}
 {% assign group = nil %}
