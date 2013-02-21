@@ -1,5 +1,11 @@
+div.getit {
+	margin: auto;
+	margin-right: 0;
+	width:300px;
+	text-align: center;
+}
 
-ul.getit {
+div.getit > ul {
   list-style:none;
   height:40px;
   
@@ -8,10 +14,10 @@ ul.getit {
   border-radius:5px;
   border:1px solid #d2d2d2;
   box-shadow:inset #fff 0 1px 0, inset rgba(0,0,0,0.03) 0 -1px 0;
-  width:300px;
+  width: 100%;
 }
 
-ul.getit > li {
+div.getit > ul li {
   width:99px;
   float:left;
   border-right:1px solid #d2d2d2;
@@ -22,13 +28,13 @@ ul.getit > li {
   
 }
 
-ul.getit li:hover {
+div.getit > ul li:hover {
   background: #ccc;
   background: -webkit-linear-gradient(top, #D0D0D0 0%,#dddddd 100%);
   background: linear-gradient(top, #D0D0D0 0%,#dddddd 100%);
 }
 
-ul.getit > li > a {
+div.getit > ul li > a {
   line-height:1;
   font-size:11px;
   color:#999;
@@ -38,24 +44,24 @@ ul.getit > li > a {
   height:40px;
 }
 
-ul.getit > li > li {
+div.getit > ul > li > li {
   width:88px;
   border-left:1px solid #fff;
 }
 
-ul.getit > li > li > li {
+div.getit > ul > li > li > li {
   border-right:none;
   width:89px;
 }
 
-ul.getit > li > a > strong {
+div.getit > ul > li > a > strong {
   font-size:14px;
   display:block;
   color:#222;
 }
 
 
-ul.getit > li > a.gh-ico:before {
+div.getit > ul > li > a.gh-ico:before {
 	display:block;
 	float:left;
 	content:"";
@@ -65,7 +71,7 @@ ul.getit > li > a.gh-ico:before {
 	height:30px;
 }
 
-ul.getit > li > a.ubuntu-ico:before {
+div.getit > ul > li > a.ubuntu-ico:before {
 	display:block;
 	float:left;
 	content:"";

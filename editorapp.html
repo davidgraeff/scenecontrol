@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Szenen-Editor
-tagline: Grafisches Programm zur Verwaltung von Szenen
+title: Konfigurieren
+tagline: Erstellen von Szenen und Einrichten von Plugins
 header: Webapplikation um den SceneServer zu konfigurieren
 group: navigation
 weight : 7
@@ -9,8 +9,15 @@ weight : 7
 {% include JB/setup %}
 
 
-<p>Um Ereignisse, Bedingungen und Aktionen in Szenen grafisch zu gestalten befindet
-sich eine Webbrowser Anwendung im Ordner "htmleditor".
-Der SceneServer und der WebSocketProxy müssen laufen.</p>
+<h1>Webapp zur Verwaltung von Szenen</h1>
+<img src="images/editor-feb-2013.jpg" style="margin-bottom:10px;max-width:500px;float:right;" />
 
-   <img src="images/editor-feb-2013.jpg" style="margin-bottom:10px" />
+<p>Die Konfiguration von SceneControl erfolgt über eine Webapplikation. Diese bietet zwei wesentliche
+Funktionen. Zum einen können so genannte <a href="#pluginconfig">Plugin Konfigurationen</a> erstellt und bearbeitet werden.
+Eine solche Konfiguration ist notwendig um ein Plugin überhaupt erst zu aktivieren und um Konfigurationsparameter
+angeben zu können. Die andere Funktion umfasst das Erstellen und Bearbeiten von
+<a href="documentation.html#scenes">Szenen</a> und <a href="documentation.html#sceneitems">Szenenelementen</a>.
+
+<h3>Webapp starten</h3>
+<p>Um die Webapp verwenden zu können, muss der <a href="documentation.html#sceneserver">SceneServer</a>
+und der <a href="documentation.html#websocketproxy">WebSocketProxy</a> laufen.</p>

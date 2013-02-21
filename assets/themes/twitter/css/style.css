@@ -27,15 +27,96 @@ html, body {
 
 /* Page header tweaks */
 .page-header {
-  background-color: #f5f5f5;
-  padding: 20px 20px 10px;
-  margin: -20px -20px 0px;
+  background-color: #e5e5e5;
+  padding: 20px 20px 0px;
+  margin:0px;
+   margin: 0px -20px 0px;
 }
 
 .topbar .btn {
   border: 0;
 }
 
+
+.navbar-inner {
+	border-radius: 0px !important;
+}
+
+/* Jumbotrons
+-------------------------------------------------- */
+
+/* Base class
+------------------------- */
+.titlebackground {
+	color: #fff;
+	background: #020031; /* Old browsers */
+	background: -moz-linear-gradient(45deg,  #020031 0%, #6d3353 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left bottom, right top, color-stop(0%,#020031), color-stop(100%,#6d3353)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* IE10+ */
+	background: linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#020031', endColorstr='#6d3353',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+	-webkit-box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
+	-moz-box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
+	box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
+	position: relative;
+	z-index: 2;
+}
+
+.titlebackground:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: url(../images/bs-docs-masthead-pattern.png) repeat center center;
+  opacity: .4;
+
+}
+
+.titlebackground > * {
+  position: relative;
+  z-index: 2;
+}
+
+.jumbotron {
+	margin:0;
+  padding: 20px 0;
+
+}
+
+.titlebackground h1 {
+   color: #fff;
+}
+
+.jumbotron h1 {
+  font-size: 60px;
+  font-weight: bold;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.jumbotron p {
+	float:left;
+	max-width:480px;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.25;
+  margin-bottom: 30px;
+}
+
+@media
+only screen and (-webkit-min-device-pixel-ratio: 2),
+only screen and (   min--moz-device-pixel-ratio: 2),
+only screen and (     -o-min-device-pixel-ratio: 2/1) {
+
+  .jumbotron:after {
+    background-size: 150px 150px;
+  }
+
+}
 
 /* tag_box ======================================================== */
 

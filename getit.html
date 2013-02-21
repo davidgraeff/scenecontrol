@@ -1,124 +1,194 @@
 ---
 layout: page
-title: Get started 
+title: Download
+tagline: Download und Installation
 header: Download
 group: navigation
 weight : 1
 ---
 {% include JB/setup %}
 
-<a href="https://travis-ci.org/davidgraeff/scenecontrol"><img src="https://travis-ci.org/davidgraeff/scenecontrol.png?branch=master" alt="Build Status"></a>
+	<p>Der Quellcode kann direkt von GitHub bezogen werden. Unter <a href="#build_software">Software bauen</a> wird
+	das selber kompilieren näher erläutert. Fertige Binaries von der letzten lauffähigen Version (trunk) des Kernprozesses,
+	der Hilfsprogramme und <a href="#plugins">einiger Plugins</a> werden für aktuelle Ubuntu Distributionen angeboten.</p>
+	<p>
+		<a class="btn" href="https://github.com/davidgraeff/scenecontrol/zipball/master">Quellcode als <strong>ZIP File</strong></a>
+		<a class="btn ubuntu-ico" href="https://launchpad.net/%7Edavid-graeff/+archive/scenecontrol">Packet für <strong>Ubuntu</strong></a>
+		<a class="btn gh-ico" href="https://github.com/davidgraeff/scenecontrol">View On <strong>GitHub</strong></a>
+	</p>
 
-<h1>Software bauen</h1>
+<h1 id="build_software">Software bauen</h1>
 
-<p>Es wird CMake (<a href="http://www.cmake.org">www.cmake.org</a>) benötigt. Im CMake-Gui Programm kann grafisch
-der Quellcodeordner und ein davon unabhängiger BUILD-Ordner angegeben werden.
-CMake versucht alle benötigten Abhängigkeiten und den angegebenen C++ Compiler
-zu finden. Im nachfolgendem Abschnitt sind die Abhängigkeiten noch einmal
-aufgeführt. Nach dem Generierungsschritt liegen (je nach Auswahl) Visual Studio
-Projektdateien, Makefiles, usw vor.</p>
+	<p>Es wird CMake (<a href="http://www.cmake.org">www.cmake.org</a>) benötigt. Im CMake-Gui Programm kann grafisch
+	der Quellcodeordner und ein davon unabhängiger BUILD-Ordner angegeben werden.
+	CMake versucht alle benötigten <a href="#dependencies">Abhängigkeiten</a> und den angegebenen C++ Compiler
+	zu finden. Nach dem Generierungsschritt liegen (je nach Auswahl) Visual Studio
+	Projektdateien, Makefiles, usw vor.</p>
 
-<p>Unter Windows: Hier wird VisualStudio 10+ empfohlen. Auf der Konsole kann nmake
-verwendet werden, ansonsten lässt sich das Projekt auch mit der VS IDE bauen.</p>
+	<p><strong>Unter Windows:</strong> Hier wird VisualStudio 10+ empfohlen. Nicht alle Teile dieses Projekts, insbesondere
+	nicht alle Plugins lassen sich unter Windows bauen.</p>
 
-<p>Unter Linux: Hier bietet sich das Erstellen lassen von Makefiles an. Anschließend
-in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
-generieren zu lassen den Befehl "make package" nutzen.</p>
+	<p><strong>Unter Linux:</strong> Hier bietet sich das Erstellen lassen von Makefiles an. Anschließend
+	in den BUILD-Ordner wechseln und den Befehl "make" ausführen. Um ein Deb Packet
+	generieren zu lassen den Befehl "make package" nutzen.</p>
 
-	<h2>Abhängigkeiten</h2>
+	<h3 id="dependencies">Abhängigkeiten</h3>
 
-		<table>
-		<tr>
-		<th>Name</th>
-		<th align="center">Ubuntu Paket</th>
-		<th align="right">Beschreibung</th>
-		<th>Komponenten</th>
-		</tr>
-		<tr>
-		<td>Qt4</td>
-		<td align="center">libqt4-dev</td>
-		<td align="right">Qt4 Framework</td>
-		<td>Kernprozess</td>
-		</tr>
-		<tr>
-		<td>SSL</td>
-		<td align="center">libssl-dev</td>
-		<td align="right">Sichere Verbindung</td>
-		<td>Kernprozess, Kontrollsocket</td>
-		</tr>
-		<tr>
-		<td>PAM</td>
-		<td align="center">libpam0g-dev</td>
-		<td align="right">Benutzerauthentifizierung</td>
-		<td>SessionProxy</td>
-		</tr>
-		<tr>
-		<td>Pulseaudio</td>
-		<td align="center">libpulse-dev</td>
-		<td align="right">Pulseaudio</td>
-		<td>Plugin: Pulseaudio</td>
-		</tr>
-		<tr>
-		<td>UDEV</td>
-		<td align="center">libudev-dev</td>
-		<td align="right">Linux Input Events</td>
-		<td>Plugin: Linux_input_events</td>
-		</tr>
-		</table>
+	<table class="table table-striped">
+	<tr>
+	<th>Name</th>
+	<th align="center">Ubuntu Paket</th>
+	<th align="right">Beschreibung</th>
+	<th>Komponenten</th>
+	</tr>
+	<tr>
+	<td>Qt4</td>
+	<td align="center">libqt4-dev</td>
+	<td align="right">Qt4 Framework</td>
+	<td>Kernprozess</td>
+	</tr>
+	<tr>
+	<td>SSL</td>
+	<td align="center">libssl-dev</td>
+	<td align="right">Sichere Verbindung</td>
+	<td>Kernprozess, Kontrollsocket</td>
+	</tr>
+	<tr>
+	<td>PAM</td>
+	<td align="center">libpam0g-dev</td>
+	<td align="right">Benutzerauthentifizierung</td>
+	<td>SessionProxy</td>
+	</tr>
+	<tr>
+	<td>Pulseaudio</td>
+	<td align="center">libpulse-dev</td>
+	<td align="right">Pulseaudio</td>
+	<td>Plugin: Pulseaudio</td>
+	</tr>
+	<tr>
+	<td>UDEV</td>
+	<td align="center">libudev-dev</td>
+	<td align="right">Linux Input Events</td>
+	<td>Plugin: Linux_input_events</td>
+	</tr>
+	</table>
 
-		
+<h1 id="plugins">Plugins</h1>
+<p>SceneControl ist bewusst mit einem sehr leichtgewichtigem, funktionsarmen Kernprozess entwickelt worden
+(siehe Beschreibung der <a href="documentation.html#architecture">Architektur</a>).
+Funktionalität wird über Plugins realisiert. Einige werden mitgeliefert, andere sind über Drittrepositories
+abrufbar.</p>
 
-<h1>Mitgelieferte Plugins</h1>
+<h3>Mitgeliefert</h3>
+<p>Einige Plugins befinden sich im selben Repository wie die Kernanwendung. Zum einen sind
+das generische Plugins, welche ohne weitere Voraussetzungen auf allen Systemen laufen und Basisfunktionen
+anbieten (<em>Time</em>, <em>WOL</em>) oder als Schnittstelle für andere Plugins dienen (<em>Leds</em>, <em>Schalter</em>).
+Zum anderen enthält das Repository einige Plugins für die Steuerung von frei verfügbarer,
+bekannter Software (<a href="http://www.xbmc.org"><em>Xbmc</em></a>, ...) oder
+Hardware Kommunikationsprotokolle (<em>DMX/ArtNet</em>).
 
-		<table>
-		<tr>
-		<th>Name</th>
-		<th>Typ</th>
-		<th>Beschreibung</th>
-		</tr>
-		<tr>
-		<td>Leds</td>
-		<td>Generisch</td>
-		<td>Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden.</td>
-		</tr>
-		<tr>
-		<td>Schalter</td>
-		<td>Generisch</td>
-		<td>Generisches Schalter Plugin zur Verwaltung aller angemeldeten Schalter.</td>
-		</tr>
-		<tr>
-		<td>Time</td>
-		<td>Generisch</td>
-		<td>Bietet feste und periodische Zeitereignisse an.</td>
-		</tr>
-		<tr>
-		<td>WOL</td>
-		<td>Generisch</td>
-		<td>Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs.</td>
-		</tr>
-		<tr>
-		<td>DMX/ArtNet</td>
-		<td>Hardware</td>
-		<td>Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware Umsetzung IP--&gt;DMX notwendig.</td>
-		</tr>
-		<tr>
-		<td>Linux Input Events</td>
-		<td>OS Abhängig</td>
-		<td>Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).</td>
-		</tr>
-		<tr>
-		<td>MPD</td>
-		<td>Softwarespezifisch</td>
-		<td>Steuert den Music Player Daemon.</td>
-		</tr>
-		<tr>
-		<td>XBMC</td>
-		<td>Softwarespezifisch</td>
-		<td> Steuert das XBox Media Center.</td>
-		</tr>
-		<tr>
-		<td>Pulseaudio</td>
-		<td>Softwarespezifisch</td>
-		<td>Steuert Lautstärkekanäle des Pulseaudio daemons.</td>
-		</tr>
-		</table>
+	<table class="table table-striped">
+	<tr>
+	<th>Name</th>
+	<th>Typ</th>
+	<th>Beschreibung</th>
+	</tr>
+	<tr>
+	<td>Leds</td>
+	<td>Generisch</td>
+	<td>Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden.</td>
+	</tr>
+	<tr>
+	<td>Schalter</td>
+	<td>Generisch</td>
+	<td>Generisches Schalter Plugin zur Verwaltung aller angemeldeten Schalter.</td>
+	</tr>
+	<tr>
+	<td>Time</td>
+	<td>Generisch</td>
+	<td>Bietet feste und periodische Zeitereignisse an.</td>
+	</tr>
+	<tr>
+	<td>WOL</td>
+	<td>Generisch</td>
+	<td>Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs.</td>
+	</tr>
+	<tr>
+	<td>DMX/ArtNet</td>
+	<td>Protokoll/Hardware</td>
+	<td>Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware Umsetzung IP--&gt;DMX notwendig.</td>
+	</tr>
+	<tr>
+	<td>Linux Input Events</td>
+	<td>OS Abhängig</td>
+	<td>Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).</td>
+	</tr>
+	<tr>
+	<td>MPD</td>
+	<td>Softwarespezifisch</td>
+	<td>Steuert den Music Player Daemon.</td>
+	</tr>
+	<tr>
+	<td>XBMC</td>
+	<td>Softwarespezifisch</td>
+	<td> Steuert das <a target="_blank" href="http://www.xbmc.org">XBox Media Center</a> ab Version 11.</td>
+	</tr>
+	<tr>
+	<td>Pulseaudio</td>
+	<td>Softwarespezifisch</td>
+	<td>Steuert Lautstärkekanäle des <a target="_blank" href="http://www.pulseaudio.org">Pulseaudio</a> Prozesses.</td>
+	</tr>
+	</table>
+	
+<h3>Drittanbieter Plugins</h3>
+<p>Fordern Plugins spezielle Hardware oder Software, werden diese nicht im SceneControl Repository aufgenommen.
+Liegen Drittanbieter Plugins im Quellcode vor, können diese einfach in das <em>plugins/3rd-party</em> Verzeichnis
+vor dem Bauvorgang kopiert werden. Das Buildsystem CMake bietet diese Plugins dann ebenfalls zum Kompilieren und
+Installieren an. Drittanbieter Binary Plugins werden nach der Installionsanleitung des Herstellers installiert.</p>
+
+	<table class="table table-striped">
+	<tr>
+	<th>Name</th>
+	<th>Typ</th>
+	<th>Quellcode?/Lizenz</th>
+	<th>Quelle</th>
+	<th>Beschreibung</th>
+	</tr>
+	<tr>
+	<td>Leds/RS232</td>
+	<td>Hardware</td>
+	<td>Ja/GPLv3</td>
+	<td><a href="https://github.com/davidgraeff/scenecontrol_plugins_dg">Plugins DG</a></td>
+	<td>Leuchtdioden über ein eigenes auf RS232 aufbauendes Protokoll ansteuern.</td>
+	</tr>
+	<tr>
+	<td>Anel sockets</td>
+	<td>Hardware</td>
+	<td>Ja/GPLv3</td>
+	<td><a href="https://github.com/davidgraeff/scenecontrol_plugins_dg">Plugins DG</a></td>
+	<td>Steuert Steckdosenleisten von der Firma <a href="http://www.anel-elektronik.de/">Anel</a>.</td>
+	</tr>
+	<tr>
+	<td>Sanyo Z700</td>
+	<td>Hardware</td>
+	<td>Ja/GPLv3</td>
+	<td><a href="https://github.com/davidgraeff/scenecontrol_plugins_dg">Plugins DG</a></td>
+	<td>Steuert Sanyo Projectoren des Typs Z700 über das serielle Interface.</td>
+	</tr>
+	<tr>
+	<td>Yamaha RX</td>
+	<td>Hardware</td>
+	<td>Ja/GPLv3</td>
+	<td><a href="https://github.com/davidgraeff/scenecontrol_plugins_dg">Plugins DG</a></td>
+	<td>Steuert Yamaha RX Receiver über die Netzwerkschnittstelle.</td>
+	</tr>
+	<tr>
+	<td>Remote system</td>
+	<td>Software</td>
+	<td>Ja/GPLv3</td>
+	<td><a href="https://github.com/davidgraeff/scenecontrol_plugins_dg">Plugins DG</a></td>
+	<td>Steuert andere Systeme, welche die entsprechende <a href="https://github.com/davidgraeff/windows_net_control">Client Software</a> installiert haben.</td>
+	</tr>
+	</table>
+	
+<p><a class="btn btn-mini btn-info" href="{{ site.githubrepo }}/issues/new" title="GitHub Issue erstellen" target="_blank"><i class="icon-comment icon-white"></i> Neues Issue: Plugin hier listen lassen</a></p>

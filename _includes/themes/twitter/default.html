@@ -49,7 +49,6 @@
             {% assign group = 'navigation' %}
             {% include JB/pages_list %}
           </ul>
-			<iframe style="padding-top: 10px;" src="http://ghbtns.com/github-btn.html?user=davidgraeff&repo=scenecontrol&type=watch&count=true"  allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
         </div>
       </div>
     </nav>
@@ -57,7 +56,9 @@
       {{ content }}
 
     <div class="container">
+    <a style="float:right;margin-top:1em;" href="#"><i class="icon-arrow-up"></i>Nach oben</a>
       <footer>
+			<p> <iframe src="http://ghbtns.com/github-btn.html?user=davidgraeff&repo=scenecontrol&type=watch&count=true"  allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe></p>
 		  <p>This project is maintained by <a href="{{ site.githubrepo }}">{{ site.author.name }}</a>, &copy; {{ site.time | date: '%Y' }}<br/>
 		  <small>Hosted on GitHub Pages &mdash; Theme by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a></small></p>
       </footer>
