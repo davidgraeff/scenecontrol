@@ -26,14 +26,9 @@
   </div>
   
   <div class="span4">
-    <h4>Dokumentation</h4>
-          <ul >
-			<li><a class="brand" href="{{ BASE_PATH }}{{ page.url }}">{{ page.title }}</a></li>
-            {% assign pages_list = site.pages %}
-            {% assign group = 'documentation' %}
-            {% include JB/pages_list %}
-          </ul>
-          
+    <h4>Published</h4>
+    <div class="date"><span>{{ page.date | date_to_long_string }}</span></div>
+
   {% unless page.tags == empty %}
     <h4>Tags</h4>
     <ul class="tag_box">
