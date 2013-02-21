@@ -5,6 +5,7 @@
     <title>{{ page.title }}</title>
     {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
     <meta name="author" content="{{ site.author.name }}">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
     <!--[if lt IE 9]>
@@ -14,14 +15,12 @@
     <!-- Le styles -->
     <link rel="stylesheet" href="{{ ASSET_PATH }}/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ ASSET_PATH }}/css/style.css?body=1" type="text/css" media="all">
-    <link rel="stylesheet" href="{{ HOME_PATH }}/css/latestcommits.css">
     <link rel="stylesheet" href="{{ HOME_PATH }}/css/getit.css">
 	<link rel="stylesheet" href="{{ HOME_PATH }}/css/tipTip.css">
 	<link rel="stylesheet" href="{{ HOME_PATH }}/css/gh-fork-ribbon.css" />
 	
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <script type="text/javascript" src="{{ HOME_PATH }}/js/jquery.timeago.js"></script>
-    <script type="text/javascript" src="{{ HOME_PATH }}/js/github-latest-commits.js"></script>
 	<script type="text/javascript" src="{{ HOME_PATH }}/js/jquery.tipTip.minified.js"></script>
 	<script type="text/javascript" src="{{ HOME_PATH }}/js/code.js"></script>
     <!-- Le fav and touch icons -->
@@ -36,14 +35,14 @@
   <body>
 	  <div class="github-fork-ribbon-wrapper right">
 		<div class="github-fork-ribbon">
-			<a href="https://github.com/simonwhitaker/github-fork-ribbon-css">Fork me on GitHub</a>
+			<a href="{{ site.githubrepo }}">Fork me on GitHub</a>
 		</div>
 	</div>
 	
     <div class="navbar">
       <div class="navbar-inner">
         <div class="container">
-          <a class="brand" href="{{ HOME_PATH }}">{{ site.title }}</a>
+          <a class="brand" href="{{ HOME_PATH }}/">{{ site.title }}</a>
           <ul class="nav">
             {% assign pages_list = site.pages %}
             {% assign group = 'navigation' %}
@@ -60,7 +59,7 @@
       </div>
 
       <footer>
-		  <p>This project is maintained by <a href="https://github.com/davidgraeff">{{ site.author.name }}</a>, &copy; {{ site.time | date: '%Y' }}<br/>
+		  <p>This project is maintained by <a href="{{ site.githubrepo }}">{{ site.author.name }}</a>, &copy; {{ site.time | date: '%Y' }}<br/>
 		  <small>Hosted on GitHub Pages &mdash; Theme by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a></small></p>
       </footer>
 
