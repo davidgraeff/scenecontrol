@@ -1,5 +1,10 @@
 /* TipTip CSS - Version 1.2 */
 
+.tooltip {
+	border-bottom: 1px blue dotted;
+}
+
+
 #tiptip_holder {
 	display: none;
 	position: absolute;
