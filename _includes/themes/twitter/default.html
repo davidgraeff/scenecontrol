@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ ASSET_PATH }}/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ ASSET_PATH }}/css/style.css?body=1" type="text/css" media="all">
     <link rel="stylesheet" href="{{ HOME_PATH }}/css/getit.css">
+    <link rel="stylesheet" href="{{ HOME_PATH }}/css/common.css">
 	<link rel="stylesheet" href="{{ HOME_PATH }}/css/tipTip.css">
 	<link rel="stylesheet" href="{{ HOME_PATH }}/css/gh-fork-ribbon.css" />
 	
@@ -39,7 +40,7 @@
 		</div>
 	</div>
 	
-    <div class="navbar">
+    <nav class="navbar">
       <div class="navbar-inner">
         <div class="container">
           <a class="brand" href="{{ HOME_PATH }}/">{{ site.title }}</a>
@@ -48,21 +49,18 @@
             {% assign group = 'navigation' %}
             {% include JB/pages_list %}
           </ul>
+			<iframe style="padding-top: 10px;" src="http://ghbtns.com/github-btn.html?user=davidgraeff&repo=scenecontrol&type=watch&count=true"  allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
         </div>
       </div>
-    </div>
+    </nav>
+
+      {{ content }}
 
     <div class="container">
-
-      <div class="content">
-        {{ content }}
-      </div>
-
       <footer>
 		  <p>This project is maintained by <a href="{{ site.githubrepo }}">{{ site.author.name }}</a>, &copy; {{ site.time | date: '%Y' }}<br/>
 		  <small>Hosted on GitHub Pages &mdash; Theme by <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a></small></p>
       </footer>
-
     </div> <!-- /container -->
   </body>
 </html>

@@ -10,7 +10,7 @@ pygments: true
 # so be sure to set them if your theme uses them.
 #
 title : SceneControl
-tagline: Home Automation
+tagline: Leicht zu bedienende Steuerungssoftware für eine einfach erweiterbare Heimautomatisierung.
 author :
   name : David Gräff
   email : david.graeff@web.remove.de

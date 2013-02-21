@@ -7,6 +7,7 @@ weight : 1
 ---
 {% include JB/setup %}
 
+<a href="https://travis-ci.org/davidgraeff/scenecontrol"><img src="https://travis-ci.org/davidgraeff/scenecontrol.png?branch=master" alt="Build Status"></a>
 
 <h1>Software bauen</h1>
 
@@ -62,5 +63,62 @@ generieren zu lassen den Befehl "make package" nutzen.</p>
 		<td align="center">libudev-dev</td>
 		<td align="right">Linux Input Events</td>
 		<td>Plugin: Linux_input_events</td>
+		</tr>
+		</table>
+
+		
+
+<h1>Mitgelieferte Plugins</h1>
+
+		<table>
+		<tr>
+		<th>Name</th>
+		<th>Typ</th>
+		<th>Beschreibung</th>
+		</tr>
+		<tr>
+		<td>Leds</td>
+		<td>Generisch</td>
+		<td>Generisches Leuchtdioden Plugin zur Verwaltung aller angemeldeten Leuchtdioden.</td>
+		</tr>
+		<tr>
+		<td>Schalter</td>
+		<td>Generisch</td>
+		<td>Generisches Schalter Plugin zur Verwaltung aller angemeldeten Schalter.</td>
+		</tr>
+		<tr>
+		<td>Time</td>
+		<td>Generisch</td>
+		<td>Bietet feste und periodische Zeitereignisse an.</td>
+		</tr>
+		<tr>
+		<td>WOL</td>
+		<td>Generisch</td>
+		<td>Wakeup on lan. Ermöglicht das starten eines über die angegebene MAC festgelegten PCs.</td>
+		</tr>
+		<tr>
+		<td>DMX/ArtNet</td>
+		<td>Hardware</td>
+		<td>Erlaubt die Steuerung von konfigurierten DMX Lampen über das Leds Plugin. Verwendet ArtNet, also ist eine Hardware Umsetzung IP--&gt;DMX notwendig.</td>
+		</tr>
+		<tr>
+		<td>Linux Input Events</td>
+		<td>OS Abhängig</td>
+		<td>Tastenereignisse vom Linux Input Framework (etwa usb Fernbedienungen, Tastaturen).</td>
+		</tr>
+		<tr>
+		<td>MPD</td>
+		<td>Softwarespezifisch</td>
+		<td>Steuert den Music Player Daemon.</td>
+		</tr>
+		<tr>
+		<td>XBMC</td>
+		<td>Softwarespezifisch</td>
+		<td> Steuert das XBox Media Center.</td>
+		</tr>
+		<tr>
+		<td>Pulseaudio</td>
+		<td>Softwarespezifisch</td>
+		<td>Steuert Lautstärkekanäle des Pulseaudio daemons.</td>
 		</tr>
 		</table>
