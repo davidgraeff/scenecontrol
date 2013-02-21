@@ -25,7 +25,7 @@ Usage:
 {% else %}
 
 	{% for weight in (1..10) %}
-		{% for p in site.pages %}
+		{% for p in pages_list %}
 			{% if p.title != null %}
 			{% if group == null or group == p.group %}
 			{% if p.weight == weight %}
@@ -37,7 +37,7 @@ Usage:
 			{% endif %}
 		{% endfor %}
 	{% endfor %}
-	{% for p in site.pages %}
+	{% for p in pages_list %}
 		{% if p.title != null %}
 		{% if group == null or group == p.group %}
 		{% if p.weight %}{% else %}
