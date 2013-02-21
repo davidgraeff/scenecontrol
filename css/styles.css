@@ -228,7 +228,7 @@ ul.getit {
   width:270px;
 }
 
-ul.getit li {
+ul.getit > li {
   width:89px;
   float:left;
   border-right:1px solid #d2d2d2;
@@ -245,7 +245,7 @@ ul.getit li:hover {
   background: linear-gradient(top, #D0D0D0 0%,#dddddd 100%);
 }
 
-ul.getit a {
+ul.getit > a {
   line-height:1;
   font-size:11px;
   color:#999;
@@ -255,17 +255,17 @@ ul.getit a {
   height:40px;
 }
 
-ul.getit li + li {
+ul.getit > li > li {
   width:88px;
   border-left:1px solid #fff;
 }
 
-ul.getit li + li + li {
+ul.getit > li > li > li {
   border-right:none;
   width:89px;
 }
 
-ul.getit a strong {
+ul.getit > a > strong {
   font-size:14px;
   display:block;
   color:#222;
