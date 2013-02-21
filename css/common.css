@@ -1,4 +1,6 @@
-
+html {
+overflow-y: scroll;
+}
 /*
 body {
   padding:20px;
@@ -225,10 +227,10 @@ float: right;
 /* Base class
 ------------------------- */
 .jumbotron {
+	margin:0;
   position: relative;
   padding: 20px 0;
   color: #fff;
-  text-align: center;
   background: #020031; /* Old browsers */
   background: -moz-linear-gradient(45deg,  #020031 0%, #6d3353 100%); /* FF3.6+ */
   background: -webkit-gradient(linear, left bottom, right top, color-stop(0%,#020031), color-stop(100%,#6d3353)); /* Chrome,Safari4+ */
@@ -241,26 +243,6 @@ float: right;
      -moz-box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
           box-shadow: inset 0 3px 7px rgba(0,0,0,.2), inset 0 -3px 7px rgba(0,0,0,.2);
 }
-.jumbotron h1 {
-  font-size: 80px;
-  font-weight: bold;
-  letter-spacing: -1px;
-  line-height: 1;
-   color: #fff;
-}
-.jumbotron p {
-  font-size: 24px;
-  font-weight: 300;
-  line-height: 1.25;
-  margin-bottom: 30px;
-}
-
-/* Pattern overlay
-------------------------- */
-.jumbotron .jumbotroncontainer {
-  position: relative;
-  z-index: 2;
-}
 .jumbotron:after {
   content: '';
   display: block;
@@ -272,6 +254,31 @@ float: right;
   background: url(../images/bs-docs-masthead-pattern.png) repeat center center;
   opacity: .4;
 }
+
+.jumbotron h1 {
+  font-size: 60px;
+  font-weight: bold;
+  letter-spacing: -1px;
+  line-height: 1;
+   color: #fff;
+}
+.jumbotron p {
+	float:left;
+	max-width:480px;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.25;
+  margin-bottom: 30px;
+}
+
+/* Pattern overlay
+------------------------- */
+.jumbotron > .container {
+  position: relative;
+  z-index: 2;
+}
+
+
 @media
 only screen and (-webkit-min-device-pixel-ratio: 2),
 only screen and (   min--moz-device-pixel-ratio: 2),
