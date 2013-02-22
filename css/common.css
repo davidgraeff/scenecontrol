@@ -1,83 +1,31 @@
 html {
 overflow-y: scroll;
 }
-
+/*
 h1, h2, h3, h4, h5, h6 {
   color:#222;
   margin:0 0 20px;
-}
+}*/
 
-p, ul, ol, table, pre, dl {
-  margin:0 0 20px;
-}
-
-h1, h2, h3 {
-  line-height:1.1;
-}
-
-h1 {
-  font-size:28px;
-}
-
-h2 {
-  color:#393939;
-}
-
-h3, h4, h5, h6 {
-  color:#494949;
-}
-
-/*
-body {
-  padding:20px;
-  font:14px/1.5 Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-weight:300;
-}
-
-a {
-  color:#39c;
-  font-weight:400;
-  text-decoration:none;
-}
-
-a small {
-  font-size:11px;
-  color:#777;
-  margin-top:-0.6em;
-  display:block;
-}
-
-.wrapper {
-  width:860px;
-  margin:0 auto;
-}
-
-blockquote {
-  border-left:1px solid #e5e5e5;
-  margin:0;
-  padding:0 0 0 20px;
-  font-style:italic;
-}
-
-code, pre {
-  font-family:Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
-  color:#333;
-  font-size:12px;
-}
-
-pre {
-  padding:8px 15px;
-  background: #f8f8f8;  
-  border-radius:5px;
-  border:1px solid #e5e5e5;
-  overflow-x: auto;
-}
-
-strong {
-  color:#222;
-  font-weight:700;
+.frontgradient {
+	background: #020031; /* Old browsers */
+	background: -moz-linear-gradient(45deg,  #020031 0%, #6d3353 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left bottom, right top, color-stop(0%,#020031), color-stop(100%,#6d3353)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* IE10+ */
+	background: linear-gradient(45deg,  #020031 0%,#6d3353 100%); /* W3C */
+	padding: 2px;  
+	border: 2px solid transparent;
+    border-radius: 4px;
+    background-origin: border-box;
+	margin-bottom:10px;
 }
 
 
 
-*/
+.frontgradient > div {
+	background: url(../images/bs-docs-masthead-pattern.png) repeat center center;
+	height:60px;width:100%;padding-top:10px;padding-left:10px;
+}
+.frontgradient h4 {color:#fff}

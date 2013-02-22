@@ -3,33 +3,47 @@ layout: page
 ---
 {% include JB/setup %}
 
-    <div class="row-fluid">
-      <div class="span4">
-        <img class="marketing-img" src="images/bs-docs-twitter-github.png">
-			<h2>Anwendungsgebiete</h2>
-			<ul class="smallul">
-			<li>Intelligenter Wecker</li>
-			<li>Energiesparsystem</li>
-			<li>Intelligenter Raum</li>
-			<li>Automatisiertes Heimkino</li>
-			</ul>
-		</div>
-      <div class="span4">
-        <img class="marketing-img" src="images/bs-docs-responsive-illustrations.png">
-        <h2>Made for everyone.</h2>
-	   SceneControl erfüllt Heimautomatisierungsaufgaben über eine robuste Prozess/Plugin Architektur. Ein <em>Always-ON</em> System wie z.B. der Rasberry PI wird vorausgesetzt.
+<div class="row-fluid">
+	<div class="span4">
+	<!--<img class="marketing-img" src="images/bs-docs-twitter-github.png">-->
+		<h2>Beispielanwendungen</h2>
+		<div class="frontgradient"><div>
+			<!--<img style="float:left;width:60;height:60px;" src="images/front_wecker.png">-->
+			<h4>Intelligenter Wecker</h4>
+			<a href="usecases/clock.html">Mehr erfahren</a>
+		</div></div>
+		<div class="frontgradient"><div>
+			<!--<img style="float:left;width:60;height:60px;" src="images/front_energy.png">-->
+			<h4>Energiesparsystem</h4>
+			<a href="usecases/energy_saving.html">Mehr erfahren</a>
+		</div></div>
+		<div class="frontgradient"><div>
+			<!--<img style="float:left;width:60;height:60px;" src="images/front_wecker.png">-->
+			<h4>Led/DMX Beleuchtung steuern</h4>
+			<a href="usecases/led_dmx.html">Mehr erfahren</a>
+		</div></div>
+		<div class="frontgradient"><div>
+			<!--<img style="float:left;width:60;height:60px;" src="images/front_wecker.png">-->
+			<h4>Automatisiertes Heimkino</h4>
+			<a href="usecases/homecinema.html">Mehr erfahren</a>
+		</div></div>
+	</div>
+	<div class="span4">
+		<img class="marketing-img" src="images/bs-docs-responsive-illustrations.png">
+		<h2>Made for everyone.</h2>
+		SceneControl erfüllt Heimautomatisierungsaufgaben über eine robuste Prozess/Plugin Architektur. Ein <em>Always-ON</em> System wie z.B. der Rasberry PI wird vorausgesetzt.
 		Über einen Editor im Webbrowser werden einfach Ereignisse, Bedingungen und Aktionen über Szenen verknüpft.
 		Einige Plugins, sowie die Basisfunktionalität von SceneControl kann von einer Android App gesteuert werden. 
-		</div>
-      <div class="span4">
-        <img class="marketing-img" src="images/bs-docs-bootstrap-features.png">
-			<h2>Eigenschaften</h2>
-			<ul class="smallul">
-			<li>Niedrige Ausfallrate durch Prozessarchitektur</li>
-			<li>Effizientes C++ Backend</li>
-			<li>Austauschbare Datenhaltung</li>
-			<li>JSON Kommunikationsformat für einfach zu erstellende Frontends (HTML-Editor, Android APP)</li>
-			</ul>
-      </div>
-    </div>
+	</div>
+	<div class="span4">
+		<img class="marketing-img" src="images/bs-docs-bootstrap-features.png">
+		<h2>Eigenschaften</h2>
+		<ul >
+		<li>Leichtgewichtiger, stabiler, mit Qt/C++ entwickelter Kernprozess. Funktionaliät über Pluginprozesse.</li>
+		<li>Steuerung über JSON API per TCP oder Websockets.</li>
+		<li>Optionaler Authentifizierungsdienst mit Zugriffsbeschränkung.</li>
+		<li>Leichte Einrichtung von Szenen über eine Webapplikation.</li>
+		</ul>
+	</div>
+</div>
 
