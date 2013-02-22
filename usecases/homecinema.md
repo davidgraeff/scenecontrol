@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Intelligenter Wecker
+title: Automatisiertes Heimkino
 tagline: 
 group: usecase
 comments: true

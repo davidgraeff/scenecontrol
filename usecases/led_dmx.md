@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Intelligenter Wecker
+title: Led/DMX Beleuchtung steuern
 tagline: 
 group: usecase
 comments: true

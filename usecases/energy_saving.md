@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Intelligenter Wecker
+title: Energiesparsystem
 tagline: 
 group: usecase
 comments: true
