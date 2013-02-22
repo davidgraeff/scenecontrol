@@ -1,4 +1,5 @@
 build/*
+_site/*
 
 *.kdev_include_paths
 .kdev4/*

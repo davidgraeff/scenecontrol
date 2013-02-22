@@ -1,8 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"setVolume", "name":"Lautstärke setzen",
-	"text":"Yamaha Lautstärke setzten auf {{value}}.",
-	"parameters": {
-		"value":{"name":"Wert", "type":"integer", "min":-800, "max":0, "value":-600,"step":5}
-	}
-}

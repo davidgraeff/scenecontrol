@@ -1,9 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"setSwitch", "name":"Schalter setzten",
-	"text":"Setze Schalter {{channel}} auf {{value}}",
-	"parameters": {
-		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"switches","indexproperty":"channel","textproperty":"name", "value":""},
-		"value":{"name":"Wert", "type":"boolean"}
-	}
-}

@@ -1,8 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"projector_sanyo_video", "name":"Videostumm",
-	"text":"Sanyo Z700 Projektor Video stumm: {{mute}}.",
-	"parameters": {
-		"mute":{"name":"Videostumm", "type":"boolean"}
-	}
-}

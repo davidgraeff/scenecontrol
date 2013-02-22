@@ -1,8 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"toggleSwitch", "name":"Schalter umschalten",
-	"text":"Schalter {{channel}} umschalten",
-	"parameters": {
-		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"switches","indexproperty":"channel","textproperty":"name", "value":""}
-	}
-}

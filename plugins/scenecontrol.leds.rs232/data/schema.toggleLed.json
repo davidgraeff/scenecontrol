@@ -1,9 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"toggleLed", "name":"Led umschalten",
-	"text":"Schalte Kanal {{channel}} um. Nutze {{fade}}.",
-	"parameters": {
-		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"leds","indexproperty":"channel","textproperty":"name", "value":""},
-		"fade":{"name":"Fade", "type":"enum", "value":0, "data":["Kein Überblenden", "Lineares Überblenden", "Spezielles Überblenden"] }
-	}
-}

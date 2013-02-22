@@ -1,9 +1,0 @@
-{
-	"type_":"schema", "targettype":"condition",
-	"method_":"isSwitchOn", "name":"Ist Schalter auf Wert?",
-	"text":"Ist Schalter {{channel}} an: {{value}}",
-	"parameters": {
-		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"switches","indexproperty":"channel","textproperty":"name", "value":""},
-		"value":{"name":"Wert", "type":"boolean"}
-	}
-}

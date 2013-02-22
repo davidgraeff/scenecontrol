@@ -1,9 +1,0 @@
-{
-	"type_":"schema", "targettype":"condition",
-	"method_":"isLedValue", "name":"Ist Led?",
-	"text":"Ist Led zwischen {{lower}} und {{upper}}?",
-	"parameters": {
-		"lower":{"name":"Mindestens", "type":"integer", "min":0, "max":255, "value":0},
-		"upper":{"name":"Maximal", "type":"integer", "min":0, "max":255, "value":0}
-	}
-}
