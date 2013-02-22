@@ -3,7 +3,16 @@
 	border:1px solid #cacaca;
 	overflow-x:hidden;
 	font:13px helvetica, arial, freesans, clean, sans-serif;
-	background:#dedede
+	background:#dedede;
+	width: 370px;
+}
+
+#latest-commits-widget .clearfix{
+	clear: both;
+}
+
+#latest-commits-widget .left{
+	float:left;
 }
 
 #latest-commits-widget a,#latest-commits-widget a:visited{
@@ -57,12 +66,12 @@
 #latest-commits-widget ul#commit-history li .commit-avatar{
 	margin-right:10px;
 	margin-top:5px;
-	height:50px;width:50px;border-radius:4px;border:1px solid #dedede;
+	height:80px;width:80px;border-radius:4px;border:1px solid #dedede;
 }
 
 
 #latest-commits-widget ul#commit-history li .commit-author-info {
 	padding-top: 5px;
-	width: 500px;
+	float:right;
 }
  

@@ -1,50 +1,68 @@
 ---
 layout: page
-title: Entwicklung
+title: Mitmachen
 header: Weiterentwicklung und Mithilfe
+tagline: Weiterentwicklung und Mithilfe
 group: navigation
 weight : 8
 ---
 {% include JB/setup %}
 
+<div class="row">
+	<div class="span7">
+		<p>
+		Um ein erstes Verständnis für die Architektur von SceneControl zu erhalten, sind die Dokumenationsseiten lesenswert.
+		Sollte der <a href="documentation.html#sceneserver" title="Entwickler Dokumentation">SceneServer</a> oder eines der
+		mitgelieferten Plugins Fehler aufweisen oder sich falsch verhalten, melde das bitte im
+		<a href="{{ site.githubrepo }}/issues/new" title="GitHub Ticket erstellen" target="_blank">GitHub Bug Tracker</a>.
+		Auf dieser Seite befindet sich außerdem die Roadmap für die nächsten Monate. Tickets für die Roadmap
+		werden über die GitHub Issues Seite verwaltet.
+		</p>
+		
+		<h2>Roadmap</h2>
 
-	<h2>Weiterentwicklung:</h2>
+		<table class="table table-striped" id="issues">
+			<thead>
+			<tr class="issuesheader">
+				<th>Zeitraum</th>
+				<th>Titel</th>
+				<th>Beschreibung</th>
+			</tr>
+			</thead>
+			<tbody id="issuesbody">
+			
+			</tbody>
+		</table>
+		<p><a class="btn btn-mini btn-info" href="{{ site.githubrepo }}/issues/new" title="GitHub Ticket erstellen" target="_blank"><i class="icon-comment icon-white"></i> Neues Ticket erstellen</a></p>
+	</div><div class="span5">
+		<link rel="stylesheet" href="{{ HOME_PATH }}/css/latestcommits.css">
+		<script type="text/javascript" src="{{ HOME_PATH }}/js/github-latest-commits.js"></script>
+		<div style="float:right" id="latest-commits-widget"  data-username="davidgraeff" data-repo="scenecontrol" data-limit="1">
+			<div id="latest-commits-header">
+				<div class="gh-ico"></div>
+				<h4>Letzte Änderung</h4>
+			</div>
+			<ul id="commit-history"></ul>
+		</div>
+	</div>
+</div>
 
-			<table>
-			<tr>
-			<th>Zeitraum</th>
-			<th>Komponente</th>
-			<th>Beschreibung</th>
-			</tr>
-			<tr>
-			<td>1. Quartal 2013</td>
-			<td>Plugin: dmx/artnet</td>
-			<td>libartnet Unterstützung um DMX Lampen nutzen zu können</td>
-			</tr>
-			<tr>
-			<td>1. Quartal 2013</td>
-			<td>Build Scripts</td>
-			<td>Script um 3rd Party Repositories vor dem Build zu integrieren</td>
-			</tr>
-			<tr>
-			<td>1. Quartal 2013</td>
-			<td>Build Scripts</td>
-			<td>Ubuntu PPA Build einrichten</td>
-			</tr>
-			<tr>
-			<td>2. Quartal 2013</td>
-			<td>Dokumentation</td>
-			<td>Strukturierte Webseite, Anleitungen, Architekturschaubilder, Screenshots</td>
-			</tr>
-			<tr>
-			<td>2. Quartal 2013</td>
-			<td>SessionProxy</td>
-			<td>Authentifizierung für den Control Socket</td>
-			</tr>
-			<tr>
-			<td>2. Quartal 2013</td>
-			<td>Android App</td>
-			<td>Modulare Plugin Unterstützung statt monolitischer Block</td>
-			</tr>
-			</table>
-
+	<script>
+		$(function() {
+			window.refreshIssuesData(function(data) {
+				var $issues = $("#issuesbody");
+				$("issuerow").remove();
+				for (var c = 0;c<data.length;++c) {
+					var row = data[c];
+					var milestone = "kein Milestone";
+					if (row.milestone)
+						milestone = row.milestone.title;
+					console.log(milestone+" "+row.title, $issues);
+					$("latest-commits-header").append("<div>HALLO</div>");
+					$issues.append("<tr class='issuerow'><td>"+milestone+"</td><td>"+row.title+"</td><td>"+row.body+"</td></tr>");
+				}
+			});
+		});
+	</script>
+	
+	
