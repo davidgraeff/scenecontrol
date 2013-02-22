@@ -5,27 +5,28 @@
 <div class="content">
 
 	<div class="row">
-	<div class="span8">
-		{{ content }}
-		<hr>
-		{% include JB/comments %}
-	</div>
+		<div class="span8">
+			{{ content }}
+			<hr>
+			{% include JB/comments %}
+		</div>
 	
-	<div class="span4">
-		<h4>Inhalt</h4>
-			<ul class="nav nav-tabs nav-stacked">
-				{% assign pages_list = site.pages %}
-				{% assign group = 'documentation' %}
-				{% include JB/pages_list %}
+		<div class="span4">
+			<h4>Inhalt</h4>
+				<ul class="nav nav-tabs nav-stacked">
+					{% assign pages_list = site.pages %}
+					{% assign group = 'documentation' %}
+					{% include JB/pages_list %}
+				</ul>
+				
+		{% unless page.tags == empty %}
+			<h4>Tags</h4>
+			<ul class="tag_box">
+			{% assign tags_list = page.tags %}
+			{% include JB/tags_list %}
 			</ul>
-			
-	{% unless page.tags == empty %}
-		<h4>Tags</h4>
-		<ul class="tag_box">
-		{% assign tags_list = page.tags %}
-		{% include JB/tags_list %}
-		</ul>
-	{% endunless %}  
+		{% endunless %}  
+		</div>
 	</div>
-	</div>
-</div></div>
+	<a style="float:right;margin-top:1em;" href="#"><i class="icon-arrow-up"></i>Nach oben</a>
+</div>
