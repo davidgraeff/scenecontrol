@@ -1,0 +1,90 @@
+<div class="container">
+	<canvas id="canvas" data-role='content'>
+		<span class="error">Your browser does not support<br>the HTML5 &lt;canvas&gt; element</span>
+	</canvas>
+</div>
+
+<footer id="scenefooter"> 
+	<div class="container"><div class="navbar-inner">
+		<span>Szene: <small>Keine Szene ausgewählt</small></span>
+		<div class="btn-group">
+			<a id="btnChangeSceneName" class="btn">Namen ändern</a>
+			<a id="btnChangeTags" class="btn">Kategorien</a>
+			<a id="btnAddSceneItem" class="btn">Element hinzufügen</a>
+		</div>
+	</div></div>
+</footer> 
+
+
+
+<!-- Create new scene popup -->
+<div data-role="popup" id="editscenenamepopup" data-overlay-theme="a" class="popup">
+	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+	<div data-role="header" data-theme="a" class="ui-corner-top">
+		<h1>Name der Szene</h1>
+	</div>
+	<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+		<form><input type="text" placeholder="Name" id="editscenename" name="editscenename" value=""  /></form>
+		<a id="btnConfirmEditScenename" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Namen bestätigen</a>  
+	</div>
+</div>
+
+<!-- Edit scene popup -->
+<div data-role="popup" id="sceneitemedit" data-overlay-theme="a" class="popup">
+	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+	<div data-role="header" data-theme="a" class="ui-corner-top">
+		<span id="sceneitemname"></span>
+	</div>
+	<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+		<span id="sceneitemsubname"></span>
+		<form class="itemform" id="sceneitemform">
+			<ul id="sceneitemproperties" class="itemcontrols" data-role="listview" data-inset="true" data-divider-theme="c">
+			</ul>
+		</form>
+		
+		<a id="btnSaveSceneItem" data-role="button" data-inline="true" data-transition="flow" data-icon="check" data-theme="b" >Speichern</a>  
+		<a id="btnRemoveSceneItem" data-role="button" data-inline="true" data-transition="flow" data-icon="minus" data-theme="b">Löschen</a>  
+	</div>
+</div>
+
+<!-- Create new event, condition, action -->
+<div data-role="popup" id="newsceneitempopup" data-overlay-theme="a" class="popup">
+	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+	<div data-role="header" data-theme="a" class="ui-corner-top">
+		<h3><span class="currentscene"></span>: <span class="newsceneitemtitle"></span></h3>
+	</div>
+	<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+		<span class="currentscene"></span>: <span class="newsceneitemtitle"></span>
+		<form>
+			<fieldset id="sceneitem_type" data-role="controlgroup" data-type="horizontal" data-mini="true">
+				<input type="radio" name="type_" id="sceneitem_type_event" value="event" checked="checked" />
+				<label for="sceneitem_type_event">Ereignis</label>
+				<input type="radio" name="type_" id="sceneitem_type_condition" value="condition" checked="checked" />
+				<label for="sceneitem_type_condition">Bedingung</label>
+				<input type="radio" name="type_" id="sceneitem_type_action" value="action" checked="checked" />
+				<label for="sceneitem_type_action">Aktion</label>
+			</fieldset>
+			<select name="componentid_" id="sceneitem_componentid" ></select>
+			<select name="method_" id="sceneitem_method" ></select>
+		</form>
+		<a id="btnConfirmSceneitem" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Erstellen</a>  
+	</div>
+</div>
+
+<!-- Change scene tags -->
+<div data-role="popup" id="scenetagspopup" data-overlay-theme="a" class="popup">
+	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
+	<div data-role="header" data-theme="a" class="ui-corner-top">
+		<h1><span class="currentscene"></span></h1>
+	</div>
+	<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+		<form>
+		<label for="scenetags"><span class="currentscene"></span>-Kategorien (Komma separiert):</label>
+		<textarea placeholder="Kategorien" id="scenetags" name="scenetags"></textarea>
+		</form>
+		<a id="btnConfirmScenetags" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Kategorien ändern</a>  
+	</div>
+</div>
+
+<script src="js/sceneitems.js"></script>
+<script src="js/sceneCanvas.js"></script>

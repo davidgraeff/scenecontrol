@@ -1,7 +1,7 @@
 (function (document, websocketInstance, storageInstance) {
 	"use strict";
 	
-	$(document).on('pageinit', function() {
+	$(function() {
 		$("#servernameandport").val(websocketInstance.defaultHostAndPort());
 		
 		$('#btnConnectToServer').on('click', function() {
@@ -27,9 +27,22 @@
 	});
 
 	$(storageInstance).on('onloadcomplete', function() {
-		$.mobile.changePage('scenelist.html', {transition: 'none'});
+		window.loadPage('scenelist');
 		$.mobile.loading( 'hide' );
 	});
+	
+	window.prepareLinks = function() {
+		
+	}
+	
+	window.loadPage = function(pageid) {
+		$('#maincontent').load('pages/'+pageid+'.html');
+		prepareLinks();
+	}
+	
+	// dummies
+	$.mobile = {loading:function(){},hide:function(){},silentScroll:function(){}}
+	
 })(document, websocketInstance, storageInstance);
 
 // jquery plugin for handlebars

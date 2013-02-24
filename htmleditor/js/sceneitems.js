@@ -8,11 +8,13 @@
 	var templateSceneServiceItem;
 
 	// All button click events
-	$(document).one('pageinit', function() {
+	$(function() {
 		var scene = storageInstance.scenes[CurrentScene.id];
 		
-		if (!websocketInstance.connected || scene==null)
-			window.location = 'index.html';
+		if (scene==null) {
+			//window.location = 'index.html';
+			console.warn("FAIL: Scene not set",CurrentScene.id);
+		}
 		$(document).off(".sceneitemspage");
 				
 		var shift= null;
@@ -158,7 +160,7 @@
 		
 		function resizecanvas() {
 			canvas.width=parseInt($canvas.css('width'));
-			canvas.height = $canvas.parent().height()-50; // - header
+			canvas.height = $canvas.parent().height()-120; // - header
 			if (!sceneCanvas.init) {
 				SceneItemsUIHelper.load(scene);
 				sceneCanvas.init = true;

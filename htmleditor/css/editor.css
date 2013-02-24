@@ -12,6 +12,44 @@
 	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
 }
 
+html,
+body {
+height: 100%;
+/* The html and body elements cannot have any padding or margin. */
+}
+
+
+/* Set the fixed height of the footer here */
+footer {
+	bottom: 0px;
+	left:0px;
+	right:0px;
+	position: fixed;
+	padding-top:10px;
+}
+
+footer .btn-group {
+	float: right;
+	padding-top: 5px;
+}
+
+.push {
+	height: 80px;
+}
+
+.popup {
+	display: none;
+}
+/* Lastly, apply responsive CSS fixes as necessary */
+@media (max-width: 767px) {
+	footer {
+		margin-left: -20px;
+		margin-right: -20px;
+		padding-left: 20px;
+		padding-right: 20px;
+	}
+}
+      
 #newsceneitempopup {
 	min-width: 360px;
 }
@@ -50,4 +88,4 @@ a.HeaderButton {
 	display:none;
 }
 
-#canvas { outline: none; cursor: default; padding: 0px;background-image:url(brushed-silver-metallic-background.jpg); width:100%;  }
+#canvas { outline: none; cursor: default; padding: 0px;background-image:url(../img/brushed-silver-metallic-background.jpg); width:100%;  }
