@@ -1,16 +1,12 @@
-<div class="container">
-	<ul id="scenelist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
-		data-split-theme="d" data-split-icon="check" data-inset="true" data-role="listview"
-		data-theme="d" data-divider-theme="d" >
-		<li id="scenelist_cat_none" data-role="list-divider">Unkategorisiert</li>
-	</ul>
+<div class="container" id="scenelists">
+
 </div>
 <div class="push"></div>
 
 <footer id="scenefooter"> 
 	<div class="container"><div class="navbar-inner">
-		<div class="btn-group">
-			<a class="btn" id="btnAddScene"><i class="icon-plus"></i>Neue Szene</a>
+		<div class="btn-group right">
+			<a href="#" class="btn" id="btnAddScene"><i class="icon-plus"></i>Neue Szene</a>
 			<a class="btn" id="btnRemoveSelectedScenes"><i class="icon-remove"></i>Markierte entfernen</a>
 		</div>
 	</div></div>
@@ -18,35 +14,49 @@
 
 <!-- Template: Scene entry -->
 <script id="sceneitem-template" type="text/x-handlebars-template">
-	<li data-sceneid="{{sceneid}}" data-selected="0" data-icon="false">
-		<a class="btnSetScene">{{name}}</a>
-		<a class="btnSelectScene">Markieren</a>
-		<span class="ui-li-count">{{counter}}</span>
+	<li data-sceneid="{{sceneid}}" data-selected="0" class="thumbnail sceneListItem unselectedSceneListItem ">
+		<a href="#no" class="btnSetScene">{{name}}</a>
+		<span class="badge badge-info">{{counter}}</span>
+		<a href="#no" class="btnSelectScene" data-sceneid="{{sceneid}}" title="Markieren"><i class="icon-check"></i> </a>
 	</li>
 </script>
+<script id="sceneitem-cat-template" type="text/x-handlebars-template">
+	<ul id="{{catid}}" class="thumbnails span5 sceneitemsul">
+		<div id="{{catid}}_name" class="label label-inverse span4">{{name}}</div>
+		
+	</ul>
+</script>
+
 
 <!-- Remove scene confirmation popup -->
-<div data-role="popup" id="removepopup" data-overlay-theme="a" class="popup">
-	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
-	<div data-role="header" data-theme="a" class="ui-corner-top">
-		<h1>Szenen löschen?</h1>
+<div class="modal fade" id="removepopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<h3>Szenen löschen?</h3>
 	</div>
-	<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+	<div class="modal-body">
 		<p>Diese Aktion kann nicht rückgängig gemacht werden.<br />
 		Möchtest du "<span class="currentrmscene"></span>" Szenen wirklich entfernen?</p>
-		<a id="btnRemoveSelectedScenesConfirm" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Entfernen</a>  
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnRemoveSelectedScenesConfirm" class="btn btn-primary">Entfernen</a>  
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
 	</div>
 </div>
 
 <!-- Create new scene popup -->
-<div data-role="popup" id="newscenepopup" data-overlay-theme="a" class="popup">
-	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
-	<div data-role="header" data-theme="a" class="ui-corner-top">
-		<h1>Name der Szene</h1>
+<div class="modal fade" id="newscenepopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<h3>Name der Szene</h3>
 	</div>
-	<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
+	<div class="modal-body">
 		<form><input type="text" placeholder="Name" id="newscenename" name="newscenename" value=""  /></form>
-		<a id="btnConfirmNewScenename" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Namen bestätigen</a>  
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnConfirmNewScenename" class="btn btn-primary">Namen bestätigen</a>  
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
 	</div>
 </div>
+
 <script src="js/scenelist.js"></script>

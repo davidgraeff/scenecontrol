@@ -206,6 +206,7 @@
 			}
 			
 			this.draw();
+			//window.location =  this.canvas.toDataURL("image/png");
 		},
 		
 		store: function() {
@@ -238,7 +239,7 @@
 	};
 
 	// unlink all event handlers of namespace sceneitems
-	$(document).off(".sceneitems"); 
+	$(storageInstance).off(".sceneitems"); 
 	// connect event handlers
 	$(storageInstance).on('onevent.sceneitems', function(d, flags) {
 		if (flags.doc.sceneid_ != CurrentScene.id)

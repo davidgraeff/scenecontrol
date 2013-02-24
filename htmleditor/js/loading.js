@@ -1,11 +1,27 @@
 (function (document, websocketInstance, storageInstance) {
 	"use strict";
 	
+	$.ajaxSetup ({
+		// Disable caching of AJAX responses
+		cache: false
+	});
+		
 	$(function() {
-		$("#servernameandport").val(websocketInstance.defaultHostAndPort());
+		var rememeber = localStorage.getItem("storehostAndPort");
+		if (remember)
+			$("#servernameandport").val(localStorage.getItem("hostAndPort"));
+		else
+			$("#servernameandport").val(websocketInstance.defaultHostAndPort());
+		
+		$("header nav").addClass("hidden");
 		
 		$('#btnConnectToServer').on('click', function() {
 			$.mobile.loading( 'show', { theme: "b", text: "Lade Dokumente", textonly: false });
+			var rememeber = $("#remember").val();
+			if (rememeber==true) {
+				localStorage.setItem("hostAndPort", hostAndPort);
+			}
+			localStorage.setItem("storehostAndPort", remember);
 			websocketInstance.setHostAndPort($("#servernameandport").val(), false);
 			websocketInstance.reconnect();
 		});
@@ -21,6 +37,7 @@
 	});
 	
 	$(websocketInstance).on('onopen', function() {
+		$("header nav").removeClass("hidden");
 		websocketInstance.requestAllDocuments();
 		websocketInstance.registerNotifier();
 		websocketInstance.requestAllProperties();
@@ -32,7 +49,11 @@
 	});
 	
 	window.prepareLinks = function() {
-		
+		$('.autolink').on('click', function() {
+			var ref = this.href.split("#")[1];
+			if (ref)
+				loadPage(ref);
+		});
 	}
 	
 	window.loadPage = function(pageid) {
@@ -58,5 +79,16 @@
 		}
 		
 		this.after(ctx(data));
+	};
+	$.fn.handlebarsAppend = function(template, data) {
+		var ctx;
+		if (compiled[template]!=null)
+			ctx = compiled[template];
+		else {
+			ctx = Handlebars.compile($(template).html());
+			compiled[template] = ctx;
+		}
+		
+		this.append(ctx(data));
 	};
 })(jQuery);

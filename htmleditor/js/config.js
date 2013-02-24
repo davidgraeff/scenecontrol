@@ -4,8 +4,7 @@ var templateConfigServiceItem;
 
 // All button click events
 $(document).one('pageinit', function() {
-	if (!websocketInstance.connected)
-		window.location = 'index.html';
+
 	$(document).off(".configpage");
 	$.mobile.loading( 'show', { theme: "b", text: "Verarbeite Dokumente", textonly: false });
 	// precompile templates

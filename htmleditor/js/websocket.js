@@ -11,12 +11,10 @@
 		that.url;
 		
 		this.defaultHostAndPort = function() {
-			var v = localStorage.getItem("hostAndPort");
-			return v ? v : "127.0.0.1:3102";
+			return  "127.0.0.1:3102";
 		}
 		
 		this.setHostAndPort = function(hostAndPort, useWSS) {
-			localStorage.setItem("hostAndPort", hostAndPort);
 			that.url = ((useWSS)?"wss://":"ws://")+hostAndPort;
 		}
 		this.requestAllDocuments = function() {
@@ -35,8 +33,8 @@
 			this.write({"componentid_":"server", "type_":"execute", "method_":"version"});
 		}
 		
-		this.runcollection = function() {
-			this.write({"componentid_":"server", "type_":"execute", "method_":"runcollection"});
+		this.runcollection = function(sceneid) {
+			this.write({"componentid_":"server", "type_":"execute", "method_":"runcollection", "sceneid_": sceneid});
 		}
 		
 		this.createScene = function(name) {

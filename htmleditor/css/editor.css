@@ -28,18 +28,33 @@ footer {
 	padding-top:10px;
 }
 
-footer .btn-group {
+footer .navbar {
+	margin: 0;
+}
+
+footer .right {
 	float: right;
 	padding-top: 5px;
+}
+
+footer .left {
+	float: left;
+	padding-top: 5px;
+}
+
+.hidden {
+	display: none;
 }
 
 .push {
 	height: 80px;
 }
 
-.popup {
-	display: none;
+.sceneitemsul > div {
+	margin-bottom: 1em;
 }
+
+
 /* Lastly, apply responsive CSS fixes as necessary */
 @media (max-width: 767px) {
 	footer {
@@ -50,14 +65,17 @@ footer .btn-group {
 	}
 }
       
-#newsceneitempopup {
+/*#newsceneitempopup {
 	min-width: 360px;
+}*/
+
+.selectedSceneListItem > a{
+	color: white !important;
+	text-shadow: 0 1px 1px #194B7E;
 }
 
 .selectedSceneListItem {
 	background: #396B9E;
-	color: white !important;
-	text-shadow: 0 1px 1px #194B7E;
 	background-image: -webkit-linear-gradient( #5F9CC5,#396B9E );
 	background-image: -moz-linear-gradient( #5F9CC5,#396B9E );
 	background-image: -ms-linear-gradient( #5F9CC5,#396B9E );
@@ -65,24 +83,35 @@ footer .btn-group {
 	background-image: linear-gradient( #5F9CC5,#396B9E );
 }
 
-@media only screen and (min-width: 1025px){
-	.ui-page,.ui-footer {
-		width: 960px !important;
-		margin: 0 auto !important;
-	}
-	.ui-page {
-		border-right: 5px #666 outset !important;
-		border-left: 5px #666 outset !important;
-		position: relative !important;
-	}
-	.ui-overlay-d{
-		background: #333;
+.unselectedSceneListItem {
+	background: #f9fBFE;
+}
+
+.sceneListItem {
+	width:160px;
+	height:100px;
+	position:relative;
+	padding:0
+}
+
+@media (max-width: 480px) {
+	.sceneListItem {
+		width:100%;
+		height:30px;
 	}
 }
-/*
-a.HeaderButton {
-	float:right;text-align:right;margin:.3em 0
-}*/
+
+.sceneListItem .btnSetScene {
+	text-align:center;margin:5px;display:block;
+}
+
+.sceneListItem .badge {
+	position:absolute;bottom:0px;right:0px;margin-right:5px;margin-bottom:5px
+}
+
+.sceneListItem .btnSelectScene {
+	position:absolute;bottom:0px;left:0px;margin-left:5px;margin-bottom:5px
+}
 
 .hidden {
 	display:none;
