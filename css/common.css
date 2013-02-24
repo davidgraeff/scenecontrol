@@ -20,12 +20,18 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 4px;
     background-origin: border-box;
 	margin-bottom:10px;
+	position: relative;
 }
 
-
-
-.frontgradient > div {
+.frontgradient > a {
 	background: url(../images/bs-docs-masthead-pattern.png) repeat center center;
-	height:60px;width:100%;padding-top:10px;padding-left:10px;
+	height:60px;width:100%;padding-top:10px;padding-left:10px;display:block;opacity:0.7;
 }
+
+.frontgradient > a:hover {
+	opacity:1.0;
+}
+
+.frontgradient .exampletxt {bottom:0;right:0;margin:5px;position:absolute;color:#fff;opacity:0.4;font-style:italic;}
+
 .frontgradient h4 {color:#fff}
