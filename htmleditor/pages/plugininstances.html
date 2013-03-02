@@ -1,78 +1,60 @@
-<script src="config.js"></script>
-
-<div data-role="header" data-position="fixed" data-theme='d'>
-	<h1>Plugin: <span class="currentplugin">Keines ausgewählt</span></h1>
-</div>
-
-<div data-role='content'>
-	
-	<div class='content-secondary' id='leftconfigpanel'>
-			<script id="configitem-template" type="text/x-handlebars-template">
-				<li data-icon="false" data-id="{{id}}" id="li{{id}}" data-selected="0">
-					<a href="javascript:setPlugin('{{id}}');">{{name}}</a>
-					<span class="ui-li-count">{{counter}}</span>
-				</li>
-			</script>
-			<ul id="configlist" data-scroll="true" data-filter="true" data-filter-placeholder="Filter nach Namen..."
-				data-split-theme="d" data-split-icon="check" data-inset="true" data-role="listview"
-				data-theme="d" data-divider-theme="d" >
-				<li id="pluginlistheader" data-role="list-divider">Plugins</li>
-			</ul>
-	</div><!-- leftside -->
-	
-	<div class='content-primary' id='rightconfigpanel'>
+<div class="container">
+	<div class="span3">
+		<script id="configitem-template" type="text/x-handlebars-template">
+		<button class="btn btnPlugininstance" data-pluginid="{{id}}"><span class="badge">{{counter}}</span> {{name}}</button>	
+		</script>
+		<h3>Plugins</h3>
+		<div id="configlist" class="btn-group btn-group-vertical">
+		</div>
+	</div>
+	<div class='span8'>
 		<script id="configitem-service-template" type="text/x-handlebars-template">
 			<form class="itemform animated fadeInDown" id="{{formid}}" data-configid="{{configid}}" data-componentid="{{componentid}}">
-				<ul class="itemcontrols" data-role="listview" data-inset="true" data-divider-theme="{{typetheme}}">
-					<li data-role="list-divider">
-						<a class="btnSaveConfigitem HeaderButton" data-role="button" data-theme="{{typetheme}}" data-icon="check" data-iconpos="notext">Speichern</a>
-						<a class="btnRemoveConfigitem HeaderButton" data-role="button" data-theme="{{typetheme}}" data-icon="minus" data-iconpos="notext">Löschen</a>
+				<ul class="itemcontrols">
+					<li>
+						<a class="btnSaveConfigitem HeaderButton">Speichern</a>
+						<a class="btnRemoveConfigitem HeaderButton">Löschen</a>
 						<small style="float:left;">{{type}}</small>
 						<center>{{name}}<br />{{subname}}</center>
 					</li>
 				</ul>
 			</form>
 		</script>
-		<div id="helptextconfig">
-			<h3>Konfigurationshinweise</h3>
-			<p>Der SceneServer&trade; organisiert seine Funktionalität in Form von Plugins. Ein PLugin stellt Kontakt zu einer bestimmten
-			Hardware her (z.B. HiFi-Receiver, Projektor, Licht) oder bietet bestimmte Funktionalität an (z.B. Ereignisauslösung durch Zeitpunkt, Steuerung
-			des Medienplayers).</p>
-			<p>Um die Möglichkeit zu bieten, mehrere gleichartige Geräte oder Software anzusteuern, können von einem Plugin mehrere Kopien (Instanzen)
-			gestartet werden. Für ein Plugin können daher mehrere Konfigurationen eingerichtet werden. Der SceneServer&trade; wertet die Konfigurationen
-			aus und startet die benötigte Anzahl von Plugins.</p>
-			<p>Im linken Bereich dieser Seite sind die installierten Plugins aufgelistet. Sobald ein Eintrag ausgewählt wurde, wird die
-			Hauptansicht, wo sich aktuell dieser Text befindet, mit den eingerichteten Konfiguration gefüllt.
-			Konfigurationen können durch das Minussymbol im oberen, linken Bereich der jeweiligen Konfiguration gelöscht werden.
-			Die zugehörige Plugininstanz wird dadurch vom SceneServer&trade; beendet. Im unteren, rechten Bereich kann mit der Schaltfläche
-			"Konfiguration erstellen" eine neue Konfiguration erstellt werden. Sobald diese gespeichert wurde, wird der SceneServer&trade;
-			eine entsprechene Plugininstanz starten.
-			</p>
-		</div>
 		<div id="configservices"></div>
-	</div><!-- rightside -->
-</div><!-- /content -->
-
-<div data-role="footer" data-position="fixed" data-theme='d'> 
-	<div class="ui-grid-a ui-bar">
-		<div class="ui-block-a"><div data-role="controlgroup" data-type="horizontal">
-			<a id="btnAddConfiguration" data-role="button" data-icon="plus" data-mini="true">Konfiguration hinzufügen</a>
-		</div></div>
-		<div class="ui-block-b"><span style="float:right"><div data-role="controlgroup" data-type="horizontal">
-			<a id="btnGotoScenes" data-role="button" data-icon="gear" data-mini="true" data-inline="true">Szenen</a>
-		</div></span></div>
-	</div>
-</div> 
-
-<!-- Create new config popup -->
-<div data-role="popup" id="configinstancepopup" data-overlay-theme="a">
-	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right">Close</a>
-	<div data-role="header" data-theme="a" class="ui-corner-top">
-		<h1>Name der Plugin Instanz</h1>
-	</div>
-	<div data-role="content" data-theme="d" class="ui-corner-bottom ui-content">
-		<p>Wähle einen KonfigurationsinstanzID aus.<br/>Bereits verwendete IDs können nicht genutzt werden.</p>
-		<form><input type="text" placeholder="Name" id="newconfiginstance" name="newconfiginstance" value=""  /></form>
-		<a id="btnConfirmConfiginstance" data-role="button" data-inline="true" data-transition="flow" data-theme="b" style="width:100%">Konfigurationsinstanz erstellen</a>  
 	</div>
 </div>
+
+<footer> 
+	<div class="container"><div class="navbar-inner">
+		<div class="btn-group left">
+			<a id="btnBack" class="btn"><i class="icon-home"></i> Zurück</a>
+		</div>
+		<div class="navbar"><button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".footer-nav-collapse">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		</button></div>
+		<div class="btn-group right footer-nav-collapse nav-collapse collapse">
+			<a href="#" class="btn btn-info" id="btnAddConfiguration"><i class="icon-plus"></i> Neue Instanz</a>
+			<a href="#" class="btn btn-danger" id="btnRemoveSelectedScenes"><i class="icon-remove"></i> Markierte entfernen</a>
+		</div>
+	</div></div>
+</footer> 
+
+<!-- Create new config popup -->
+<div class="elemhidden modal fade" id="configinstancepopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<h3>Name der Plugin Instanz</h3>
+	</div>
+	<div class="modal-body">
+		<p>Wähle einen KonfigurationsinstanzID aus.<br/>Bereits verwendete IDs können nicht genutzt werden.</p>
+		<form><input type="text" placeholder="Name" id="newconfiginstance" name="newconfiginstance" value=""  /></form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnConfirmConfiginstance" class="btn btn-primary">Konfigurationsinstanz erstellen</a>  
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
+	</div>
+</div>
+
+<script src="js/config.js"></script>

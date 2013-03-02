@@ -12,6 +12,7 @@
 		
 		set: function(sceneid) {
 			CurrentScene.id = sceneid;
+			websocketInstance.startMonitorScene(sceneid);
 		},
 		
 		isValid: function() {
@@ -39,8 +40,8 @@
 		},
 		
 		getTags: function() {
-			var cats = storageInstance.scenes[CurrentScene.id].categories;
-			return (cats instanceof Array) ? cats.join(",") : "";
+			var tags = storageInstance.scenes[CurrentScene.id].categories;
+			return (tags instanceof Array) ? tags.join(",") : "";
 		},
 		
 		setTags: function(taglist) {

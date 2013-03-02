@@ -21,6 +21,10 @@
 			this.write({"componentid_":"server", "type_":"execute", "method_":"fetchAllDocuments"});
 		}
 		
+		this.startMonitorScene = function(sceneid) {
+			this.write({"componentid_":"server", "type_":"execute", "method_":"startMonitor", "monitor": "scene", "sceneid_": sceneid});
+		}
+		
 		this.registerNotifier = function() {
 			this.write({"componentid_":"server", "type_":"execute", "method_":"registerNotifier"});
 		}

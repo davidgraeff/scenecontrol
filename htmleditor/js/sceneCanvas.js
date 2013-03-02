@@ -5,19 +5,18 @@
  */
 (function (window) {
 	"use strict";
-	window.sceneCanvas = {
-		/*
-		* Based on Finite State Machine Designer (http://madebyevan.com/fsm/)
-		* License: MIT License, Finite State Machine Designer Copyright (c) 2010 Evan Wallace
-		*/
-		canvas: null,
-		ctx: null,
-		nodes: [],
-		links: [],
+	window.sceneCanvas = function() {
+		this.canvas = null;
+		this.ctx = null;
+		this.scene = null;
+		this.nodes = [];
+		this.links = [];
 		
-		selectedObject: null, // either a Link or a Node
-		currentLink: null, // a Link
- 
+		this.selectedObject = null; // either a Link or a Node
+		this.currentLink = null; // a Link
+	}
+	
+	window.sceneCanvas.prototype = {
 		setCanvas: function(canvas) {
 			this.canvas = canvas;
 			this.ctx = canvas.getContext('2d');
@@ -153,10 +152,33 @@
 		},
  
 		load: function(scene) {
+			this.unload();
 			this.scene = scene;
-			this.nodes = [];
-			this.links = [];
-			this.currentLink = null;
+
+			// connect event handlers
+			$(storageInstance).on('onevent.sceneitems', function(d, flags) {
+				if (flags.doc.sceneid_ != sceneCanvas.scene.id_)
+					return;
+				
+				if (!flags.removed)
+					sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
+			});
+
+			$(storageInstance).on('oncondition.sceneitems', function(d, flags) {
+				if (flags.doc.sceneid_ != sceneCanvas.scene.id_)
+					return;
+				
+				if (!flags.removed)
+					sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
+			});
+
+			$(storageInstance).on('onaction.sceneitems', function(d, flags) {
+				if (flags.doc.sceneid_ != sceneCanvas.scene.id_)
+					return;
+				
+				if (!flags.removed)
+					sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
+			});
 			
 			//var sceneDocuments = storageInstance.documentsForScene(sceneid);
 			// 	console.log("load scene", scene);
@@ -206,12 +228,25 @@
 			}
 			
 			this.draw();
-			//window.location =  this.canvas.toDataURL("image/png");
+		},
+		
+		unload: function() {
+			this.scene = null;
+			this.nodes = [];
+			this.links = [];
+			this.currentLink = null;
+			
+			// unlink all event handlers of namespace sceneitems
+			$(storageInstance).off(".sceneitems"); 
 		},
 		
 		store: function() {
 			this.scene.v = this.getGraph();
 			websocketInstance.updateDocument(this.scene);
+		},
+		
+		getImage: function(format) { // 'image/jpeg'
+			return this.canvas.toDataURL(((format==undefined)?"image/png":format));
 		},
 		
 		getGraph: function() {
@@ -237,31 +272,4 @@
 			return v;
 		}
 	};
-
-	// unlink all event handlers of namespace sceneitems
-	$(storageInstance).off(".sceneitems"); 
-	// connect event handlers
-	$(storageInstance).on('onevent.sceneitems', function(d, flags) {
-		if (flags.doc.sceneid_ != CurrentScene.id)
-			return;
-		
-		if (!flags.removed)
-			sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
-	});
-
-	$(storageInstance).on('oncondition.sceneitems', function(d, flags) {
-		if (flags.doc.sceneid_ != CurrentScene.id)
-			return;
-		
-		if (!flags.removed)
-			sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
-	});
-
-	$(storageInstance).on('onaction.sceneitems', function(d, flags) {
-		if (flags.doc.sceneid_ != CurrentScene.id)
-			return;
-		
-		if (!flags.removed)
-			sceneCanvas.sceneitemchanged(flags.doc, flags.temporary);
-	});
 })(window);

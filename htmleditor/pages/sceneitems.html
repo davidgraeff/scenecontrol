@@ -1,5 +1,5 @@
 <div class="container">
-	<canvas id="canvas" data-role='content'>
+	<canvas id="canvas">
 		<span class="error">Your browser does not support<br>the HTML5 &lt;canvas&gt; element</span>
 	</canvas>
 </div>
@@ -24,7 +24,7 @@
 </footer> 
 
 <!-- Create new scene popup -->
-<div class="modal fade" id="editscenenamepopup">
+<div class="elemhidden modal fade" id="editscenenamepopup">
 	<div class="modal-header">
 		<a class="close" data-dismiss="modal">&times;</a>
 		<h3>Name der Szene</h3>
@@ -39,7 +39,7 @@
 </div>
 
 <!-- Edit scene popup -->
-<div class="modal fade" id="sceneitemedit">
+<div class="elemhidden modal fade" id="sceneitemedit">
 	<div class="modal-header">
 		<a class="close" data-dismiss="modal">&times;</a>
 		<span id="sceneitemname"></span>
@@ -59,7 +59,7 @@
 </div>
 
 <!-- Create new event, condition, action -->
-<div class="modal fade" id="newsceneitempopup">
+<div class="elemhidden modal fade" id="newsceneitempopup">
 	<div class="modal-header">
 		<a class="close" data-dismiss="modal">&times;</a>
 		<h3>Neues Element für <span class="currentscene"></span></h3>
@@ -86,7 +86,7 @@
 </div>
 
 <!-- Change scene tags -->
-<div class="modal fade" id="scenetagspopup">
+<div class="elemhidden modal fade" id="scenetagspopup">
 	<div class="modal-header">
 		<a class="close" data-dismiss="modal">&times;</a>
 		<span class="currentscene"></span>
@@ -103,5 +103,4 @@
 	</div>
 </div>
 
-<script src="js/sceneCanvas.js"></script>
 <script src="js/sceneitems.js"></script>

@@ -41,6 +41,7 @@
 					}
 					$("#"+catid).handlebarsAppend("#sceneitem-template", entry);
 				}
+				this.renderDocImage(doc);
 			}
 
 			if (SceneUIHelper.sceneLastAdded) {
@@ -56,6 +57,31 @@
 				}
 				SceneUIHelper.sceneLastAdded = null;
 			}
+		},
+		renderDocImage: function(scene) {
+			// prepare canvas'
+			var canvasDrawBig = document.createElement("canvas");
+			canvasDrawBig.width = 800; canvasDrawBig.height = 600;
+			// load scene
+			var sc = new sceneCanvas();
+			sc.setCanvas(canvasDrawBig);
+			sc.load(scene);
+			// store into image and resize
+			var image = new Image();
+			image.onload = function() {
+				var canvasDrawSmall = document.createElement("canvas");
+				canvasDrawSmall.width = 160; canvasDrawSmall.height = 100;
+				var canvasDrawSmallCtx = canvasDrawSmall.getContext("2d");
+				canvasDrawSmallCtx.drawImage(image, 0, 0, canvasDrawSmall.width, canvasDrawSmall.height);
+				// unload
+				sc.unload();
+				sc = null;
+				// return data
+				//console.log("pic", canvasDrawSmall.toDataURL('image/jpeg'));
+				$("*[data-sceneid='"+scene.id_+"']").css("background-image", "url('"+ canvasDrawSmall.toDataURL()+"')");
+				
+			};
+			image.src = sc.getImage();
 		}
 	};
 	

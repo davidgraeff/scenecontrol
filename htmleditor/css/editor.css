@@ -50,10 +50,13 @@ footer .left {
 	height: 80px;
 }
 
-.sceneitemsul > div {
+/*.sceneitemsul > div {
 	margin-bottom: 1em;
-}
+}*/
 
+/*#scenelists > .thumbnails { display: inline; }*/
+/*#scenelists > .catname { float: left; }
+#scenelists > .catname:before { clear: both; }*/
 
 /* Lastly, apply responsive CSS fixes as necessary */
 @media (max-width: 767px) {
@@ -69,8 +72,21 @@ footer .left {
 	min-width: 360px;
 }*/
 
+#configlist > button {
+	width:100%;
+	text-align: left;
+}
+
 .selectedSceneListItem > a{
-	color: white !important;
+	font-size:110%;
+	color: black !important;
+	text-shadow: 0 1px 1px #194B7E;
+}
+
+
+.unselectedSceneListItem > a{
+	font-size:110%;
+	color: black !important;
 	text-shadow: 0 1px 1px #194B7E;
 }
 
@@ -91,7 +107,8 @@ footer .left {
 	width:160px;
 	height:100px;
 	position:relative;
-	padding:0
+	padding:0;
+	display: table; 
 }
 
 @media (max-width: 480px) {
@@ -102,7 +119,18 @@ footer .left {
 }
 
 .sceneListItem .btnSetScene {
-	text-align:center;margin:5px;display:block;
+	text-align:center;
+	text-align:center;
+	display: table-cell; 
+	vertical-align: middle; 
+}
+
+.sceneListItem .btnSetScene > .btnSetSceneText {
+	background-color: rgba(252, 247, 199, 0.8);
+}
+
+.sceneListItem:hover .btnSelectScene {
+	visibility:visible;
 }
 
 .sceneListItem .badge {
@@ -110,11 +138,27 @@ footer .left {
 }
 
 .sceneListItem .btnSelectScene {
-	position:absolute;bottom:0px;left:0px;margin-left:5px;margin-bottom:5px
+	position:absolute;bottom:-10px;left:-10px;visibility:hidden;
 }
 
-.hidden {
+.elemhidden {
 	display:none;
 }
 
-#canvas { outline: none; cursor: default; padding: 0px;background-image:url(../img/brushed-silver-metallic-background.jpg); width:100%;  }
+#canvas {
+	outline: none;
+	cursor: default;
+	padding: 0px;
+	background-image:url(../img/brushed-silver-metallic-background.jpg);
+	width:100%;
+}
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}

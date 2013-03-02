@@ -22,6 +22,7 @@
 	
 	var canvas = document.getElementById('canvas');
 	var $canvas = $(canvas);
+	var sceneCanvasObject = new sceneCanvas();
 	
 	
 	$('#btnBack').on('click.sceneitemspage', function() {
@@ -123,8 +124,8 @@
 			var obj = jQuery.extend(true, CurrentSceneItem.item, objdata.data);
 			$.jGrowl("Saving ...");
 			$form.find("input,select,label,textarea,.btnSaveSceneitem").addClass("disabled");
-			sceneCanvas.disable(CurrentSceneItem.item);
-			sceneCanvas.draw();
+			sceneCanvasObject.disable(CurrentSceneItem.item);
+			sceneCanvasObject.draw();
 			websocketInstance.updateDocument(obj);
 			$('#sceneitemedit').modal("hide");
 		} else {
@@ -139,8 +140,8 @@
 		$.jGrowl("Removing...");
 		//$form.find("input,select,label,textarea,.btnSaveSceneitem,.btnRemoveSceneitem").addClass("disabled");
 		
-		sceneCanvas.disable(CurrentSceneItem.item);
-		sceneCanvas.draw();
+		sceneCanvasObject.disable(CurrentSceneItem.item);
+		sceneCanvasObject.draw();
 		
 		websocketInstance.removeSceneItem(CurrentScene.id, CurrentSceneItem.item);
 		$('#sceneitemedit').modal("hide");
@@ -150,11 +151,11 @@
 	function resizecanvas() {
 		canvas.width=parseInt($canvas.css('width'));
 		canvas.height = window.innerHeight - 140; // - header
-		if (!sceneCanvas.init) {
+		if (!sceneCanvasObject.init) {
 			SceneItemsUIHelper.load(scene);
-			sceneCanvas.init = true;
+			sceneCanvasObject.init = true;
 		} else
-			sceneCanvas.draw();
+			sceneCanvasObject.draw();
 	}
 
 	$canvas.mousedown(function(e) {
@@ -166,25 +167,25 @@
 		// mouse position
 		var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top};
 
-		sceneCanvas.selectedObject = sceneCanvas.selectObject(mouse.x, mouse.y);
+		sceneCanvasObject.selectedObject = sceneCanvasObject.selectObject(mouse.x, mouse.y);
 		
 		movingObject = false;
-		if (sceneCanvas.selectedObject != null) {
-			if (shift && sceneCanvas.selectedObject instanceof Node) {
+		if (sceneCanvasObject.selectedObject != null) {
+			if (shift && sceneCanvasObject.selectedObject instanceof Node) {
 				$canvas.css('cursor', 'pointer');
-				sceneCanvas.currentLink = new TemporaryLink(sceneCanvas.selectedObject, mouse);
+				sceneCanvasObject.currentLink = new TemporaryLink(sceneCanvasObject.selectedObject, mouse);
 			} else {
 				$canvas.css('cursor', 'move');
 				movingObject = true;
-				if (sceneCanvas.selectedObject.setMouseStart) {
-					sceneCanvas.selectedObject.setMouseStart(mouse.x, mouse.y);
+				if (sceneCanvasObject.selectedObject.setMouseStart) {
+					sceneCanvasObject.selectedObject.setMouseStart(mouse.x, mouse.y);
 				}
 			}
 		} else {
 			originalMouse = mouse;
 			$canvas.css('cursor', 'move');
 		}
-		sceneCanvas.draw();
+		sceneCanvasObject.draw();
 		
 		if (document.activeElement == canvas) {
 			// disable drag-and-drop only if the canvas is already focused
@@ -197,71 +198,71 @@
 	
 	canvas.ondblclick = function(e) {
 		var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top};
-		sceneCanvas.selectedObject = sceneCanvas.selectObject(mouse.x, mouse.y);
+		sceneCanvasObject.selectedObject = sceneCanvasObject.selectObject(mouse.x, mouse.y);
 		
-		if (sceneCanvas.selectedObject == null)
+		if (sceneCanvasObject.selectedObject == null)
 			return;
 		
-		if (sceneCanvas.selectedObject instanceof Node && sceneCanvas.selectedObject.enabled) {
-			SceneItemsUIHelper.showSceneItemDialog(sceneCanvas.selectedObject.data, false);
-		} else if (sceneCanvas.selectedObject instanceof Link) {
-			sceneCanvas.removeLink(sceneCanvas.selectedObject);
-			sceneCanvas.draw();
-			sceneCanvas.store();
+		if (sceneCanvasObject.selectedObject instanceof Node && sceneCanvasObject.selectedObject.enabled) {
+			SceneItemsUIHelper.showSceneItemDialog(sceneCanvasObject.selectedObject.data, false);
+		} else if (sceneCanvasObject.selectedObject instanceof Link) {
+			sceneCanvasObject.removeLink(sceneCanvasObject.selectedObject);
+			sceneCanvasObject.draw();
+			sceneCanvasObject.store();
 		}
 	};
 	
 	$canvas.mousemove(function(e) {
-		if (sceneCanvas.currentLink != null) {
+		if (sceneCanvasObject.currentLink != null) {
 			var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top}; 
-			var targetNode = sceneCanvas.selectObject(mouse.x, mouse.y);
+			var targetNode = sceneCanvasObject.selectObject(mouse.x, mouse.y);
 			if (!(targetNode instanceof Node)) {
 				targetNode = null;
 			}
 			
-			if (sceneCanvas.selectedObject != null) {
+			if (sceneCanvasObject.selectedObject != null) {
 				if (targetNode != null) {
-					sceneCanvas.currentLink = new Link(sceneCanvas.selectedObject, targetNode);
+					sceneCanvasObject.currentLink = new Link(sceneCanvasObject.selectedObject, targetNode);
 				} else {
-					sceneCanvas.currentLink = new TemporaryLink(sceneCanvas.selectedObject.closestPointOnShape(mouse.x, mouse.y), mouse);
+					sceneCanvasObject.currentLink = new TemporaryLink(sceneCanvasObject.selectedObject.closestPointOnShape(mouse.x, mouse.y), mouse);
 				}
 			}
-			sceneCanvas.draw();
+			sceneCanvasObject.draw();
 		} else if (movingObject) {
-			sceneCanvas.selectedObject.setAnchorPoint(e.pageX - $canvas.offset().left, e.pageY - $canvas.offset().top);
-			sceneCanvas.snapNode();
-			sceneCanvas.draw();
+			sceneCanvasObject.selectedObject.setAnchorPoint(e.pageX - $canvas.offset().left, e.pageY - $canvas.offset().top);
+			sceneCanvasObject.snapNode();
+			sceneCanvasObject.draw();
 		} else if (originalMouse != null) { // move nodes
 			var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top}; 
-			sceneCanvas.moveNodes(mouse.x - originalMouse.x,
+			sceneCanvasObject.moveNodes(mouse.x - originalMouse.x,
 									mouse.y - originalMouse.y);
-			sceneCanvas.draw();
+			sceneCanvasObject.draw();
 			originalMouse = mouse;
 		}
 	});
 	
 	$canvas.mouseout(function () {
 		if (movingObject)
-			sceneCanvas.store();
-		sceneCanvas.currentLink = null;
-		sceneCanvas.draw();
+			sceneCanvasObject.store();
+		sceneCanvasObject.currentLink = null;
+		sceneCanvasObject.draw();
 		movingObject = false;
 		originalMouse = null;
 		$canvas.css('cursor', 'default');
 	});
 	
 	$(document).mouseup(function(e) {
-		if (sceneCanvas.currentLink != null) {
-			if (!(sceneCanvas.currentLink instanceof TemporaryLink)) {
-				sceneCanvas.selectedObject = sceneCanvas.currentLink;
-				sceneCanvas.links.push(sceneCanvas.currentLink);
-				movingObject = true; // reuse as indication for sceneCanvas.store()
+		if (sceneCanvasObject.currentLink != null) {
+			if (!(sceneCanvasObject.currentLink instanceof TemporaryLink)) {
+				sceneCanvasObject.selectedObject = sceneCanvasObject.currentLink;
+				sceneCanvasObject.links.push(sceneCanvasObject.currentLink);
+				movingObject = true; // reuse as indication for sceneCanvasObject.store()
 			}
-			sceneCanvas.currentLink = null;
-			sceneCanvas.draw();
+			sceneCanvasObject.currentLink = null;
+			sceneCanvasObject.draw();
 		}
 		if (movingObject || originalMouse)
-			sceneCanvas.store();
+			sceneCanvasObject.store();
 		
 		movingObject = false;
 		originalMouse = null;
@@ -326,9 +327,6 @@
 			if (ok)
 				CurrentSceneItem.registerChangeNotifiers($('#sceneitemproperties'), function() {$("#btnSaveSceneItem").removeClass("disabled");});
 			
-			$("#sceneitemform").trigger("create");
-			$("#sceneitemform").trigger("change");
-			
 			$('#sceneitemedit').modal("show");
 		},
  
@@ -340,14 +338,14 @@
 			$(".currentscene").text(scene.name);
 			CurrentScene.set(scene.id_);
 			
-			sceneCanvas.load(scene);
+			sceneCanvasObject.load(scene);
 			$.jGrowl("Szene geladen: "+scene.name,{life:800,animateClose:null});
 		}
 	};
 	
 	// init
-	sceneCanvas.init = false;
-	sceneCanvas.setCanvas(canvas);
+	sceneCanvasObject.init = false;
+	sceneCanvasObject.setCanvas(canvas);
 	$(window).resize(function() {resizecanvas();});
 	setTimeout( resizecanvas, 500 );
 })(window);
