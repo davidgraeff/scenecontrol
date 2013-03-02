@@ -5,25 +5,25 @@
 (function (window) {
 	"use strict";
 
+	// get scene
 	var scene = storageInstance.scenes[CurrentScene.id];
 	if (scene==null) {
 		//window.location = 'index.html';
 		console.warn("FAIL: Scene not set",CurrentScene.id);
 		loadPage('scenelist');
 	}
-	$("#maincontent").off(".sceneitemspage");
-			
-	var shift= null;
-	var originalMouse= null;
-	var scrollMaxX= null;
-	var scrollMaxY= null;
-	var movingObject =  null;
-	var SceneItemCreator = {type_:null,componentid_:null, instanceid_:null};
 	
+	// prepare page
+	$("#maincontent").off(".sceneitemspage");
+	var SceneItemCreator = {type_:null,componentid_:null, instanceid_:null};
+
+	// prepare canvas object
 	var canvas = document.getElementById('canvas');
 	var $canvas = $(canvas);
 	var sceneCanvasObject = new sceneCanvas();
-	
+	sceneCanvasObject.init = false;
+	sceneCanvasObject.setCanvas(canvas);
+
 	
 	$('#btnBack').on('click.sceneitemspage', function() {
 		loadPage('scenelist');
@@ -158,132 +158,6 @@
 			sceneCanvasObject.draw();
 	}
 
-	$canvas.mousedown(function(e) {
-		if (e.which!=1)
-			return;
-		
-		// set focus to canvas (to get key strokes)
-		$canvas.attr("tabindex", "0");
-		// mouse position
-		var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top};
-
-		sceneCanvasObject.selectedObject = sceneCanvasObject.selectObject(mouse.x, mouse.y);
-		
-		movingObject = false;
-		if (sceneCanvasObject.selectedObject != null) {
-			if (shift && sceneCanvasObject.selectedObject instanceof Node) {
-				$canvas.css('cursor', 'pointer');
-				sceneCanvasObject.currentLink = new TemporaryLink(sceneCanvasObject.selectedObject, mouse);
-			} else {
-				$canvas.css('cursor', 'move');
-				movingObject = true;
-				if (sceneCanvasObject.selectedObject.setMouseStart) {
-					sceneCanvasObject.selectedObject.setMouseStart(mouse.x, mouse.y);
-				}
-			}
-		} else {
-			originalMouse = mouse;
-			$canvas.css('cursor', 'move');
-		}
-		sceneCanvasObject.draw();
-		
-		if (document.activeElement == canvas) {
-			// disable drag-and-drop only if the canvas is already focused
-			return false;
-		} else {
-			// otherwise, let the browser switch the focus away from wherever it was
-			return true;
-		}
-	});
-	
-	canvas.ondblclick = function(e) {
-		var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top};
-		sceneCanvasObject.selectedObject = sceneCanvasObject.selectObject(mouse.x, mouse.y);
-		
-		if (sceneCanvasObject.selectedObject == null)
-			return;
-		
-		if (sceneCanvasObject.selectedObject instanceof Node && sceneCanvasObject.selectedObject.enabled) {
-			SceneItemsUIHelper.showSceneItemDialog(sceneCanvasObject.selectedObject.data, false);
-		} else if (sceneCanvasObject.selectedObject instanceof Link) {
-			sceneCanvasObject.removeLink(sceneCanvasObject.selectedObject);
-			sceneCanvasObject.draw();
-			sceneCanvasObject.store();
-		}
-	};
-	
-	$canvas.mousemove(function(e) {
-		if (sceneCanvasObject.currentLink != null) {
-			var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top}; 
-			var targetNode = sceneCanvasObject.selectObject(mouse.x, mouse.y);
-			if (!(targetNode instanceof Node)) {
-				targetNode = null;
-			}
-			
-			if (sceneCanvasObject.selectedObject != null) {
-				if (targetNode != null) {
-					sceneCanvasObject.currentLink = new Link(sceneCanvasObject.selectedObject, targetNode);
-				} else {
-					sceneCanvasObject.currentLink = new TemporaryLink(sceneCanvasObject.selectedObject.closestPointOnShape(mouse.x, mouse.y), mouse);
-				}
-			}
-			sceneCanvasObject.draw();
-		} else if (movingObject) {
-			sceneCanvasObject.selectedObject.setAnchorPoint(e.pageX - $canvas.offset().left, e.pageY - $canvas.offset().top);
-			sceneCanvasObject.snapNode();
-			sceneCanvasObject.draw();
-		} else if (originalMouse != null) { // move nodes
-			var mouse = {'x': e.pageX - $canvas.offset().left,'y': e.pageY - $canvas.offset().top}; 
-			sceneCanvasObject.moveNodes(mouse.x - originalMouse.x,
-									mouse.y - originalMouse.y);
-			sceneCanvasObject.draw();
-			originalMouse = mouse;
-		}
-	});
-	
-	$canvas.mouseout(function () {
-		if (movingObject)
-			sceneCanvasObject.store();
-		sceneCanvasObject.currentLink = null;
-		sceneCanvasObject.draw();
-		movingObject = false;
-		originalMouse = null;
-		$canvas.css('cursor', 'default');
-	});
-	
-	$(document).mouseup(function(e) {
-		if (sceneCanvasObject.currentLink != null) {
-			if (!(sceneCanvasObject.currentLink instanceof TemporaryLink)) {
-				sceneCanvasObject.selectedObject = sceneCanvasObject.currentLink;
-				sceneCanvasObject.links.push(sceneCanvasObject.currentLink);
-				movingObject = true; // reuse as indication for sceneCanvasObject.store()
-			}
-			sceneCanvasObject.currentLink = null;
-			sceneCanvasObject.draw();
-		}
-		if (movingObject || originalMouse)
-			sceneCanvasObject.store();
-		
-		movingObject = false;
-		originalMouse = null;
-		$canvas.css('cursor', 'default');
-	});
-	
-	$canvas.keydown(function(event) {
-		var key = event.which;
-		if (key == 16) {
-			shift = true;
-		}
-	});
-	
-	$canvas.keyup(function(event) {
-		var key = event.which;
-		
-		if (key == 16) {
-			shift = false;
-		}
-	});
-
 	// for getting propteries from the server and provide them in the edit dialogs
 	$(storageInstance).off(".sceneitemspage"); 
 	$(storageInstance).on('onnotification.sceneitemspage', function(d, doc) {
@@ -344,8 +218,6 @@
 	};
 	
 	// init
-	sceneCanvasObject.init = false;
-	sceneCanvasObject.setCanvas(canvas);
 	$(window).resize(function() {resizecanvas();});
 	setTimeout( resizecanvas, 500 );
 })(window);

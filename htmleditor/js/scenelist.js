@@ -59,6 +59,7 @@
 			}
 		},
 		renderDocImage: function(scene) {
+			return; //TODO
 			// prepare canvas'
 			var canvasDrawBig = document.createElement("canvas");
 			canvasDrawBig.width = 800; canvasDrawBig.height = 600;
