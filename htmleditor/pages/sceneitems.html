@@ -1,6 +1,31 @@
 <div class="container">
-	<canvas id="canvas"></canvas>
+	<svg id="canvas">
+		<marker id="pf1"
+		viewBox="0 0 10 10" refX="10" refY="5"
+		markerUnits="strokeWidth"
+		markerWidth="15" markerHeight="15"
+		orient="auto">
+		<path d="M 0,0 l 10,5 l -10,5 z" />
+		</marker>
+	</svg>
 </div>
+<!-- Template: Scene entry -->
+<script id="scenegraphitem-template" type="text/x-handlebars-template">
+	<div class="sceneItem">
+		<div class="sceneItemHeader {{bgclass}}">
+			<span class="sceneItemType">{{type}}</span>
+			<span class="sceneItemComponent">{{component}}</span>
+			<span class="sceneItemMethod">{{title}}</span>
+		</div>
+		<div data-nodeindex="{{nodeindex}}" class="sceneItemMain">{{text}}</div>
+		<div class="sceneItemCommands btn-group">
+			<a href="#no" class="btn btn-mini btnLink" data-nodeindex="{{nodeindex}}" title="Link erstellen">Link</a>
+			<a href="#no" class="btn btn-mini btnLinkAlt" data-nodeindex="{{nodeindex}}" title="Alternativ Link für fehlgeschlagene Bedingung erstellen">Alt Link</a>
+			<a href="#no" class="btn btn-danger btn-mini btnRemove" data-nodeindex="{{nodeindex}}" title="Entfernen"><i class="icon-remove"></i></a>
+			<a href="#no" class="btn btn-success btn-mini btnExecute" data-nodeindex="{{nodeindex}}" title="Ab hier ausführen"><i class="icon-play"></i></a>
+		</div>
+	</div>
+</script>
 
 <footer id="scenefooter"> 
 	<div class="container"><div class="navbar-inner">

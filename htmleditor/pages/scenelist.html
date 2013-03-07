@@ -6,26 +6,40 @@
 <footer id="scenefooter"> 
 	<div class="container"><div class="navbar-inner">
 		<div class="btn-group right">
-			<a href="#" class="btn" id="btnBackup"><i class="icon-upload"></i> Backup</a>
-			<a href="#" class="btn" id="btnRestore"><i class="icon-download"></i> Wiederherstellen</a>
-			<a href="#" class="btn btn-info" id="btnAddScene"><i class="icon-plus"></i> Neue Szene</a>
-			<a href="#" class="btn btn-danger" id="btnRemoveSelectedScenes"><i class="icon-remove"></i> Markierte entfernen</a>
+
 		</div>
+			<div class="navbar"><button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".footer-nav-collapse">
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button></div>
+			<div class="btn-group right footer-nav-collapse nav-collapse collapse">
+				<a href="#" class="btn" id="btnBackup"><i class="icon-upload"></i> Backup</a>
+				<a href="#" class="btn" id="btnRestore"><i class="icon-download"></i> Wiederherstellen</a>
+				<a href="#" class="btn btn-info" id="btnAddScene"><i class="icon-plus"></i> Neue Szene</a>
+				<a href="#" class="btn btn-danger" id="btnRemoveSelectedScenes"><i class="icon-remove"></i> Markierte entfernen</a>
+			</div>
 	</div></div>
 </footer> 
 
 <!-- Template: Scene entry -->
 <script id="sceneitem-template" type="text/x-handlebars-template">
-<li data-sceneid="{{sceneid}}" data-selected="0" class="thumbnail sceneListItem unselectedSceneListItem ">
-		<a href="#no" class="btnSetScene"><span class="btnSetSceneText">{{name}}</span></a>
-		<span class="badge badge-info" title="Diese Szene hat {{counter}} Element(e)">{{counter}}</span>
-		<a href="#no" class="btnSelectScene" data-sceneid="{{sceneid}}" title="Markieren"><i class="icon-check"></i> </a>
+	<li data-sceneid="{{sceneid}}" data-selected="0" class="sceneListItem {{colorclass}}">
+		<a href="#no" class="sceneListItemText btnSetScene">{{name}}</a>
+		<span class="sceneinfo">
+			<span class="badge badge-inverse" title="Diese Szene hat {{counter}} Element(e)">{{counter}}</span>
+			<div class="btn-group">
+				<a href="#no" class="btnSelectScene btn btn-inverse btn-mini" data-sceneid="{{sceneid}}" title="Markieren"><i class="icon-check icon-white"></i> </a>
+				<a href="#no" class="btnChangeSceneImage btn btn-inverse btn-mini" data-sceneid="{{sceneid}}" title="Bild ändern"><i class="icon-camera icon-white"></i> </a>
+			</div>
+		</span>
 	</li>
 </script>
 <script id="sceneitem-cat-template" type="text/x-handlebars-template">
-	<div id="{{catid}}_name" class="catname label label-inverse">{{name}}</div>
-	<ul id="{{catid}}" class="thumbnails">
-		
+	<ul id="{{catid}}" class="sceneList" data-colorclass="{{colorclass}}">
+		<li class="sceneListItem {{colorclass}}" id="{{catid}}_name">
+			<span class="sceneListItemCatText">{{name}}</span>
+		</li>
 	</ul>
 </script>
 
