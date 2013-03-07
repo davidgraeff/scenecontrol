@@ -1,0 +1,55 @@
+{
+	"name": "scenecontrol",
+	"version": "3.0.0",
+	"author": "David Gräff <david.graeff@web.change2de>",
+	"description": "A plugin extendable software for home automation / domotics requiering a small always-on pc like the raspberry pi. Use your modern webbrowser to simply configure events-conditions-actions. Extendable functionality through an easy to use plugin API.",
+	"contributors": [ 
+	{
+		"name": "David Gräff",
+		"email": "david.graeff@web.change2de"
+	} 
+	],
+	"bin": {
+		"scenecontrolserver": "./bin/scenecontrol"
+	},
+	"directories" : {
+		"lib" : ".",
+		"test" : "test",
+		"example" : "example"
+	},
+	"scripts": {
+		"start": "nodejs main.js",
+		"test": "vows --spec --isolate",
+		"predeploy": "echo This will be run before deploying the app",
+		"postdeploy": "echo This will be run after deploying the app"
+	},
+	"main": "./main.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/davidgraeff/scenecontrol.git"
+	},
+	"keywords": [
+	"home",
+	"automation",
+	"server",
+	"events"
+	],
+	"dependencies" : {
+		"node-uuid"   :  "1.4.x",
+		"optimist" :  "0.3.x",
+		"hashish" :  "0.0.x",
+		"mubsub" :  "0.2.x",
+		"mongoskin" : "0.5.x",
+		"websocket" : "1.0.x"
+	},
+	"analyze": false,
+	"devDependencies": {
+		"vows"    :  "0.5.x",
+		"request" :  "2.1.x"
+	},
+	"bundledDependencies": [],  
+	"license": "GPLv3",
+	"engines": {
+		"node": ">=0.6"
+	}
+}
