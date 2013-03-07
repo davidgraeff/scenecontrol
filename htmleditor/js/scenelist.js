@@ -36,12 +36,15 @@
 					var catid = "scenelist_cat_" + categories[i].replace(" ", "_").replace(".", "_");
 					if (!$("#"+catid).length) {
 						// add not existing category holder
-						var cat_entry = {"catid": catid, "name":categories[i]};
+						var colornumber = $('.sceneList').length % 10;
+						var cat_entry = {"catid": catid, "name":categories[i], "colorclass":"q"+colornumber};
 						$("#scenelists").handlebarsAppend("#sceneitem-cat-template", cat_entry);
 					}
-					$("#"+catid).handlebarsAppend("#sceneitem-template", entry);
+					var $cat = $("#"+catid);
+					entry.colorclass = $cat.attr("data-colorclass");
+					$cat.handlebarsAppend("#sceneitem-template", entry);
 				}
-				this.renderDocImage(doc);
+// 				this.renderDocImage(doc);
 			}
 
 			if (SceneUIHelper.sceneLastAdded) {
@@ -57,9 +60,8 @@
 				}
 				SceneUIHelper.sceneLastAdded = null;
 			}
-		},
+		}/*,
 		renderDocImage: function(scene) {
-			return; //TODO
 			// prepare canvas'
 			var canvasDrawBig = document.createElement("canvas");
 			canvasDrawBig.width = 800; canvasDrawBig.height = 600;
@@ -83,7 +85,7 @@
 				
 			};
 			image.src = sc.getImage();
-		}
+		}*/
 	};
 	
 
@@ -110,7 +112,7 @@
 		});
 		
 		$(".btnSelectScene").on('click.editorpage', function() {
-			var $scenelistentry = $(this).parent();
+			var $scenelistentry = $(this).parent().parent().parent();
 			if ($scenelistentry.attr('data-selected')=="1") { // is selected: deselect
 				$scenelistentry.removeClass("selectedSceneListItem").addClass("unselectedSceneListItem");
 				$scenelistentry.attr('data-selected', "0");

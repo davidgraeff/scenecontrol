@@ -18,12 +18,12 @@
 	var SceneItemCreator = {type_:null,componentid_:null, instanceid_:null};
 
 	// prepare canvas object
-	var canvas = document.getElementById('canvas');
-	var $canvas = $(canvas);
 	var sceneCanvasObject = new sceneCanvas();
-	sceneCanvasObject.init = false;
-	sceneCanvasObject.setCanvas(canvas);
-
+	sceneCanvasObject.setCanvas(document.getElementById('canvas'));
+	
+	$(sceneCanvasObject).on('itemtriggered.sceneitemspage', function(e, data) {
+		SceneItemsUIHelper.showSceneItemDialog(data, false);
+	});
 	
 	$('#btnBack').on('click.sceneitemspage', function() {
 		loadPage('scenelist');
@@ -147,17 +147,6 @@
 		$('#sceneitemedit').modal("hide");
 	});
 
-
-	function resizecanvas() {
-		canvas.width=parseInt($canvas.css('width'));
-		canvas.height = window.innerHeight - 140; // - header
-		if (!sceneCanvasObject.init) {
-			SceneItemsUIHelper.load(scene);
-			sceneCanvasObject.init = true;
-		} else
-			sceneCanvasObject.draw();
-	}
-
 	// for getting propteries from the server and provide them in the edit dialogs
 	$(storageInstance).off(".sceneitemspage"); 
 	$(storageInstance).on('onnotification.sceneitemspage', function(d, doc) {
@@ -218,6 +207,5 @@
 	};
 	
 	// init
-	$(window).resize(function() {resizecanvas();});
-	setTimeout( resizecanvas, 500 );
+	SceneItemsUIHelper.load(scene);
 })(window);
