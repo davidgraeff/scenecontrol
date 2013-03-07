@@ -1,0 +1,64 @@
+<div class="container" id="scenelists">
+
+</div>
+<div class="push"></div>
+
+<footer id="scenefooter"> 
+	<div class="container"><div class="navbar-inner">
+		<div class="btn-group right">
+			<a href="#" class="btn" id="btnBackup"><i class="icon-upload"></i> Backup</a>
+			<a href="#" class="btn" id="btnRestore"><i class="icon-download"></i> Wiederherstellen</a>
+			<a href="#" class="btn btn-info" id="btnAddScene"><i class="icon-plus"></i> Neue Szene</a>
+			<a href="#" class="btn btn-danger" id="btnRemoveSelectedScenes"><i class="icon-remove"></i> Markierte entfernen</a>
+		</div>
+	</div></div>
+</footer> 
+
+<!-- Template: Scene entry -->
+<script id="sceneitem-template" type="text/x-handlebars-template">
+<li data-sceneid="{{sceneid}}" data-selected="0" class="thumbnail sceneListItem unselectedSceneListItem ">
+		<a href="#no" class="btnSetScene"><span class="btnSetSceneText">{{name}}</span></a>
+		<span class="badge badge-info" title="Diese Szene hat {{counter}} Element(e)">{{counter}}</span>
+		<a href="#no" class="btnSelectScene" data-sceneid="{{sceneid}}" title="Markieren"><i class="icon-check"></i> </a>
+	</li>
+</script>
+<script id="sceneitem-cat-template" type="text/x-handlebars-template">
+	<div id="{{catid}}_name" class="catname label label-inverse">{{name}}</div>
+	<ul id="{{catid}}" class="thumbnails">
+		
+	</ul>
+</script>
+
+
+<!-- Remove scene confirmation popup -->
+<div class="elemhidden modal fade" id="removepopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<h3>Szenen löschen?</h3>
+	</div>
+	<div class="modal-body">
+		<p>Diese Aktion kann nicht rückgängig gemacht werden.<br />
+		Möchtest du "<span class="currentrmscene"></span>" Szenen wirklich entfernen?</p>
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnRemoveSelectedScenesConfirm" class="btn btn-primary">Entfernen</a>  
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
+	</div>
+</div>
+
+<!-- Create new scene popup -->
+<div class="elemhidden modal fade" id="newscenepopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<h3>Name der Szene</h3>
+	</div>
+	<div class="modal-body">
+		<form><input type="text" placeholder="Name" id="newscenename" name="newscenename" value=""  /></form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnConfirmNewScenename" class="btn btn-primary">Namen bestätigen</a>  
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
+	</div>
+</div>
+
+<script src="js/scenelist.js"></script>

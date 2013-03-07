@@ -1,0 +1,104 @@
+<div class="container">
+	<canvas id="canvas"></canvas>
+</div>
+
+<footer id="scenefooter"> 
+	<div class="container"><div class="navbar-inner">
+			<div class="btn-group left">
+				<a id="btnBack" class="btn"><i class="icon-home"></i> Verlasse <strong><span class="currentscene"></span></strong></a>
+			</div>
+			<div class="navbar"><button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".footer-nav-collapse">
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button></div>
+			<div class="btn-group right footer-nav-collapse nav-collapse collapse">
+				<a id="btnChangeSceneName" class="btn"><i class="icon-pencil"></i> Namen ändern</a>
+				<a id="btnChangeTags" class="btn"><i class="icon-tag"></i> Kategorien</a>
+				<a id="btnAddSceneItem" class="btn"><i class="icon-plus"></i> Element hinzufügen</a>
+				<a id="btnExecute" class="btn btn-success"><i class="icon-play"></i> Ausführen</a>
+			</div>
+	</div></div>
+</footer> 
+
+<!-- Create new scene popup -->
+<div class="elemhidden modal fade" id="editscenenamepopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<h3>Name der Szene</h3>
+	</div>
+	<div class="modal-body">
+		<form><input type="text" placeholder="Name" id="editscenename" name="editscenename" value=""  /></form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnConfirmEditScenename" class="btn btn-primary">Namen bestätigen</a>  
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
+	</div>
+</div>
+
+<!-- Edit scene popup -->
+<div class="elemhidden modal fade" id="sceneitemedit">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<span id="sceneitemname"></span>
+	</div>
+	<div class="modal-body">
+		<span id="sceneitemsubname"></span>
+		<form class="itemform" id="sceneitemform">
+			<ul id="sceneitemproperties" class="itemcontrols" data-role="listview" data-inset="true" data-divider-theme="c">
+			</ul>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnSaveSceneItem" class="btn btn-primary">Speichern</a>  
+		<a href="#" id="btnRemoveSceneItem" class="btn btn btn-danger">Löschen</a>  
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
+	</div>
+</div>
+
+<!-- Create new event, condition, action -->
+<div class="elemhidden modal fade" id="newsceneitempopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<h3>Neues Element für <span class="currentscene"></span></h3>
+	</div>
+	<div class="modal-body">
+<!--		<span class="currentscene"></span>: <span class="newsceneitemtitle"></span>-->
+		<form>
+			<div class="btn-group" data-toggle="buttons-radio">
+				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_event" value="event" >
+				Ereignis</button>
+				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_condition" value="condition">
+				Bedingung</button>
+				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_action" value="action">
+				Aktion</button>
+			</div>
+			<div><select name="componentid_" id="sceneitem_componentid" ></select></div>
+			<div><select name="method_" id="sceneitem_method" ></select></div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnConfirmSceneitem" class="btn btn-primary">Erstellen</a>
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
+	</div>
+</div>
+
+<!-- Change scene tags -->
+<div class="elemhidden modal fade" id="scenetagspopup">
+	<div class="modal-header">
+		<a class="close" data-dismiss="modal">&times;</a>
+		<span class="currentscene"></span>
+	</div>
+	<div class="modal-body">
+		<form>
+		<label for="scenetags"><span class="currentscene"></span>-Kategorien (Komma separiert):</label>
+		<textarea placeholder="Kategorien" id="scenetags" name="scenetags"></textarea>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<a href="#" id="btnConfirmScenetags" class="btn btn-primary">Kategorien ändern</a> 
+		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
+	</div>
+</div>
+
+<script src="js/sceneitems.js"></script>

@@ -1,0 +1,164 @@
+::-webkit-scrollbar {
+	width: 12px;
+}
+
+::-webkit-scrollbar-track {
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+	border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+}
+
+html,
+body {
+height: 100%;
+/* The html and body elements cannot have any padding or margin. */
+}
+
+
+/* Set the fixed height of the footer here */
+footer {
+	bottom: 0px;
+	left:0px;
+	right:0px;
+	position: fixed;
+	padding-top:10px;
+}
+
+footer .navbar {
+	margin: 0;
+}
+
+footer .right {
+	float: right;
+	padding-top: 5px;
+}
+
+footer .left {
+	float: left;
+	padding-top: 5px;
+}
+
+.hidden {
+	display: none;
+}
+
+.push {
+	height: 80px;
+}
+
+/*.sceneitemsul > div {
+	margin-bottom: 1em;
+}*/
+
+/*#scenelists > .thumbnails { display: inline; }*/
+/*#scenelists > .catname { float: left; }
+#scenelists > .catname:before { clear: both; }*/
+
+/* Lastly, apply responsive CSS fixes as necessary */
+@media (max-width: 767px) {
+	footer {
+		margin-left: -20px;
+		margin-right: -20px;
+		padding-left: 20px;
+		padding-right: 20px;
+	}
+}
+      
+/*#newsceneitempopup {
+	min-width: 360px;
+}*/
+
+#configlist > button {
+	width:100%;
+	text-align: left;
+}
+
+.selectedSceneListItem > a{
+	font-size:110%;
+	color: black !important;
+	text-shadow: 0 1px 1px #194B7E;
+}
+
+
+.unselectedSceneListItem > a{
+	font-size:110%;
+	color: black !important;
+	text-shadow: 0 1px 1px #194B7E;
+}
+
+.selectedSceneListItem {
+	background: #396B9E;
+	background-image: -webkit-linear-gradient( #5F9CC5,#396B9E );
+	background-image: -moz-linear-gradient( #5F9CC5,#396B9E );
+	background-image: -ms-linear-gradient( #5F9CC5,#396B9E );
+	background-image: -o-linear-gradient( #5F9CC5,#396B9E );
+	background-image: linear-gradient( #5F9CC5,#396B9E );
+}
+
+.unselectedSceneListItem {
+	background: #f9fBFE;
+}
+
+.sceneListItem {
+	width:160px;
+	height:100px;
+	position:relative;
+	padding:0;
+	display: table; 
+}
+
+@media (max-width: 480px) {
+	.sceneListItem {
+		width:100%;
+		height:30px;
+	}
+}
+
+.sceneListItem .btnSetScene {
+	text-align:center;
+	text-align:center;
+	display: table-cell; 
+	vertical-align: middle; 
+}
+
+.sceneListItem .btnSetScene > .btnSetSceneText {
+	background-color: rgba(252, 247, 199, 0.8);
+}
+
+.sceneListItem:hover .btnSelectScene {
+	visibility:visible;
+}
+
+.sceneListItem .badge {
+	position:absolute;bottom:0px;right:0px;margin-right:5px;margin-bottom:5px
+}
+
+.sceneListItem .btnSelectScene {
+	position:absolute;bottom:-10px;left:-10px;visibility:hidden;
+}
+
+.elemhidden {
+	display:none;
+}
+
+#canvas {
+	outline: none;
+	cursor: default;
+	padding: 0px;
+	background-image:url(../img/brushed-silver-metallic-background.jpg);
+	width:100%;
+}
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
