@@ -1,16 +1,18 @@
 var net = require('net');
 var tls = require('tls');
 var fs = require('fs');
+var controlflow = require('async');
+var configs = require('../config.js');
 
 var options = {
-  key: fs.readFileSync('certificates/server-key.key'),
-  cert: fs.readFileSync('certificates/server-cert.crt'),
-
+  key: fs.readFileSync('certificates/server.key'),
+  cert: fs.readFileSync('certificates/server.crt'),
+  passphrase: "1234",
   // This is necessary only if using the client certificate authentication.
-  requestCert: true,
+  requestCert: true/*,
 
   // This is necessary only if the client uses the self-signed certificate.
-  ca: [ fs.readFileSync('client-cert.pem') ]
+  ca: [ fs.readFileSync('certificates/client.crt') ]*/
 };
 
 var server = tls.createServer(options, function(c) { //'connection' listener
@@ -22,19 +24,12 @@ var server = tls.createServer(options, function(c) { //'connection' listener
   c.write('hello\n');
   c.pipe(c);
 });
-server.listen(3101, function() { //'listening' listener
-  console.log('server bound');
-}); 
 
 //////////////////////////////////////////////////////
 var WebSocketServer = require('websocket').server;
 var http = require('http');
 
-var httpserver = http.createServer(function(request, response) {
-    // process HTTP request. Since we're writing just WebSockets server
-    // we don't have to implement anything.
-});
-httpserver.listen(3102, function() { });
+var httpserver = http.createServer(function(request, response) {});
 
 // create the server
 wsServer = new WebSocketServer({
@@ -57,3 +52,31 @@ wsServer.on('request', function(request) {
         // close user connection
     });
 });
+
+exports.start = function(callback_out) {
+	controlflow.series([
+		function(callback){
+			server.on("error", function() {
+				callback("Cannot bind to controlsocket port "+configs.runtimeconfig.controlport,"");
+				
+			});
+			server.on("listening", function() {
+				console.log("Controlsocket port: " + configs.runtimeconfig.controlport);
+				callback(null,"");
+			});
+			server.listen(configs.runtimeconfig.controlport);
+		},
+		function(callback){
+			httpserver.on("error", function() {
+				callback("Cannot bind to Websocket port "+configs.runtimeconfig.websocketport,"");
+				
+			});
+			httpserver.on("listening", function() {
+				console.log("Websocket port: " + configs.runtimeconfig.websocketport);
+				callback(null,"");
+			});
+			httpserver.listen(configs.runtimeconfig.websocketport);
+		}
+	],
+	callback_out);
+}

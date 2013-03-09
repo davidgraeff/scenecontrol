@@ -40,7 +40,8 @@
 		"hashish" :  "0.0.x",
 		"mubsub" :  "0.2.x",
 		"mongoskin" : "0.5.x",
-		"websocket" : "1.0.x"
+		"websocket" : "1.0.x",
+		"async" : "0.2.x"
 	},
 	"analyze": false,
 	"devDependencies": {
