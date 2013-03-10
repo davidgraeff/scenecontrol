@@ -15,6 +15,7 @@ IF (NOT ${QT_FOUND})
 ENDIF()
 
 # Shared source
+ADD_DEFINITIONS(-D__STRICT_ANSI__)
 include_directories(${QT_INCLUDES} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 file(GLOB SRCS_SHARED_JSON "${CMAKE_CURRENT_SOURCE_DIR}/shared/jsondocuments/*.cpp") # JSon Document shared source
 add_library(jsonDocumentsLib OBJECT ${SRCS_SHARED_JSON})
@@ -26,7 +27,7 @@ add_library(PluginLib OBJECT ${SRCS_SHARED_PLUGINS} ${SRCS_SHARED_PLUGINS_MOCS} 
 
 # add directories
 add_subdirectory(libdatastorage)
-add_subdirectory(server)
+add_subdirectory(core)
 add_subdirectory(plugins)
 add_subdirectory(htmleditor)
 add_subdirectory(tools/startonboot)
