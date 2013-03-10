@@ -26,9 +26,7 @@ QT4_WRAP_CPP(SRCS_SHARED_PLUGINS_MOCS "${CMAKE_CURRENT_SOURCE_DIR}/shared/plugin
 add_library(PluginLib OBJECT ${SRCS_SHARED_PLUGINS} ${SRCS_SHARED_PLUGINS_MOCS} ${SRCS_SHARED_UTILS} ${SRCS_SHARED_JSON})
 
 # add directories
-add_subdirectory(libdatastorage)
 add_subdirectory(core)
 add_subdirectory(plugins)
 add_subdirectory(htmleditor)
 add_subdirectory(tools/startonboot)
-add_subdirectory(websocketproxy)
