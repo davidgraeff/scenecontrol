@@ -10,6 +10,7 @@
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <QProcessEnvironment>
 #include "shared/utils/logging.h"
+#include <shared/utils/paths.h>
 
 /// The name of the server communication socket
 #define LOCALSOCKETNAMESPACE "sceneserver"
@@ -46,8 +47,98 @@ AbstractPlugin::AbstractPlugin(const QString& pluginid, const QString& instancei
 
 AbstractPlugin::~AbstractPlugin() {}
 
+
+QSslKey AbstractPlugin::readKey(const QString& fileKeyString)
+{
+	QFile fileKey(fileKeyString);
+	if (fileKey.open(QIODevice::ReadOnly))
+	{
+		QByteArray key = fileKey.readAll();
+		fileKey.close();
+		return QSslKey(key, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, "1234");
+	}
+	else
+	{
+		qWarning() << fileKey.errorString();
+		return QSslKey();
+	}
+}
+
+QSslCertificate AbstractPlugin::readCertificate(const QString& filename)
+{
+	QFile fileCert(filename);
+	if (fileCert.open(QIODevice::ReadOnly))
+	{
+		QByteArray cert = fileCert.readAll();
+		fileCert.close();
+		return QSslCertificate(cert);
+	}
+	else
+	{
+		qWarning() << fileCert.errorString();
+		return QSslCertificate();
+	}
+}
+
+void AbstractPlugin::sslErrors ( const QList<QSslError> & errors ) {
+	QList<QSslError> filteredErrors(errors);
+	for (int i=filteredErrors.size()-1;i>=0;--i)
+		if (filteredErrors[i].error() == QSslError::SelfSignedCertificate || filteredErrors[i].error() == QSslError::HostNameMismatch)
+			filteredErrors.removeAt(i);
+		if (filteredErrors.size())
+			qWarning() << "SSL Errors" << filteredErrors;
+}
+
 bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int port)
 {
+	// ssl cert and keys
+	ignoreSslErrors();
+	setProtocol(QSsl::SslV3);
+	setPeerVerifyMode(QSslSocket::VerifyNone);
+	
+	// Add client key
+	{
+		QByteArray filename;
+		filename.append("services/").append(m_pluginid.toLatin1()).append(".key");
+		QSslKey sslKeySpecific = readKey(setup::certificateFile(filename.constData()));
+		if (sslKeySpecific.isNull()) {
+			qDebug() << "SSL specific key invalid:" << setup::certificateFile(filename.constData())<<"Will try generic one.";
+			QSslKey sslKeyGeneric = readKey(setup::certificateFile("services/generic.key"));
+			if (sslKeyGeneric.isNull()) {
+				qWarning() << "SSL key invalid:" << setup::certificateFile("services/generic.key");
+				return false;
+			} else
+				setPrivateKey(sslKeyGeneric);
+		} else
+			setPrivateKey(sslKeySpecific);
+	}
+	
+	// Set public certificate
+	{
+		QByteArray filename;
+		filename.append("services/").append(m_pluginid.toLatin1()).append(".crt");
+		QSslCertificate sslCertSpecific = readCertificate(setup::certificateFile(filename.constData()));
+		if (sslCertSpecific.isNull()) {
+			qDebug() << "SSL specific Certificate invalid:" << setup::certificateFile(filename.constData())<<"Will try generic one.";
+			QSslCertificate sslCertGeneric = readCertificate(setup::certificateFile("services/generic.crt"));
+			if (sslCertGeneric.isNull()) {
+				qWarning() << "SSL Certificate invalid:" << setup::certificateFile("services/generic.crt");
+				return false;
+			} else
+				setLocalCertificate(sslCertGeneric);
+		} else
+			setLocalCertificate(sslCertSpecific);
+	}
+
+	// Add public certificate of the server to the trusted hosts
+	QSslCertificate sslCertServer = readCertificate(setup::certificateFile("server.crt"));
+	if (sslCertServer.isNull())
+	{
+		qWarning() << "SSL Server Certificate invalid:" << setup::certificateFile("server.crt");
+		return false;
+	}
+	addCaCertificate(sslCertServer);
+
 	// connect
 	connectToHostEncrypted(serverip, port);
 	if (!waitForConnected()) {

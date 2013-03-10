@@ -25,6 +25,7 @@
 #include <QString>
 #include <QTcpSocket>
 #include <QSslSocket>
+#include <QSslKey>
 #include <QSet>
 #include <QVariant>
 
@@ -81,13 +82,16 @@ private Q_SLOTS:
     void readyReadCommunication();
     // If disconnected from server, quit plugin process
     void disconnectedFromServer();
+	void sslErrors ( const QList<QSslError> & errors );
 protected:
     int m_lastsessionid;
 	QString m_pluginid;
 	QString m_instanceid;
 private:
 	AbstractPlugin(const QString& pluginid, const QString& instanceid);
-    QByteArray m_chunk;
+	QSslKey readKey(const QString& fileKeyString);
+	QSslCertificate readCertificate(const QString& filename);
+	
     int invokeHelperGetMethodId(const QByteArray& methodName);
 	// Return -1 if parameters are not matching
     int invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output);
