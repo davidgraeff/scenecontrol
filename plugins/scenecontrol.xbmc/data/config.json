@@ -1,1 +1,1 @@
-{"server":"127.0.0.1", "port":9090,"instanceid_":"127.0.0.19090","type_":"configuration"}
+{"server":"127.0.0.1", "port":9090,"instanceid_":"127.0.0.19090","type_":"configuration", "autostart": true}
