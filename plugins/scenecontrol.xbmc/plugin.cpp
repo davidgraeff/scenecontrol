@@ -7,27 +7,26 @@
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
-    if (argc<2) {
-		qWarning()<<"No instanceid provided!";
+    if (argc<4) {
+		qWarning()<<"Usage: plugin_id instance_id server_ip server_port";
 		return 1;
 	}
-    plugin p(QLatin1String(PLUGIN_ID), QString::fromAscii(argv[1]));
-    if (!p.createCommunicationSockets())
+    
+    if (plugin::createInstance(PLUGIN_ID,argv[1],argv[2],argv[3])==0)
         return -1;
     return app.exec();
-}
-
-plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
-    connect(&m_socket, SIGNAL(connected()), SLOT(hostconnected()));
-    connect(&m_socket, SIGNAL(disconnected()), SLOT(hostdisconnected()));
-    connect(&m_socket, SIGNAL(readyRead()), SLOT(readyRead()));
-    connect(&m_socket, SIGNAL(error(QAbstractSocket::SocketError)), SLOT(error(QAbstractSocket::SocketError)));
 }
 
 plugin::~plugin() {}
 
 void plugin::clear() {}
-void plugin::initialize() {}
+
+void plugin::initialize() {    
+	connect(&m_socket, SIGNAL(connected()), SLOT(hostconnected()));
+	connect(&m_socket, SIGNAL(disconnected()), SLOT(hostdisconnected()));
+	connect(&m_socket, SIGNAL(readyRead()), SLOT(readyRead()));
+	connect(&m_socket, SIGNAL(error(QAbstractSocket::SocketError)), SLOT(error(QAbstractSocket::SocketError)));
+}
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     Q_UNUSED(configid);

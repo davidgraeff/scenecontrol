@@ -22,80 +22,86 @@ static void catch_int(int )
         QCoreApplication::exit(0);
 }
 
+AbstractPlugin* AbstractPlugin::createInstance(const QByteArray& pluginid, const QByteArray& instanceid, const QByteArray& serverip, const QByteArray& port)
+{
+	setLogOptions(pluginid+":"+instanceid, true);
+	qInstallMsgHandler(roomMessageOutput);
+	
+	AbstractPlugin* plugin = new AbstractPlugin(pluginid, instanceid);
+	if (!plugin->createCommunicationSockets(serverip, port.toInt())) {
+		delete plugin;
+		return 0;
+	}
+	
+	//set up signal handlers to exit on 2x CTRL+C
+	signal(SIGINT, catch_int);
+	signal(SIGTERM, catch_int);
+	
+	return plugin;
+}
+
 AbstractPlugin::AbstractPlugin(const QString& pluginid, const QString& instanceid) : m_lastsessionid(-1), m_pluginid(pluginid), m_instanceid(instanceid)
 {
-	setLogOptions(m_pluginid.toUtf8()+":"+m_instanceid.toUtf8(), true);
-    qInstallMsgHandler(roomMessageOutput);
-    connect(this, SIGNAL(newConnection()), SLOT(newConnectionCommunication()));
-
-    //set up signal handlers to exit on 2x CTRL+C
-    signal(SIGINT, catch_int);
-    signal(SIGTERM, catch_int);
 }
 
-AbstractPlugin::~AbstractPlugin()
-{
-	close();
-	qDeleteAll(m_connectionsByID);
-	m_connectionsByID.clear();
-}
+AbstractPlugin::~AbstractPlugin() {}
 
-bool AbstractPlugin::createCommunicationSockets()
+bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int port)
 {
-    // create server socket for incoming connections
-    const QString name = QLatin1String(LOCALSOCKETNAMESPACE) + m_pluginid + m_instanceid;
-    removeServer(name);
-    if (!listen(name)) {
-        qWarning() << "Plugin interconnect server failed";
-        return false;
-    }
-    // create connection to server
-    QLocalSocket* socketToServer = getClientConnection(LOCALSOCKETNAMESPACE);
-    if (!socketToServer) {
-        qWarning() << "Couldn't connect to server";
-        return false;
-    }
-    connect(socketToServer, SIGNAL(disconnected()), SLOT(disconnectedFromServer()));
+	// connect
+	connectToHostEncrypted(serverip, port);
+	if (!waitForConnected()) {
+		return false;
+	}
+	// The core will send a version identifier
+	if (!waitForReadyRead()) {
+		return false;
+	}
+	{
+		// we expect the server (remote_types=="core") and at least api level 10
+		SceneDocument serverident(readLine());
+		if (!serverident.isMethod("identify") ||
+			serverident.toInt("apiversion")<10 ||
+			serverident.toString("remote_types")!=QLatin1String("core")) {
+			qWarning()<<"Wrong api version!";
+			return false;
+		}
+		SceneDocument ack;
+		ack.setComponentID(m_pluginid);
+		ack.setInstanceID(m_instanceid);
+		ack.makeack(serverident.requestid());
+		write(ack.getjson());
+		flush();
+	}
+	
+	// identify
+	SceneDocument identify;
+	identify.setrequestid();
+	identify.setMethod("identify");
+	identify.setComponentID(m_pluginid);
+	identify.setInstanceID(m_instanceid);
+	identify.setData("remote_types",QStringList() << QLatin1String("service"));
+	identify.setData("apiversion", 10);
+	write(identify.getjson());
+	flush();
+	if (!waitForReadyRead()) {
+		return false;
+	}
+	SceneDocument serverresponse(readLine());
+	if (!serverresponse.isResponse(identify)) {
+		qWarning()<<"Couldn't identify to core!";
+		return false;
+	}
+	
+    connect(this, SIGNAL(disconnected()), SLOT(disconnectedFromServer()));
+	connect(this, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
     return true;
 }
 
 void AbstractPlugin::readyReadCommunication()
 {
-    QLocalSocket* socket = (QLocalSocket*)sender();
-
-    m_chunk.append(socket->readAll());
-
-    int indexOfChunkEnd;
-    while ((indexOfChunkEnd = m_chunk.indexOf("\n\t")) != -1) {
-        // Read data and decode into a QVariantMap; clear chunk buffer
-        QVariantMap variantdata;
-        {
-            const QByteArray r(m_chunk, indexOfChunkEnd);
-            QDataStream stream(r);
-            stream >> variantdata;
-        }
-        // Drop chunk and chunk-complete-bytes
-        m_chunk.remove(0,indexOfChunkEnd+3);
-		
-		SceneDocument doc(variantdata);
-
-		if (m_connectionsBySocket.value(socket).isEmpty()) {
-			if (m_pendingConnections.contains(socket)) {
-				m_pendingConnections.remove(socket);
-				if (doc.isMethod("identifyplugin") && doc.hasComponentID()) {
-					m_connectionsBySocket.insert(socket, doc.componentUniqueID().toUtf8());
-					continue;
-				} else {
-					qWarning() << "Connection didn't authorize!" << variantdata;
-					socket->deleteLater();
-					return;
-				}
-			} else {
-				qWarning() << "Unknown socket!";
-				socket->deleteLater();
-				return;
-			}
-		}
+    while (canReadLine()) {
+		SceneDocument doc(readLine());
 
         m_lastsessionid = doc.sessionid();
 
@@ -103,13 +109,8 @@ void AbstractPlugin::readyReadCommunication()
         const QByteArray method = doc.method();
 
         // Server callable methods
-        if (method == "pluginid") {
-			SceneDocument transferdoc;
-			transferdoc.setMethod("pluginid");
-			transferdoc.setComponentID(m_pluginid);
-            writeToSocket(socket, transferdoc.getData());
-        } else if (method == "configChanged") {
-            configChanged(doc.id().toUtf8(), variantdata);
+        if (method == "configChanged") {
+            configChanged(doc.id().toUtf8(), doc.getData());
         } else if (method == "methodresponse") { // Ignore responses
         } else if (method == "initialize") {
             initialize();
@@ -119,20 +120,21 @@ void AbstractPlugin::readyReadCommunication()
             requestProperties(m_lastsessionid);
         } else if (method == "session_change") {
             session_change(m_lastsessionid, doc.toBool("running"));
-		} else if (method == "callslot") { // server and other plugins callable methods
+		} else if (method == "call") { // server and other plugins callable methods
 			// Extract data document out of the transfered doc
-			SceneDocument dataDocument(variantdata.value(QLatin1String("doc")).toMap());
+			SceneDocument dataDocument(doc.getData().value(QLatin1String("doc")).toMap());
             // Prepare response
 			SceneDocument transferdoc;
-			transferdoc.setMethod("methodresponse");
+			transferdoc.makeack(doc.requestid());
 			transferdoc.setComponentID(m_pluginid);
+			transferdoc.setInstanceID(m_instanceid);
 			
 			int methodId = invokeHelperGetMethodId(dataDocument.method());
             // If method not found call dataFromPlugin
             if (methodId == -1) {
 				qWarning() << "Method not found!" << dataDocument.method();
 				transferdoc.setData("error", "Method not found!");
-                writeToSocket(socket, transferdoc.getData());
+				write(transferdoc.getjson());
                 continue;
             }
 			
@@ -141,87 +143,37 @@ void AbstractPlugin::readyReadCommunication()
 			if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
 				qWarning() << "Arguments list incompatible!" << dataDocument.method() << methodId << dataDocument.getData() << argumentsInOrder;
                 transferdoc.setData("error", "Arguments list incompatible!");
-                writeToSocket(socket, transferdoc.getData());
+				write(transferdoc.getjson());
                 continue;
             }
 
             const char* returntype = metaObject()->method(methodId).typeName();
             // If no response is expected, write the method-response message before invoking the target method,
             // because that may write data the the server and the response-message have to be the first answer
-            QByteArray responseid = variantdata.value(QLatin1String("responseid_")).toByteArray();
+			QByteArray responseid = doc.requestid().toLatin1();
             transferdoc.setData("responseid_", responseid);
             transferdoc.setData("response_",
 								invokeSlot(dataDocument.method(), params, returntype,
 											argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3],
 											argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]));
             if (responseid.size()) {
-                writeToSocket(socket, transferdoc.getData());
+				write(transferdoc.getjson());
                 qDebug() << "WRITE RESPONSE" << transferdoc.toString("response_");
             }
         }
     }
 }
 
-
-void AbstractPlugin::writeToSocket(QLocalSocket* socket, const QVariantMap& data) {
-    QDataStream streamout(socket);
-    streamout << data;
-    streamout.writeRawData("\n\t\0", 3);
-}
-
-void AbstractPlugin::newConnectionCommunication()
+bool AbstractPlugin::callRemoteComponent( const QVariantMap& dataout )
 {
-    while (hasPendingConnections()) {
-		QLocalSocket* socket = nextPendingConnection();
-		connect(socket, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
-		m_pendingConnections.insert(socket);
-    }
-}
-
-bool AbstractPlugin::callRemoteComponentMethod( const QByteArray& componentUniqueID, const QVariantMap& dataout )
-{
-    QVariantMap d;
-	d.insert(QLatin1String("doc"), dataout);
-	d.insert(QLatin1String("method_"), "callslot");
-	return sendDataToComponent(componentUniqueID, d);
-}
-
-bool AbstractPlugin::sendDataToComponent( const QByteArray& componentUniqueID, const QVariantMap& dataout )
-{
-	QLocalSocket* socket = getClientConnection(componentUniqueID);
-	if (!socket) {
-		qWarning() << "Failed to send data to" << componentUniqueID;
-		return false;
-	}
-	writeToSocket(socket, dataout);
+	SceneDocument d;
+	d.setComponentID(m_pluginid);
+	d.setInstanceID(m_instanceid);
+	d.setData("doc", dataout);
+	d.setMethod("call");
+	write(d.getjson());
+	flush();
 	return true;
-}
-
-QLocalSocket* AbstractPlugin::getClientConnection(const QByteArray& componentUniqueID) {
-    // If this connection is known we get a valid socket out of the map (id->socket)
-    QLocalSocket* socket = m_connectionsByID.value(componentUniqueID);
-    // Try to connect to the target plugin if no connection is made so far
-    if (!socket) {
-        socket = new QLocalSocket();
-        socket->connectToServer(QLatin1String(LOCALSOCKETNAMESPACE) + componentUniqueID);
-        connect(socket, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
-        // wait for at least 30 seconds for a connection
-        if (!socket->waitForConnected()) {
-			qWarning() << "Couldn't connect to" << componentUniqueID;
-            delete socket;
-            return 0;
-        }
-        // connection established: add to list of connections, send welcome string with current plugin id
-        m_connectionsByID[componentUniqueID] = socket;
-        m_connectionsBySocket[socket] = componentUniqueID;
-		SceneDocument transferdoc;
-		transferdoc.setMethod("identifyplugin");
-		transferdoc.setComponentID(m_pluginid);
-		transferdoc.setInstanceID(m_instanceid);
-		writeToSocket(socket, transferdoc.getData());
-        socket->waitForBytesWritten();
-    }
-    return socket;
 }
 
 void AbstractPlugin::changeConfig(const QByteArray& configid, const QVariantMap& data) {
@@ -230,7 +182,7 @@ void AbstractPlugin::changeConfig(const QByteArray& configid, const QVariantMap&
 	transferdoc.setComponentID(m_pluginid);
 	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setid(configid);
-	sendDataToComponent(LOCALSOCKETNAMESPACE, transferdoc.getData());
+	write(transferdoc.getjson());
 }
 
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
@@ -239,7 +191,7 @@ void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
 	transferdoc.setComponentID(m_pluginid);
 	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setSessionID(sessionid);
-	sendDataToComponent(LOCALSOCKETNAMESPACE, transferdoc.getData());
+	write(transferdoc.getjson());
 }
 
 void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_sceneid) {
@@ -249,7 +201,7 @@ void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_
 	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setSceneid(dest_sceneid);
 	transferdoc.setid(eventid);
-	sendDataToComponent(LOCALSOCKETNAMESPACE, transferdoc.getData());
+	write(transferdoc.getjson());
 }
 
 void AbstractPlugin::disconnectedFromServer() {

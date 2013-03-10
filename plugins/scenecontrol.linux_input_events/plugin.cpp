@@ -37,23 +37,14 @@
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
-    if (argc<2) {
-		qWarning()<<"No instanceid provided!";
+    if (argc<4) {
+		qWarning()<<"Usage: plugin_id instance_id server_ip server_port";
 		return 1;
 	}
-    plugin p(QLatin1String(PLUGIN_ID), QString::fromAscii(argv[1]));
-    if (!p.createCommunicationSockets())
+    
+    if (plugin::createInstance(PLUGIN_ID,argv[1],argv[2],argv[3])==0)
         return -1;
     return app.exec();
-}
-
-plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
-	m_dontgrab = 0;
-    m_repeat = 0;
-    m_repeatInit = 0;
-    m_devicelist = new ManagedDeviceList();
-    connect ( m_devicelist,SIGNAL ( deviceAdded ( ManagedDevice* ) ),SLOT ( deviceAdded ( ManagedDevice* ) ) );
-    connect ( m_devicelist,SIGNAL ( deviceRemoved ( ManagedDevice* ) ),SLOT ( deviceRemoved ( ManagedDevice* ) ) );
 }
 
 plugin::~plugin() {
@@ -66,10 +57,18 @@ void plugin::clear() {
     qDeleteAll(m_devices);
     m_devices.clear();
 	m_events.clear();
+	delete m_devicelist;
+	m_devicelist = 0;
 }
 
 void plugin::initialize() {
-    clear();
+	m_dontgrab = 0;
+	m_repeat = 0;
+	m_repeatInit = 0;
+	m_devicelist = new ManagedDeviceList();
+	connect ( m_devicelist,SIGNAL ( deviceAdded ( ManagedDevice* ) ),SLOT ( deviceAdded ( ManagedDevice* ) ) );
+	connect ( m_devicelist,SIGNAL ( deviceRemoved ( ManagedDevice* ) ),SLOT ( deviceRemoved ( ManagedDevice* ) ) );
+	
     for ( int i=0;keynames[i].name;++i ) {
         m_keymapping[keynames[i].value] = keynames[i].name;
     }

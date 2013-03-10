@@ -23,6 +23,7 @@
 #include <QByteArray>
 #include <QTextStream>
 #include <QStringList>
+#include <QUuid>
 
 /**
  * A scene document is the in-memory copy of a json document, technically implemented
@@ -59,9 +60,16 @@ public:
      * Constructor: Construct by a json document
      */
     SceneDocument(const QByteArray& jsondata, const QByteArray& hash);
+	SceneDocument(const QByteArray& jsondata);
+	
+	bool isResponse(SceneDocument& doc) {return requestid()==doc.responseid();}
 
 	const QByteArray getHash() ;
 	QString filename() const ;
+	QString responseid() const {return m_map.value(QLatin1String("responseid_")).toString();}
+	QString requestid() const {return m_map.value(QLatin1String("requestid_")).toString();}
+	void setrequestid() {m_map[QLatin1String("requestid_")] = QUuid::createUuid().toString();}
+	void makeack(const QString& requestid) {setMethod("ack"); m_map[QLatin1String("responseid_")] = requestid;}
 	
 	/***************** For Model messages/Notification ******************/
     /**

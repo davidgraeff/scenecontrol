@@ -29,31 +29,21 @@
 int main ( int argc, char* argv[] )
 {
     QCoreApplication app ( argc, argv );
-    if ( argc<2 )
-    {
-        qWarning() <<"No instanceid provided!";
+    if (argc<4) {
+        qWarning()<<"Usage: plugin_id instance_id server_ip server_port";
         return 1;
     }
-    plugin p ( QLatin1String ( PLUGIN_ID ), QString::fromAscii ( argv[1] ) );
-    if ( !p.createCommunicationSockets() )
+    
+    if (plugin::createInstance(PLUGIN_ID,argv[1],argv[2],argv[3])==0)
         return -1;
     return app.exec();
-}
-
-plugin::plugin ( const QString& pluginid, const QString& instanceid ) : AbstractPlugin ( pluginid, instanceid )
-{
-    m_mediacontroller = new MediaController ( this );
-    connect ( m_mediacontroller,SIGNAL ( playlistChanged ( QString ) ),SLOT ( playlistChanged ( QString ) ) );
-    connect ( m_mediacontroller,SIGNAL ( playlistsChanged ( QString,int ) ),SLOT ( playlistsChanged ( QString,int ) ) );
-    connect ( m_mediacontroller,SIGNAL ( trackChanged ( QString,QString,int,uint,uint,int ) ), SLOT ( trackChanged ( QString,QString,int,uint,uint,int ) ) );
-    connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
-    connect ( m_mediacontroller,SIGNAL ( stateChanged ( MediaController* ) ),SLOT ( stateChanged ( MediaController* ) ) );
 }
 
 plugin::~plugin()
 {
     delete m_mediacontroller;
 }
+
 
 void plugin::configChanged ( const QByteArray& configid, const QVariantMap& data )
 {
@@ -194,4 +184,12 @@ void plugin::mpdchangeplaylist ( const QString& playlistid, int track )
     {
         m_mediacontroller->setCurrentTrack ( track );
     }
+}
+void plugin::initialize() {
+	m_mediacontroller = new MediaController ( this );
+	connect ( m_mediacontroller,SIGNAL ( playlistChanged ( QString ) ),SLOT ( playlistChanged ( QString ) ) );
+	connect ( m_mediacontroller,SIGNAL ( playlistsChanged ( QString,int ) ),SLOT ( playlistsChanged ( QString,int ) ) );
+	connect ( m_mediacontroller,SIGNAL ( trackChanged ( QString,QString,int,uint,uint,int ) ), SLOT ( trackChanged ( QString,QString,int,uint,uint,int ) ) );
+	connect ( m_mediacontroller,SIGNAL ( volumeChanged ( double ) ),SLOT ( volumeChanged ( double ) ) );
+	connect ( m_mediacontroller,SIGNAL ( stateChanged ( MediaController* ) ),SLOT ( stateChanged ( MediaController* ) ) );
 }

@@ -24,20 +24,14 @@
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
-    if (argc<2) {
-		qWarning()<<"No instanceid provided!";
+    if (argc<4) {
+		qWarning()<<"Usage: plugin_id instance_id server_ip server_port";
 		return 1;
 	}
-    plugin p(QLatin1String(PLUGIN_ID), QString::fromAscii(argv[1]));
-    if (!p.createCommunicationSockets())
+    
+    if (plugin::createInstance(PLUGIN_ID,argv[1],argv[2],argv[3])==0)
         return -1;
     return app.exec();
-}
-
-plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid) {
-    connect(&m_moodlightTimer, SIGNAL(timeout()),SLOT(moodlightTimeout()));
-    m_moodlightTimer.setInterval(5000);
-    srand(100);
 }
 
 plugin::~plugin() {
@@ -47,12 +41,12 @@ void plugin::clear() {
 
 }
 
-void plugin::clear(const QByteArray& plugin_) {
+void plugin::clear(const QString& componentid_, const QString& instanceid_) {
     // Remove all leds referenced by "plugin_id"
     QMutableMapIterator<QString, iochannel> i(m_ios);
     while (i.hasNext()) {
         i.next();
-        if (i.value().componentUniqueID == plugin_) {
+		if (i.value().componentID == componentid_ && i.value().instanceID == instanceid_) {
             SceneDocument sc = SceneDocument::createModelRemoveItem("leds");
             sc.setData("channel", i.value().channel);
             changeProperty(sc.getData());
@@ -62,6 +56,9 @@ void plugin::clear(const QByteArray& plugin_) {
 }
 
 void plugin::initialize() {
+	connect(&m_moodlightTimer, SIGNAL(timeout()),SLOT(moodlightTimeout()));
+	m_moodlightTimer.setInterval(5000);
+	srand(100);
     m_ios.clear();
 }
 
@@ -135,13 +132,13 @@ void plugin::setLed ( const QString& channel, int value, int fade )
     p.fadeType = fade;
 
     SceneDocument doc;
-	doc.setComponentID(m_pluginid);
-	doc.setInstanceID(m_instanceid);
+	doc.setComponentID(p.componentID);
+	doc.setInstanceID(p.instanceID);
     doc.setMethod("setLed");
 	doc.setData("channel",channel);
 	doc.setData("value",value);
 	doc.setData("fade",fade);
-    callRemoteComponentMethod(p.componentUniqueID, doc.getData());
+	callRemoteComponent(doc.getData());
 }
 
 void plugin::setLedName ( const QString& channel, const QString& name, bool updateDatabase )
@@ -216,7 +213,8 @@ void plugin::subpluginChange(const QString& componentid_, const QString& instanc
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];
-	io.componentUniqueID = QString(componentid_+instanceid_).toUtf8();
+	io.componentID = componentid_.toUtf8();
+	io.instanceID = instanceid_.toUtf8();
     //p.moodlight = false;
     //p.fadeType = 1;
     io.channel = channel;

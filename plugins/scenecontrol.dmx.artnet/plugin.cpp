@@ -24,20 +24,16 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
-    if (argc<2) {
-		qWarning()<<"No instanceid provided!";
+    if (argc<4) {
+		qWarning()<<"Usage: plugin_id instance_id server_ip server_port";
 		return 1;
 	}
-    plugin p(QLatin1String(PLUGIN_ID), QString::fromAscii(argv[1]));
-    if(!p.createCommunicationSockets())
-        return -1;
+    
+    if (plugin::createInstance(PLUGIN_ID,argv[1],argv[2],argv[3])==0)
+        return 2;
     return app.exec();
 }
 
-plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlugin(pluginid, instanceid), m_socket(0) {
-    connect(&m_connectTimer, SIGNAL(timeout()), SLOT(resendConnectSequence()));
-    m_connectTimer.setSingleShot(true);
-}
 plugin::~plugin() {
     delete m_socket;
 }
@@ -50,12 +46,15 @@ void plugin::clear() {
 	
     SceneDocument doc;
     doc.setMethod("clear");
-	doc.setComponentID(m_pluginid);
-	doc.setInstanceID(m_instanceid);
-    callRemoteComponentMethod("scenecontrol.ledsnull", doc.getData());
+	doc.setComponentID(QLatin1String("scenecontrol.leds"));
+	doc.setInstanceID(QLatin1String("null"));
+	callRemoteComponent(doc.getData());
 }
 
-void plugin::initialize() {}
+void plugin::initialize() {
+	connect(&m_connectTimer, SIGNAL(timeout()), SLOT(resendConnectSequence()));
+	m_connectTimer.setSingleShot(true);
+}
 
 void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
     Q_UNUSED(configid);
@@ -92,12 +91,12 @@ void plugin::ledChanged(QString channel, int value) {
 
 	SceneDocument doc;
 	doc.setMethod("subpluginChange");
-	doc.setComponentID(m_pluginid);
-	doc.setInstanceID(m_instanceid);
+	doc.setComponentID(QLatin1String("scenecontrol.leds"));
+	doc.setInstanceID(QLatin1String("null"));
 	doc.setData("channel",channel);
 	doc.setData("value",value);
 	doc.setData("name",QString());
-	callRemoteComponentMethod("scenecontrol.ledsnull", doc.getData());
+	callRemoteComponent(doc.getData());
 }
 
 int plugin::getLed ( const QString& channel ) const {

@@ -76,6 +76,13 @@ SceneDocument::SceneDocument(const QByteArray& jsondata, const QByteArray& hash)
 	m_map = r.result().toMap();
 	convertType();
 }
+SceneDocument::SceneDocument(const QByteArray& jsondata)
+{
+	JsonReader r;
+	r.parse(jsondata);
+	m_map = r.result().toMap();
+	convertType();
+}
 
 void SceneDocument::convertType()
 {

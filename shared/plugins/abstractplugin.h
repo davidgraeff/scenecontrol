@@ -23,8 +23,8 @@
 #include <QMap>
 #include <QObject>
 #include <QString>
-#include <QLocalSocket>
-#include <QLocalServer>
+#include <QTcpSocket>
+#include <QSslSocket>
 #include <QSet>
 #include <QVariant>
 
@@ -56,7 +56,7 @@
  * like "void dim_light(int id, int value)" or "bool isOn(int id)". Conditions may only
  * return a boolean response value.
  */
-class AbstractPlugin: public QLocalServer {
+class AbstractPlugin: public QSslSocket {
     Q_OBJECT
 public:
     /**
@@ -65,7 +65,7 @@ public:
      *
      * Use this in your plugin main method.
      */
-    AbstractPlugin(const QString& pluginid, const QString& instanceid);
+	static AbstractPlugin* createInstance(const QByteArray& pluginid, const QByteArray& instanceid, const QByteArray& serverip, const QByteArray& port);
     virtual ~AbstractPlugin();
 	/**
 	 * If data from the server has been received you can get the clients id (session id)
@@ -73,16 +73,12 @@ public:
 	 * send data.
 	 */
 	int getLastSessionID();
-
-    bool createCommunicationSockets();
-    bool callRemoteComponentMethod( const QByteArray& componentUniqueID, const QVariantMap& dataout );
-	bool sendDataToComponent( const QByteArray& componentUniqueID, const QVariantMap& dataout );
+	bool callRemoteComponent( const QVariantMap& dataout );
     void changeConfig(const QByteArray& category, const QVariantMap& data);
     void changeProperty(const QVariantMap& data, int sessionid = -1);
     void eventTriggered(const QString& eventid, const QString& dest_collectionId);
 private Q_SLOTS:
     void readyReadCommunication();
-    void newConnectionCommunication ();
     // If disconnected from server, quit plugin process
     void disconnectedFromServer();
 protected:
@@ -90,16 +86,13 @@ protected:
 	QString m_pluginid;
 	QString m_instanceid;
 private:
+	AbstractPlugin(const QString& pluginid, const QString& instanceid);
     QByteArray m_chunk;
-    QMap<QByteArray, QLocalSocket*> m_connectionsByID;
-    QMap<QLocalSocket*, QByteArray> m_connectionsBySocket;
-    QSet<QLocalSocket*> m_pendingConnections;
-    QLocalSocket* getClientConnection(const QByteArray& plugin_id);
-    void writeToSocket(QLocalSocket* socket, const QVariantMap& data);
     int invokeHelperGetMethodId(const QByteArray& methodName);
 	// Return -1 if parameters are not matching
     int invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output);
     QVariant invokeSlot(const QByteArray& methodname, int numParams, const char* returntype, QVariant p0, QVariant p1, QVariant p2, QVariant p3, QVariant p4, QVariant p5, QVariant p6, QVariant p7, QVariant p8);
+	bool createCommunicationSockets(const QByteArray& serverip, int port);
 public Q_SLOTS:
     /**
      * Return pluginid

@@ -27,13 +27,13 @@ class plugin : public AbstractPlugin
 {
     Q_OBJECT
 public:
-    plugin(const QString& pluginid, const QString& instanceid);
+
     virtual ~plugin();
 
 private Q_SLOTS:
     virtual void initialize();
     virtual void clear();
-    void clear(const QByteArray& plugin_);
+    void clear(const QString& componentid_, const QString& instanceid_);
     virtual void requestProperties(int sessionid);
     virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
     // Call this method to update <channel, value>-pairs and clear(your_plugin_id) to clear
@@ -58,7 +58,8 @@ private:
         int value;
         QString name;
         QString channel;
-        QByteArray componentUniqueID;
+		QByteArray componentID;
+		QByteArray instanceID;
         bool moodlight;
         int fadeType;
 

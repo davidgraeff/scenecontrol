@@ -27,8 +27,9 @@ class plugin : public AbstractPlugin
 {
     Q_OBJECT
 public:
-    plugin(const QString& pluginid, const QString& instanceid);
+
     virtual ~plugin();
+	virtual void initialize();
 private:
 	MediaController* m_mediacontroller;
     virtual void configChanged ( const QByteArray& configid, const QVariantMap& data );
