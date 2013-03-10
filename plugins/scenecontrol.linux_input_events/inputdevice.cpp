@@ -1,7 +1,7 @@
 #include "inputdevice.h"
 #include "managed_device_list.h"
 #include "plugin.h"
-#include <shared/jsondocuments/scenedocument.h>
+#include "jsondocuments/scenedocument.h"
 #include <linux/input.h>
 #include <QFileInfo>
 #include <unistd.h>

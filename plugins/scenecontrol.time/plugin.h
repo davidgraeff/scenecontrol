@@ -23,7 +23,7 @@
 #include <QTimer>
 #include <QBitArray>
 #include <QSet>
-#include "shared/plugins/abstractplugin.h"
+#include "abstractplugin.h"
 #include <QDateTime>
 
 class plugin : public AbstractPlugin

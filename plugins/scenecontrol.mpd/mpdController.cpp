@@ -25,7 +25,7 @@
 #include <QDateTime>
 
 #include "mpdController.h"
-#include "shared/plugins/abstractplugin.h"
+#include "abstractplugin.h"
 
 MediaController::MediaController(AbstractPlugin* plugin) : m_plugin(plugin), m_terminate(false), m_mediastate(NothingLoaded), m_currenttime(0), m_totaltime(0), m_track(0), m_volume(0)
 {

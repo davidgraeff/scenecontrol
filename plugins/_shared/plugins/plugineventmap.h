@@ -4,7 +4,7 @@
 #define PLUGIN_ID "fake_from_pluginservicehelper.cpp"
 #endif
 
-#include "shared/jsondocuments/scenedocument.h"
+#include "../jsondocuments/scenedocument.h"
 
 #include <QVariantMap>
 #include <QString>

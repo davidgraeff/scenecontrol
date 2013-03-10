@@ -3,7 +3,7 @@
 #include "plugin.h"
 
 #include <QCoreApplication>
-#include "shared/jsondocuments/json.h"
+#include "jsondocuments/json.h"
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);

@@ -9,8 +9,8 @@
 #include <QElapsedTimer>
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <QProcessEnvironment>
-#include "shared/utils/logging.h"
-#include <shared/utils/paths.h>
+#include "../utils/logging.h"
+#include "../utils/paths.h"
 
 /// The name of the server communication socket
 #define LOCALSOCKETNAMESPACE "sceneserver"

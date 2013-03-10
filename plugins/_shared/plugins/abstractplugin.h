@@ -29,7 +29,7 @@
 #include <QSet>
 #include <QVariant>
 
-#include "shared/jsondocuments/scenedocument.h"
+#include "../jsondocuments/scenedocument.h"
 
 /**
  * Use this as your plugin base class. You have to define PLUGIN_ID before

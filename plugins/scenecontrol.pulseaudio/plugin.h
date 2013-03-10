@@ -20,7 +20,7 @@
 #pragma once
 #include <QObject>
 #include <QStringList>
-#include "shared/plugins/abstractplugin.h"
+#include "abstractplugin.h"
 #include "pulseController.h"
 
 class plugin : public AbstractPlugin
