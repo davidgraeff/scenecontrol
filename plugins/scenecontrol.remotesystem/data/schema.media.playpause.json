@@ -1,5 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"media_playpause", "name":"Medium abspielen/pause",
-	"parameters": {}
-}

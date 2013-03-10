@@ -1,8 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"volume.relative", "name":"Volume",
-	"text":"Remotesystem Lautstärke ändern um {{volume}}",
-	"parameters": {
-		"volume":{"name":"Volume", "type":"integer", "min":-100, "max":100, "value":0}
-	}
-}

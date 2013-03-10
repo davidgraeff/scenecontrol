@@ -1,8 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"mute", "name":"Stumm/Laut",
-	"text":"Remotesystem Audioausgabe {{mute}}",
-	"parameters": {
-		"mute":{"name":"Wert", "type":"enum", "data":["Stumm","Laut","Umschalten"]}
-	}
-}
