@@ -1,0 +1,11 @@
+Description:
+------------
+This certificate is for tests only! Generate your own certificate for
+server <--> service ssl communication with openssl, e.g.:
+>> openssl req -x509 -new -out generic.crt -keyout generic.key -days 365
+
+The password for the generic private key is "1234".
+
+If your service does not provide an own certificate, this generic one will
+be used for ssl communication with the Core. You are encouraged to provide your own
+public certificate+private key pair.

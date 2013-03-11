@@ -41,7 +41,8 @@
 		"mubsub" :  "0.2.x",
 		"mongoskin" : "0.5.x",
 		"websocket" : "1.0.x",
-		"async" : "0.2.x"
+		"async" : "0.2.x",
+		"file" : "0.1.x"
 	},
 	"analyze": false,
 	"devDependencies": {

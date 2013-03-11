@@ -9,6 +9,6 @@ INCLUDE(cmake/configfile.cmake)
 
 # add directories
 add_subdirectory(core)
-add_subdirectory(plugins)
+add_subdirectory(services)
 add_subdirectory(htmleditor)
 add_subdirectory(tools/startonboot)

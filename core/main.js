@@ -7,6 +7,7 @@ var optimist = require('optimist').usage('Usage: $0	 [options]')
 	.options("h",{alias:"help"}).describe("h","Show this help")
 	.options("v",{alias:"version"}).describe("v","Show version and other information as parsable json")
 	.options("i",{alias:"import"}).describe("i","Import json files from path")
+	.options("o",{alias:"override"}).describe("o","Override existing documents when importing files with the same id+type")
 	.options("e",{alias:"exit"}).describe("e","Do not enter the mainloop and exit after importing")
 	.options("dbname",{default:configs.runtimeconfig.databasename}).describe("dbname","Database name")
 	.options("cport",{default:configs.runtimeconfig.controlport}).describe("cport","TCP Controlsocket port")
@@ -32,7 +33,9 @@ var autostartplugins = require("./startplugins.js");
 var commandsocket = require("./com/socket.js");
 
 // install new database files
-storage.addImportPath(configs.runtimeconfig.ROOM_DATABASEIMPORTPATH); // add system import path
+storage.overwrite = argv.o;
+storage.addImportPath(configs.systempaths.path_database_files); // add system import path
+if (configs.userpaths.path_database_files) storage.addImportPath(configs.userpaths.path_database_files); // add command line import path if any
 if (argv.i) storage.addImportPath(argv.i); // add command line import path if any
 if (argv.e) {
 	console.log("Only import...");
@@ -52,8 +55,8 @@ process.on('exit', function () {
 // 2) Install missing config files from system and user dir
 // 3) start plugin processes (as soon as storage.load() is called)
 // 4) Call storage.load
-controlflow.series([commandsocket.start, storage.init, storage.importNewFiles, 
-				   autostartplugins.init, storage.load], 
+controlflow.series([commandsocket.start, storage.init, storage.importNewFiles, storage.showstats,
+				   autostartplugins.init], 
 	function(err, results){
 		if (err) {
 			console.error("Error on start: " + err);

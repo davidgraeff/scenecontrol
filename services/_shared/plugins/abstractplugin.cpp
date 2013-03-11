@@ -12,9 +12,6 @@
 #include "../utils/logging.h"
 #include "../utils/paths.h"
 
-/// The name of the server communication socket
-#define LOCALSOCKETNAMESPACE "sceneserver"
-
 static void catch_int(int )
 {
     signal(SIGINT, 0);
