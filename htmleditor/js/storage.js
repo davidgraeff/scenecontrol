@@ -136,7 +136,7 @@
 			return null;
 		}
 
-		this.documentChanged = function(doc, removed) {
+		this.documentChanged = function(doc, removed, notify) {
 			if (doc.type_=="scene") {
 				if (removed)
 					delete that.scenes[doc.id_];
@@ -168,6 +168,9 @@
 				else
 					that.configurations[this.uniqueComponentID(doc)] = doc;
 			}
+			
+			if (notify)
+				that.notifyDocumentChange(doc.document, removed, false);
 		};
 		
 		this.notifyDocumentChange = function(doc, removed_, temporary_) {
@@ -188,12 +191,11 @@
 			}
 		};
 		
-		$(websocketInstance).on('ondocument', function(d, doc) {
-			if (doc.type_=="model.reset") {
+		this.modelChange = function(action, doc) {
+			if (action=="reset") {
 				that.models[doc.componentid_+doc.instanceid_+doc.id_] = {"key":doc.key_,"data":{}};
 				$(that).trigger("model.reset", doc.componentid_+doc.instanceid_+doc.id_);
-			} else
-			if (doc.type_=="model.change") {
+			} else if (action=="change") {
 				var model = that.models[doc.componentid_+doc.instanceid_+doc.id_];
 				if (model == null || model["key"] == null)
 					return;
@@ -204,8 +206,7 @@
 				delete doc.type_;
 				model.data[key] = doc;
 				$(that).trigger("model.change", doc.componentid_+doc.instanceid_+doc.id_);
-			} else
-			if (doc.type_=="model.remove") {
+			} else if (action=="remove") {
 				var model = that.models[doc.componentid_+doc.instanceid_+doc.id_];
 				if (model == null || model["key"] == null)
 					return;
@@ -216,49 +217,26 @@
 				delete doc.type_;
 				delete model.data[key];
 				$(that).trigger("model.remove", doc.componentid_+doc.instanceid_+doc.id_);
-				
-			} else
-			if (doc.type_=="notification") {
-				if (doc.id_=="alldocuments") {
-					for (var i = 0; i < doc.documents.length; i++) {
-						that.documentChanged(doc.documents[i], false);
-					}
-					
-					$(that).trigger("onloadcomplete");
-				} else if (doc.id_=="documentChanged")  {
-					that.documentChanged(doc.document, false);
-					that.notifyDocumentChange(doc.document, false, false);
-					// update scene
-// 					if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition") {
-// 						var scenedoc = that.scenes[doc.document.sceneid_]
-// 						if (scenedoc)
-// 							that.notifyDocumentChange(scenedoc, false, false);
-// 					}
-				} else if (doc.id_=="documentRemoved")  {
-					that.documentChanged(doc.document, true);
-					that.notifyDocumentChange(doc.document, true, false);
-					// update scene
-// 					if (doc.document.type_=="action"||doc.document.type_=="event"||doc.document.type_=="condition")
-// 						that.notifyDocumentChange(doc.document.sceneid_, false);
-				} else if (doc.id_=="registerNotifier")  {
-					console.log("Document notifier registered:", doc.notifierstate);
-				} else if (doc.id_=="plugins" && doc.componentid_=="PluginController")  {
-					that.plugins = doc.plugins;
-					$(that).trigger("onplugins");
-				} else {
-					$(that).trigger("onnotification", doc);
-					console.log("Notification", doc);
-				}
-			} else if (doc.type_=="serverresponse") {
-				console.warn("Server response:" + doc.msg)
-			} else {
-				console.warn("Response type unknown:", doc)
 			}
-		});
+		};
 		
-		$(websocketInstance).on('onclose', function() {
-			that.clear();
-		});
+		this.documentBatch = function(docs) {
+			for (var i = 0; i < docs.length; i++) {
+				that.documentChanged(docs[i], false);
+			}
+		};
+		
+		this.notification = function(doc) {
+			if (doc.id_=="registerNotifier")  {
+				console.log("Document notifier registered:", doc.notifierstate);
+			} else if (doc.id_=="plugins" && doc.componentid_=="PluginController")  {
+				that.plugins = doc.plugins;
+				$(that).trigger("onplugins");
+			} else {
+				$(that).trigger("onnotification", doc);
+				console.log("Notification", doc);
+			}
+		};
 		
 		this.clear = function() {
 			that.scenes = {};

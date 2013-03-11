@@ -151,15 +151,13 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	{
 		// we expect the server (remote_types=="core") and at least api level 10
 		SceneDocument serverident(readLine());
-		if (!serverident.isMethod("identify") ||
+		if (!serverident.isType(SceneDocument::TypeAuth) || !serverident.isMethod("identify") ||
 			serverident.toInt("apiversion")<10 ||
-			serverident.toString("remote_types")!=QLatin1String("core")) {
+			serverident.toString("provides")!=QLatin1String("core")) {
 			qWarning()<<"Wrong api version!";
 			return false;
 		}
 		SceneDocument ack;
-		ack.setComponentID(m_pluginid);
-		ack.setInstanceID(m_instanceid);
 		ack.makeack(serverident.requestid());
 		write(ack.getjson());
 		flush();
@@ -168,10 +166,11 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	// identify
 	SceneDocument identify;
 	identify.setrequestid();
+	identify.setType(SceneDocument::TypeAuth);
 	identify.setMethod("identify");
 	identify.setComponentID(m_pluginid);
 	identify.setInstanceID(m_instanceid);
-	identify.setData("remote_types",QStringList() << QLatin1String("service"));
+	identify.setData("provides",QStringList() << QLatin1String("service"));
 	identify.setData("apiversion", 10);
 	write(identify.getjson());
 	flush();
@@ -217,8 +216,6 @@ void AbstractPlugin::readyReadCommunication()
             // Prepare response
 			SceneDocument transferdoc;
 			transferdoc.makeack(doc.requestid());
-			transferdoc.setComponentID(m_pluginid);
-			transferdoc.setInstanceID(m_instanceid);
 			
 			int methodId = invokeHelperGetMethodId(dataDocument.method());
             // If method not found call dataFromPlugin
@@ -270,8 +267,6 @@ bool AbstractPlugin::callRemoteComponent( const QVariantMap& dataout )
 void AbstractPlugin::changeConfig(const QByteArray& configid, const QVariantMap& data) {
 	SceneDocument transferdoc(data);
 	transferdoc.setMethod("changeConfig");
-	transferdoc.setComponentID(m_pluginid);
-	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setid(configid);
 	write(transferdoc.getjson());
 }
@@ -279,8 +274,6 @@ void AbstractPlugin::changeConfig(const QByteArray& configid, const QVariantMap&
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
 	SceneDocument transferdoc(data);
 	transferdoc.setMethod("changeProperty");
-	transferdoc.setComponentID(m_pluginid);
-	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setSessionID(sessionid);
 	write(transferdoc.getjson());
 }
@@ -288,8 +281,6 @@ void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
 void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_sceneid) {
 	SceneDocument transferdoc;
 	transferdoc.setMethod("eventTriggered");
-	transferdoc.setComponentID(m_pluginid);
-	transferdoc.setInstanceID(m_instanceid);
 	transferdoc.setSceneid(dest_sceneid);
 	transferdoc.setid(eventid);
 	write(transferdoc.getjson());

@@ -43,9 +43,9 @@ public:
 		TypeRemove,	// Remove stored document
 		TypeNotification,// A notification
 		
-		TypeModelItem, TypeModelItemRemove,TypeModelItemChange,TypeModelItemReset,
+		TypeModelItem,
 		
-		TypeError,
+		TypeError, TypeAck, TypeAuth,
 		
 		TypeLAST
 	};
@@ -69,7 +69,7 @@ public:
 	QString responseid() const {return m_map.value(QLatin1String("responseid_")).toString();}
 	QString requestid() const {return m_map.value(QLatin1String("requestid_")).toString();}
 	void setrequestid() {m_map[QLatin1String("requestid_")] = QUuid::createUuid().toString();}
-	void makeack(const QString& requestid) {setMethod("ack"); m_map[QLatin1String("responseid_")] = requestid;}
+	void makeack(const QString& requestid) {setType(TypeAck); m_map[QLatin1String("responseid_")] = requestid;}
 	
 	/***************** For Model messages/Notification ******************/
     /**

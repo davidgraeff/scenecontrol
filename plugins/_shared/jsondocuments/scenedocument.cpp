@@ -7,27 +7,29 @@
 const char* const SceneDocument::typetext[] = {" ",
 "event","condition","action","scene","configuration","schema",
 "execute","remove","notification",
-"model","model.remove","model.change","model.reset",
-"error"," "};
+"model","error","ack","auth"," "};
 
 SceneDocument SceneDocument::createModelRemoveItem ( const char* id ) {
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
-	sc.setType(TypeModelItemRemove);
+	sc.setType(TypeModelItem);
+	sc.setData("action","remove");
     return sc;
 }
 
 SceneDocument SceneDocument::createModelChangeItem ( const char* id ) {
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
-	sc.setType(TypeModelItemChange);
+	sc.setType(TypeModelItem);
+	sc.setData("action","change");
     return sc;
 }
 
 SceneDocument SceneDocument::createModelReset ( const char* id, const char* key ) {
     SceneDocument sc;
 	sc.setid(QLatin1String ( id ));
-	sc.setType(TypeModelItemReset);
+	sc.setType(TypeModelItem);
+	sc.setData("action","reset");
 	sc.setModelkey(key);
     return sc;
 }

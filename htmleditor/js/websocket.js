@@ -18,41 +18,41 @@
 			that.url = ((useWSS)?"wss://":"ws://")+hostAndPort;
 		}
 		this.requestAllDocuments = function() {
-			this.write({"componentid_":"server", "type_":"execute", "method_":"fetchAllDocuments"});
+			this.write({"type_":"execute", "method_":"fetchAllDocuments"});
 		}
 		
 		this.startMonitorScene = function(sceneid) {
-			this.write({"componentid_":"server", "type_":"execute", "method_":"startMonitor", "monitor": "scene", "sceneid_": sceneid});
+			this.write({"type_":"execute", "method_":"startMonitor", "monitor": "scene", "sceneid_": sceneid});
 		}
 		
 		this.registerNotifier = function() {
-			this.write({"componentid_":"server", "type_":"execute", "method_":"registerNotifier"});
+			this.write({"type_":"execute", "method_":"registerNotifier"});
 		}
 		
 		this.requestAllProperties = function() {
-			this.write({"componentid_":"server", "type_":"execute", "method_":"requestAllProperties"});
+			this.write({"type_":"execute", "method_":"requestAllProperties"});
 		}
 		
-		this.version = function() {
-			this.write({"componentid_":"server", "type_":"execute", "method_":"version"});
+		this.auth = function() {
+			this.write({"type_":"auth", "method_":"identify", "provides":["client"], "apiversion":10});
 		}
 		
 		this.runcollection = function(sceneid) {
-			this.write({"componentid_":"server", "type_":"execute", "method_":"runcollection", "sceneid_": sceneid});
+			this.write({"type_":"execute", "method_":"runcollection", "sceneid_": sceneid});
 		}
 		
 		this.createScene = function(name) {
-			var newscene = {"id_":"GENERATEGUID", "componentid_":"server", "type_": "scene","v":[],"categories": [],"enabled": true,"name": name};
+			var newscene = {"id_":"GENERATEGUID", "type_": "scene","v":[],"categories": [],"enabled": true,"name": name};
 			websocketInstance.write(newscene);
 		}
 		
 		this.createSceneItem = function(scene_id, sceneItemDocument) {
-			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"addSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
+			websocketInstance.write({"type_":"execute","method_":"addSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
 		}
 		
 		this.removeSceneItem = function(scene_id, sceneItemDocument) {
 			console.log("removeSceneItem", scene_id, sceneItemDocument);
-			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
+			websocketInstance.write({"type_":"execute","method_":"removeSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
 		}
 		
 		this.createConfig = function(instanceid, componentid) {ee
@@ -61,12 +61,12 @@
 		}
 		
 		this.remove = function(sceneDocument) {
-			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"removeDocument","doc":sceneDocument});
+			websocketInstance.write({"type_":"execute","method_":"removeDocument","doc":sceneDocument});
 		}
 		
 		this.updateDocument = function(sceneDocument) {
 			//console.log("Change: ", sceneDocument)
-			websocketInstance.write({"componentid_":"server","type_":"execute","method_":"changeDocument","doc":sceneDocument});
+			websocketInstance.write({"type_":"execute","method_":"changeDocument","doc":sceneDocument});
 		}
 		
 		this.write = function(data) {
