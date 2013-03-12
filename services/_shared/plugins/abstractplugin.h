@@ -89,8 +89,8 @@ protected:
 	QString m_instanceid;
 private:
 	AbstractPlugin(const QString& pluginid, const QString& instanceid);
-	QSslKey readKey(const QString& fileKeyString);
-	QSslCertificate readCertificate(const QString& filename);
+	QSslKey readKey(const QString& fileKeyString, bool ignoreNotExisting);
+	QSslCertificate readCertificate(const QString& filename, bool ignoreNotExisting);
 	
     int invokeHelperGetMethodId(const QByteArray& methodName);
 	// Return -1 if parameters are not matching

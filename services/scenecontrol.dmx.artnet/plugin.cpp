@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     if (argc<4) {
-		qWarning()<<"Usage: plugin_id instance_id server_ip server_port";
+		qWarning()<<"Usage: instance_id server_ip server_port";
 		return 1;
 	}
     

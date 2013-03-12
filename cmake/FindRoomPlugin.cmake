@@ -6,7 +6,7 @@ ENDIF()
 
 # project name
 get_filename_component(targetname ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-message(STATUS "Plugin: ${targetname}")
+message(STATUS "Service: ${targetname}")
 project(${targetname}_plugin)
 
 # abort if dependencies are not found. Message is defined by PLUGIN_DEP_MESSAGE.
@@ -16,7 +16,7 @@ IF (NOT PLUGIN_DEPENDENCIES_FOUND)
 ENDIF()
 
 # add an cmake gui option for selecting this plugin
-OPTION(PLUGIN_${PROJECT_NAME} "Plugin ${PROJECT_NAME}" ON)
+OPTION(PLUGIN_${PROJECT_NAME} "Service ${PROJECT_NAME}" ON)
 
 IF (NOT PLUGIN_${PROJECT_NAME})
 	RETURN()
@@ -27,7 +27,7 @@ macro(install_schemas)
 	INSTALL(DIRECTORY "data/" DESTINATION ${CONFIG_SERVER_DATABASEIMPORTPATH}/${targetname} COMPONENT ServerPlugins)
 endmacro()
 macro(install_lib)
-	GET_TARGET_PROPERTY(BINARY_NAME ${PROJECT_NAME} OUTPUT_NAME)
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${targetname})
 	install_schemas()
 	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${LIBPATH} COMPONENT ServerPlugins)
 	SET(CPACK_PACKAGE_EXECUTABLES ${CPACK_PACKAGE_EXECUTABLES} ${PROJECT_NAME} CACHE INTERNAL "")

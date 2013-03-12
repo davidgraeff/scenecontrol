@@ -3,6 +3,8 @@ var tls = require('tls');
 var fs = require('fs');
 var controlflow = require('async');
 var configs = require('../config.js');
+var clientcom = require('./clientcom.js');
+var plugincom = require('./plugincom.js');
 
 var options = {
   key: fs.readFileSync('certificates/server.key'),
@@ -16,13 +18,25 @@ var options = {
 };
 
 var server = tls.createServer(options, function(c) { //'connection' listener
-  console.log('server connected');
-  c.setEncoding('utf8');
-  c.on('end', function() {
-    console.log('server disconnected');
-  });
-  c.write('hello\n');
-  c.pipe(c);
+	c.setNoDelay(true);
+	//c.setKeepAlive(true);
+	console.log('service connected');
+	c.setEncoding('utf8');
+	c.on('data', function(data) {
+		try {
+			var obj = JSON.parse(data);
+			console.log('service data', obj);
+			if (obj.type_!="ack")
+				c.write(JSON.stringify({"type_":"ack","responseid_":obj.requestid_}));
+		} catch(e) {
+			
+		}
+	});
+	c.on('end', function() {
+		console.log('service disconnected');
+	});
+	c.write(JSON.stringify({"type_":"auth","method_":"identify","apiversion":10,"provides":"core","requestid_":"bla"}));
+// 	c.pipe(c);
 });
 
 //////////////////////////////////////////////////////
@@ -52,6 +66,10 @@ wsServer.on('request', function(request) {
         // close user connection
     });
 });
+
+exports.controlport = configs.runtimeconfig.controlport;
+exports.websocketport = configs.runtimeconfig.websocketport;
+exports.serverip = "127.0.0.1"; // ipv4 only?
 
 exports.start = function(callback_out) {
 	controlflow.series([

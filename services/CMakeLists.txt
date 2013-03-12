@@ -36,4 +36,5 @@ IF(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${child} AND NOT ${child} STREQUAL "
 ENDFOREACH()
 
 # Install generic certificate
-INSTALL(FILES "_shared/certificates/*.key" "_shared/certificates/*.crt" DESTINATION ${CONFIG_CLIENT_CERTPATH} COMPONENT ServerPlugins)
+file(GLOB GENERICCERTS "${CMAKE_CURRENT_SOURCE_DIR}/_shared/certificates/*.key" "${CMAKE_CURRENT_SOURCE_DIR}/_shared/certificates/*.crt")
+INSTALL(FILES ${GENERICCERTS} DESTINATION ${CONFIG_CLIENT_CERTPATH} COMPONENT ServerPlugins)

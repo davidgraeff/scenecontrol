@@ -9,8 +9,8 @@
 #include <QElapsedTimer>
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <QProcessEnvironment>
-#include "../utils/logging.h"
-#include "../utils/paths.h"
+#include "logging.h"
+#include "paths.h"
 
 static void catch_int(int )
 {
@@ -45,9 +45,13 @@ AbstractPlugin::AbstractPlugin(const QString& pluginid, const QString& instancei
 AbstractPlugin::~AbstractPlugin() {}
 
 
-QSslKey AbstractPlugin::readKey(const QString& fileKeyString)
+QSslKey AbstractPlugin::readKey(const QString& fileKeyString, bool ignoreNotExisting)
 {
 	QFile fileKey(fileKeyString);
+	if (!fileKey.exists()) {
+		if (!ignoreNotExisting) qWarning() << "File does not exist:"<< fileKeyString;
+		return QSslKey();
+	}
 	if (fileKey.open(QIODevice::ReadOnly))
 	{
 		QByteArray key = fileKey.readAll();
@@ -61,9 +65,13 @@ QSslKey AbstractPlugin::readKey(const QString& fileKeyString)
 	}
 }
 
-QSslCertificate AbstractPlugin::readCertificate(const QString& filename)
+QSslCertificate AbstractPlugin::readCertificate(const QString& filename, bool ignoreNotExisting)
 {
 	QFile fileCert(filename);
+	if (!fileCert.exists()) {
+		if (!ignoreNotExisting) qWarning() << "File does not exist:"<< filename;
+		return QSslCertificate();
+	}
 	if (fileCert.open(QIODevice::ReadOnly))
 	{
 		QByteArray cert = fileCert.readAll();
@@ -97,15 +105,16 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	{
 		QByteArray filename;
 		filename.append("services/").append(m_pluginid.toLatin1()).append(".key");
-		QSslKey sslKeySpecific = readKey(setup::certificateFile(filename.constData()));
+		QSslKey sslKeySpecific = readKey(setup::certificateFile(filename.constData()), true);
 		if (sslKeySpecific.isNull()) {
-			qDebug() << "SSL specific key invalid:" << setup::certificateFile(filename.constData())<<"Will try generic one.";
-			QSslKey sslKeyGeneric = readKey(setup::certificateFile("services/generic.key"));
+			QSslKey sslKeyGeneric = readKey(setup::certificateFile("services/generic.key"), false);
 			if (sslKeyGeneric.isNull()) {
 				qWarning() << "SSL key invalid:" << setup::certificateFile("services/generic.key");
 				return false;
-			} else
+			} else {
+				qDebug() << "Using generic SSL key!";
 				setPrivateKey(sslKeyGeneric);
+			}
 		} else
 			setPrivateKey(sslKeySpecific);
 	}
@@ -114,21 +123,22 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	{
 		QByteArray filename;
 		filename.append("services/").append(m_pluginid.toLatin1()).append(".crt");
-		QSslCertificate sslCertSpecific = readCertificate(setup::certificateFile(filename.constData()));
+		QSslCertificate sslCertSpecific = readCertificate(setup::certificateFile(filename.constData()), true);
 		if (sslCertSpecific.isNull()) {
-			qDebug() << "SSL specific Certificate invalid:" << setup::certificateFile(filename.constData())<<"Will try generic one.";
-			QSslCertificate sslCertGeneric = readCertificate(setup::certificateFile("services/generic.crt"));
+			QSslCertificate sslCertGeneric = readCertificate(setup::certificateFile("services/generic.crt"), false);
 			if (sslCertGeneric.isNull()) {
 				qWarning() << "SSL Certificate invalid:" << setup::certificateFile("services/generic.crt");
 				return false;
-			} else
+			} else {
+				qDebug() << "Using generic SSL Certificate!";
 				setLocalCertificate(sslCertGeneric);
+			}
 		} else
 			setLocalCertificate(sslCertSpecific);
 	}
 
 	// Add public certificate of the server to the trusted hosts
-	QSslCertificate sslCertServer = readCertificate(setup::certificateFile("server.crt"));
+	QSslCertificate sslCertServer = readCertificate(setup::certificateFile("server.crt"), true);
 	if (sslCertServer.isNull())
 	{
 		qWarning() << "SSL Server Certificate invalid:" << setup::certificateFile("server.crt");
@@ -139,10 +149,12 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	// connect
 	connectToHostEncrypted(serverip, port);
 	if (!waitForConnected()) {
+		qWarning() << "Server does not respond!"<<serverip<< port;
 		return false;
 	}
 	// The core will send a version identifier
 	if (!waitForReadyRead()) {
+		qWarning() << "Server does not respond!";
 		return false;
 	}
 	{
@@ -172,6 +184,7 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	write(identify.getjson());
 	flush();
 	if (!waitForReadyRead()) {
+		qWarning() << "Server does not send an ack!";
 		return false;
 	}
 	SceneDocument serverresponse(readLine());
@@ -310,7 +323,7 @@ int AbstractPlugin::invokeHelperMakeArgumentList(int methodID, const QVariantMap
         // If not found abort
         if (paramPosition == inputData.end()) {
             qWarning() << "Method parameter missing!" << parameterNames[paramNameIndex] << inputData;
-            return -1;
+            return 10;
         } else { // Otherwise create a QVariant and copy that to the output QVector
             output[paramNameIndex] = paramPosition.value();
         }

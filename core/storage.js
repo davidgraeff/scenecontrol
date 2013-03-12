@@ -41,14 +41,23 @@ exports.genericverifier = function(doc) {
 		if (!doc.id_) {
 			if (doc.type_=="configuration")
 				doc.id_ = doc.componentid_ + "." + doc.instanceid_;
+			else if (doc.type_=="description")
+				doc.id_ = doc.componentid_ + "." + doc.language;
 			else
 				doc.id_ = baseName(filename);
 		}
 	}
 	this.isValid = function(doc) {
-		if (doc.type_=="configuration") {
-			return doc.componentid_ && doc.instanceid_;
-		} else
+		var valid_types = ["event","condition","action","configuration","schema","description"];
+		if (doc.type_=="description" && (!doc.language || !doc.name)) {
+			return false;
+		}
+		if (doc.type_=="scene" && (!doc.name)) {
+			return false;
+		}
+		if (doc.type_=="configuration" && !doc.instanceid_) {
+			return false;
+		}
 		return (doc.componentid_ && doc.id_);
 	}
 };
@@ -61,6 +70,10 @@ exports.init = function(callback) {
 	callback(null, null);
 }
 
+/****** db *********/
+exports.db = db;
+
+/****** importNewFiles *********/
 exports.importNewFiles = function(callback) {
 	var verifier = new exports.genericverifier();
 	var remaining = 0, processed = 0;
