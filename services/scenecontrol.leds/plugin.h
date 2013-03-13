@@ -34,8 +34,8 @@ private Q_SLOTS:
     virtual void initialize();
     virtual void clear();
     void clear(const QString& componentid_, const QString& instanceid_);
-    virtual void requestProperties(int sessionid);
-    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
+    virtual void requestProperties();
+    virtual void instanceConfiguration(const QVariantMap& data);
     // Call this method to update <channel, value>-pairs and clear(your_plugin_id) to clear
 	void subpluginChange(const QString& componentid_, const QString& instanceid_, const QString& channel, int value, const QString& name);
 

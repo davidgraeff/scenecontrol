@@ -41,9 +41,9 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual void requestProperties(int sessionid);
-    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
-    virtual void session_change ( int sessionid, bool running );
+    virtual void requestProperties();
+    virtual void instanceConfiguration(const QVariantMap& data);
+    virtual void session_change ( bool running );
 
 public Q_SLOTS:
   void inputevent ( const QString& id_, const QString& sceneid_, const QString& inputdevice, const QString& kernelkeyname, bool repeat );

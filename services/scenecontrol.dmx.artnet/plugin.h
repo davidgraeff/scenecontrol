@@ -46,8 +46,8 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual void requestProperties(int sessionid);
-    virtual void configChanged(const QByteArray& configid, const QVariantMap& data);
+    virtual void requestProperties();
+    virtual void instanceConfiguration(const QVariantMap& data);
 private:
     void connectToLeds(const QString& host, int port);
     void ledChanged(QString channel, int value);

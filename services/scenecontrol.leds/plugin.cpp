@@ -69,8 +69,8 @@ bool plugin::isLedValue ( const QString& channel, int lower, int upper )  {
     return true;
 }
 
-void plugin::requestProperties(int sessionid) {
-    changeProperty(SceneDocument::createModelReset("leds", "channel").getData(), sessionid);
+void plugin::requestProperties() {
+	changeProperty(SceneDocument::createModelReset("leds", "channel").getData(), m_lastsessionid);
     QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for (;i!=m_ios.end();++i) {
         const plugin::iochannel& io = i.value();
@@ -79,7 +79,7 @@ void plugin::requestProperties(int sessionid) {
         sc.setData("value", io.value);
         sc.setData("name", io.name);
         sc.setData("moodlight", io.moodlight);
-        changeProperty(sc.getData(), sessionid);
+		changeProperty(sc.getData(), m_lastsessionid);
     }
 }
 
@@ -197,8 +197,8 @@ void plugin::moodlightTimeout() {
 }
 
 // Get names from database
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-    Q_UNUSED(configid);
+void plugin::instanceConfiguration(const QVariantMap& data) {
+    
     if (data.contains(QLatin1String("isname")) && data.contains(QLatin1String("channel")) && data.contains(QLatin1String("name"))) {
         const QByteArray channel = data.value(QLatin1String("channel")).toByteArray();
         const QString name = data.value(QLatin1String("name")).toString();

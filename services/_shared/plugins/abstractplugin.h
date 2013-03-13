@@ -105,14 +105,13 @@ public Q_SLOTS:
     QString instanceid();
     
     /**
-     * (Re)Initialize the plugin. Called after all plugins are loaded but before the
-     * network is initiated.
+     * Called after all services have been loaded. Initialize data structures here.
      */
     virtual void initialize() {}
 
     /**
      * Called by server process before it releases all ressources and finish.
-     * Tidy up here.
+	 * Tidy up here. You may receive another initialize after clear.
      */
     virtual void clear() {}
 
@@ -120,15 +119,13 @@ public Q_SLOTS:
     * Called by server process if a new session with sessionid is starting (running=true)
     * or a session finished (running=false).
     */
-    virtual void session_change ( int sessionid, bool running ) {
-        Q_UNUSED(sessionid);
+    virtual void session_change (bool running ) {
         Q_UNUSED(running);
     }
     /**
-     * Settings have changed. This method is called at startup for initial settings, too.
+     * A set of configurations are send by the server.
      */
-    virtual void configChanged(const QByteArray& configid, const QVariantMap& data) {
-        Q_UNUSED(configid);
+    virtual void instanceConfiguration(const QVariantMap& data) {
         Q_UNUSED(data);
     };
     /**
@@ -142,7 +139,5 @@ public Q_SLOTS:
      * should not block the server noticable!
      * \param sessionid id of the client session that requests properties of this plugin
      */
-    virtual void requestProperties(int sessionid) {
-        Q_UNUSED(sessionid);
-    };
+    virtual void requestProperties() {};
 };

@@ -28,8 +28,8 @@ void plugin::initialize() {
 	connect(&m_socket, SIGNAL(error(QAbstractSocket::SocketError)), SLOT(error(QAbstractSocket::SocketError)));
 }
 
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-    Q_UNUSED(configid);
+void plugin::instanceConfiguration(const QVariantMap& data) {
+    
     if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port"))) {
         m_host = data[QLatin1String("server")].toString();
         m_port = data[QLatin1String("port")].toInt();

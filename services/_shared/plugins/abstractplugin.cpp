@@ -9,6 +9,7 @@
 #include <QElapsedTimer>
 #include <signal.h>    /* signal name macros, and the signal() prototype */
 #include <QProcessEnvironment>
+#include <QTimer>
 #include "logging.h"
 #include "paths.h"
 
@@ -100,6 +101,7 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	ignoreSslErrors();
 	setProtocol(QSsl::SslV3);
 	setPeerVerifyMode(QSslSocket::VerifyNone);
+	bool useGenericKey = false, useGenericCert = false;
 	
 	// Add client key
 	{
@@ -112,7 +114,7 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 				qWarning() << "SSL key invalid:" << setup::certificateFile("services/generic.key");
 				return false;
 			} else {
-				qDebug() << "Using generic SSL key!";
+				useGenericKey = true;
 				setPrivateKey(sslKeyGeneric);
 			}
 		} else
@@ -130,7 +132,7 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 				qWarning() << "SSL Certificate invalid:" << setup::certificateFile("services/generic.crt");
 				return false;
 			} else {
-				qDebug() << "Using generic SSL Certificate!";
+				useGenericCert = true;
 				setLocalCertificate(sslCertGeneric);
 			}
 		} else
@@ -154,14 +156,13 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	}
 	// The core will send a version identifier
 	if (!waitForReadyRead()) {
-		qWarning() << "Server does not respond!";
+		qWarning() << "Server didn't send an identify message!";
 		return false;
 	}
 	{
 		// we expect the server (remote_types=="core") and at least api level 10
 		SceneDocument serverident(readLine());
-		if (!serverident.isType(SceneDocument::TypeAuth) || !serverident.isMethod("identify") ||
-			serverident.toInt("apiversion")<10 ||
+		if (!serverident.isMethod("identify") || serverident.toInt("apiversion")<10 ||
 			serverident.toString("provides")!=QLatin1String("core")) {
 			qWarning()<<"Wrong api version!";
 			return false;
@@ -175,7 +176,6 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	// identify
 	SceneDocument identify;
 	identify.setrequestid();
-	identify.setType(SceneDocument::TypeAuth);
 	identify.setMethod("identify");
 	identify.setComponentID(m_pluginid);
 	identify.setInstanceID(m_instanceid);
@@ -195,70 +195,57 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	
     connect(this, SIGNAL(disconnected()), SLOT(disconnectedFromServer()));
 	connect(this, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
+	
+	qDebug() << "Service ready." << (useGenericKey?"Using generic SSL key!":"")<< (useGenericCert?"Using generic Certificate key!":"");
+	
+	// work through rest of received data with the next event loop step
+	if (canReadLine())
+		QTimer::singleShot(0, this, SLOT(readyReadCommunication()));
     return true;
 }
 
 void AbstractPlugin::readyReadCommunication()
 {
     while (canReadLine()) {
-		SceneDocument doc(readLine());
+		SceneDocument dataDocument(readLine());
+		
+		if (dataDocument.isType(SceneDocument::TypeAck))
+			continue;
+		
+// 		qDebug() << "receive" << dataDocument.getjson();
+		m_lastsessionid = dataDocument.sessionid();
 
-        m_lastsessionid = doc.sessionid();
+		// Prepare response
+		SceneDocument transferdoc;
+		transferdoc.makeack(dataDocument.requestid());
+		
+		int methodId = invokeHelperGetMethodId(dataDocument.method());
+		// If method not found call dataFromPlugin
+		if (methodId == -1) {
+			qWarning() << "Method not found!" << dataDocument.method();
+			transferdoc.setData("error", "Method not found!");
+			write(transferdoc.getjson());
+			continue;
+		}
+		
+		QVector<QVariant> argumentsInOrder(9);
+		int params;
+		if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
+			qWarning() << "Arguments list incompatible!" << dataDocument.method() << methodId << dataDocument.getData() << argumentsInOrder;
+			transferdoc.setData("error", "Arguments list incompatible!");
+			write(transferdoc.getjson());
+			continue;
+		}
 
-        // Retrieve method
-        const QByteArray method = doc.method();
-
-        // Server callable methods
-        if (method == "configChanged") {
-            configChanged(doc.id().toUtf8(), doc.getData());
-        } else if (method == "methodresponse") { // Ignore responses
-        } else if (method == "initialize") {
-            initialize();
-        } else if (method == "clear") {
-            clear();
-        } else if (method == "requestProperties") {
-            requestProperties(m_lastsessionid);
-        } else if (method == "session_change") {
-            session_change(m_lastsessionid, doc.toBool("running"));
-		} else if (method == "call") { // server and other plugins callable methods
-			// Extract data document out of the transfered doc
-			SceneDocument dataDocument(doc.getData().value(QLatin1String("doc")).toMap());
-            // Prepare response
-			SceneDocument transferdoc;
-			transferdoc.makeack(doc.requestid());
-			
-			int methodId = invokeHelperGetMethodId(dataDocument.method());
-            // If method not found call dataFromPlugin
-            if (methodId == -1) {
-				qWarning() << "Method not found!" << dataDocument.method();
-				transferdoc.setData("error", "Method not found!");
-				write(transferdoc.getjson());
-                continue;
-            }
-			
-            QVector<QVariant> argumentsInOrder(9);
-            int params;
-			if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
-				qWarning() << "Arguments list incompatible!" << dataDocument.method() << methodId << dataDocument.getData() << argumentsInOrder;
-                transferdoc.setData("error", "Arguments list incompatible!");
-				write(transferdoc.getjson());
-                continue;
-            }
-
-            const char* returntype = metaObject()->method(methodId).typeName();
-            // If no response is expected, write the method-response message before invoking the target method,
-            // because that may write data the the server and the response-message have to be the first answer
-			QByteArray responseid = doc.requestid().toLatin1();
-            transferdoc.setData("responseid_", responseid);
-            transferdoc.setData("response_",
-								invokeSlot(dataDocument.method(), params, returntype,
-											argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3],
-											argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]));
-            if (responseid.size()) {
-				write(transferdoc.getjson());
-                qDebug() << "WRITE RESPONSE" << transferdoc.toString("response_");
-            }
-        }
+		const char* returntype = metaObject()->method(methodId).typeName();
+		// If no response is expected, write the method-response message before invoking the target method,
+		// because that may write data the the server and the response-message have to be the first answer
+		transferdoc.setData("response_",
+							invokeSlot(dataDocument.method(), params, returntype,
+										argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3],
+										argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]));
+		write(transferdoc.getjson());
+// 		qDebug() << "response" << transferdoc.getjson();
     }
 }
 

@@ -74,7 +74,7 @@ void plugin::removeEvent ( const QString& eventid) {
 // 	}
 }
 
-void plugin::requestProperties(int sessionid) {
+void plugin::requestProperties() {
 // 	SceneDocument s = SceneDocument::createNotification("nextalarm");
 // 	if (mEvents.size())
 // 		s.setData("seconds", QDateTime::currentDateTime().secsTo(mEvents.begin().key()));

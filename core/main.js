@@ -28,11 +28,8 @@ if (argv.help) {
 console.log(configs.aboutconfig.ABOUT_SERVICENAME+" "+configs.aboutconfig.ABOUT_VERSION);
 
 
-var storage = require('./storage.js');
-var autostartplugins = require("./startplugins.js");
-var commandsocket = require("./com/socket.js");
-
 // install new database files
+var storage = require('./storage.js');
 storage.overwrite = argv.o;
 storage.addImportPath(configs.systempaths.path_database_files); // add system import path
 if (configs.userpaths.path_database_files) storage.addImportPath(configs.userpaths.path_database_files); // add command line import path if any
@@ -40,12 +37,19 @@ if (argv.i) storage.addImportPath(argv.i); // add command line import path if an
 if (argv.e) {
 	console.log("Only import...");
 	storage.importNewFiles(function(err, result) {process.exit(0);});
+	return;
 }
+
+var autostartplugins = require("./startplugins.js");
+var commandsocket = require("./com/socket.js");
+var scenes = require("./scenes.js");
 
 // exit handling
 process.stdin.resume();
 process.on('SIGINT', function () {
-	process.exit(0);
+	controlflow.series([scenes.finish, commandsocket.finish, autostartplugins.finish], function() {
+		process.exit(0);
+	});
 });
 process.on('exit', function () {
 	console.log('Beenden...');
@@ -56,7 +60,7 @@ process.on('exit', function () {
 // 3) start plugin processes (as soon as storage.load() is called)
 // 4) Call storage.load
 controlflow.series([commandsocket.start, storage.init, storage.importNewFiles, storage.showstats,
-				   autostartplugins.init], 
+				   autostartplugins.init, scenes.init], 
 	function(err, results){
 		if (err) {
 			console.error("Error on start: " + err);

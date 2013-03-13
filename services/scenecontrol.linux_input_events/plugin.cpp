@@ -75,8 +75,8 @@ void plugin::initialize() {
     m_devicelist->start();
 }
 
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-    Q_UNUSED(configid);
+void plugin::instanceConfiguration(const QVariantMap& data) {
+    
     if (data.contains(QLatin1String("repeat")))
         m_repeat = data[QLatin1String("repeat")].toInt();
     if (data.contains(QLatin1String("repeat_init")))
@@ -130,18 +130,18 @@ void plugin::listenToInputEvents(const QString& inputdevice)
 	inputdeviceObj->connectSession ( m_lastsessionid );
 }
 
-void plugin::session_change ( int sessionid, bool running ) {
+void plugin::session_change ( bool running ) {
     if (!running) {
         foreach ( InputDevice* device, m_devices ) {
-            device->disconnectSession ( sessionid );
+			device->disconnectSession ( m_lastsessionid );
         }
     }
 }
 
-void plugin::requestProperties(int sessionid) {
-    changeProperty( SceneDocument::createModelReset ( "inputdevice", "udid" ).getData(), sessionid );
+void plugin::requestProperties() {
+	changeProperty( SceneDocument::createModelReset ( "inputdevice", "udid" ).getData(), m_lastsessionid );
     foreach ( InputDevice* device, m_devices ) {
-        changeProperty( createServiceOfDevice ( device->device() ).getData(), sessionid );
+		changeProperty( createServiceOfDevice ( device->device() ).getData(), m_lastsessionid );
     }
 }
 

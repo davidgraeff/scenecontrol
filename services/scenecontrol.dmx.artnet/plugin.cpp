@@ -56,8 +56,8 @@ void plugin::initialize() {
 	m_connectTimer.setSingleShot(true);
 }
 
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-    Q_UNUSED(configid);
+void plugin::instanceConfiguration(const QVariantMap& data) {
+    
     if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port")))
         connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
 }
@@ -69,8 +69,8 @@ bool plugin::isLedValue( const QString& channel, int lower, int upper ) {
     return true;
 }
 
-void plugin::requestProperties(int sessionid) {
-	changeProperty(SceneDocument::createModelReset("udpled.values", "channel").getData(), sessionid);
+void plugin::requestProperties() {
+	changeProperty(SceneDocument::createModelReset("udpled.values", "channel").getData(), m_lastsessionid);
 
     QMap<QString, plugin::ledchannel>::iterator i = m_leds.begin();
     for (;i!=m_leds.end();++i) {
@@ -78,7 +78,7 @@ void plugin::requestProperties(int sessionid) {
 			SceneDocument sc = SceneDocument::createModelChangeItem("udpled.values");
             sc.setData("channel", i.key());
             sc.setData("value", i.value().value);
-            changeProperty(sc.getData(), sessionid);
+            changeProperty(sc.getData(), m_lastsessionid);
         }
     }
 }

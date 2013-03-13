@@ -66,8 +66,8 @@ bool plugin::isSwitchOn ( const QString& channel, bool value )  {
     return ( getSwitch ( channel ) == value );
 }
 
-void plugin::requestProperties(int sessionid) {
-    changeProperty(SceneDocument::createModelReset("switches", "channel").getData(), sessionid);
+void plugin::requestProperties() {
+	changeProperty(SceneDocument::createModelReset("switches", "channel").getData(), m_lastsessionid);
     QMap<QString, plugin::iochannel>::iterator i = m_ios.begin();
     for (;i!=m_ios.end();++i) {
         const plugin::iochannel& str = i.value();
@@ -75,7 +75,7 @@ void plugin::requestProperties(int sessionid) {
         sc.setData("channel", str.channel);
         sc.setData("value", str.value);
         sc.setData("name", str.name);
-        changeProperty(sc.getData(), sessionid);
+		changeProperty(sc.getData(), m_lastsessionid);
     }
 }
 
@@ -138,8 +138,8 @@ QString plugin::getSwitchName(const QString& channel) {
 }
 
 // Get names from database
-void plugin::configChanged(const QByteArray& configid, const QVariantMap& data) {
-    Q_UNUSED(configid);
+void plugin::instanceConfiguration(const QVariantMap& data) {
+    
     if (data.contains(QLatin1String("isname")) && data.contains(QLatin1String("channel")) && data.contains(QLatin1String("name"))) {
         const QByteArray channel = data.value(QLatin1String("channel")).toByteArray();
         const QString name = data.value(QLatin1String("name")).toString();

@@ -28,7 +28,7 @@ class plugin : public AbstractPlugin
 public:
 
     virtual ~plugin();
-    virtual void requestProperties(int sessionid);
+    virtual void requestProperties();
 
 public Q_SLOTS:
     virtual void wol ( const QString& mac);

@@ -35,7 +35,7 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual void requestProperties(int sessionid);
+    virtual void requestProperties();
 public Q_SLOTS:
     void eventDateTime ( const QString& id_, const QString& sceneid_, const QString& date, const QString& time);
     void eventPeriodic ( const QString& id_, const QString& sceneid_, const QString& time, const QVariantList& days);

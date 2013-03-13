@@ -121,13 +121,13 @@ void plugin::removeEvent ( const QString& eventid) {
 	setupTimer();
 }
 
-void plugin::requestProperties(int sessionid) {
+void plugin::requestProperties() {
 	SceneDocument s = SceneDocument::createNotification("nextalarm");
 	if (mEvents.size())
 		s.setData("seconds", QDateTime::currentDateTime().secsTo(mEvents.begin().key()));
-	changeProperty(s.getData(), sessionid);
+	changeProperty(s.getData(), m_lastsessionid);
 
-	changeProperty(SceneDocument::createModelReset("time.alarms", "uid").getData(), sessionid);
+	changeProperty(SceneDocument::createModelReset("time.alarms", "uid").getData(), m_lastsessionid);
 
 	QMapIterator<QDateTime, EventTimeStructure>  i(mEvents);
 	while(i.hasNext()) {
@@ -135,7 +135,7 @@ void plugin::requestProperties(int sessionid) {
         SceneDocument sc = SceneDocument::createModelChangeItem("time.alarms");
         sc.setData("uid", i.value().eventid);
 		sc.setData("seconds", QDateTime::currentDateTime().secsTo(i.key()));
-        changeProperty(sc.getData(), sessionid);
+		changeProperty(sc.getData(), m_lastsessionid);
     }
 }
 

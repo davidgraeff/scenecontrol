@@ -35,7 +35,7 @@ public:
 
     virtual void initialize();
     virtual void clear();
-    virtual void requestProperties(int sessionid);
+    virtual void requestProperties();
 	
 	struct VariableEvent {
 		QByteArray name;

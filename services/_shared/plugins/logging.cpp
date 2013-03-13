@@ -57,6 +57,7 @@ void messageout(QtMsgType type, const char *msg, FILE * stream_debug, FILE * str
     switch (type) {
     case QtDebugMsg:
         fprintf(stdout, "[%2d:%02d,%s] %s\n", (ptm->tm_hour+1)%24, ptm->tm_min, logid.constData(), msg);
+		fflush(stdout);
         break;
     case QtWarningMsg:
         fprintf(stderr, "[%2d:%02d,%s] \033[33mWarning: %s\033[0m\n", (ptm->tm_hour+1)%24, ptm->tm_min, logid.constData(), msg);
