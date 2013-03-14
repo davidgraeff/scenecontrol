@@ -24,7 +24,8 @@ ENDIF()
 
 # Install macro
 macro(install_schemas)
-	INSTALL(DIRECTORY "data/" DESTINATION ${CONFIG_SERVER_DATABASEIMPORTPATH}/${targetname} COMPONENT ServerPlugins)
+	file(GLOB_RECURSE JSONFILES "data/*.json")
+	INSTALL(FILES ${JSONFILES} DESTINATION ${CONFIG_SERVER_DATABASEIMPORTPATH}/${targetname} COMPONENT ServerPlugins)
 endmacro()
 macro(install_lib)
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${targetname})

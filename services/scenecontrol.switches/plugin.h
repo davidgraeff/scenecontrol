@@ -33,18 +33,18 @@ private Q_SLOTS:
 
     virtual void initialize();
     virtual void clear();
-    void clear(const QString& componentid_, const QString& instanceid_);
+	void clear( const QVariantMap& target);
     virtual void requestProperties();
     virtual void instanceConfiguration(const QVariantMap& data);
     // Call this method to update <channel, value>-pairs and clear(your_plugin_id) to clear
-    void subpluginChange( const QString& componentid_, const QString& instanceid_, const QString& channel, bool value, const QString& name );
+	void subpluginChange(  const QVariantMap& target, const QString& channel, bool value, const QString& name );
 
     // Get, Set Names
     QString getSwitchName ( const QString& channel );
     void setSwitchName ( const QString& channel, const QString& name );
     // Get, Set Values
-    void setSwitch ( const QString& channel, bool value );
-    void toggleSwitch ( const QString& channel );
+    bool setSwitch ( const QString& channel, bool value );
+    bool toggleSwitch ( const QString& channel );
     bool getSwitch( const QString& channel ) const;
     bool isSwitchOn( const QString& channel, bool value );
     int countSwitchs();

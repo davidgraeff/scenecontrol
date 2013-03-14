@@ -2,7 +2,7 @@ var configs = require('./config.js');
 var child_process = require('child_process');
 var storage = require('./storage.js');
 var commandsocket = require("./com/socket.js");
-var childs = [];
+var childs = {};
 
 exports.finish = function(callback) {
 	childs.forEach(function(child) {
@@ -19,12 +19,13 @@ exports.init = function(callback) {
 		if (items) {
 			console.log('Autostarting service processes: '+items.length);
 			items.forEach(function(config) {
-				if (!config.autostart) 
+				var configid = config.componentid_+"."+config.instanceid_;
+				if (!config.autostart || childs[configid]) 
 					return;
 				var child = child_process.spawn(configs.systempaths.path_plugins+"/"+config.componentid_,[config.instanceid_,commandsocket.serverip,commandsocket.controlport]);
 				child.name = config.componentid_;
 				child.instance = config.instanceid_;
-				childs.push(child);
+				childs[configid] = child;
 				child.stdout.on('data', function (data) {
 					console.log(data.toString("utf8", 0, data.length-1));
 				});
@@ -38,9 +39,7 @@ exports.init = function(callback) {
 						console.warn("Start service failed '"+ config.componentid_ + "' with configuration: "+ config.instanceid_);
 					} else
 						console.log('Service finished: ' + this.name + " ("+ this.instance +")");
-					var i = childs.indexOf(this);
-					if (i!=-1)
-						childs = childs.splice(i,1);
+					delete childs[configid];
 				});
 			});
 		}

@@ -6,7 +6,7 @@ var assert = require('assert');
 
 var scenes = {};
 
-function waitForAckSceneItem(sceneItemUID, scene, runtime) {
+function waitForAckSceneItem(sceneItemUID, scene, runtime, lastresponse) {
 	var that = this;
 	this.item = sceneItemUID;
 	this.service = null;
@@ -14,7 +14,6 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime) {
 	this.timer = null;
 	
 	this.execute = function() {
-		console.log("WaitAck:", that.ackID);
 		storage.getSceneItem(sceneItemUID.type_, sceneItemUID.id_, function(err, items) {
 			if (err) {
 				that.receiveAck(); // execute successors. nothing to do here
@@ -24,7 +23,7 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime) {
 			if (items && items.length>=0) {
 				that.item = items[0];
 				// determine service
-				that.service = services.getService(that.item.componentid_, that.item.instanceid_);
+				that.service = services.getService(that.item);
 				// if no service or scene item is an event, execute successors
 				if (sceneItemUID.type_ == "event" || !that.service) {
 					that.receiveAck(false); // execute successors. nothing to do here
@@ -36,6 +35,8 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime) {
 				// timeout if no answer by the service in time (~1,5s)
 				that.timer = setTimeout(that.receiveAck, 1500);
 
+				// TODO apply properties+variables now (incl. lastresponse)
+				
 				// execute item now
 				api.setAckRequired(that.item, that.ackID);
 				that.service.com.send(that.item);
@@ -51,17 +52,21 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime) {
 			clearTimeout(that.timer);
 	}
 	
-	this.receiveAck = function(responseid, responsedoc) {
+	this.receiveAck = function(responseid, response) {
 		if (responsedoc && responseid != that.ackID)
 			return;
 		clearTimeout(that.timer);
-		console.log("  WaitAck ack:", responseid,"E:", that.ackID);
 		
 		// get successors
 		var successors = [];
 		for (var i =0;i<scene.v.length;++i) {
 			if (scene.v[i].type_==that.item.type_ && scene.v[i].id_ == that.item.id_) {
-				var linked = scene.v[i].e;
+				var linked;
+				if (that.item.type_ == "condition" && response==false)
+					linked = scene.v[i].eAlt;
+				else
+					linked = scene.v[i].e;
+				
 				if (linked) {
 					for (var j =0;j<linked.length;++j) {
 						successors.push({type_:linked[j].type_, id_: linked[j].id_});
@@ -70,7 +75,7 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime) {
 			}
 		}
 		
-		runtime.startItemExecution(successors, that.item);
+		runtime.startItemExecution(successors, response, that.item);
 	}
 }
 
@@ -132,10 +137,10 @@ function sceneRuntime(sceneDoc) {
 	/**
 	 * This method will add all listed nodes to the waitForAckSceneItems list and execute them.
 	 */
-	this.startItemExecution = function(sceneItemUIDs, removeOldUID) {
+	this.startItemExecution = function(sceneItemUIDs, lastresponse, removeOldUID) {
 		console.log("Start scene items @ ", that.scene.name, sceneItemUIDs.length);
 		sceneItemUIDs.forEach(function(sceneItemID) {
-			var ackObj = new waitForAckSceneItem(sceneItemID, that.scene, that);
+			var ackObj = new waitForAckSceneItem(sceneItemID, that.scene, that, lastresponse);
 			that.waitForAckSceneItems.push(ackObj);
 			ackObj.execute();
 		});
@@ -215,7 +220,7 @@ function sceneRuntime(sceneDoc) {
 	
 	this.registerEvent= function(eventDoc) {
 		assert(eventDoc, "registerEvent");
-		var service = services.getService(eventDoc.componentid_, eventDoc.instanceid_);
+		var service = services.getService(eventDoc);
 		that.eventsBeforeReload[eventDoc.id_] = {service: service, event: eventDoc};
 		
 		if (!service) {
@@ -245,7 +250,8 @@ function sceneRuntime(sceneDoc) {
 	}
 
 	this.unload = function() {
-		console.log("Unload scene: ", sceneDoc.name);
+		that.stopScene();
+		//console.log("Unload scene: ", sceneDoc.name);
 	}
 	
 	this.reload(sceneDoc);

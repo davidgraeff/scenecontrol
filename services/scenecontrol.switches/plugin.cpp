@@ -43,7 +43,11 @@ void plugin::clear() {
     m_cache.clear();
 }
 
-void plugin::clear(const QString& componentid_, const QString& instanceid_) {
+void plugin::clear(const QVariantMap& target) {
+	SceneDocument targetD(target);
+	QByteArray componentid_ = targetD.componentID().toUtf8();
+	QByteArray instanceid_ = targetD.instanceID().toUtf8();
+	
     // Remove all leds referenced by "plugin_id"
     QMutableMapIterator<QString, iochannel> i(m_ios);
     while (i.hasNext()) {
@@ -85,9 +89,9 @@ bool plugin::getSwitch(const QString& channel) const
     return m_ios[channel].value;
 }
 
-void plugin::setSwitch ( const QString& channel, bool value )
+bool plugin::setSwitch ( const QString& channel, bool value )
 {
-    if (!m_ios.contains(channel)) return;
+    if (!m_ios.contains(channel)) return false;
     iochannel& p = m_ios[channel];
     p.value = value;
     m_cache.insert(&p);
@@ -99,6 +103,7 @@ void plugin::setSwitch ( const QString& channel, bool value )
 	doc.setData("channel",channel);
 	doc.setData("value",value);
 	callRemoteComponent(doc.getData());
+	return true;
 }
 
 void plugin::setSwitchName ( const QString& channel, const QString& name )
@@ -122,10 +127,10 @@ void plugin::setSwitchName ( const QString& channel, const QString& name )
     changeConfig("channelname_" + channel.toUtf8(),settings);
 }
 
-void plugin::toggleSwitch ( const QString& channel )
+bool plugin::toggleSwitch ( const QString& channel )
 {
-    if (!m_ios.contains(channel)) return;
-    setSwitch ( channel, !m_ios[channel].value );
+    if (!m_ios.contains(channel)) return false;
+    return setSwitch ( channel, !m_ios[channel].value );
 }
 
 int plugin::countSwitchs() {
@@ -150,12 +155,13 @@ void plugin::instanceConfiguration(const QVariantMap& data) {
     }
 }
 
-void plugin::subpluginChange( const QString& componentid_, const QString& instanceid_, const QString& channel, bool value, const QString& name ) {
+void plugin::subpluginChange( const QVariantMap& target, const QString& channel, bool value, const QString& name ) {
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];
-    io.componentID = componentid_.toUtf8();
-	io.instanceID = instanceid_.toUtf8();
+	SceneDocument targetD(target);
+	io.componentID = targetD.componentID().toUtf8();
+	io.instanceID = targetD.instanceID().toUtf8();
 	//p.moodlight = false;
     //p.fadeType = 1;
     io.channel = channel;

@@ -12,7 +12,7 @@ exports.api = {
 		return remoteDoc.type_=="storage";
 	},
 	isServiceCall: function(remoteDoc) {
-		return remoteDoc.type_=="call";
+		return remoteDoc.method_=="call";
 	},
 	isPropertyChange: function(remoteDoc) {
 		return remoteDoc.type_=="notification";

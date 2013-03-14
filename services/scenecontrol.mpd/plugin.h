@@ -30,10 +30,10 @@ public:
 
     virtual ~plugin();
 	virtual void initialize();
+	virtual void requestProperties();
+	virtual void instanceConfiguration(const QVariantMap& data);
 private:
 	MediaController* m_mediacontroller;
-    virtual void configChanged ( const QByteArray& configid, const QVariantMap& data );
-    virtual void requestProperties ( int sessionid );
 private Q_SLOTS:
 	// from mpdController
     void playlistChanged ( QString );

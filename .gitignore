@@ -22,3 +22,6 @@ old/*
 
 # nodejs
 core/node_modules/*
+
+# 3rdparty services
+services/3rdparty/*

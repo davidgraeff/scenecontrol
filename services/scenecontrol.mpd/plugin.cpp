@@ -45,18 +45,15 @@ plugin::~plugin()
 }
 
 
-void plugin::configChanged ( const QByteArray& configid, const QVariantMap& data )
+void plugin::instanceConfiguration (const QVariantMap& data )
 {
-	Q_UNUSED ( configid );
     if ( data.contains ( QLatin1String ( "host" ) ) && data.contains ( QLatin1String ( "port" ) ) )
         m_mediacontroller->connectToMpd ( data[QLatin1String ( "host" )].toString(), data[QLatin1String ( "port" )].toInt() );
 }
 
-void plugin::requestProperties ( int sessionid )
+void plugin::requestProperties ( )
 {
-    Q_UNUSED ( sessionid );
-
-    changeProperty ( stateChanged ( m_mediacontroller, false ) );
+   changeProperty ( stateChanged ( m_mediacontroller, false ) );
     {
         SceneDocument sc = SceneDocument::createNotification ("mpd.playlist.current" );
         sc.setData ( "playlistid", m_mediacontroller->currentplaylist() );

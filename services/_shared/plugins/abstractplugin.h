@@ -144,9 +144,7 @@ public Q_SLOTS:
     /**
      * A set of configurations are send by the server.
      */
-    virtual void instanceConfiguration(const QVariantMap& data) {
-        Q_UNUSED(data);
-    };
+    virtual void instanceConfiguration(const QVariantMap& data) = 0;
     /**
      * Return current state of all plugin properties. The server
      * reguests all properties from all plugins after a client has connected.
@@ -158,5 +156,5 @@ public Q_SLOTS:
      * should not block the server noticable!
      * \param sessionid id of the client session that requests properties of this plugin
      */
-    virtual void requestProperties() {};
+    virtual void requestProperties() = 0;
 };

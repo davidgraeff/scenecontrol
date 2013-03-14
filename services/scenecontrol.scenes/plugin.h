@@ -36,6 +36,7 @@ public:
     virtual void initialize();
     virtual void clear();
     virtual void requestProperties();
+	virtual void instanceConfiguration(const QVariantMap&) {};
 	
 	struct VariableEvent {
 		QByteArray name;

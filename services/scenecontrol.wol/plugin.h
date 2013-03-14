@@ -29,6 +29,7 @@ public:
 
     virtual ~plugin();
     virtual void requestProperties();
+	virtual void instanceConfiguration(const QVariantMap&) {};
 
 public Q_SLOTS:
     virtual void wol ( const QString& mac);
