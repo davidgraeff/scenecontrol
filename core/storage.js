@@ -80,8 +80,8 @@ exports.getScenes = function(callback) {
 exports.getEventsForScene = function(sceneid, callback) {
 	exports.db.collection('event').find({sceneid_:sceneid}).toArray(callback);
 }
-exports.getEvent = function(eventid, callback) {
-	exports.db.collection('event').find({id_:eventid}).toArray(callback);
+exports.getSceneItem = function(type, id, callback) {
+	exports.db.collection(type).find({id_:id}).toArray(callback);
 }
 
 /****** importNewFiles *********/

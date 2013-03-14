@@ -51,7 +51,7 @@ exports.service = function(com, id) {
 	
 	com.on("data", function(doc) {
 		if (api.isAck(doc)) {
-			that.emit("ack", doc.responseid_);
+			that.emit("ack", doc.responseid_, doc);
 		} else if (api.isForStorage(doc)) {
 			that.emit("modify_doc", doc, that.id);
 		} else if (api.isServiceCall(doc)) {
@@ -62,6 +62,8 @@ exports.service = function(com, id) {
 			exports.properties[doc.id_] = doc;
 		} else if (api.isModelPropertyChange(doc)) {
 // 			console.log('Property changed:', doc.id_);
+		} else if (api.isTriggeredEvent(doc)) {
+			that.emit("event_triggered", doc);
 		} else 
 			console.log('Unknown type:', doc);
 	});

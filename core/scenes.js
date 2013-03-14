@@ -6,11 +6,83 @@ var assert = require('assert');
 
 var scenes = {};
 
+function waitForAckSceneItem(sceneItemUID, scene, runtime) {
+	var that = this;
+	this.item = sceneItemUID;
+	this.service = null;
+	this.ackID = sceneItemUID.type_ + "." + sceneItemUID.id_;
+	this.timer = null;
+	
+	this.execute = function() {
+		console.log("WaitAck:", that.ackID);
+		storage.getSceneItem(sceneItemUID.type_, sceneItemUID.id_, function(err, items) {
+			if (err) {
+				that.receiveAck(); // execute successors. nothing to do here
+				return;
+			}
+			// we got the scene item from the storage, determine the service now
+			if (items && items.length>=0) {
+				that.item = items[0];
+				// determine service
+				that.service = services.getService(that.item.componentid_, that.item.instanceid_);
+				// if no service or scene item is an event, execute successors
+				if (sceneItemUID.type_ == "event" || !that.service) {
+					that.receiveAck(false); // execute successors. nothing to do here
+					return;
+				}
+				// ack from service to go on with the execution
+				that.service.on("ack", that.receiveAck);
+				
+				// timeout if no answer by the service in time (~1,5s)
+				that.timer = setTimeout(that.receiveAck, 1500);
+
+				// execute item now
+				api.setAckRequired(that.item, that.ackID);
+				that.service.com.send(that.item);
+				console.log("  WaitAck execute:", that.ackID);
+			}
+			
+		});
+	}
+	
+	this.destroy = function() {
+		that.service.removeListener("ack", that.receiveAck);
+		if (that.timer)
+			clearTimeout(that.timer);
+	}
+	
+	this.receiveAck = function(responseid, responsedoc) {
+		if (responsedoc && responseid != that.ackID)
+			return;
+		clearTimeout(that.timer);
+		console.log("  WaitAck ack:", responseid,"E:", that.ackID);
+		
+		// get successors
+		var successors = [];
+		for (var i =0;i<scene.v.length;++i) {
+			if (scene.v[i].type_==that.item.type_ && scene.v[i].id_ == that.item.id_) {
+				var linked = scene.v[i].e;
+				if (linked) {
+					for (var j =0;j<linked.length;++j) {
+						successors.push({type_:linked[j].type_, id_: linked[j].id_});
+					}
+				}
+			}
+		}
+		
+		runtime.startItemExecution(successors, that.item);
+	}
+}
+
 function sceneRuntime(sceneDoc) {
 	var that = this;
+	this.scene = sceneDoc;
+	// scene-event handling
 	this.eventsBeforeReload = {};
 	this.eventsreloadCounter = 0;
 	this.eventsToBeRegistered = {};
+	// scene-runtime handling
+	this.waitForAckSceneItems = [];
 	
 	services.services.on("added", function(service) {
 		// copy object
@@ -29,15 +101,116 @@ function sceneRuntime(sceneDoc) {
 	
 	this.reload = function(sceneDoc) {
 		this.sceneDoc = sceneDoc;
-		storage.getEventsForScene(sceneDoc.id_, function(err, items) {
+		storage.getEventsForScene(sceneDoc.id_, function(err, eventDocs) {
 			if (err) {
 				console.warn("Could not get scenes ", err);
 			}
-			if (items) {
-				that.checkEvents(items);
+			if (eventDocs) {
+				that.eventsToBeRegistered = {};
+				// set counter for this reload iteration
+				++that.eventsreloadCounter;
+				console.log("Scene: ", sceneDoc.name);
+				// register events on services
+				eventDocs.forEach(function(eventDoc) {
+					if (that.eventsBeforeReload[eventDoc.id_]) {
+						that.unregisterEvent(eventDoc);
+					}
+					that.registerEvent(eventDoc);
+					that.eventsBeforeReload[eventDoc.id_].changeIteration = that.eventsreloadCounter;
+				});
+				// unregister not used events
+				for (var eventid in that.eventsBeforeReload) {
+					if (that.eventsBeforeReload[eventid].changeIteration != that.eventsreloadCounter) {
+						that.unregisterEvent(eventid);
+					}
+				}
 			}
 			
 		});
+	}
+	
+	/**
+	 * This method will add all listed nodes to the waitForAckSceneItems list and execute them.
+	 */
+	this.startItemExecution = function(sceneItemUIDs, removeOldUID) {
+		console.log("Start scene items @ ", that.scene.name, sceneItemUIDs.length);
+		sceneItemUIDs.forEach(function(sceneItemID) {
+			var ackObj = new waitForAckSceneItem(sceneItemID, that.scene, that);
+			that.waitForAckSceneItems.push(ackObj);
+			ackObj.execute();
+		});
+		if (removeOldUID) {
+			that.waitForAckSceneItems = that.waitForAckSceneItems.filter(function(elem) {return elem.item != removeOldUID});
+		}
+	}
+	
+	/**
+	 * Some scene items do not have "incoming" other scene items.
+	 * Those are called root nodes. This method returns all root nodes
+	 * of the current scene.
+	 */
+	this.determineRootNodes = function() {
+		var linkedNodes = [];
+		var allNodes = [];
+		var rootNodes = [];
+		for (var id in that.scene.v) {
+			var sceneitem = that.scene.v[id];
+			if (sceneitem.type_==undefined || sceneitem.id_==undefined)
+				continue;
+			var e = sceneitem.e;
+			sceneitem = {type_:sceneitem.type_, id_:sceneitem.id_};
+			
+			allNodes.push(sceneitem);
+			for (var e_id in e) {
+				var linkedsceneitem = e[e_id];
+				if (linkedsceneitem.type_==undefined || linkedsceneitem.id_==undefined)
+					continue;
+				linkedsceneitem = {type_:linkedsceneitem.type_, id_:linkedsceneitem.id_};
+				if (linkedNodes.indexOf(linkedsceneitem)==-1)
+					linkedNodes.push(linkedsceneitem);
+			}
+		}
+		// remove from allnodes if in linkedNodes
+		for (var i =0;i<allNodes.length;++i) {
+			var found = false;
+			for (var j =0;j<linkedNodes.length;++j) {
+				if (allNodes[i].type_==linkedNodes[j].type_ && allNodes[i].id_==linkedNodes[j].id_ ) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				rootNodes.push(allNodes[i]);
+		}
+		return rootNodes;
+	}
+	
+	this.stopScene = function() {
+		while (that.waitForAckSceneItems.length) {
+			var ackObject = that.waitForAckSceneItems.pop();
+			ackObject.destroy();
+			delete ackObject;
+		}
+	}
+	
+	/**
+	 * Start scene either with all root nodes if @sceneItemUIDs is omitted
+	 * or with all referenced scene items of @sceneItemUIDs
+	 */
+	this.startScene = function(sceneItemUIDs) {
+		if (!sceneItemUIDs)
+			sceneItemUIDs = that.determineRootNodes();
+		if (!sceneItemUIDs) // Empty scene? Abort
+			return;
+		
+		that.startItemExecution(sceneItemUIDs);
+	}
+	
+	this.eventTriggered = function(eventDoc) {
+		if (eventDoc.sceneid_ != that.scene.id_)
+			return;
+		
+		that.startScene([eventDoc.id_]);
 	}
 	
 	this.registerEvent= function(eventDoc) {
@@ -46,11 +219,12 @@ function sceneRuntime(sceneDoc) {
 		that.eventsBeforeReload[eventDoc.id_] = {service: service, event: eventDoc};
 		
 		if (!service) {
-			console.log("  Event Later: ", eventDoc.method_);
+// 			console.log("  Event Later: ", eventDoc.method_);
 			that.eventsToBeRegistered[eventDoc.id_] = eventDoc;
 		} else {
-			console.log("  Event: ", eventDoc.method_, service.id);
+// 			console.log("  Event: ", eventDoc.method_, service.id);
 			service.com.send(eventDoc);
+			service.on("event_triggered", that.eventTriggered);
 		}
 	}
 	
@@ -62,39 +236,23 @@ function sceneRuntime(sceneDoc) {
 		var entry = that.eventsBeforeReload[eventid];
 		var service = entry.service;
 		if (service) {
+			service.removeListener("event_triggered", that.eventTriggered);
 			delete entry.event.sceneid_;
 			service.com.send(entry.event);
 		}
 		
 		delete that.eventsBeforeReload[eventid];
 	}
-	
-	this.checkEvents = function(eventDocs) {
-		that.eventsToBeRegistered = {};
-		// set counter for this reload iteration
-		++that.eventsreloadCounter;
-		console.log("Scene: ", sceneDoc.name);
-		// register events on services
-		eventDocs.forEach(function(eventDoc) {
-			if (that.eventsBeforeReload[eventDoc.id_]) {
-				that.unregisterEvent(eventDoc);
-			}
-			that.registerEvent(eventDoc);
-			that.eventsBeforeReload[eventDoc.id_].changeIteration = that.eventsreloadCounter;
-		});
-		// unregister not used events
-		for (var eventid in that.eventsBeforeReload) {
-			if (that.eventsBeforeReload[eventid].changeIteration != that.eventsreloadCounter) {
-				that.unregisterEvent(eventid);
-			}
-		}
-	}
-	
+
 	this.unload = function() {
 		console.log("Unload scene: ", sceneDoc.name);
 	}
 	
 	this.reload(sceneDoc);
+}
+
+exports.getScene = function(id) {
+	return scenes[id];
 }
 
 exports.finish = function(callback) {

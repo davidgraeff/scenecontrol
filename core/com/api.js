@@ -5,6 +5,9 @@ exports.api = {
 	isAck: function(remoteDoc, expect) {
 		return remoteDoc.type_=="ack" && (expect ? remoteDoc.responseid_== expect : true);
 	},
+	setAckRequired: function(remoteDoc, expect) {
+		return remoteDoc.requestid_= expect;
+	},
 	isForStorage: function(remoteDoc) {
 		return remoteDoc.type_=="storage";
 	},
@@ -16,6 +19,9 @@ exports.api = {
 	},
 	isModelPropertyChange: function(remoteDoc) {
 		return remoteDoc.type_=="model";
+	},
+	isTriggeredEvent: function(remoteDoc) {
+		return remoteDoc.method_=="eventTriggered";
 	},
 	// extract document from clientDoc
 	getDataFromClientCall: function(clientDoc, sessionid) {
