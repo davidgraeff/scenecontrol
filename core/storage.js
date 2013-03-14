@@ -73,6 +73,17 @@ exports.init = function(callback) {
 /****** db *********/
 exports.db = db;
 
+/****** helper *********/
+exports.getScenes = function(callback) {
+	exports.db.collection('scene').find().toArray(callback);
+}
+exports.getEventsForScene = function(sceneid, callback) {
+	exports.db.collection('event').find({sceneid_:sceneid}).toArray(callback);
+}
+exports.getEvent = function(eventid, callback) {
+	exports.db.collection('event').find({id_:eventid}).toArray(callback);
+}
+
 /****** importNewFiles *********/
 exports.importNewFiles = function(callback) {
 	var verifier = new exports.genericverifier();

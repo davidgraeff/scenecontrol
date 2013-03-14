@@ -6,10 +6,16 @@ exports.api = {
 		return remoteDoc.type_=="ack" && (expect ? remoteDoc.responseid_== expect : true);
 	},
 	isForStorage: function(remoteDoc) {
-		return !remoteDoc.type_=="storage";
+		return remoteDoc.type_=="storage";
 	},
 	isServiceCall: function(remoteDoc) {
-		return !remoteDoc.type_=="call";
+		return remoteDoc.type_=="call";
+	},
+	isPropertyChange: function(remoteDoc) {
+		return remoteDoc.type_=="notification";
+	},
+	isModelPropertyChange: function(remoteDoc) {
+		return remoteDoc.type_=="model";
 	},
 	// extract document from clientDoc
 	getDataFromClientCall: function(clientDoc, sessionid) {

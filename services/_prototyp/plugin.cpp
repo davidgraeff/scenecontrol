@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
     
-    if (plugin::createInstance(PLUGIN_ID,argv[1],argv[2],argv[3])==0)
+    if (AbstractPlugin::createInstance<plugin>(PLUGIN_ID,argv[1],argv[2],argv[3])==0)
         return 10;
     return app.exec();
 }

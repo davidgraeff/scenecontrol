@@ -21,26 +21,18 @@ static void catch_int(int )
         QCoreApplication::exit(0);
 }
 
-AbstractPlugin* AbstractPlugin::createInstance(const QByteArray& pluginid, const QByteArray& instanceid, const QByteArray& serverip, const QByteArray& port)
+AbstractPlugin::AbstractPlugin() : m_lastsessionid(-1){}
+
+void AbstractPlugin::setPluginInfo(const QByteArray& pluginid, const QByteArray& instanceid)
 {
 	setLogOptions(pluginid+":"+instanceid, true);
+	m_pluginid = pluginid;
+	m_instanceid = instanceid;
 	qInstallMsgHandler(roomMessageOutput);
-	
-	AbstractPlugin* plugin = new AbstractPlugin(pluginid, instanceid);
-	if (!plugin->createCommunicationSockets(serverip, port.toInt())) {
-		delete plugin;
-		return 0;
-	}
 	
 	//set up signal handlers to exit on 2x CTRL+C
 	signal(SIGINT, catch_int);
 	signal(SIGTERM, catch_int);
-	
-	return plugin;
-}
-
-AbstractPlugin::AbstractPlugin(const QString& pluginid, const QString& instanceid) : m_lastsessionid(-1), m_pluginid(pluginid), m_instanceid(instanceid)
-{
 }
 
 AbstractPlugin::~AbstractPlugin() {}
@@ -98,9 +90,9 @@ void AbstractPlugin::sslErrors ( const QList<QSslError> & errors ) {
 bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int port)
 {
 	// ssl cert and keys
-	ignoreSslErrors();
-	setProtocol(QSsl::SslV3);
-	setPeerVerifyMode(QSslSocket::VerifyNone);
+	socket.ignoreSslErrors();
+	socket.setProtocol(QSsl::SslV3);
+	socket.setPeerVerifyMode(QSslSocket::VerifyNone);
 	bool useGenericKey = false, useGenericCert = false;
 	
 	// Add client key
@@ -115,10 +107,10 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 				return false;
 			} else {
 				useGenericKey = true;
-				setPrivateKey(sslKeyGeneric);
+				socket.setPrivateKey(sslKeyGeneric);
 			}
 		} else
-			setPrivateKey(sslKeySpecific);
+			socket.setPrivateKey(sslKeySpecific);
 	}
 	
 	// Set public certificate
@@ -133,10 +125,10 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 				return false;
 			} else {
 				useGenericCert = true;
-				setLocalCertificate(sslCertGeneric);
+				socket.setLocalCertificate(sslCertGeneric);
 			}
 		} else
-			setLocalCertificate(sslCertSpecific);
+			socket.setLocalCertificate(sslCertSpecific);
 	}
 
 	// Add public certificate of the server to the trusted hosts
@@ -146,22 +138,22 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 		qWarning() << "SSL Server Certificate invalid:" << setup::certificateFile("server.crt");
 		return false;
 	}
-	addCaCertificate(sslCertServer);
+	socket.addCaCertificate(sslCertServer);
 
 	// connect
-	connectToHostEncrypted(serverip, port);
-	if (!waitForConnected()) {
+	socket.connectToHostEncrypted(serverip, port);
+	if (!socket.waitForConnected()) {
 		qWarning() << "Server does not respond!"<<serverip<< port;
 		return false;
 	}
 	// The core will send a version identifier
-	if (!waitForReadyRead()) {
+	if (!socket.waitForReadyRead()) {
 		qWarning() << "Server didn't send an identify message!";
 		return false;
 	}
 	{
 		// we expect the server (remote_types=="core") and at least api level 10
-		SceneDocument serverident(readLine());
+		SceneDocument serverident(socket.readLine());
 		if (!serverident.isMethod("identify") || serverident.toInt("apiversion")<10 ||
 			serverident.toString("provides")!=QLatin1String("core")) {
 			qWarning()<<"Wrong api version!";
@@ -169,8 +161,8 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 		}
 		SceneDocument ack;
 		ack.makeack(serverident.requestid());
-		write(ack.getjson());
-		flush();
+		socket.write(ack.getjson());
+		socket.flush();
 	}
 	
 	// identify
@@ -180,72 +172,36 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 	identify.setComponentID(m_pluginid);
 	identify.setInstanceID(m_instanceid);
 	identify.setData("provides",QStringList() << QLatin1String("service"));
+	identify.setData("useGenericKey",useGenericKey);
+	identify.setData("useGenericCert",useGenericCert);
 	identify.setData("apiversion", 10);
-	write(identify.getjson());
-	flush();
-	if (!waitForReadyRead()) {
+	socket.write(identify.getjson());
+	socket.flush();
+	if (!socket.waitForReadyRead()) {
 		qWarning() << "Server does not send an ack!";
 		return false;
 	}
-	SceneDocument serverresponse(readLine());
+	SceneDocument serverresponse(socket.readLine());
 	if (!serverresponse.isResponse(identify)) {
 		qWarning()<<"Couldn't identify to core!";
 		return false;
 	}
 	
-    connect(this, SIGNAL(disconnected()), SLOT(disconnectedFromServer()));
-	connect(this, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
-	
-	qDebug() << "Service ready." << (useGenericKey?"Using generic SSL key!":"")<< (useGenericCert?"Using generic Certificate key!":"");
+    connect(&socket, SIGNAL(disconnected()), SLOT(disconnectedFromServer()));
+	connect(&socket, SIGNAL(readyRead()), SLOT(readyReadCommunication()));
 	
 	// work through rest of received data with the next event loop step
-	if (canReadLine())
+	if (socket.canReadLine())
 		QTimer::singleShot(0, this, SLOT(readyReadCommunication()));
     return true;
 }
 
 void AbstractPlugin::readyReadCommunication()
 {
-    while (canReadLine()) {
-		SceneDocument dataDocument(readLine());
-		
-		if (dataDocument.isType(SceneDocument::TypeAck))
-			continue;
-		
-// 		qDebug() << "receive" << dataDocument.getjson();
-		m_lastsessionid = dataDocument.sessionid();
-
-		// Prepare response
+    while (socket.canReadLine()) {
 		SceneDocument transferdoc;
-		transferdoc.makeack(dataDocument.requestid());
-		
-		int methodId = invokeHelperGetMethodId(dataDocument.method());
-		// If method not found call dataFromPlugin
-		if (methodId == -1) {
-			qWarning() << "Method not found!" << dataDocument.method();
-			transferdoc.setData("error", "Method not found!");
-			write(transferdoc.getjson());
-			continue;
-		}
-		
-		QVector<QVariant> argumentsInOrder(9);
-		int params;
-		if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
-			qWarning() << "Arguments list incompatible!" << dataDocument.method() << methodId << dataDocument.getData() << argumentsInOrder;
-			transferdoc.setData("error", "Arguments list incompatible!");
-			write(transferdoc.getjson());
-			continue;
-		}
-
-		const char* returntype = metaObject()->method(methodId).typeName();
-		// If no response is expected, write the method-response message before invoking the target method,
-		// because that may write data the the server and the response-message have to be the first answer
-		transferdoc.setData("response_",
-							invokeSlot(dataDocument.method(), params, returntype,
-										argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3],
-										argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]));
-		write(transferdoc.getjson());
-// 		qDebug() << "response" << transferdoc.getjson();
+		if (executeMethodByIncomingDocument(SceneDocument(socket.readLine()), transferdoc))
+			socket.write(transferdoc.getjson());
     }
 }
 
@@ -256,8 +212,8 @@ bool AbstractPlugin::callRemoteComponent( const QVariantMap& dataout )
 	d.setInstanceID(m_instanceid);
 	d.setData("doc", dataout);
 	d.setMethod("call");
-	write(d.getjson());
-	flush();
+	socket.write(d.getjson());
+	socket.flush();
 	return true;
 }
 
@@ -265,14 +221,14 @@ void AbstractPlugin::changeConfig(const QByteArray& configid, const QVariantMap&
 	SceneDocument transferdoc(data);
 	transferdoc.setMethod("changeConfig");
 	transferdoc.setid(configid);
-	write(transferdoc.getjson());
+	socket.write(transferdoc.getjson());
 }
 
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
 	SceneDocument transferdoc(data);
 	transferdoc.setMethod("changeProperty");
 	transferdoc.setSessionID(sessionid);
-	write(transferdoc.getjson());
+	socket.write(transferdoc.getjson());
 }
 
 void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_sceneid) {
@@ -280,7 +236,7 @@ void AbstractPlugin::eventTriggered(const QString& eventid, const QString& dest_
 	transferdoc.setMethod("eventTriggered");
 	transferdoc.setSceneid(dest_sceneid);
 	transferdoc.setid(eventid);
-	write(transferdoc.getjson());
+	socket.write(transferdoc.getjson());
 }
 
 void AbstractPlugin::disconnectedFromServer() {
@@ -293,7 +249,6 @@ int AbstractPlugin::invokeHelperGetMethodId(const QByteArray& methodName) {
         // Extract method name from signature of QMetaMethod
         QByteArray methodNameOfPlugin(metaObject()->method(i).signature());
         methodNameOfPlugin.resize(methodNameOfPlugin.indexOf('('));
-
         if (methodNameOfPlugin == methodName)
             return i;
     }
@@ -335,3 +290,51 @@ QString AbstractPlugin::instanceid() {
     return m_instanceid;
 }
 int AbstractPlugin::getLastSessionID() {return m_lastsessionid;}
+
+bool AbstractPlugin::addEvent(const QVariantMap& data) {
+	SceneDocument ignore;
+	return executeMethodByIncomingDocument(data, ignore);
+}
+
+bool AbstractPlugin::removeEvent(const QVariantMap& data) {
+	SceneDocument ignore;
+	return executeMethodByIncomingDocument(data, ignore);
+}
+
+bool AbstractPlugin::executeMethodByIncomingDocument(const SceneDocument& dataDocument, SceneDocument& responseDocument) {
+	if (dataDocument.isType(SceneDocument::TypeAck))
+		return false;
+	
+	// 		qDebug() << "receive" << dataDocument.getjson();
+	m_lastsessionid = dataDocument.sessionid();
+	
+	// Prepare response
+	responseDocument.makeack(dataDocument.requestid());
+	
+	int methodId = invokeHelperGetMethodId(dataDocument.method());
+	// If method not found call dataFromPlugin
+	if (methodId == -1) {
+		qWarning() << "Method not found!" << dataDocument.method();
+		responseDocument.setData("error", "Method not found!");
+		socket.write(responseDocument.getjson());
+		return false;
+	}
+	
+	QVector<QVariant> argumentsInOrder(9);
+	int params;
+	if ((params = invokeHelperMakeArgumentList(methodId, dataDocument.getData(), argumentsInOrder)) == -1) {
+		qWarning() << "Arguments list incompatible!" << dataDocument.method() << methodId << dataDocument.getData() << argumentsInOrder;
+		responseDocument.setData("error", "Arguments list incompatible!");
+		socket.write(responseDocument.getjson());
+		return false;
+	}
+	
+	const char* returntype = metaObject()->method(methodId).typeName();
+	// If no response is expected, write the method-response message before invoking the target method,
+	// because that may write data the the server and the response-message have to be the first answer
+	responseDocument.setData("response_",
+						invokeSlot(dataDocument.method(), params, returntype,
+								   argumentsInOrder[0], argumentsInOrder[1], argumentsInOrder[2], argumentsInOrder[3],
+				 argumentsInOrder[4], argumentsInOrder[5], argumentsInOrder[6], argumentsInOrder[7], argumentsInOrder[8]));
+	return true;
+}

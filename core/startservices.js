@@ -12,16 +12,15 @@ exports.finish = function(callback) {
 }
 
 exports.init = function(callback) {
-	console.log('Autostarting plugin processes...');
 	storage.db.collection('configuration').find().toArray(function(err, items) {
 		if (err) {
 			console.warn("Could not get configurations for services ", err);
 		}
 		if (items) {
+			console.log('Autostarting service processes: '+items.length);
 			items.forEach(function(config) {
 				if (!config.autostart) 
 					return;
-				console.log("Start service '"+ config.componentid_ + "' with configuration: "+ config.instanceid_);
 				var child = child_process.spawn(configs.systempaths.path_plugins+"/"+config.componentid_,[config.instanceid_,commandsocket.serverip,commandsocket.controlport]);
 				child.name = config.componentid_;
 				child.instance = config.instanceid_;
@@ -35,7 +34,10 @@ exports.init = function(callback) {
 				});
 
 				child.on('exit', function (code) {
-					console.log('Service finished: ' + this.name + " ("+ this.instance +")");
+					if (code!=0) {
+						console.warn("Start service failed '"+ config.componentid_ + "' with configuration: "+ config.instanceid_);
+					} else
+						console.log('Service finished: ' + this.name + " ("+ this.instance +")");
 					var i = childs.indexOf(this);
 					if (i!=-1)
 						childs = childs.splice(i,1);

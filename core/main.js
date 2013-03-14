@@ -40,14 +40,15 @@ if (argv.e) {
 	return;
 }
 
-var autostartplugins = require("./startplugins.js");
+var startservices = require("./startservices.js");
 var commandsocket = require("./com/socket.js");
+var commandwebsocket = require("./com/websocket.js");
 var scenes = require("./scenes.js");
 
 // exit handling
 process.stdin.resume();
 process.on('SIGINT', function () {
-	controlflow.series([scenes.finish, commandsocket.finish, autostartplugins.finish], function() {
+	controlflow.series([scenes.finish, commandwebsocket.finish, commandsocket.finish, startservices.finish], function() {
 		process.exit(0);
 	});
 });
@@ -59,8 +60,8 @@ process.on('exit', function () {
 // 2) Install missing config files from system and user dir
 // 3) start plugin processes (as soon as storage.load() is called)
 // 4) Call storage.load
-controlflow.series([commandsocket.start, storage.init, storage.importNewFiles, storage.showstats,
-				   autostartplugins.init, scenes.init], 
+controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, storage.importNewFiles, storage.showstats,
+				   startservices.init, scenes.init], 
 	function(err, results){
 		if (err) {
 			console.error("Error on start: " + err);

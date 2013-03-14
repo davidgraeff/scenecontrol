@@ -57,7 +57,7 @@
  * like "void dim_light(int id, int value)" or "bool isOn(int id)". Conditions may only
  * return a boolean response value.
  */
-class AbstractPlugin: public QSslSocket {
+class AbstractPlugin : public QObject {
     Q_OBJECT
 public:
     /**
@@ -66,7 +66,19 @@ public:
      *
      * Use this in your plugin main method.
      */
-	static AbstractPlugin* createInstance(const QByteArray& pluginid, const QByteArray& instanceid, const QByteArray& serverip, const QByteArray& port);
+	template <class T>
+	static T* createInstance(const QByteArray& pluginid, const QByteArray& instanceid, const QByteArray& serverip, const QByteArray& port)
+	{
+		T* plugin = new T();
+		plugin->setPluginInfo(pluginid, instanceid);
+		if (!plugin->createCommunicationSockets(serverip, port.toInt())) {
+			delete plugin;
+			return 0;
+		}
+		
+		return plugin;
+	}
+	
     virtual ~AbstractPlugin();
 	/**
 	 * If data from the server has been received you can get the clients id (session id)
@@ -87,22 +99,29 @@ protected:
     int m_lastsessionid;
 	QString m_pluginid;
 	QString m_instanceid;
+	AbstractPlugin();
 private:
-	AbstractPlugin(const QString& pluginid, const QString& instanceid);
+	void setPluginInfo(const QByteArray& pluginid, const QByteArray& instanceid);
 	QSslKey readKey(const QString& fileKeyString, bool ignoreNotExisting);
 	QSslCertificate readCertificate(const QString& filename, bool ignoreNotExisting);
 	
+	bool executeMethodByIncomingDocument(const SceneDocument& dataDocument, SceneDocument& responseDocument);
     int invokeHelperGetMethodId(const QByteArray& methodName);
 	// Return -1 if parameters are not matching
     int invokeHelperMakeArgumentList(int methodID, const QVariantMap& inputData, QVector< QVariant >& output);
     QVariant invokeSlot(const QByteArray& methodname, int numParams, const char* returntype, QVariant p0, QVariant p1, QVariant p2, QVariant p3, QVariant p4, QVariant p5, QVariant p6, QVariant p7, QVariant p8);
 	bool createCommunicationSockets(const QByteArray& serverip, int port);
+	
+	QSslSocket socket;
 public Q_SLOTS:
     /**
      * Return pluginid
      */
     QString pluginid();
     QString instanceid();
+	
+	virtual bool addEvent(const QVariantMap& data);
+	virtual bool removeEvent(const QVariantMap& data);
     
     /**
      * Called after all services have been loaded. Initialize data structures here.
