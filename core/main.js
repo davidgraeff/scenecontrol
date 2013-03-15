@@ -72,9 +72,9 @@ controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, s
 
 
 /// Tests
-setTimeout(function() {
-	console.log("Test...");
-	var scene = scenes.getScene("54114e2456df4aa2a15b161a47a3d8d1");
-	console.log("Execute: "+scene.scene.name);
-	scene.startScene();
-}, 2000);
+// setTimeout(function() {
+// 	console.log("Test...");
+// 	var scene = scenes.getScene("54114e2456df4aa2a15b161a47a3d8d1");
+// 	console.log("Execute: "+scene.scene.name);
+// 	scene.startScene();
+// }, 2000);

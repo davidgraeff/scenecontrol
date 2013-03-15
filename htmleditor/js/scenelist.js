@@ -16,7 +16,7 @@
 	
 	window.SceneUIHelper = {
 		sceneLastAdded: null,
-		sceneChanged: function(doc, removed) {
+		sceneChanged: function(doc, removed, responseid) {
 			var $entries = $("#scenelists").find("*[data-sceneid='"+doc.id_+"']");
 			if (removed==true) {
 				// Remove the scene entry
@@ -49,7 +49,7 @@
 
 			if (SceneUIHelper.sceneLastAdded) {
 				var $entries = $("#scenelist").find("li[data-sceneid='"+doc.id_+"']");
-				if (!removed && SceneUIHelper.sceneLastAdded == doc.name) {
+				if (!removed && SceneUIHelper.sceneLastAdded == responseid) {
 					$.mobile.silentScroll($entries.first().offset().top);
 					var properties = {
 						paddingTop:    '10px',
@@ -60,7 +60,14 @@
 				}
 				SceneUIHelper.sceneLastAdded = null;
 			}
-		}/*,
+		},
+		load: function() {
+			for (var index in storageInstance.scenes) {
+				SceneUIHelper.sceneChanged(storageInstance.scenes[index], false);
+			}
+		}
+		
+		/*,
 		renderDocImage: function(scene) {
 			// prepare canvas'
 			var canvasDrawBig = document.createElement("canvas");
@@ -95,10 +102,6 @@
 
 		$("#btnRemoveSelectedScenes").addClass("disabled");
 		
-		for (var index in storageInstance.scenes) {
-			SceneUIHelper.sceneChanged(storageInstance.scenes[index], false);
-		}
-
 		////////////////// SET AND SELECT SCENES //////////////////
 		$(".btnSetScene").on('click.editorpage', function() {
 			var sceneid = $(this).parent().attr("data-sceneid");
@@ -141,7 +144,7 @@
 			$("#scenelist").find("[data-selected='1']").removeClass("selectedSceneListItem").addClass("disabled").each(function(index,elem){
 				var sceneid = elem.getAttribute('data-sceneid');
 				var doc = storageInstance.scenes[sceneid];
-				websocketInstance.remove(doc);
+				websocketInstance.write(api.manipulatorAPI.remove(doc));
 			});
 		});
 		
@@ -157,8 +160,8 @@
 				$.jGrowl("Name nicht gültig. A-Za-z0-9 sind zugelassen!");
 				return;
 			}
-			SceneUIHelper.sceneLastAdded = name;
-			websocketInstance.createScene(name);
+			SceneUIHelper.sceneLastAdded = name+Math.round(Math.random()*10000);
+			websocketInstance.write(api.addRequestID(api.manipulatorAPI.createScene(name), SceneUIHelper.sceneLastAdded));
 			$("#newscenename").val('');
 			$('#newscenepopup').modal("hide");
 		});

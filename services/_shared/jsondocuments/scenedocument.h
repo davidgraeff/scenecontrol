@@ -41,11 +41,9 @@ public:
 		// Special types
 		TypeExecution, 	// Same as Action but is executed immediately and not stored
 		TypeRemove,	// Remove stored document
-		TypeNotification,// A notification
+		TypePropertyChange,// A notification
 		
-		TypeModelItem,
-		
-		TypeError, TypeAck, TypeAuth,
+		TypeError, TypeAck,
 		
 		TypeLAST
 	};

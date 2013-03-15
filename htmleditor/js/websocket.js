@@ -4,11 +4,13 @@
  */
 (function (window) {
 	"use strict";
+	
 	function serverWebsocket() {
 		var that = this;
 		that.connected = false;
 		that.socket_di = null;
 		that.url;
+		this.state = 1;
 		
 		this.defaultHostAndPort = function() {
 			return  "127.0.0.1:3102";
@@ -17,56 +19,14 @@
 		this.setHostAndPort = function(hostAndPort, useWSS) {
 			that.url = ((useWSS)?"wss://":"ws://")+hostAndPort;
 		}
-		this.requestAllDocuments = function() {
-			this.write({"type_":"execute", "method_":"fetchAllDocuments"});
-		}
-		
+
 		this.startMonitorScene = function(sceneid) {
 			this.write({"type_":"execute", "method_":"startMonitor", "monitor": "scene", "sceneid_": sceneid});
 		}
 		
-		this.registerNotifier = function() {
-			this.write({"type_":"execute", "method_":"registerNotifier"});
-		}
-		
-		this.requestAllProperties = function() {
-			this.write({"type_":"execute", "method_":"requestAllProperties"});
-		}
-		
-		this.auth = function() {
-			this.write({"type_":"auth", "method_":"identify", "provides":["client"], "apiversion":10});
-		}
-		
+
 		this.runcollection = function(sceneid) {
 			this.write({"type_":"execute", "method_":"runcollection", "sceneid_": sceneid});
-		}
-		
-		this.createScene = function(name) {
-			var newscene = {"id_":"GENERATEGUID", "type_": "scene","v":[],"categories": [],"enabled": true,"name": name};
-			websocketInstance.write(newscene);
-		}
-		
-		this.createSceneItem = function(scene_id, sceneItemDocument) {
-			websocketInstance.write({"type_":"execute","method_":"addSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
-		}
-		
-		this.removeSceneItem = function(scene_id, sceneItemDocument) {
-			console.log("removeSceneItem", scene_id, sceneItemDocument);
-			websocketInstance.write({"type_":"execute","method_":"removeSceneItemDocument","scene_id":scene_id,"sceneitem":sceneItemDocument});
-		}
-		
-		this.createConfig = function(instanceid, componentid) {ee
-			var newconfig = {"id_":"GENERATEGUID", "componentid_":componentid, "type_": "configuration","instanceid_": instanceid};
-			websocketInstance.write(newconfig);
-		}
-		
-		this.remove = function(sceneDocument) {
-			websocketInstance.write({"type_":"execute","method_":"removeDocument","doc":sceneDocument});
-		}
-		
-		this.updateDocument = function(sceneDocument) {
-			//console.log("Change: ", sceneDocument)
-			websocketInstance.write({"type_":"execute","method_":"changeDocument","doc":sceneDocument});
 		}
 		
 		this.write = function(data) {
@@ -91,7 +51,7 @@
 			
 			try {
 				window.setTimeout( that.checkConnected, 1500 );
-				that.socket_di = new WebSocket(that.url, "roomcontrol-protocol");
+				that.socket_di = new WebSocket(that.url, "scenecontrol-protocol");
 				that.socket_di.onopen = function() {
 					that.connected = true;
 					$(that).trigger('onopen');
@@ -101,7 +61,28 @@
 					var datas = msg.data.split("\n");
 					for (var index in datas) {
 						if (datas[index] && datas[index] != '') {
-							$(that).trigger('ondocument', JSON.parse(datas[index]));
+
+							var doc = JSON.parse(datas[index]);
+							if (api.needAck(doc)) {
+								that.write(api.generateAck(doc));
+							}
+							switch (that.state) {
+								case 1:
+									that.serverinfo = doc;
+									that.write(api.methodIdentify("htmleditorv2"));
+									that.state = 2;
+									break;
+								case 2:
+									if (!api.isAck(doc, "htmleditorv2")) {
+										that.socket.close();
+										return;
+									}
+									that.state = 3;
+									$(that).trigger('onidentified');
+									break;
+								case 3:
+									$(that).trigger('ondocument', doc);
+							}
 						}
 					}
 				} 

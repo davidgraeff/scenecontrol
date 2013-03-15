@@ -53,7 +53,7 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime, lastresponse) {
 	}
 	
 	this.receiveAck = function(responseid, response) {
-		if (responsedoc && responseid != that.ackID)
+		if (response && responseid != that.ackID)
 			return;
 		clearTimeout(that.timer);
 		

@@ -1,5 +1,7 @@
 var api = require('./api.js').api;
 var services = require('../services.js');
+var storage = require('../storage.js');
+var properties = require('../properties.js');
 
 exports.clientcom = function(socket) {
 	this.socket = socket;
@@ -10,6 +12,13 @@ exports.clientcom = function(socket) {
 	
 	this.send = function(obj) {
 		socket.writeDoc(obj);
+	}
+
+	this.free = function(obj) {
+		if (that.info.provides.indexOf("service")!=-1)
+			services.removeService(that.info);
+		if (that.info.provides.indexOf("consumer")!=-1)
+			properties.removePropertyListener(that.info.sessionid);
 	}
 	
 	this.receive = function(rawString) {
@@ -25,7 +34,7 @@ exports.clientcom = function(socket) {
 		switch (that.state) {
 			case 1:
 				if (!api.isAck(doc, "first")) {
-					socket.destroy();
+					that.emit("failed", that.socket);
 					return;
 				}
 				that.state = 2;
@@ -33,28 +42,44 @@ exports.clientcom = function(socket) {
 			case 2:
 				// check for identity
 				if (doc.method_ != "identify") {
-					socket.destroy();
+					that.emit("failed", that.socket);
 					return;
 				}
 				
 				that.emit("identified", that.socket);
 
 				that.info = doc;
+				that.info.sessionid = socket.id;
 				that.name = doc.componentid_;
 				that.state = 3;
 
 				if (api.needAck(doc))
 					socket.writeDoc(api.generateAck(doc));
 				
-				if (doc.provides.indexOf("service")!=-1)
-					services.addService(that);
+				if (that.info.provides.indexOf("service")!=-1)
+					services.addService(that, that.info);
+				if (that.info.provides.indexOf("consumer")!=-1)
+					properties.addPropertyListener(that, that.info.sessionid);
 				
 				break;
 			case 3:
 				if (api.needAck(doc))
 					socket.writeDoc(api.generateAck(doc));
 				
-				that.emit("data", doc);
+				if (api.consumerAPI.isFetchDocuments(doc)) {
+					storage.db.collection(doc.type).find(doc.filter).toArray(function(err, items) {
+						if (err) {
+							return;
+						}
+						if (items) {
+							socket.writeDoc({type_:"storage",method_:"batch",documents:items});
+						}
+					});
+					return;
+				}
+				//TODO update, remove docs
+				
+				that.emit("data", doc, that);
 				break;
 			default:
 				console.warn("State unknown:", that.state);

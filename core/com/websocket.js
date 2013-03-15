@@ -12,38 +12,32 @@ var httpserver = require('http').createServer(function(request, response) {});
 var WebSocketServer = require('websocket').server;
 var wsServer = new WebSocketServer({ httpServer: httpserver});
 wsServer.clients = [];
+var connects_count = 0;
 
 wsServer.on('request', function(request) {
-    var c = request.accept(null, request.origin);
-	c.writeDoc = function(doc) {this.write(JSON.stringify(doc)+"\n");}
+	var c = request.accept("scenecontrol-protocol", request.origin);
+	c.writeDoc = function(doc) {this.sendUTF(JSON.stringify(doc)+"\n");}
 	// close socket if no identify message after 1,5s
-	c.setTimeout(1500, c.destroy);
-	clients.push(c);
+	var timeoutTimer = setTimeout(function() {c.close();}, 1500);
+	wsServer.clients.push(c);
+	
+	c.id = "w"+connects_count++;
 	
 	c.com = new clientcom(c);
+
+	c.com.once("identified", function() { clearTimeout(timeoutTimer); delete timeoutTimer; });
+	c.com.once("failed", function(socket) { socket.close(); });
 	
-	c.com.on("identified", function() { c.setTimeout(0); });
-	
-    // This is the most important callback for us, we'll handle
-    // all messages from users here.
     c.on('message', function(message) {
         if (message.type === 'utf8') {
-			var remoteDoc;
-			try {
-				remoteDoc = JSON.parse(message.data);
-			} catch(e) {
-				wsServer.clients.removeElement(c);
-				c.destroy();
-				return;
-			}
-			
-			c.com.receive(remoteDoc);
+			c.com.receive(message.utf8Data);
         }
     });
 
-    c.on('close', function(c) {
+    c.on('close', function() {
 		wsServer.clients.removeElement(c);
 		console.log('Client disconnected: '+c.com.name);
+		c.com.free();
 		delete c.com;
     });
 	
@@ -66,4 +60,12 @@ exports.start = function(callback_out) {
 
 exports.finish = function(callback_out) {
 	httpserver.close(function(err,result){callback_out();});
+	var q = controlflow.queue(function (task, queuecallback) {
+		task.client.on("close", queuecallback);
+		task.client.close();
+	}, 2);
+	
+	wsServer.clients.forEach(function(client) {
+		q.push({client: client});
+	});
 }

@@ -99,7 +99,7 @@ exports.importNewFiles = function(callback) {
 			});
 		});
 	});
-
+	
 	// setup queue
 	var q = controlflow.queue(function (task, queuecallback) {
 		var doc = task.doc;
@@ -146,6 +146,7 @@ exports.importNewFiles = function(callback) {
 
 	// start adding files to queue
 	remaining = allfiles.length;
+	
 	allfiles.forEach(function(jsonfilename) {
 		var doc;
 		try {
@@ -167,7 +168,7 @@ exports.importNewFiles = function(callback) {
 		q.push({doc:doc});
 	});
 
-	if (remaining.length == 0)
+	if (remaining == 0)
 		callback(null, null);
 }
 

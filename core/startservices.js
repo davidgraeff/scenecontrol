@@ -5,9 +5,8 @@ var commandsocket = require("./com/socket.js");
 var childs = {};
 
 exports.finish = function(callback) {
-	childs.forEach(function(child) {
-		child.kill();
-	});
+	for (var i in childs)
+		childs[i].kill();
 	callback();
 }
 

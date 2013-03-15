@@ -16,6 +16,7 @@ var options = {
 };
 var server = require('tls').createServer(options, addRawSocket);
 server.clients = [];
+var connects_count = 0;
 
 function addRawSocket(c) { //'connection' listener
 	c.setNoDelay(true);
@@ -24,10 +25,12 @@ function addRawSocket(c) { //'connection' listener
 	c.setTimeout(1500, function() { c.destroy(); });
 	c.writeDoc = function(doc) {this.write(JSON.stringify(doc)+"\n");}
 	server.clients.push(c);
+	c.id = "r"+connects_count++;
 	
 	c.com = new clientcom(c);
 	
-	c.com.on("identified", function(socket) { socket.setTimeout(0); });
+	c.com.once("identified", function(socket) { socket.setTimeout(0); });
+	c.com.once("failed", function(socket) { socket.destroy(); });
 	
 	// receive event
 	var rlInterface = rl.createInterface(c, c);
@@ -38,6 +41,7 @@ function addRawSocket(c) { //'connection' listener
 		c.setTimeout(0);
 		server.clients.removeElement(c);
 		console.log('Client disconnected: '+c.com.name);
+		c.com.free();
 		delete c.com;
 	});
 	

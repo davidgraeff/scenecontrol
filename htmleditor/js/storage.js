@@ -76,7 +76,8 @@
 	// 	}
 		
 		this.modelItems = function(componentid, instanceid, modelid) {
-			return that.models[componentid+instanceid+modelid];
+// 			return that.models[componentid+instanceid+modelid];
+			return that.models[modelid];
 		}
 		
 		this.componentIDsFromConfigurationsByType = function(type) {
@@ -136,7 +137,8 @@
 			return null;
 		}
 
-		this.documentChanged = function(doc, removed, notify) {
+		this.documentChanged = function(doc, flags) {
+			var removed = flags.removed;
 			if (doc.type_=="scene") {
 				if (removed)
 					delete that.scenes[doc.id_];
@@ -169,34 +171,24 @@
 					that.configurations[this.uniqueComponentID(doc)] = doc;
 			}
 			
-			if (notify)
-				that.notifyDocumentChange(doc.document, removed, false);
+			if (doc.type_)
+				that.notifyDocumentChange(doc, flags);
 		};
 		
-		this.notifyDocumentChange = function(doc, removed_, temporary_) {
-			var flagObj = {"removed":removed_, "temporary":temporary_,"doc":doc};
-			
-			if (doc.type_=="scene") {
-				$(that).trigger("onscene", flagObj);
-			} else if (doc.type_=="schemas") {
-				$(that).trigger("onschemas", flagObj);
-			} else if (doc.type_=="event") {
-				$(that).trigger("onevent", flagObj);
-			} else if (doc.type_=="condition") {
-				$(that).trigger("oncondition", flagObj);
-			} else if (doc.type_=="action") {
-				$(that).trigger("onaction", flagObj);
-			} else if (doc.type_=="configuration") {
-				$(that).trigger("onconfiguration", flagObj);
-			}
+		this.notifyDocumentChange = function(doc, flags) {
+			flags.doc = doc;
+			//console.log("on"+doc.type_);
+			$(that).trigger("on"+doc.type_, flags);
 		};
 		
 		this.modelChange = function(action, doc) {
+			//var modelid = doc.componentid_+doc.instanceid_+doc.id_;
+			var modelid = doc.id_;
 			if (action=="reset") {
-				that.models[doc.componentid_+doc.instanceid_+doc.id_] = {"key":doc.key_,"data":{}};
-				$(that).trigger("model.reset", doc.componentid_+doc.instanceid_+doc.id_);
+				that.models[modelid] = {"key":doc.key_,"data":{}};
+				$(that).trigger("model.reset", modelid);
 			} else if (action=="change") {
-				var model = that.models[doc.componentid_+doc.instanceid_+doc.id_];
+				var model = that.models[modelid];
 				if (model == null || model["key"] == null)
 					return;
 				var key = doc[ model["key"] ];
@@ -205,9 +197,9 @@
 				delete doc.method_;
 				delete doc.type_;
 				model.data[key] = doc;
-				$(that).trigger("model.change", doc.componentid_+doc.instanceid_+doc.id_);
+				$(that).trigger("model.change", modelid);
 			} else if (action=="remove") {
-				var model = that.models[doc.componentid_+doc.instanceid_+doc.id_];
+				var model = that.models[modelid];
 				if (model == null || model["key"] == null)
 					return;
 				var key = doc[ model["key"] ];
@@ -216,20 +208,18 @@
 				delete doc.method_;
 				delete doc.type_;
 				delete model.data[key];
-				$(that).trigger("model.remove", doc.componentid_+doc.instanceid_+doc.id_);
+				$(that).trigger("model.remove", modelid);
 			}
 		};
 		
 		this.documentBatch = function(docs) {
 			for (var i = 0; i < docs.length; i++) {
-				that.documentChanged(docs[i], false);
+				that.documentChanged(docs[i], {batch:true});
 			}
 		};
-		
+
 		this.notification = function(doc) {
-			if (doc.id_=="registerNotifier")  {
-				console.log("Document notifier registered:", doc.notifierstate);
-			} else if (doc.id_=="plugins" && doc.componentid_=="PluginController")  {
+			if (doc.method_=="pluginlist")  {
 				that.plugins = doc.plugins;
 				$(that).trigger("onplugins");
 			} else {

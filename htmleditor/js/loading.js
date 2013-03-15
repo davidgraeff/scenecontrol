@@ -17,9 +17,9 @@
 		
 		$('#btnConnectToServer').on('click', function() {
 			$.mobile.loading( 'show', { theme: "b", text: "Lade Dokumente", textonly: false });
-			var rememeber = $("#remember").val();
+			var rememeber = $("#remember").is(':checked');
 			if (rememeber==true) {
-				localStorage.setItem("hostAndPort", hostAndPort);
+				localStorage.setItem("hostAndPort", $("#servernameandport").val());
 			}
 			localStorage.setItem("storehostAndPort", remember);
 			websocketInstance.setHostAndPort($("#servernameandport").val(), false);
@@ -36,40 +36,42 @@
 		$.jGrowl("Keine Verbindung zum Server<br/>Läuft der Websocketproxy?");
 		$.mobile.loading( 'hide' );
 	});
+
+	$(websocketInstance).on('onidentified', function() {
+		websocketInstance.write(api.consumerAPI.requestDocuments("scene",{}));
+		websocketInstance.write(api.consumerAPI.requestDocuments("event",{}));
+		websocketInstance.write(api.consumerAPI.requestDocuments("condition",{}));
+		websocketInstance.write(api.consumerAPI.requestDocuments("action",{}));
+		websocketInstance.write(api.consumerAPI.requestDocuments("schema",{}));
+		websocketInstance.write(api.consumerAPI.requestDocuments("description",{}));
+		websocketInstance.write(api.consumerAPI.requestDocuments("configuration",{}));
+		
+		websocketInstance.write(api.consumerAPI.requestAllProperties());
+		window.loadPage('scenelist');
+		$("header nav").removeClass("hidden");
+		$.mobile.loading( 'hide' );
+	});
 	
 	$(websocketInstance).on('ondocument', function(d, doc) {
-		if (doc.type_=="notification") {
-			storageInstance.notification(doc);
-		} else if (doc.type_=="auth") {
-			websocketInstance.auth();
-			websocketInstance.requestAllDocuments();
-			websocketInstance.registerNotifier();
-			websocketInstance.requestAllProperties();
-		} else if (doc.type_=="model") {
-			storageInstance.modelChange(doc.action, doc);
+		if (doc.type_=="property") {
+			if (doc.method_)
+				storageInstance.modelChange(doc.method_, doc);
+			else
+				storageInstance.notification(doc);
 		} else if (doc.type_=="ack") {
 // 			console.warn("Server response:" + doc.msg)
 		} else if (doc.type_=="error") {
 			console.warn("Server response:" + doc.msg)
-		} else if (doc.type_=="storage") {
-			if (doc.id_=="documentChanged")  {
-				storageInstance.documentChanged(doc.document, false, true);
-			} else if (doc.id_=="documentRemoved")  {
-				storageInstance.documentChanged(doc.document, true, true);
-			} else if (doc.id_=="documentBatch")  {
-				storageInstance.documentBatch(doc.documents);
-				window.loadPage('scenelist');
-				$.mobile.loading( 'hide' );
-			}
+		} else if (doc.method_=="changed")  {
+			storageInstance.documentChanged(doc.document, {removed:false,reponseid:api.getReponseID(doc)});
+		} else if (doc.method_=="removed")  {
+			storageInstance.documentChanged(doc.document, {removed:true,reponseid:api.getReponseID(doc)});
+		} else if (doc.method_=="batch")  {
+			storageInstance.documentBatch(doc.documents);
 		} else {
 			console.warn("Response type unknown:", doc)
 		}
 	});
-	
-	$(websocketInstance).on('onopen', function() {
-		$("header nav").removeClass("hidden");
-	});
-
 	
 	window.prepareLinks = function() {
 		$('.autolink').on('click', function() {

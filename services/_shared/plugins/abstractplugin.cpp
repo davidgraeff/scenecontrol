@@ -226,7 +226,6 @@ void AbstractPlugin::changeConfig(const QByteArray& configid, const QVariantMap&
 
 void AbstractPlugin::changeProperty(const QVariantMap& data, int sessionid) {
 	SceneDocument transferdoc(data);
-	transferdoc.setMethod("changeProperty");
 	transferdoc.setSessionID(sessionid);
 	socket.write(transferdoc.getjson());
 }
