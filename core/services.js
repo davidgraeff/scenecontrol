@@ -46,6 +46,41 @@ exports.addService = function(obj, uidDoc) {
 	exports.services.emit("added", service);
 }
 
+exports.servicecall = function(doc, clientcom) {
+	var dataDoc = api.serviceAPI.getDataFromClientCall(doc, clientcom.info.sessionid);
+	var timeoutTimer = null;
+	var remoteservice = exports.getService(dataDoc);
+	if (!remoteservice) {
+		console.warn("Service not found!", dataDoc);
+		return;
+	}
+	
+	if (remoteservice.com == clientcom) {
+		console.warn("Service addressed itself. Not delivering message!",clientcom.info.componentid_);
+		return;
+	}
+	
+	if (api.needAck(doc)) {
+		timeoutTimer = setTimeout(function() {
+			remoteservice.removeListener("ack", receiveAck);
+			clientcom.send(api.generateAck(doc, false));
+		}, 1500);
+		
+		function receiveAck(id, response) {
+			if (id == doc.requestid_) {
+				remoteservice.removeListener("ack", receiveAck);
+				clearTimeout(timeoutTimer);
+				clientcom.send(api.generateAck(doc, response));
+			}
+		}
+		
+		remoteservice.on("ack", receiveAck);
+	}
+	
+	api.setAckRequired(dataDoc, doc.requestid_);
+	remoteservice.com.send(dataDoc);
+}
+
 exports.service = function(com, id) {
 	var that = this;
 	that.id = id;
@@ -75,18 +110,7 @@ exports.service = function(com, id) {
 		} else if (api.serviceAPI.isTriggeredEvent(doc)) {
 			that.emit("event_triggered", doc);
 		} else if (api.serviceAPI.isServiceCall(doc)) {
-			var dataDoc = api.serviceAPI.getDataFromClientCall(doc, that.id);
-			var remoteservice = exports.getService(dataDoc);
-			if (!remoteservice) {
-				console.warn("Service not found!", dataDoc);
-				return;
-			}
-
-			if (remoteservice == that) {
-				console.warn("Service addressed itself. Not delivering message!",that.info.componentid_);
-				return;
-			}
-			remoteservice.com.send(dataDoc);
+			exports.servicecall(doc, that.com);
 		} else 
 			console.log('Unknown type:', doc);
 	});

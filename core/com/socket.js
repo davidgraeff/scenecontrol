@@ -25,12 +25,15 @@ function addRawSocket(c) { //'connection' listener
 	c.setTimeout(1500, function() { c.destroy(); });
 	c.writeDoc = function(doc) {this.write(JSON.stringify(doc)+"\n");}
 	server.clients.push(c);
-	c.id = "r"+connects_count++;
+
+	c.com = new clientcom("r"+connects_count++);
+	c.com.socket = c;
+	c.com.send = function(obj) {
+		c.writeDoc(obj);
+	}
 	
-	c.com = new clientcom(c);
-	
-	c.com.once("identified", function(socket) { socket.setTimeout(0); });
-	c.com.once("failed", function(socket) { socket.destroy(); });
+	c.com.once("identified", function(com) { com.socket.setTimeout(0); });
+	c.com.once("failed", function(com) { com.socket.destroy(); });
 	
 	// receive event
 	var rlInterface = rl.createInterface(c, c);

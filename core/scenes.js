@@ -1,6 +1,7 @@
 var configs = require('./config.js');
 var storage = require('./storage.js');
 var services = require('./services.js');
+var properties = require('./properties.js');
 var api = require('./com/api.js').api;
 var assert = require('assert');
 
@@ -35,12 +36,12 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime, lastresponse) {
 				// timeout if no answer by the service in time (~1,5s)
 				that.timer = setTimeout(that.receiveAck, 1500);
 
-				// TODO apply properties+variables now (incl. lastresponse)
+				properties.applyPropertiesAndVariables( that.item, {lastresponse:lastresponse} );
 				
 				// execute item now
 				api.setAckRequired(that.item, that.ackID);
 				that.service.com.send(that.item);
-				console.log("  WaitAck execute:", that.ackID);
+				//console.log("  WaitAck execute:", that.ackID);
 			}
 			
 		});
@@ -55,8 +56,8 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime, lastresponse) {
 	this.receiveAck = function(responseid, response) {
 		if (response && responseid != that.ackID)
 			return;
-		clearTimeout(that.timer);
-		
+		that.destroy();
+
 		// get successors
 		var successors = [];
 		for (var i =0;i<scene.v.length;++i) {
@@ -75,7 +76,8 @@ function waitForAckSceneItem(sceneItemUID, scene, runtime, lastresponse) {
 			}
 		}
 		
-		runtime.startItemExecution(successors, response, that.item);
+		if (successors.length)
+			runtime.startItemExecution(successors, response, that.item);
 	}
 }
 
@@ -138,7 +140,10 @@ function sceneRuntime(sceneDoc) {
 	 * This method will add all listed nodes to the waitForAckSceneItems list and execute them.
 	 */
 	this.startItemExecution = function(sceneItemUIDs, lastresponse, removeOldUID) {
-		console.log("Start scene items @ ", that.scene.name, sceneItemUIDs.length);
+		//console.log("Start scene items @ ", that.scene.name, sceneItemUIDs.length);
+		if (!sceneItemUIDs.length)
+			return;
+		
 		sceneItemUIDs.forEach(function(sceneItemID) {
 			var ackObj = new waitForAckSceneItem(sceneItemID, that.scene, that, lastresponse);
 			that.waitForAckSceneItems.push(ackObj);
@@ -208,6 +213,7 @@ function sceneRuntime(sceneDoc) {
 		if (!sceneItemUIDs) // Empty scene? Abort
 			return;
 		
+		console.log("Start scene");
 		that.startItemExecution(sceneItemUIDs);
 	}
 	

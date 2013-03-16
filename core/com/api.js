@@ -8,8 +8,10 @@ exports.api = {
 	setAckRequired: function(remoteDoc, expect) {
 		return remoteDoc.requestid_= expect;
 	},
-	generateAck: function(remoteDoc) {
-		return {"type_":"ack","responseid_":remoteDoc.requestid_};
+	generateAck: function(remoteDoc, reponse) {
+		var obj = {"type_":"ack","responseid_":remoteDoc.requestid_};
+		if (reponse) obj.response_ = reponse;
+		return obj;
 	},
 	methodIdentify: function(requestid) {
 		return {"method_":"identify","apiversion":10,"provides":"core","requestid_":requestid};

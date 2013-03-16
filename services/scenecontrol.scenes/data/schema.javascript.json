@@ -1,7 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"javascript", "name":"Javascript ausführen",
-	"parameters": {
-		"javascript":{"name":"Script", "type":"string", "value":""}
-	}
-}

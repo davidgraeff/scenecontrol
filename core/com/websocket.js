@@ -21,12 +21,14 @@ wsServer.on('request', function(request) {
 	var timeoutTimer = setTimeout(function() {c.close();}, 1500);
 	wsServer.clients.push(c);
 	
-	c.id = "w"+connects_count++;
+	c.com = new clientcom("w"+connects_count++);
+	c.com.socket = c;
+	c.com.send = function(obj) {
+		c.writeDoc(obj);
+	}
 	
-	c.com = new clientcom(c);
-
 	c.com.once("identified", function() { clearTimeout(timeoutTimer); delete timeoutTimer; });
-	c.com.once("failed", function(socket) { socket.close(); });
+	c.com.once("failed", function(com) { com.socket.close(); });
 	
     c.on('message', function(message) {
         if (message.type === 'utf8') {

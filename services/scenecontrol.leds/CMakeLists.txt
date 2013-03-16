@@ -8,4 +8,5 @@ QT4_WRAP_CPP(SRCS_MOCS ${SRCS_H})
 add_executable(${PROJECT_NAME} ${SRCS} ${SRCS_MOCS} $<TARGET_OBJECTS:PluginLib>)
 target_link_libraries(${PROJECT_NAME} ${QT_QTCORE_LIBRARY} ${QT_QTNETWORK_LIBRARIES})
 
+install_schemas()
 install_lib()

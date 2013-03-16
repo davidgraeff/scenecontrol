@@ -44,11 +44,12 @@ var startservices = require("./startservices.js");
 var commandsocket = require("./com/socket.js");
 var commandwebsocket = require("./com/websocket.js");
 var scenes = require("./scenes.js");
+var coreservice = require('./core.service.js');
 
 // exit handling
 process.stdin.resume();
 process.on('SIGINT', function () {
-	controlflow.series([scenes.finish, commandwebsocket.finish, commandsocket.finish, startservices.finish], function() {
+	controlflow.series([scenes.finish, commandwebsocket.finish, commandsocket.finish, startservices.finish,coreservice.finish], function() {
 		process.exit(0);
 	});
 });
@@ -61,7 +62,7 @@ process.on('exit', function () {
 // 3) start plugin processes (as soon as storage.load() is called)
 // 4) Call storage.load
 controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, storage.importNewFiles, storage.showstats,
-				   startservices.init, scenes.init], 
+				   startservices.init, coreservice.init, scenes.init], 
 	function(err, results){
 		if (err) {
 			console.error("Error on start: " + err);
@@ -72,9 +73,14 @@ controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, s
 
 
 /// Tests
-// setTimeout(function() {
-// 	console.log("Test...");
-// 	var scene = scenes.getScene("54114e2456df4aa2a15b161a47a3d8d1");
-// 	console.log("Execute: "+scene.scene.name);
-// 	scene.startScene();
-// }, 2000);
+setTimeout(function() {
+	var clientcomEmu = function() {
+		this.info = { sessionid: "testservice",componentid_:"testservice" };
+		this.send = function(data) {
+			console.log("  Execute result:", data);
+		}
+	}
+	var services = require("./services.js");
+	console.log("Test...");
+	services.servicecall({requestid_:"testid",doc:{componentid_:"core", instanceid_:"main",method_:"startscene", sceneid_:"54114e2456df4aa2a15b161a47a3d8d1"}}, new clientcomEmu());
+}, 2000);

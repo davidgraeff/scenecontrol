@@ -42,3 +42,19 @@ plugin::plugin(const QString& pluginid, const QString& instanceid) : AbstractPlu
 
 plugin::~plugin() {
 }
+
+void plugin::instanceConfiguration(const QVariantMap&) {
+	
+}
+
+void plugin::initialize() {
+	
+}
+
+void plugin::clear() {
+	
+}
+
+void plugin::requestProperties() {
+	
+}

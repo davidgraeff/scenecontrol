@@ -24,7 +24,7 @@
 
 /**
  * Minimal example plugin. You always should inherit AbstractPlugin for getting
- * preimplemented funcatinaliy like plugin<-->plugin and plugin<-->server
+ * preimplemented funcatinaliy like plugin<-->server
  * communication as well as predefined overridable methods like initialize and clear.
  */
 class plugin : public AbstractPlugin
@@ -34,7 +34,10 @@ public:
     /**
      * Do not use the constructor, instead override "initialize" for setting up your ressources.
      */
-
+	virtual void initialize();
+	virtual void clear();
+    virtual void requestProperties();
+	virtual void instanceConfiguration(const QVariantMap&);
     /**
     * Do not (only) clean up in the destructor. The server process may like to recycle the plugin
     * process. Use "clear" for cleaning up and "initialize" for setting up your ressources.

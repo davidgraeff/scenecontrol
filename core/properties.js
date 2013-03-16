@@ -1,5 +1,6 @@
 var api = require('./com/api.js').api;
 
+exports.variables = {};
 exports.properties = {};
 exports.propertyModels = {};
 
@@ -58,6 +59,28 @@ exports.addPropertyListener = function(obj, id) {
 	obj.on("data", onPropertyListenerData);
 	
 	console.log('Add Property listener:', id);
+}
+
+exports.applyPropertiesAndVariables = function(doc, additionalVariables) {
+	//TODO
+// 	for (var i in exports.properties) {
+// 		var serviceProperties = exports.properties[i];
+// 		
+// 		if (serviceProperties.normal) {
+// 			for (var j in serviceProperties.normal) {
+// 				var prop = serviceProperties.normal[j];
+// 
+// 			}
+// 		}
+// 	}
+}
+
+exports.setVariable = function(id, value) {
+	exports.variables[id] = value;
+}
+
+exports.getVariable = function(id) {
+	return exports.variables[id];
 }
 
 
