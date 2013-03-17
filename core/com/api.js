@@ -15,6 +15,9 @@ exports.api = {
 	},
 	methodIdentify: function(requestid) {
 		return {"method_":"identify","apiversion":10,"provides":"core","requestid_":requestid};
+	},
+	isExecuteCall: function(remoteDoc) {
+		return remoteDoc.method_=="execute";
 	}
 };
 
@@ -67,7 +70,7 @@ exports.api.serviceAPI = {
 	// extract document from clientDoc
 	getDataFromClientCall: function(clientDoc, sessionid) {
 		var obj = clientDoc.doc;
-		if (sessionid) obj.sessionid_ = sessionid;
+		if (sessionid && sessionid!=-1) obj.sessionid_ = sessionid;
 		return obj;
 	}
 };

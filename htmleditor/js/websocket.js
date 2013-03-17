@@ -20,13 +20,8 @@
 			that.url = ((useWSS)?"wss://":"ws://")+hostAndPort;
 		}
 
-		this.startMonitorScene = function(sceneid) {
-			this.write({"type_":"execute", "method_":"startMonitor", "monitor": "scene", "sceneid_": sceneid});
-		}
-		
-
 		this.runcollection = function(sceneid) {
-			this.write({"type_":"execute", "method_":"runcollection", "sceneid_": sceneid});
+			this.write({method_:"execute", doc: { componentid_:"core",instanceid_:"main", method_:"startscene", sceneid_: sceneid} });
 		}
 		
 		this.write = function(data) {

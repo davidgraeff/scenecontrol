@@ -12,7 +12,6 @@
 		
 		set: function(sceneid) {
 			CurrentScene.id = sceneid;
-			websocketInstance.startMonitorScene(sceneid);
 		},
 		
 		isValid: function() {

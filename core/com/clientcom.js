@@ -74,6 +74,10 @@ exports.clientcom = function(uniqueid) {
 				that.identified(doc);
 				break;
 			case 3:
+				if (api.isExecuteCall(doc)) {
+					services.servicecall(doc, that);
+					return;
+				}
 				that.emit("data", doc, that);
 				break;
 			default:
