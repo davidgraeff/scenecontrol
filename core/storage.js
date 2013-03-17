@@ -3,16 +3,8 @@ var mongo = require('mongoskin');
 var fs = require('fs');
 var fsFile = require('file');
 var configs = require('./config.js');
+var storageListener = require('./storage.listener.js');
 var db = mongo.db('localhost:27017/'+configs.runtimeconfig.databasename, {w: 1});
-// 
-// db.collection('blog').find().toArray(function (err, items) {
-// 	console.dir(items);
-// })
-// 
-// db.createCollection("bla", function(err, collection){
-// 	collection.insert({"test":"value"}, function(err2) {});
-// 	console.log("create ok", err);
-// 	});
 
 var importpaths = [];
 
@@ -43,6 +35,8 @@ exports.genericverifier = function(doc) {
 				doc.id_ = doc.componentid_ + "." + doc.instanceid_;
 			else if (doc.type_=="description")
 				doc.id_ = doc.componentid_ + "." + doc.language;
+			else if (doc.type_=="schema")
+				doc.id_ = doc.componentid_ + "." + doc.method_;
 			else
 				doc.id_ = baseName(filename);
 		}
@@ -82,6 +76,22 @@ exports.getEventsForScene = function(sceneid, callback) {
 }
 exports.getSceneItem = function(type, id, callback) {
 	exports.db.collection(type).find({id_:id}).toArray(callback);
+}
+exports.update = function(doc) {
+	db.collection(doc.type_).update({id_:doc.id_}, doc, { safe:true, upsert: true, strict:true }, function(err) {
+		if (err) {
+			return;
+		}
+		storageListener.change(doc);
+	});
+}
+exports.remove = function(doc) {
+	db.collection(doc.type_).remove({id_:doc.id_}, function(err) {
+		if (err) {
+			return;
+		}
+		storageListener.remove(doc);
+	});
 }
 
 /****** importNewFiles *********/

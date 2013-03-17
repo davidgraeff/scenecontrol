@@ -1,3 +1,6 @@
+// profiling
+// var agent = require('webkit-devtools-agent');
+
 // control flow
 var controlflow = require('async');
 
@@ -6,6 +9,7 @@ var configs = require('./config.js');
 var optimist = require('optimist').usage('Usage: $0	 [options]')
 	.options("h",{alias:"help"}).describe("h","Show this help")
 	.options("v",{alias:"version"}).describe("v","Show version and other information as parsable json")
+	.options("d",{alias:"debug"}).describe("d","Activate profiling and debug output")
 	.options("i",{alias:"import"}).describe("i","Import json files from path")
 	.options("o",{alias:"override"}).describe("o","Override existing documents when importing files with the same id+type")
 	.options("e",{alias:"exit"}).describe("e","Do not enter the mainloop and exit after importing")
@@ -43,7 +47,7 @@ if (argv.e) {
 var startservices = require("./startservices.js");
 var commandsocket = require("./com/socket.js");
 var commandwebsocket = require("./com/websocket.js");
-var scenes = require("./scenes.js");
+var scenes = require("./sceneruntime.js");
 var coreservice = require('./core.service.js');
 
 // exit handling

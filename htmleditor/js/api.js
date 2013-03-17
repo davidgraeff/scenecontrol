@@ -32,7 +32,7 @@
 			return({"method_":"requestAllProperties"});
 		},
 		requestDocuments: function(type, filter) {
-			return({method_:"fetchDocuments",type:type,filter:{}});
+			return({method_:"fetch",type:type,filter:{}});
 		}
 	};
 	// Client API, manipulatorAPI
@@ -54,12 +54,12 @@
 		},
 		
 		remove: function(sceneDocument) {
-			return ({method_:"removeDocument","doc":sceneDocument});
+			return ({method_:"remove","doc":sceneDocument});
 		},
 		
 		update: function(sceneDocument, allowInsert) {
 			//console.log("Change: ", sceneDocument)
-			return {method_:"changeDocument",insert:(allowInsert?allowInsert:false), doc:sceneDocument};
+			return {method_:"change",insert:(allowInsert?allowInsert:false), doc:sceneDocument};
 		}
 	};
 })(window);

@@ -1,8 +1,9 @@
 var api = require('./com/api.js').api;
 var clientcom = require('./com/clientcom.js').clientcom;
 var services = require('./services.js');
-var scenes = require("./scenes.js");
+var scenes = require("./sceneruntime.js");
 var properties = require('./properties.js');
+var variables = require('./variables.js');
 
 var coreservice = function() {
 	var that = this;
@@ -39,7 +40,7 @@ var coreservice = function() {
 			
 		} else if (m == "compareVariable" && data.var_id && data.value && data.cmpOp) {
 			var cmpOp = data.cmpOp;
-			var storedValue = properties.getVariable(data.var_id);
+			var storedValue = variables.getVariable(data.var_id);
 			if (cmpOp=="==")
 				that.com.receive(api.generateAck(data,data.value==storedValue));
 			else if (cmpOp=="<")
@@ -50,10 +51,10 @@ var coreservice = function() {
 				that.com.receive(api.generateAck(data,false));
 			
 		} else if (m == "setVariable" && data.var_id && data.value) {
-			that.com.receive(api.generateAck(data,properties.setVariable(data.var_id, data.value)));
+			that.com.receive(api.generateAck(data,variables.setVariable(data.var_id, data.value)));
 			
 		} else if (m == "getVariable" && data.var_id) {
-			that.com.receive(api.generateAck(data,properties.getVariable(data.var_id)));
+			that.com.receive(api.generateAck(data,variables.getVariable(data.var_id)));
 		}
 	}
 };

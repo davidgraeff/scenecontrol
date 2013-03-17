@@ -95,7 +95,8 @@
 		}*/
 	};
 	
-
+	window.SceneUIHelper.load();
+	
 	// All button click events
 	$(function() {
 		$.mobile.loading( 'show', { theme: "b", text: "Verarbeite Dokumente", textonly: false });
@@ -103,7 +104,8 @@
 		$("#btnRemoveSelectedScenes").addClass("disabled");
 		
 		////////////////// SET AND SELECT SCENES //////////////////
-		$(".btnSetScene").on('click.editorpage', function() {
+		$('#scenelists').on('click.editorpage',".btnSetScene", function() {
+			console.log("setscene");
 			var sceneid = $(this).parent().attr("data-sceneid");
 			if (sceneid == undefined) {
 				console.warn("no data-sceneid!");
@@ -114,7 +116,7 @@
 			loadPage('sceneitems');
 		});
 		
-		$(".btnSelectScene").on('click.editorpage', function() {
+		$('#scenelists').on('click.editorpage',".btnSelectScene", function() {
 			var $scenelistentry = $(this).parent().parent().parent();
 			if ($scenelistentry.attr('data-selected')=="1") { // is selected: deselect
 				$scenelistentry.removeClass("selectedSceneListItem").addClass("unselectedSceneListItem");

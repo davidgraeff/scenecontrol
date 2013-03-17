@@ -1,13 +1,7 @@
-var api = require('./com/api.js').api;
+var propertyListener = require('./properties.listener.js');
 
-exports.variables = {};
 exports.properties = {};
 exports.propertyModels = {};
-
-var propertyListener = {};
-var propertyEvents = function() {};
-require('util').inherits(propertyEvents, require('events').EventEmitter);
-exports.propertyEvents = new propertyEvents();
 
 exports.change = function(doc, from) {
 	var data;
@@ -41,70 +35,24 @@ exports.change = function(doc, from) {
 	} else // normal property
 		exports.properties[id].normal[doc.id_] = doc;
 	
-	for (var i in propertyListener) {
-		var listener = propertyListener[i];
-		console.log('Property propagate:', listener.info);
-		if (listener.info != from)
-			listener.send(doc);
+	propertyListener.change(doc);
+}
+
+exports.apply = function(propName) {
+	for (var i in exports.properties) {
+		var serviceProperties = exports.properties[i];
+		
+		if (serviceProperties.normal) {
+			for (var j in serviceProperties.normal) {
+				var prop = serviceProperties.normal[j];
+				if (prop.id_ == propName)
+					return prop;
+			}
+		}
 	}
-	
-	exports.propertyEvents.emit("changed", doc);
+	return null;
 }
 
-exports.addPropertyListener = function(obj, id) {
-	var d = propertyListener[id];
-	if (d)
-		return;
-	propertyListener[id] = obj;
-	obj.on("data", onPropertyListenerData);
-	
-	console.log('Add Property listener:', id);
-}
-
-exports.applyPropertiesAndVariables = function(doc, additionalVariables) {
-	//TODO
-// 	for (var i in exports.properties) {
-// 		var serviceProperties = exports.properties[i];
-// 		
-// 		if (serviceProperties.normal) {
-// 			for (var j in serviceProperties.normal) {
-// 				var prop = serviceProperties.normal[j];
-// 
-// 			}
-// 		}
-// 	}
-}
-
-exports.setVariable = function(id, value) {
-	exports.variables[id] = value;
-}
-
-exports.getVariable = function(id) {
-	return exports.variables[id];
-}
-
-
-exports.removePropertyListener = function(id) {
-	var d = propertyListener[id];
-	if (!d)
-		return;
-	
-	console.log('Remove Property listener:', id);
-	d.removeListener("data", onPropertyListenerData);
-	delete propertyListener[id];
-}
-
-function onPropertyListenerData(data, from) {
-	if (api.consumerAPI.isRequestAllProperties(data)) {
-		exports.requestAllProperties(function(items) {
-			items.forEach(function(item) {
-				from.send(item);
-			});
-		});
-		return;
-	}
-// 	exports.change(data, from.info);
-}
 
 exports.requestAllProperties = function(callback) {
 	var propertieslist = [];

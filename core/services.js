@@ -64,6 +64,7 @@ exports.servicecall = function(doc, clientcom) {
 		timeoutTimer = setTimeout(function() {
 			remoteservice.removeListener("ack", receiveAck);
 			clientcom.send(api.generateAck(doc, false));
+			clientcom = null;
 		}, 1500);
 		
 		function receiveAck(id, response) {
@@ -71,6 +72,7 @@ exports.servicecall = function(doc, clientcom) {
 				remoteservice.removeListener("ack", receiveAck);
 				clearTimeout(timeoutTimer);
 				clientcom.send(api.generateAck(doc, response));
+				clientcom = null;
 			}
 		}
 		

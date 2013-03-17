@@ -19,18 +19,24 @@ exports.api = {
 };
 
 exports.api.manipulatorAPI = {
+	isFetchDocuments: function(remoteDoc) {
+		return remoteDoc.method_=="fetch";
+	},
 	isDocumentUpdate: function(remoteDoc) {
-		return remoteDoc.method_=="storage";
+		return remoteDoc.method_=="change";
 	},
 	isDocumentRemove: function(remoteDoc) {
-		return remoteDoc.method_=="storage";
+		return remoteDoc.method_=="remove";
+	},
+	methodDocumentUpdated: function(storageDoc) {
+		return {"method_":"changed",document:storageDoc};
+	},
+	methodDocumentRemoved: function(storageDoc) {
+		return {"method_":"removed",document:storageDoc};
 	}
 };
 
 exports.api.consumerAPI = {
-	isFetchDocuments: function(remoteDoc) {
-		return remoteDoc.method_=="fetchDocuments";
-	},
 	isRequestAllProperties: function(remoteDoc) {
 		return remoteDoc.method_=="requestAllProperties";
 	}

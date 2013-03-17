@@ -1,7 +1,7 @@
 var api = require('./api.js').api;
 var services = require('../services.js');
-var storage = require('../storage.js');
-var properties = require('../properties.js');
+var propertyListener = require('../properties.listener.js');
+var storageListener = require('../storage.listener.js');
 
 exports.clientcom = function(uniqueid) {
 	this.name ="No name";
@@ -19,7 +19,9 @@ exports.clientcom = function(uniqueid) {
 		if (that.info.provides.indexOf("service")!=-1)
 			services.removeService(that.info);
 		if (that.info.provides.indexOf("consumer")!=-1)
-			properties.removePropertyListener(that.info.sessionid);
+			propertyListener.removeListener(that.info.sessionid);
+		if (that.info.provides.indexOf("manipulator")!=-1)
+			storageListener.removeListener(that.info.sessionid);
 	}
 	
 	this.identified = function(doc) {
@@ -31,7 +33,9 @@ exports.clientcom = function(uniqueid) {
 		if (that.info.provides.indexOf("service")!=-1)
 			services.addService(that, that.info);
 		if (that.info.provides.indexOf("consumer")!=-1)
-			properties.addPropertyListener(that, that.info.sessionid);
+			propertyListener.addListener(that, that.info.sessionid);
+		if (that.info.provides.indexOf("manipulator")!=-1)
+			storageListener.addListener(that, that.info.sessionid);
 	};
 	
 	this.receive = function(data) {
@@ -70,19 +74,6 @@ exports.clientcom = function(uniqueid) {
 				that.identified(doc);
 				break;
 			case 3:
-				if (api.consumerAPI.isFetchDocuments(doc)) {
-					storage.db.collection(doc.type).find(doc.filter).toArray(function(err, items) {
-						if (err) {
-							return;
-						}
-						if (items) {
-							that.send({type_:"storage",method_:"batch",documents:items});
-						}
-					});
-					return;
-				}
-				//TODO update, remove docs
-				
 				that.emit("data", doc, that);
 				break;
 			default:
