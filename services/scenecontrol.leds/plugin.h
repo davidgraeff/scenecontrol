@@ -33,20 +33,20 @@ public:
 private Q_SLOTS:
     virtual void initialize();
     virtual void clear();
-    void clear(const QString& componentid_, const QString& instanceid_);
+    void clear(const QVariantMap& target);
     virtual void requestProperties();
     virtual void instanceConfiguration(const QVariantMap& data);
     // Call this method to update <channel, value>-pairs and clear(your_plugin_id) to clear
-	void subpluginChange(const QString& componentid_, const QString& instanceid_, const QString& channel, int value, const QString& name);
+	void subpluginChange(const QVariantMap& target, const QString& channel, int value, const QString& name);
 
     // Get, Set Names
     QString getLedName ( const QString& channel );
     void setLedName ( const QString& channel, const QString& name, bool updateDatabase = true );
     // Get, Set Values
-    void setLed ( const QString& channel, int value, int fade );
-    void setLedExponential ( const QString& channel, int multiplikator, int fade );
-    void setLedRelative ( const QString& channel, int value, int fade );
-    void toggleLed ( const QString& channel, int fade );
+    bool setLed ( const QString& channel, int value, int fade );
+    bool setLedExponential ( const QString& channel, int multiplikator, int fade );
+    bool setLedRelative ( const QString& channel, int value, int fade );
+    bool toggleLed ( const QString& channel, int fade );
     int getLed( const QString& channel ) const;
     bool isLedValue( const QString& channel, int lower, int upper );
     int countLeds();

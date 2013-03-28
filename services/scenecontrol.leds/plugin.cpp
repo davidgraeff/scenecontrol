@@ -41,7 +41,11 @@ void plugin::clear() {
 
 }
 
-void plugin::clear(const QString& componentid_, const QString& instanceid_) {
+void plugin::clear(const QVariantMap& target) {
+	SceneDocument targetD(target);
+	QByteArray componentid_ = targetD.componentID().toUtf8();
+	QByteArray instanceid_ = targetD.instanceID().toUtf8();
+	
     // Remove all leds referenced by "plugin_id"
     QMutableMapIterator<QString, iochannel> i(m_ios);
     while (i.hasNext()) {
@@ -99,8 +103,8 @@ void plugin::moodlight(const QString& channel, bool moodlight) {
     }
 }
 
-void plugin::setLedExponential ( const QString& channel, int multiplikator, int fade ) {
-    if ( !m_ios.contains(channel) ) return;
+bool plugin::setLedExponential ( const QString& channel, int multiplikator, int fade ) {
+    if ( !m_ios.contains(channel) ) return false;
     unsigned int v = m_ios[channel].value;
     if ( multiplikator>100 ) {
         if ( v==0 )
@@ -116,17 +120,16 @@ void plugin::setLedExponential ( const QString& channel, int multiplikator, int 
             v = ( v * multiplikator ) /100-1;
     }
 
-    setLed ( channel, v, fade );
+    return setLed ( channel, v, fade );
 }
 
-void plugin::setLedRelative ( const QString& channel, int value, int fade ) {
-    if (! m_ios.contains(channel) ) return;
-    setLed ( channel,  value + m_ios[channel].value, fade );
+bool plugin::setLedRelative ( const QString& channel, int value, int fade ) {
+	return setLed ( channel,  value + m_ios[channel].value, fade );
 }
 
-void plugin::setLed ( const QString& channel, int value, int fade )
+bool plugin::setLed ( const QString& channel, int value, int fade )
 {
-    if (!m_ios.contains(channel)) return;
+    if (!m_ios.contains(channel)) return false;
     iochannel& p = m_ios[channel];
     p.value = value;
     p.fadeType = fade;
@@ -138,7 +141,7 @@ void plugin::setLed ( const QString& channel, int value, int fade )
 	doc.setData("channel",channel);
 	doc.setData("value",value);
 	doc.setData("fade",fade);
-	callRemoteComponent(doc.getData());
+	return callRemoteComponent(doc.getData());
 }
 
 void plugin::setLedName ( const QString& channel, const QString& name, bool updateDatabase )
@@ -168,10 +171,10 @@ void plugin::setLedName ( const QString& channel, const QString& name, bool upda
     }
 }
 
-void plugin::toggleLed ( const QString& channel, int fade )
+bool plugin::toggleLed ( const QString& channel, int fade )
 {
-    if (!m_ios.contains(channel)) return;
-    setLed ( channel, (m_ios[channel].value==0?255:0), fade );
+    if (!m_ios.contains(channel)) return false;
+    return setLed ( channel, (m_ios[channel].value==0?255:0), fade );
 }
 
 int plugin::countLeds() {
@@ -209,12 +212,13 @@ void plugin::instanceConfiguration(const QVariantMap& data) {
     }
 }
 
-void plugin::subpluginChange(const QString& componentid_, const QString& instanceid_, const QString& channel, int value, const QString& name) {
+void plugin::subpluginChange(const QVariantMap& target, const QString& channel, int value, const QString& name) {
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];
-	io.componentID = componentid_.toUtf8();
-	io.instanceID = instanceid_.toUtf8();
+	SceneDocument targetD(target);
+	io.componentID = targetD.componentID().toUtf8();
+	io.instanceID = targetD.instanceID().toUtf8();
     //p.moodlight = false;
     //p.fadeType = 1;
     io.channel = channel;

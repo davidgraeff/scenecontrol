@@ -155,7 +155,7 @@ void plugin::instanceConfiguration(const QVariantMap& data) {
     }
 }
 
-void plugin::subpluginChange( const QVariantMap& target, const QString& channel, bool value, const QString& name ) {
+void plugin::subpluginChange(const QVariantMap& target, const QString& channel, bool value, const QString& name ) {
     // Assign data to structure
     bool before = m_ios.contains(channel);
     iochannel& io = m_ios[channel];
