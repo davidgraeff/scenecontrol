@@ -38,19 +38,19 @@
 	// Client API, manipulatorAPI
 	window.api.manipulatorAPI = {
 		createScene: function(name) {
-			return api.update({"type_": "scene","v":[],"categories": [],"enabled": true,"name": name}, true);
+			return api.manipulatorAPI.update({"type_": "scene","v":[],"categories": [],"enabled": true,"name": name}, true);
 		},
 		
 		createSceneItem: function(scene_id, sceneItemDocument) {
-			return api.update(sceneItemDocument, true);
+			return api.manipulatorAPI.update(sceneItemDocument, true);
 		},
 		
 		removeSceneItem: function(scene_id, sceneItemDocument) {
-			return api.remove(sceneDocument);
+			return api.manipulatorAPI.remove(sceneDocument);
 		},
 		
 		createConfig: function(instanceid, componentid) {
-			return api.update({"componentid_":componentid, "type_": "configuration","instanceid_": instanceid}, true);
+			return api.manipulatorAPI.update({"componentid_":componentid, "type_": "configuration","instanceid_": instanceid}, true);
 		},
 		
 		remove: function(sceneDocument) {
