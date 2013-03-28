@@ -1,0 +1,10 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"setVariable", "name":"Setze Variable",
+	"text":"Setze Variable {{name}} auf Wert {{value}}.",
+	"parameters": {
+		"var_id":{"name":"Name", "type":"string", "value":""},
+		"type":{"name":"Art", "type":"enum", "value":0, "data":["Zahl", "Text"]},
+		"value":{"name":"Wert", "type":"string", "value":""}
+	}
+}

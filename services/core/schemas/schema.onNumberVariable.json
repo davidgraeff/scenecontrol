@@ -1,9 +1,0 @@
-{
-	"type_":"schema", "targettype":"event",
-	"method_":"onNumberVariable", "name":"Nummernvariable hat Wert angenommen",
-	"text":"Bei Nummernvariable {{name}} auf Wert {{value}}.",
-	"parameters": {
-		"name":{"name":"Name", "type":"string", "value":""},
-		"value":{"name":"Wert", "type":"integer", "value":0}
-	}
-}

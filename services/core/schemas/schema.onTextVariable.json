@@ -1,9 +1,0 @@
-{
-	"type_":"schema", "targettype":"event",
-	"method_":"onTextVariable", "name":"Textvariable hat Wert angenommen",
-	"text":"Bei Textvariable {{name}} auf Wert {{value}}.",
-	"parameters": {
-		"name":{"name":"Name", "type":"string", "value":""},
-		"value":{"name":"Wert", "type":"string", "value":""}
-	}
-}

@@ -22,7 +22,10 @@ exports.addListener = function(obj, id) {
 	if (d)
 		return;
 	listener[id] = obj;
-	obj.on("data", onListenerData);
+	
+	// if obj sends document changes, we listen to them
+	if (obj.on)
+		obj.on("data", onListenerData);
 	
 	console.log('Add Storage listener:', id);
 }
@@ -33,7 +36,8 @@ exports.removeListener = function(id) {
 		return;
 	
 	console.log('Remove Storage listener:', id);
-	d.removeListener("data", onListenerData);
+	if (d.removeListener)
+		d.removeListener("data", onListenerData);
 	delete listener[id];
 }
 

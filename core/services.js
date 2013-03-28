@@ -2,6 +2,10 @@ var api = require('./com/api.js').api;
 var storage = require('./storage.js');
 var properties = require('./properties.js');
 
+// start phase
+var startphase = true;
+setTimeout(function() { startphase = false; }, 2000);
+
 var servicelist = {};
 var services = function() {
 	this.servicelist = servicelist;
@@ -51,7 +55,12 @@ exports.servicecall = function(doc, clientcom) {
 	var timeoutTimer = null;
 	var remoteservice = exports.getService(dataDoc);
 	if (!remoteservice) {
-		console.warn("Service not found!", dataDoc);
+		if (!startphase) {
+			console.warn("Service not found!", dataDoc);
+		} else {
+			// execute service call after 2s, the start order of services follows no order
+			setTimeout(function() { exports.servicecall(doc, clientcom, true); }, 2000);
+		}
 		return;
 	}
 	
@@ -92,6 +101,7 @@ exports.service = function(com, id) {
 	// init service
 	that.com.send(api.serviceAPI.init());
 	that.com.send(api.serviceAPI.requestProperties());
+
 	// send all configurations that are for this service instance
 	storage.db.collection('configuration').find({componentid_:that.info.componentid_,instanceid_:that.info.instanceid_}).toArray(function(err, items) {
 		if (err) {
@@ -116,5 +126,9 @@ exports.service = function(com, id) {
 		} else 
 			console.log('Unknown type:', doc);
 	});
+	
+	this.abort = function(sceneid) {
+		that.com.send(api.serviceAPI.abortExecution(sceneid));
+	}
 };
 require('util').inherits(exports.service, require('events').EventEmitter);

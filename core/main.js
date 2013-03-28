@@ -33,27 +33,28 @@ console.log(configs.aboutconfig.ABOUT_SERVICENAME+" "+configs.aboutconfig.ABOUT_
 
 
 // install new database files
-var storage = require('./storage.js');
-storage.overwrite = argv.o;
-storage.addImportPath(configs.systempaths.path_database_files); // add system import path
-if (configs.userpaths.path_database_files) storage.addImportPath(configs.userpaths.path_database_files); // add command line import path if any
-if (argv.i) storage.addImportPath(argv.i); // add command line import path if any
+var storageImporter = require('./storage.import.js');
+storageImporter.overwrite = argv.o;
+storageImporter.addImportPath(configs.systempaths.path_database_files); // add system import path
+if (configs.userpaths.path_database_files) storageImporter.addImportPath(configs.userpaths.path_database_files); // add command line import path if any
+if (argv.i) storageImporter.addImportPath(argv.i); // add command line import path if any
 if (argv.e) {
 	console.log("Only import...");
-	storage.importNewFiles(function(err, result) {process.exit(0);});
+	storageImporter.importNewFiles(function(err, result) {process.exit(0);});
 	return;
 }
 
-var startservices = require("./startservices.js");
+var startservices = require("./services.processcontroller.js");
 var commandsocket = require("./com/socket.js");
 var commandwebsocket = require("./com/websocket.js");
 var scenes = require("./sceneruntime.js");
 var coreservice = require('./core.service.js');
+var storage = require('./storage.js');
 
 // exit handling
 process.stdin.resume();
 process.on('SIGINT', function () {
-	controlflow.series([scenes.finish, commandwebsocket.finish, commandsocket.finish, startservices.finish,coreservice.finish], function() {
+	controlflow.series([scenes.finish, commandwebsocket.finish, commandsocket.finish,coreservice.finish, startservices.finish], function() {
 		process.exit(0);
 	});
 });
@@ -65,7 +66,7 @@ process.on('exit', function () {
 // 2) Install missing config files from system and user dir
 // 3) start plugin processes (as soon as storage.load() is called)
 // 4) Call storage.load
-controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, storage.importNewFiles, storage.showstats,
+controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, storageImporter.importNewFiles, storage.showstats,
 				   startservices.init, coreservice.init, scenes.init], 
 	function(err, results){
 		if (err) {
@@ -84,7 +85,9 @@ setTimeout(function() {
 			console.log("  Execute result:", data);
 		}
 	}
+	var c = new clientcomEmu();
 	var services = require("./services.js");
 	console.log("Test...");
-	services.servicecall({requestid_:"testid",doc:{componentid_:"core", instanceid_:"main",method_:"startscene", sceneid_:"54114e2456df4aa2a15b161a47a3d8d1"}}, new clientcomEmu());
+	services.servicecall({requestid_:"teststart",doc:{componentid_:"core", instanceid_:"main",method_:"startscene", sceneid_:"54114e2456df4aa2a15b161a47a3d8d1"}}, c);
+	services.servicecall({requestid_:"testled",doc:{componentid_:"scenecontrol.leds", instanceid_:"null",method_:"setLed", channel:"1", value:255, fade:0}}, c);
 }, 2000);

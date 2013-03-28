@@ -74,6 +74,10 @@ exports.clientcom = function(uniqueid) {
 				that.identified(doc);
 				break;
 			case 3:
+				/* A service call is either for information exchange
+				 * between services (service<-->service communication) or
+				 * from other kind of clients which want to call a function
+				 * of a service. */
 				if (api.isExecuteCall(doc)) {
 					services.servicecall(doc, that);
 					return;

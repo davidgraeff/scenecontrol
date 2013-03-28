@@ -33,6 +33,7 @@ function sceneRuntime(sceneDoc) {
 	
 	this.reload = function(sceneDoc) {
 		this.sceneDoc = sceneDoc;
+		this.stopScene();
 		storage.getEventsForScene(sceneDoc.id_, function(err, eventDocs) {
 			if (err) {
 				console.warn("Could not get scenes ", err);
@@ -123,7 +124,7 @@ function sceneRuntime(sceneDoc) {
 	this.stopScene = function() {
 		while (that.waitForAckSceneItems.length) {
 			var ackObject = that.waitForAckSceneItems.pop();
-			ackObject.destroy();
+			ackObject.abortDestroy();
 			delete ackObject;
 		}
 	}

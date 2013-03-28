@@ -63,8 +63,13 @@ exports.start = function(callback_out) {
 exports.finish = function(callback_out) {
 	httpserver.close(function(err,result){callback_out();});
 	var q = controlflow.queue(function (task, queuecallback) {
-		task.client.on("close", queuecallback);
-		task.client.close();
+		try {
+			task.client.on("close", queuecallback);
+			task.client.close();
+		} catch(e) {
+			console.log("with err", e);
+			queuecallback();
+		}
 	}, 2);
 	
 	wsServer.clients.forEach(function(client) {

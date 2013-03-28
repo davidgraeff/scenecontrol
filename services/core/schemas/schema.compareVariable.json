@@ -1,0 +1,10 @@
+{
+	"type_":"schema", "targettype":"condition",
+	"method_":"compareVariable", "name":"Ist Variable identisch",
+	"text":"Ist Variable {{name}} auf Wert {{value}}?",
+	"parameters": {
+		"var_id":{"name":"Name", "type":"string", "value":""},
+		"type":{"name":"Operator", "type":"enum", "value":0, "data":["==", "<", ">", "<=", ">="]},
+		"value":{"name":"Vergleichswert", "type":"string", "value":""}
+	}
+}

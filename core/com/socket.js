@@ -71,12 +71,19 @@ exports.finish = function(callback_out) {
 	server.close(function(err,result){callback_out();});
 	
 	var q = controlflow.queue(function (task, queuecallback) {
-		task.client.on("close", queuecallback);
-		task.client.end();
-		task.client.destroy();
+		try {
+			task.client.on("close", queuecallback);
+			task.client.end();
+			task.client.destroy();
+		} catch(e) {
+			console.log("with err", e);
+			queuecallback();
+		}
 	}, 2);
 	
 	server.clients.forEach(function(client) {
 		q.push({client: client});
 	});
+	
+	
 }

@@ -1,0 +1,8 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"getVariable", "name":"Gib Variableninhalt zurück",
+	"text":"Gib Variableninhalt von {{name}} zurück.",
+	"parameters": {
+		"var_id":{"name":"Name", "type":"string", "value":""}
+	}
+}

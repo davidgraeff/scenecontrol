@@ -36,6 +36,9 @@ exports.api.manipulatorAPI = {
 	},
 	methodDocumentRemoved: function(storageDoc) {
 		return {"method_":"removed",document:storageDoc};
+	},
+	extractDocument: function(storageDoc) {
+		return storageDoc.document;
 	}
 };
 
@@ -54,6 +57,13 @@ exports.api.serviceAPI = {
 	},
 	clear: function() {
 		return {"method_":"clear"};
+	},
+	/**
+	 * Abort execution of all conditions, actions currently running 
+	 * belonging to the scene given by the sceneid.
+	 */
+	abortExecution: function(sceneid) {
+		return {"method_":"abort",sceneid_:sceneid};
 	},
 	requestProperties: function() {
 		return {"method_":"requestProperties"};
