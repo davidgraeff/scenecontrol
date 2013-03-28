@@ -42,10 +42,14 @@ void plugin::clear() {
     m_connectTimer.stop();
     m_leds.clear();
 	
-	changeProperty(SceneDocument::createModelReset("udpled.values", "channel").getData());
+	changeProperty(SceneDocument::createModelReset("artnet.values", "channel").getData());
 	
-    SceneDocument doc;
+	SceneDocument target;
+	target.setComponentID(m_pluginid);
+	target.setInstanceID(m_instanceid);
+	SceneDocument doc;
     doc.setMethod("clear");
+	doc.setData("target",target.getData());	
 	doc.setComponentID(QLatin1String("scenecontrol.leds"));
 	doc.setInstanceID(QLatin1String("null"));
 	callRemoteComponent(doc.getData());
@@ -54,12 +58,19 @@ void plugin::clear() {
 void plugin::initialize() {
 	connect(&m_connectTimer, SIGNAL(timeout()), SLOT(resendConnectSequence()));
 	m_connectTimer.setSingleShot(true);
+	
+	clear();
+	delete m_socket;
+	m_socket = new QUdpSocket(this);
+	connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
+	m_socket->bind(6454);
+	m_connectTime=1000;
+	resendConnectSequence();
 }
 
 void plugin::instanceConfiguration(const QVariantMap& data) {
-    
-    if (data.contains(QLatin1String("server")) && data.contains(QLatin1String("port")))
-        connectToLeds ( data[QLatin1String("server")].toString(), data[QLatin1String("port")].toInt() );
+	Q_UNUSED(data);
+
 }
 
 bool plugin::isLedValue( const QString& channel, int lower, int upper ) {
@@ -70,12 +81,12 @@ bool plugin::isLedValue( const QString& channel, int lower, int upper ) {
 }
 
 void plugin::requestProperties() {
-	changeProperty(SceneDocument::createModelReset("udpled.values", "channel").getData(), m_lastsessionid);
+	changeProperty(SceneDocument::createModelReset("artnet.values", "channel").getData(), m_lastsessionid);
 
     QMap<QString, plugin::ledchannel>::iterator i = m_leds.begin();
     for (;i!=m_leds.end();++i) {
         {
-			SceneDocument sc = SceneDocument::createModelChangeItem("udpled.values");
+			SceneDocument sc = SceneDocument::createModelChangeItem("artnet.values");
             sc.setData("channel", i.key());
             sc.setData("value", i.value().value);
             changeProperty(sc.getData(), m_lastsessionid);
@@ -84,13 +95,17 @@ void plugin::requestProperties() {
 }
 
 void plugin::ledChanged(QString channel, int value) {
-	SceneDocument sc = SceneDocument::createModelChangeItem("udpled.values");
+	SceneDocument sc = SceneDocument::createModelChangeItem("artnet.values");
     sc.setData("channel", channel);
     if (value != -1) sc.setData("value", value);
     changeProperty(sc.getData());
 
+	SceneDocument target;
+	target.setComponentID(m_pluginid);
+	target.setInstanceID(m_instanceid);
 	SceneDocument doc;
 	doc.setMethod("subpluginChange");
+	doc.setData("target",target.getData());
 	doc.setComponentID(QLatin1String("scenecontrol.leds"));
 	doc.setInstanceID(QLatin1String("null"));
 	doc.setData("channel",channel);
@@ -148,64 +163,91 @@ void plugin::setLed ( const QString& channel, int value, int fade ) {
     l->value = value;
     ledChanged ( channel, value );
 
-    struct
-    {
-        uint8_t type;    // see above
-        uint8_t channel; // if port: pin
-        uint8_t value;
-    } data;
+	char mem[sizeof(artnet_dmx)+m_leds.size()];
+	artnet_dmx* out = (artnet_dmx*)&mem;
+	out->opcode = OP_OUTPUT;
+	out->universe = l->universe;
+	out->lengthHi = 0;
+	out->length = m_leds.size();
+	strcpy(out->id, artnet_ID);
+	
+	for (auto i=m_leds.begin();i!=m_leds.end();++i) {
+		const ledchannel& cu = *i;
+		if (cu.channel<m_leds.size()) {
+			out->dataStart[cu.channel] = cu.value;
+		}
+	}
 
-    data.type = fade;
-    data.channel = l->channel;
-    data.value = value;
-
-    m_socket->write ( (char*)&data, sizeof ( data ) );
+	qDebug() << "write" << l->remote << sizeof ( mem );
+	m_socket->writeDatagram ( mem, sizeof ( mem ), l->remote, 6454 );
 }
 
 void plugin::readyRead() {
     m_connectTimer.stop();
     while (m_socket->hasPendingDatagrams()) {
+		QHostAddress remote;
         QByteArray bytes;
         bytes.resize ( m_socket->pendingDatagramSize() );
-        m_socket->readDatagram ( bytes.data(), bytes.size() );
-
-        while ( bytes.size() > 6 ) {
-            if (bytes.startsWith("stella") && bytes.size() >= 7+bytes[6])  {
-                m_channels = bytes[6];
-                clear();
-                for (uint8_t c=0;c<m_channels;++c) {
-                    const unsigned int value = (uint8_t)bytes[7+c];
-                    m_leds[QString::number(c)] = ledchannel(c, value);
-                    ledChanged(QString::number(c), value);
-                }
-                bytes = bytes.mid(7+m_channels);
-            } else {
-                qWarning() << pluginid() << "Failed to parse" << bytes << bytes.size() << 7+bytes[6];
-                break;
-            }
-        } //while
+        m_socket->readDatagram ( bytes.data(), bytes.size(), &remote );
+		
+		const artnet_header *header= (const artnet_header *) bytes.constData();
+		
+		/* check the id */
+		if (strncmp((char *) header->id, artnet_ID, 8))
+		{
+			qWarning("Wrong ArtNet header, discarded\r\n");
+			continue;
+		}
+		
+		switch (header->opcode)
+		{
+			case OP_POLL:
+				qDebug() << "Received artnet poll packet!" << remote.toString();
+				break;
+			case OP_POLLREPLY:{
+				const artnet_pollreply *pollreply = (const artnet_pollreply *) header;
+				
+				qDebug() << "Received artnet poll reply packet!" << pollreply->shortName << pollreply->longName;
+				break;
+			} case OP_OUTPUT: {
+				const artnet_dmx *dmx = (const artnet_dmx *) header;
+				qDebug() << "Received artnet data packet!" << dmx->universe << dmx->length;
+				m_channels = dmx->length;
+				clear();
+				for (uint8_t c=0;c<m_channels;++c) {
+					const unsigned int value = (uint8_t)dmx->dataStart[c];
+					m_leds[QString::number(c)] = ledchannel(c, value,remote, dmx->universe);
+					ledChanged(QString::number(c), value);
+				}
+				break;
+			}
+			case OP_ADDRESS:
+			case OP_IPPROG:
+				break;
+			default:
+				qDebug("Received an invalid artnet packet!\r\n");
+				break;
+		}
     }
 }
 
-void plugin::connectToLeds ( const QString& host, int port ) {
-    clear();
-    m_sendPort = port;
-    delete m_socket;
-    m_socket = new QUdpSocket(this);
-    connect(m_socket,SIGNAL(readyRead()),SLOT(readyRead()));
-    m_socket->connectToHost(QHostAddress(host),m_sendPort);
-    m_connectTime=1000;
-    m_connectTimer.start(m_connectTime);
-}
-
 void plugin::resendConnectSequence() {
-    // request all channel values
-    const unsigned char b[] = {255,0,0};
-    m_socket->write ( (const char*)b, sizeof ( b ) );
+    // request all nodes
+	artnet_poll p;
+	strcpy(p.id, artnet_ID);
+	p.opcode = OP_POLL;
+	p.versionH = 0;
+	p.version = PROTOCOL_VERSION;
+	p.talkToMe = 0 | (1 << 2) | ( 1 << 1);
+	p.priority = 0;
+	
+	m_socket->writeDatagram ( (const char*)&p, sizeof ( p ), QHostAddress::Broadcast, 6454);
     m_socket->flush();
+	
+	qDebug() << "connecting...";
+	
     m_connectTime *= 2;
     if (m_connectTime>60000)
         m_connectTime=60000;
     m_connectTimer.start(m_connectTime);
 }
-
