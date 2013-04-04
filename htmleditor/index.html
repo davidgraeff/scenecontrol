@@ -25,58 +25,48 @@
 		<script src="js/sceneGraph.js"></script>
 	</head>
 	<body>
-		<div class="container"><header class="navbar"><div class="navbar-inner">
-			<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</button>
-			<a class="brand" title="Mit Server verbinden" href="index.html">SceneControl Editor</a>
-			<nav class="nav-collapse collapse">
-				<ul class="nav">
-				<li><a class="autolink" href="#scenelist" title="Szenenliste">Szenenliste</a></li>
-				<li><a class="autolink" href="#plugininstances" title="Konfiguration der Plugin Instanzen">Plugin Instanzen</a></li>
-				</ul>
-			</nav><!--/.nav-collapse -->
-		</div></header></div>
 
-		<div id="maincontent">
-			<style type="text/css">
-				.form-signin {
-					max-width: 300px;
-					padding: 19px 29px 29px;
-					margin: 0 auto 20px;
-					background-color: #fff;
-					border: 1px solid #e5e5e5;
-					-webkit-border-radius: 5px;
-					-moz-border-radius: 5px;
-					border-radius: 5px;
-					-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-					-moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-					box-shadow: 0 1px 2px rgba(0,0,0,.05);
-				}
-				.form-signin .form-signin-heading,
-				.form-signin .checkbox {
-					margin-bottom: 10px;
-				}
-				.form-signin input {
-					font-size: 16px;
-					height: auto;
-					margin-bottom: 15px;
-					padding: 7px 9px;
-				}
-			</style>
-			<div class="container">
-			<form class="form-signin">
-				<h3 class="form-signin-heading">SceneServer Login</h3>
-				<input class="input-block-level" type="text" id="servernameandport" placeholder="Server und Port" />
-				<label class="checkbox">
-					<input type="checkbox" id="remember" checked="checked">
-					Server speichern
-				</label>
-				<a id="btnConnectToServer" class="btn btn-large btn-primary">Verbinden</a>  
-			</form>
-			</div>
+	<div id="maincontent">
+		<div class="container"><header class="navbar"><div class="navbar-inner">
+			<a class="brand">SceneControl Editor</a>
+		</div></header></div>
+		
+		<style type="text/css">
+			.form-signin {
+				max-width: 300px;
+				padding: 19px 29px 29px;
+				margin: 0 auto 20px;
+				background-color: #fff;
+				border: 1px solid #e5e5e5;
+				-webkit-border-radius: 5px;
+				-moz-border-radius: 5px;
+				border-radius: 5px;
+				-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+				-moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+				box-shadow: 0 1px 2px rgba(0,0,0,.05);
+			}
+			.form-signin .form-signin-heading,
+			.form-signin .checkbox {
+				margin-bottom: 10px;
+			}
+			.form-signin input {
+				font-size: 16px;
+				height: auto;
+				margin-bottom: 15px;
+				padding: 7px 9px;
+			}
+		</style>
+		<div class="container">
+		<form class="form-signin">
+			<h3 class="form-signin-heading">SceneServer Login</h3>
+			<input class="input-block-level" type="text" id="servernameandport" placeholder="Server und Port" />
+			<label class="checkbox">
+				<input type="checkbox" id="remember" checked="checked">
+				Server speichern
+			</label>
+			<a id="btnConnectToServer" class="btn btn-large btn-primary">Verbinden</a>  
+		</form>
 		</div>
+	</div>
 	</body>
 </html>

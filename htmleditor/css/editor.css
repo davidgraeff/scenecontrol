@@ -28,18 +28,16 @@ footer {
 	padding-top:10px;
 }
 
-footer .navbar {
+header .btn-group {
 	margin: 0;
 }
 
-footer .right {
+header .right {
 	float: right;
-	padding-top: 5px;
 }
 
-footer .left {
+header .left {
 	float: left;
-	padding-top: 5px;
 }
 
 .hidden {
@@ -67,14 +65,14 @@ footer .left {
 
 .sceneList {
 	list-style: none;
+	clear: both;
 }
 
 .sceneListItem {
 	width:160px;
-	height:100px;
+	height:30px;
 	position:relative;
 	padding:0;
-	display: table; 
 	float: left;
 	margin-top: 5px;
 /* 	border-right: 1px solid black; */
@@ -90,13 +88,6 @@ footer .left {
 	}
 }
 
-.selectedSceneListItem > a{
-	font-size:110%;
-	color: black !important;
-/* 	text-shadow: 0 1px 1px #194B7E; */
-}
-
-
 .selectedSceneListItem {
 	background: #396B9E;
 	background-image: -webkit-linear-gradient( #5F9CC5,#396B9E );
@@ -106,25 +97,14 @@ footer .left {
 	background-image: linear-gradient( #5F9CC5,#396B9E );
 }
 
-.sceneListItem .sceneListItemText, .sceneListItem .sceneListItemCatText {
-	text-align:center;
-	text-align:center;
-	display: table-cell; 
-	vertical-align: middle; 
-	height: 100%;
-}
-
-
 .sceneListItem .sceneListItemText {
-	/* 	background-color: rgba(252, 247, 199, 0.8); */
-	/* background-color: #333333; */
-/* 	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25); */
-	font-size: 13pt;
-	font-weight: bold;
-	/* line-height: 14px; */
-
-	/* 	opacity: 0.8; */
-		color: black;
+/*	font-size: 13pt;
+	font-weight: bold;*/
+	color: black;
+/*	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space:nowrap;
+	width:90%;*/
 }
 
 .sceneListItem:first-child {
@@ -157,27 +137,12 @@ footer .left {
 .q8{background-color:rgb(241,182,218)}
 .q9{background-color:rgb(253,224,239)}
 
-/*.sceneListItem .sceneinfo:before {
-	display: table-row; 
-}*/
-
 .sceneListItem .sceneinfo {
-	display: table-row; 
 
-}
-
-
-.sceneListItem .btn-group {
-/* 	position:absolute;bottom:0px;left:0px;margin-left:5px;margin-bottom:5px */
-float:left;
-	margin-bottom:5px;
-	margin-left:5px;
-	margin-right:5px;
 }
 
 .sceneListItem .badge {
-/* 	position:absolute;bottom:0px;right:0px;margin-right:5px;margin-bottom:5px */
-float:right;
+	float:right;
 	margin-bottom:5px;
 	margin-left:5px;
 	margin-right:5px;
@@ -192,7 +157,7 @@ float:right;
 	height: -webkit-calc(100% - 140px);
 }
 
-#maincontent .container {
+#maincontent .fullheight {
 	height: 100%;
 }
 
