@@ -2,12 +2,15 @@ var api = require('./api.js').api;
 var services = require('../services.js');
 var propertyListener = require('../properties.listener.js');
 var storageListener = require('../storage.listener.js');
+var assert = require('assert');
 
 exports.clientcom = function(uniqueid) {
 	this.name ="No name";
 	this.info = null;
 	this.state = 1;
 	var that = this;
+	
+	assert(uniqueid, "Unique ID of clientcom not set!");
 	
 	/**
 	 * Empty implementation: Have to be overriden by the underlying

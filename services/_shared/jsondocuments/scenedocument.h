@@ -99,7 +99,6 @@ public:
 	void setModelkey(const QByteArray& configurationkey) ;
 	
     /***************** Is valid ******************/
-	void checkIfIDneedsGUID();
 	bool isValid() const;
     /***************** Export to json ******************/
     QByteArray getjson() const;

@@ -1,10 +1,4 @@
-// profiling
-// var agent = require('webkit-devtools-agent');
-
-// control flow
-var controlflow = require('async');
-
-// Print usage information, look at command line parameters
+// Print usage information, command line parameters
 var configs = require('./config.js');
 var optimist = require('optimist').usage('Usage: $0	 [options]')
 	.options("h",{alias:"help"}).describe("h","Show this help")
@@ -18,6 +12,7 @@ var optimist = require('optimist').usage('Usage: $0	 [options]')
 	.options("wport",{default:configs.runtimeconfig.websocketport}).describe("wport","Websocket Controlsocket port"),
 	argv = optimist.argv;
 	
+// Show Help or Version info?
 if (argv.help) {
 	console.log(configs.aboutconfig.ABOUT_SERVICENAME+" "+configs.aboutconfig.ABOUT_VERSION);
 	console.log("Please visit http://davidgraeff.github.com/scenecontrol for more information");
@@ -32,18 +27,22 @@ if (argv.help) {
 console.log(configs.aboutconfig.ABOUT_SERVICENAME+" "+configs.aboutconfig.ABOUT_VERSION);
 
 
-// install new database files
+// Storage: add import paths
 var storageImporter = require('./storage.import.js');
 storageImporter.overwrite = argv.o;
 storageImporter.addImportPath(configs.systempaths.path_database_files); // add system import path
 if (configs.userpaths.path_database_files) storageImporter.addImportPath(configs.userpaths.path_database_files); // add command line import path if any
 if (argv.i) storageImporter.addImportPath(argv.i); // add command line import path if any
+
+// Only import: install new database files and exit
 if (argv.e) {
 	console.log("Only import...");
 	storageImporter.importNewFiles(function(err, result) {process.exit(0);});
 	return;
 }
 
+// init modules
+var controlflow = require('async');
 var startservices = require("./services.processcontroller.js");
 var commandsocket = require("./com/socket.js");
 var commandwebsocket = require("./com/websocket.js");
@@ -62,10 +61,13 @@ process.on('exit', function () {
 	console.log('Beenden...');
 });
 
-// 1) start network socket
-// 2) Install missing config files from system and user dir
-// 3) start plugin processes (as soon as storage.load() is called)
-// 4) Call storage.load
+// 1) start network sockets
+// 2) init storage
+// 3) Install missing config files from system and user dir
+// 4) start plugin processes (as soon as storage.load() is called)
+// 5) Start core service
+// 6) Start scenes (Register events to services)
+
 controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, storageImporter.importNewFiles, storage.showstats,
 				   startservices.init, coreservice.init, scenes.init], 
 	function(err, results){
@@ -75,19 +77,3 @@ controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, s
 		}
 	}
 );
-
-
-/// Tests
-setTimeout(function() {
-	var clientcomEmu = function() {
-		this.info = { sessionid: "testservice",componentid_:"testservice" };
-		this.send = function(data) {
-			console.log("  Execute result:", data);
-		}
-	}
-	var c = new clientcomEmu();
-	var services = require("./services.js");
-	console.log("Test...");
-	services.servicecall({requestid_:"teststart",doc:{componentid_:"core", instanceid_:"main",method_:"startscene", sceneid_:"54114e2456df4aa2a15b161a47a3d8d1"}}, c);
-	services.servicecall({requestid_:"testled",doc:{componentid_:"scenecontrol.leds", instanceid_:"null",method_:"setLed", channel:"1", value:255, fade:0}}, c);
-}, 2000);

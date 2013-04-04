@@ -10,13 +10,13 @@
 	$(storageInstance).on('onscene.sceneitemspage', function(d, flags) {
 		if (flags.temporary)
 			return;
-		console.log("onscene", flags);
 		SceneUIHelper.sceneChanged(flags.doc, flags.removed);
 	});
 	
 	window.SceneUIHelper = {
 		sceneLastAdded: null,
 		sceneChanged: function(doc, removed, responseid) {
+// 			console.log("onscene", doc);
 			var $entries = $("#scenelists").find("*[data-sceneid='"+doc.id_+"']");
 			if (removed==true) {
 				// Remove the scene entry
@@ -62,37 +62,10 @@
 			}
 		},
 		load: function() {
-			for (var index in storageInstance.scenes) {
-				SceneUIHelper.sceneChanged(storageInstance.scenes[index], false);
-			}
+			storageInstance.forEveryDocument("scene", function(scenedoc) {
+				SceneUIHelper.sceneChanged(scenedoc, false);
+			});
 		}
-		
-		/*,
-		renderDocImage: function(scene) {
-			// prepare canvas'
-			var canvasDrawBig = document.createElement("canvas");
-			canvasDrawBig.width = 800; canvasDrawBig.height = 600;
-			// load scene
-			var sc = new sceneCanvas();
-			sc.setCanvas(canvasDrawBig);
-			sc.load(scene);
-			// store into image and resize
-			var image = new Image();
-			image.onload = function() {
-				var canvasDrawSmall = document.createElement("canvas");
-				canvasDrawSmall.width = 160; canvasDrawSmall.height = 100;
-				var canvasDrawSmallCtx = canvasDrawSmall.getContext("2d");
-				canvasDrawSmallCtx.drawImage(image, 0, 0, canvasDrawSmall.width, canvasDrawSmall.height);
-				// unload
-				sc.unload();
-				sc = null;
-				// return data
-				//console.log("pic", canvasDrawSmall.toDataURL('image/jpeg'));
-				$("*[data-sceneid='"+scene.id_+"']").css("background-image", "url('"+ canvasDrawSmall.toDataURL()+"')");
-				
-			};
-			image.src = sc.getImage();
-		}*/
 	};
 	
 	window.SceneUIHelper.load();
@@ -105,7 +78,6 @@
 		
 		////////////////// SET AND SELECT SCENES //////////////////
 		$('#scenelists').on('click.editorpage',".btnSetScene", function() {
-			console.log("setscene");
 			var sceneid = $(this).parent().attr("data-sceneid");
 			if (sceneid == undefined) {
 				console.warn("no data-sceneid!");
@@ -143,9 +115,14 @@
 			$('#removepopup').modal("hide");
 			$("#btnRemoveSelectedScenes").addClass("disabled");
 			selectedScenesCounter = 0;
-			$("#scenelist").find("[data-selected='1']").removeClass("selectedSceneListItem").addClass("disabled").each(function(index,elem){
+			console.log("Remove");
+			$("#scenelists").find("[data-selected='1']").removeClass("selectedSceneListItem").addClass("disabled").each(function(index,elem){
 				var sceneid = elem.getAttribute('data-sceneid');
-				var doc = storageInstance.scenes[sceneid];
+				var doc = storageInstance.getDocument("scene",sceneid);
+				if (!doc) {
+					console.warn("btnRemoveSelectedScenesConfirm: No id!");
+					return;
+				}
 				websocketInstance.write(api.manipulatorAPI.remove(doc));
 			});
 		});

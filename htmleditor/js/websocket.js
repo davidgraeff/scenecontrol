@@ -24,6 +24,10 @@
 			this.write({method_:"execute", doc: { componentid_:"core",instanceid_:"main", method_:"startscene", sceneid_: sceneid} });
 		}
 		
+		this.runaction = function(actiondoc) {
+			this.write({method_:"execute", doc: actiondoc});
+		}
+		
 		this.write = function(data) {
 			if (typeof data == "object")
 				data = JSON.stringify(data);

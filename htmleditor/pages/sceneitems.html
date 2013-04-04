@@ -1,29 +1,38 @@
-<div class="container">
-	<svg id="canvas">
-		<marker id="pf1"
-		viewBox="0 0 10 10" refX="10" refY="5"
-		markerUnits="strokeWidth"
-		markerWidth="15" markerHeight="15"
-		orient="auto">
-		<path d="M 0,0 l 10,5 l -10,5 z" />
-		</marker>
-	</svg>
+<div class="container" id="canvascontainer">
+	<table id="canvas">
+		<tbody>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td class="trash btn-danger" title="Trash"><i class="icon-remove"></i> Hierher ziehen um zu entfernen</td>
+			</tr>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+			<tr>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
+			</tr>
+		</tbody>
+	</table>
 </div>
 <!-- Template: Scene entry -->
 <script id="scenegraphitem-template" type="text/x-handlebars-template">
-	<div class="sceneItem">
-		<div class="sceneItemHeader {{bgclass}}">
-			<span class="sceneItemType">{{type}}</span>
-			<span class="sceneItemComponent">{{component}}</span>
-			<span class="sceneItemMethod">{{title}}</span>
-		</div>
-		<div data-nodeindex="{{nodeindex}}" class="sceneItemMain">{{text}}</div>
-		<div class="sceneItemCommands btn-group">
-			<a href="#no" class="btn btn-mini btnLink" data-nodeindex="{{nodeindex}}" title="Link erstellen">Link</a>
-			<a href="#no" class="btn btn-mini btnLinkAlt" data-nodeindex="{{nodeindex}}" title="Alternativ Link für fehlgeschlagene Bedingung erstellen">Alt Link</a>
-			<a href="#no" class="btn btn-danger btn-mini btnRemove" data-nodeindex="{{nodeindex}}" title="Entfernen"><i class="icon-remove"></i></a>
-			<a href="#no" class="btn btn-success btn-mini btnExecute" data-nodeindex="{{nodeindex}}" title="Ab hier ausführen"><i class="icon-play"></i></a>
-		</div>
+	<div class="sceneItem drag" data-nodeindex="{{nodeindex}}" id="sceneItem{{nodeindex}}">
+		<div class="{{bgclass}} btn btnExecute sceneItemHeader" data-nodeindex="{{nodeindex}}">{{type}}</div>
+		<div data-nodeindex="{{nodeindex}}" class="sceneItemMain"><strong>{{component}} ({{title}}):</strong> {{text}}</div>
 	</div>
 </script>
 
@@ -41,7 +50,7 @@
 				<a id="btnChangeSceneName" class="btn"><i class="icon-pencil"></i> Namen ändern</a>
 				<a id="btnChangeTags" class="btn"><i class="icon-tag"></i> Kategorien</a>
 				<a id="btnAddSceneItem" class="btn"><i class="icon-plus"></i> Element hinzufügen</a>
-				<a id="btnExecute" class="btn btn-success"><i class="icon-play"></i> Ausführen</a>
+				<a id="btnExecute" class="btn btn-success"  title="Markierte Elemente ausführen oder ganze Szene ausführen"><i class="icon-play"></i> Ausführen</a>
 			</div>
 	</div></div>
 </footer> 
@@ -61,36 +70,16 @@
 	</div>
 </div>
 
-<!-- Edit scene popup -->
-<div class="elemhidden modal fade" id="sceneitemedit">
-	<div class="modal-header">
-		<a class="close" data-dismiss="modal">&times;</a>
-		<span id="sceneitemname"></span>
-	</div>
-	<div class="modal-body">
-		<span id="sceneitemsubname"></span>
-		<form class="itemform" id="sceneitemform">
-			<ul id="sceneitemproperties" class="itemcontrols" data-role="listview" data-inset="true" data-divider-theme="c">
-			</ul>
-		</form>
-	</div>
-	<div class="modal-footer">
-		<a href="#" id="btnSaveSceneItem" class="btn btn-primary">Speichern</a>  
-		<a href="#" id="btnRemoveSceneItem" class="btn btn btn-danger">Löschen</a>  
-		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
-	</div>
-</div>
-
 <!-- Create new event, condition, action -->
 <div class="elemhidden modal fade" id="newsceneitempopup">
 	<div class="modal-header">
 		<a class="close" data-dismiss="modal">&times;</a>
-		<h3>Neues Element für <span class="currentscene"></span></h3>
+		<h3>Szene: <span class="currentscene"></span></h3>
 	</div>
 	<div class="modal-body">
 <!--		<span class="currentscene"></span>: <span class="newsceneitemtitle"></span>-->
 		<form>
-			<div class="btn-group" data-toggle="buttons-radio">
+		<center><div class="btn-group" style="padding-bottom: 10px;" data-toggle="buttons-radio">
 				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_event" value="event" >
 				Ereignis</button>
 				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_condition" value="condition">
@@ -98,12 +87,17 @@
 				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_action" value="action">
 				Aktion</button>
 			</div>
-			<div><select name="componentid_" id="sceneitem_componentid" ></select></div>
-			<div><select name="method_" id="sceneitem_method" ></select></div>
-		</form>
+			<div>
+				<select name="componentid_" id="sceneitem_componentid" ></select>
+				<select name="method_" id="sceneitem_method" ></select>
+			</div>
+			</center>
+		</form>	<hr>
+		<form class="form-horizontal" id="sceneitemform"></form>
 	</div>
 	<div class="modal-footer">
-		<a href="#" id="btnConfirmSceneitem" class="btn btn-primary">Erstellen</a>
+		<a href="#" id="btnSaveSceneItem" class="btn btn-primary">...</a>  
+		<a href="#" id="btnRemoveSceneItem" class="btn btn btn-danger">Löschen</a>  
 		<a href="#" class="btn" data-dismiss="modal">Schließen</a>
 	</div>
 </div>
@@ -126,4 +120,5 @@
 	</div>
 </div>
 
+<script src="js/redips-drag-min.js"></script>
 <script src="js/sceneitems.js"></script>

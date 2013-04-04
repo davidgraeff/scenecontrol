@@ -4,6 +4,7 @@ var services = require('./services.js');
 var scenes = require("./sceneruntime.js");
 var properties = require('./properties.js');
 var variables = require('./variables.js');
+var assert = require('assert');
 
 var coreservice = function() {
 	var that = this;
@@ -28,16 +29,16 @@ var coreservice = function() {
 		delete delays[sceneid_];
 	}
 	
-	function addDelay(sceneid, actionid, waitms) {
-		if (!delays[data.sceneid_])
-			delays[data.sceneid_] = {len:0,actions:{}}
+	function addDelay(sceneid, actionid, waitms, data) {
+		if (!delays[sceneid])
+			delays[sceneid] = {len:0,actions:{}}
 		
-		delays[data.sceneid_].len++;
-		delays[data.sceneid_].actions[data.id_] = setTimeout(function() {
-			delete delays[data.sceneid_].actions[data.id_];
-			delays[data.sceneid_].len--;
-			if (delays[data.sceneid_].len<=0)
-				delete delays[data.sceneid_];
+		delays[sceneid].len++;
+		delays[sceneid].actions[actionid] = setTimeout(function() {
+			delete delays[sceneid].actions[actionid];
+			delays[sceneid].len--;
+			if (delays[sceneid].len<=0)
+				delete delays[sceneid];
 			that.com.receive(api.generateAck(data,true));
 		}, waitms);
 	}
@@ -48,6 +49,7 @@ var coreservice = function() {
 	}
 	
 	this.com.send = function(data) {
+		assert(data,"core service: Scene item document not set!");
 		var m = data.method_;
 // 		console.log("core service:", m);
 		if (m == "startscene") {
@@ -65,7 +67,7 @@ var coreservice = function() {
 			that.com.receive(api.generateAck(data,(scene!=undefined)));
 			
 		} else if (m == "delay") {
-			addDelay(data.sceneid_, data.id_, data.waitms);
+			addDelay(data.sceneid_, data.id_, data.waitms, data);
 			
 		} else if (m == "onstartscene") {
 			registeredEvents_startscene[data.id_+data.sceneid_] = data;

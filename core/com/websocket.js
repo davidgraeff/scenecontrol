@@ -37,6 +37,8 @@ wsServer.on('request', function(request) {
     });
 
     c.on('close', function() {
+		if (!c.com) // already freed
+			return;
 		wsServer.clients.removeElement(c);
 		console.log('Client disconnected: '+c.com.name);
 		c.com.free();

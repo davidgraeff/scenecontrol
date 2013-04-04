@@ -29,43 +29,40 @@
 		},
 		
 		rename: function(name) {
-			var scene = storageInstance.scenes[CurrentScene.id];
+			var scene = storageInstance.getDocument("scene",CurrentScene.id);
 			scene.name = name;
-			websocketInstance.updateDocument(scene);
+			websocketInstance.write(api.manipulatorAPI.update(scene));
 		},
 		
+		get: function() {
+			return storageInstance.getDocument("scene",CurrentScene.id);
+		},
+ 
 		getName: function() {
-			return storageInstance.scenes[CurrentScene.id].name;
+			var scene = storageInstance.getDocument("scene",CurrentScene.id);
+			return scene.name;
 		},
 		
 		getTags: function() {
-			var tags = storageInstance.scenes[CurrentScene.id].categories;
+			var scene = storageInstance.getDocument("scene",CurrentScene.id);
+			var tags = scene.categories;
 			return (tags instanceof Array) ? tags.join(",") : "";
 		},
 		
 		setTags: function(taglist) {
-			var scene = storageInstance.scenes[CurrentScene.id];
+			var scene = storageInstance.getDocument("scene",CurrentScene.id);
 			scene.categories = taglist;
-			websocketInstance.updateDocument(scene);
+			websocketInstance.write(api.manipulatorAPI.update(scene));
 		}
 	};
 
 	// current scene item object
 	window.CurrentSceneItem = {
 		item: null,
-		schema: null,
-		name: "",
-		subname: "",
-		temporary: false,
-		
-		set: function(sceneitemdocument, temporary) {
-			CurrentSceneItem.item = sceneitemdocument;
-			CurrentSceneItem.temporary = temporary;
-			var schema = storageInstance.schemaForDocument(sceneitemdocument);
-			CurrentSceneItem.name = sceneitemdocument.componentid_;
-			if (temporary) {
-				CurrentSceneItem.name +=" (Neu, nicht gespeichert)"
-			}
+		notsaved: false,
+ 
+		getSchema: function() {
+			var schema = storageInstance.schemaForDocument(CurrentSceneItem.item);
 			
 			if (schema == null) {
 				schema = {
@@ -73,16 +70,18 @@
 						raw:{name:"Schemalose Daten",type:"rawdoc"}
 					}
 				};
-				CurrentSceneItem.subname = sceneitemdocument.method_;
-			} else {
-				CurrentSceneItem.subname = schema.name;
 			}
-			CurrentSceneItem.schema = schema;
+			return schema;
+		},
+ 
+		set: function(sceneitemdocument, notsaved) {
+			CurrentSceneItem.item = sceneitemdocument;
+			CurrentSceneItem.notsaved = notsaved;
 		},
 		
 		createParameterForm: function($ulBase) {
 			var doc = CurrentSceneItem.item;
-			var schema = CurrentSceneItem.schema;
+			var schema = CurrentSceneItem.getSchema();
 			var result = true;
 			for (var paramid in schema.parameters) {
 				var parameter = schema.parameters[paramid];
@@ -98,65 +97,65 @@
 					delete docCopy.instanceid_;
 					delete docCopy.method_;
 					delete docCopy.sceneid_;
-					$elem = $('<li >' + 
-					'<label for="'+domid+'">'+parameter.name+'</label>' + 
-					'<textarea rows="8" '+comon+'">'+JSON.stringify(docCopy, null, "\t")+'</textarea></li>').appendTo($ulBase);
+					$elem = $('<div class="control-group">' + 
+					'<label class="control-label" for="'+domid+'">'+parameter.name+'</label>' + 
+					'<div class="controls"><textarea rows="8" '+comon+'">'+JSON.stringify(docCopy, null, "\t")+'</textarea></div></div>').appendTo($ulBase);
 				} else if (parameter.type == "string") {
 					var value = doc[paramid] ? doc[paramid] : parameter.value;
-					$elem = $('<li data-role="fieldcontain">' + 
-					'<label for="'+domid+'">'+parameter.name+'</label>' + 
-					'<input type="text" '+comon+' value="'+value+'"  /></li>').appendTo($ulBase);
+					$elem = $('<div class="control-group">' + 
+					'<label class="control-label" for="'+domid+'">'+parameter.name+'</label>' + 
+					'<div class="controls"><input type="text" '+comon+' value="'+value+'"  /></div></div>').appendTo($ulBase);
 				} else if (parameter.type == "date") {
 					var value = doc[paramid] ? doc[paramid] : parameter.value;
-					$elem = $('<li data-role="fieldcontain">' + 
-					'<label for="'+domid+'">'+parameter.name+'</label>' + 
-					'<input type="date" '+comon+' value="'+value+'"  /></li>').appendTo($ulBase);
+					$elem = $('<div class="control-group">' + 
+					'<label class="control-label" for="'+domid+'">'+parameter.name+'</label>' + 
+					'<div class="controls"><input type="date" '+comon+' value="'+value+'"  /></div></div>').appendTo($ulBase);
 				} else if (parameter.type == "time") {
 					var value = doc[paramid] ? doc[paramid] : parameter.value;
-					$elem = $('<li data-role="fieldcontain">' + 
-					'<label for="'+domid+'">'+parameter.name+'</label>' + 
-					'<input type="time" '+comon+' value="'+value+'"  /></li>').appendTo($ulBase);
+					$elem = $('<div class="control-group">' + 
+					'<label class="control-label" for="'+domid+'">'+parameter.name+'</label>' + 
+					'<div class="controls"><input type="time" '+comon+' value="'+value+'"  /></div></div>').appendTo($ulBase);
 				} else if (parameter.type == "boolean") {
 					var value = doc[paramid] ? doc[paramid] : parameter.value;
-					$elem = $('<li data-role="fieldcontain">'+
-					'<label for="'+domid+'">'+parameter.name+'</label>'+
-					'<select '+comon+' data-role="slider">'+
+					$elem = $('<div class="control-group">'+
+					'<label class="control-label" for="'+domid+'">'+parameter.name+'</label>'+
+					'<div class="controls"><select '+comon+' data-role="slider">'+
 					'<option value="0" '+(value?'':'selected')+'>Off</option><option value="1" '+(value?'selected':'')+'>On</option>' +
-					'</select></li>').appendTo($ulBase);
+					'</select></div></div>').appendTo($ulBase);
 				} else if (parameter.type == "integer" && parameter.min && parameter.max) {
 					var value = doc[paramid] ? doc[paramid] : parameter.value;
-					$elem = $('<li data-role="fieldcontain">' +
-					'<label for="'+domid+'">'+parameter.name+'</label>' +
-					'<input type="range" data-highlight="true" '+comon+' value="'+value+'"' +
-					'min="'+parameter.min+'" max="'+parameter.max+'" '+(parameter.step?'step="'+parameter.step+'"':'')+' /></li>').appendTo($ulBase);
+					$elem = $('<div class="control-group">' +
+					'<label class="control-label" for="'+domid+'">'+parameter.name+'</label>' +
+					'<div class="controls"><input type="range" data-highlight="true" '+comon+' value="'+value+'"' +
+					'min="'+parameter.min+'" max="'+parameter.max+'" '+(parameter.step?'step="'+parameter.step+'"':'')+' /></div></div>').appendTo($ulBase);
 				} else if (parameter.type == "integer") {
 					var value = doc[paramid] ? doc[paramid] : parameter.value;
-					$elem = $('<li data-role="fieldcontain">' +
-					'<label for="'+domid+'">'+parameter.name+'</label>' +
-					'<input type="number" '+comon+' value="'+value+'" '+
+					$elem = $('<div class="control-group">' +
+					'<label class="control-label" for="'+domid+'">'+parameter.name+'</label>' +
+					'<div class="controls"><input type="number" '+comon+' value="'+value+'" '+
 					(parameter.step?'step="'+parameter.step+'" ':'')+
 					(parameter.min?'min="'+parameter.min+'" ':'')+
 					(parameter.max?'max="'+parameter.max+'" ':'')+
-					' /></li>').appendTo($ulBase);
+					' /></div></div>').appendTo($ulBase);
 				} else if (parameter.type == "enum") {
-					var d = '<li data-role="fieldcontain">' +
-					'<fieldset data-role="controlgroup" id="'+domid+'">' +
+					var d = '<div class="control-group">' +
+					'<div class="controls"><fieldset data-role="controlgroup" id="'+domid+'">' +
 					'	<legend>'+parameter.name+'</legend>';
 					
 					for (var i=0;i<parameter.data.length;++i) {
 						var itemDomID = domid + i;
 						d+= '<input type="radio" name="'+paramid+'" id="'+itemDomID+'" internal-data-type="'+parameter.type+'" value="'+i+'" '+(i==doc[paramid]?'checked="checked"':'')+'>' +
-						'<label for="'+itemDomID+'">'+parameter.data[i]+'</label>';
+						'<label class="control-label" for="'+itemDomID+'">'+parameter.data[i]+'</label>';
 					}
 					
-					d += '</fieldset>' +
-					'</li>';
+					d += '</div></fieldset>' +
+					'</div>';
 					
 					$elem = $(d).appendTo($ulBase);
 				} else if (parameter.type == "modelenum") {
-					var d = '<li data-role="fieldcontain">' +
-					'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
-					'<select '+comon+' data-native-menu="false">';
+					var d = '<div class="control-group">' +
+					'<label class="control-label" for="'+domid+'" class="select">'+parameter.name+'</label>' +
+					'<div class="controls"><select '+comon+' data-native-menu="false">';
 					
 					var model = storageInstance.modelItems(doc.componentid_,doc.instanceid_,parameter.model);
 					if (!model || !model.data) {
@@ -189,14 +188,14 @@
 						d += dElements;
 					}
 					
-					d += '</select>' +
-					'</li>';
+					d += '</div></select>' +
+					'</div>';
 					
 					$elem = $(d).appendTo($ulBase);
 				} else if (parameter.type == "multienum") {
-					var d = '<li data-role="fieldcontain">' +
-					'<label for="'+domid+'" class="select">'+parameter.name+'</label>' +
-					'<select '+comon+' data-size="'+parameter.data.length+'" data-native-menu="false" multiple="multiple">';
+					var d = '<div class="control-group">' +
+					'<label class="control-label" for="'+domid+'" class="select">'+parameter.name+'</label>' +
+					'<div class="controls"><select '+comon+' data-size="'+parameter.data.length+'" data-native-menu="false" multiple="multiple">';
 					var counter = 0;
 					var dataFromDoc = doc[paramid];
 					for (var index in parameter.data) {
@@ -206,12 +205,12 @@
 						d += '<option value="'+counter+'" '+(s?'selected':'')+'>'+parameter.data[index]+'</option>';
 						++counter;
 					}
-					d += '</select>' +
-					'</li>';
+					d += '</div></select>' +
+					'</div>';
 					
 					$elem = $(d).appendTo($ulBase);
 				} else {
-					$elem = $('<li>Unknown parameter: '+parameter.type+'</li>').appendTo($ulBase);
+					$elem = $('<div class="control-group">Unknown parameter: '+parameter.type+'</div>').appendTo($ulBase);
 					console.log("unknown parameter", parameter);
 					result = false;
 				}
@@ -244,18 +243,18 @@
 		},
 		
 		propertyOnChange: function(destMethod, type, value, name) {
-			var dataout = {"method_":destMethod,"type_":"execute","componentid_":CurrentSceneItem.item.componentid_, "instanceid_":CurrentSceneItem.item.instanceid_};
+			var dataout = {"method_":destMethod,"componentid_":CurrentSceneItem.item.componentid_, "instanceid_":CurrentSceneItem.item.instanceid_};
 			CurrentSceneItem.serializeElement(dataout, type, value, name);
 	// 		console.log("propertyOnChange "+paramid, destMethod, o);
-			websocketInstance.write(dataout);
+			websocketInstance.runaction(dataout);
 		},
 		
-		registerChangeNotifiers: function($ulBase, callbackInputChanged) {
-			$ulBase.find('input,textarea').not(':checkbox,:radio').on('input', function() {
+		registerChangeNotifiers: function($form, callbackInputChanged) {
+			$form.find('input,textarea').not(':checkbox,:radio').on('input', function() {
 				if (callbackInputChanged)
 					callbackInputChanged();
 			});
-			$ulBase.find('select,input[type=checkbox],input[type=radio],input[type=range],input[type=number]').on('change', function() {
+			$form.find('select,input[type=checkbox],input[type=radio],input[type=range],input[type=number]').on('change', function() {
 				if (callbackInputChanged)
 					callbackInputChanged();
 			});
@@ -333,7 +332,7 @@
 			// create a copy of the scene item
 			var sceneItemCopy = {};
 			$.extend(true, sceneItemCopy, sceneItem);
-			// extend the object: replace enum integers by their text representations, fill in model data etc
+			// Replace: replace enum integers by their text representations, fill in model data etc
 			for (var paramid in schema.parameters) {
 				var parameter = schema.parameters[paramid];
 				if (parameter.type == "boolean") {

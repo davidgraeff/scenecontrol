@@ -5,7 +5,7 @@ var listener = {};
 
 exports.change = function(doc) {
 	for (var i in listener) {
-		console.log('Property propagate:', i);
+// 		console.log('Property propagate:', i);
 		listener[i].send(doc);
 	}
 }
@@ -31,6 +31,11 @@ exports.removeListener = function(id) {
 }
 
 function onListenerData(data, from) {
+	if (!data.type_ || data.type_ != "consumer")
+		return;
+	
+	var responseID = api.getRequestID(data);
+	
 	if (api.consumerAPI.isRequestAllProperties(data)) {
 		properties.requestAllProperties(function(items) {
 			items.forEach(function(item) {
@@ -38,5 +43,8 @@ function onListenerData(data, from) {
 			});
 		});
 		return;
+	} else {
+		console.warn("Consumer method not supported!", api.getMethod(data));
+		from.send(api.generateError(responseID, "api.missing",  "Consumer method not supported!"));
 	}
 }

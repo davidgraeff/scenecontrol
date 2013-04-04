@@ -9,36 +9,58 @@ exports.api = {
 		return remoteDoc.requestid_= expect;
 	},
 	generateAck: function(remoteDoc, reponse) {
-		var obj = {"type_":"ack","responseid_":remoteDoc.requestid_};
+		var obj = {type_:"ack", responseid_:remoteDoc.requestid_};
 		if (reponse) obj.response_ = reponse;
 		return obj;
 	},
 	methodIdentify: function(requestid) {
-		return {"method_":"identify","apiversion":10,"provides":"core","requestid_":requestid};
+		return {method_:"identify",apiversion:10,provides:"core",requestid_:requestid};
 	},
 	isExecuteCall: function(remoteDoc) {
 		return remoteDoc.method_=="execute";
+	},
+	getMethod: function(remoteDoc) {
+		return remoteDoc.method_;
+	},
+	getRequestID: function(remoteDoc) {
+		return remoteDoc.requestid_;
+	},
+	generateError: function(requestid, errorcodeid, errormsg) {
+		return {type_:"ack", method_:"error", requestid_:requestid, errorcode: exports.errorcodes.indexOf(errorcodeid), errormsg:errormsg};
+	},
+	uidEqual: function(doc1, doc2) {
+		return doc1.type_==doc2.type_ && doc1.id_==doc2.id_;
 	}
 };
+
+exports.errorcodes = ["api.missing", "storage.insert", "storage.update", "storage.remove"];
 
 exports.api.manipulatorAPI = {
 	isFetchDocuments: function(remoteDoc) {
 		return remoteDoc.method_=="fetch";
 	},
+	isDocumentInsert: function(remoteDoc) {
+		return remoteDoc.method_=="insert";
+	},
+	isSceneItemDocumentInsert: function(remoteDoc) {
+		return remoteDoc.method_=="insertSceneItem";
+	},
 	isDocumentUpdate: function(remoteDoc) {
-		return remoteDoc.method_=="change";
+		return remoteDoc.method_=="update";
 	},
 	isDocumentRemove: function(remoteDoc) {
 		return remoteDoc.method_=="remove";
 	},
-	methodDocumentUpdated: function(storageDoc) {
-		return {"method_":"changed",document:storageDoc};
+	methodDocumentUpdated: function(storageDoc, storageCode) {
+		delete storageDoc._id; // remove mongodb id
+		return {method_:"changed", responseid_:storageCode, document:storageDoc};
 	},
-	methodDocumentRemoved: function(storageDoc) {
-		return {"method_":"removed",document:storageDoc};
+	methodDocumentRemoved: function(storageDoc, storageCode) {
+		delete storageDoc._id; // remove mongodb id
+		return {method_:"removed", responseid_:storageCode, document:storageDoc};
 	},
-	extractDocument: function(storageDoc) {
-		return storageDoc.document;
+	extractDocument: function(remoteDoc) {
+		return remoteDoc.document;
 	}
 };
 

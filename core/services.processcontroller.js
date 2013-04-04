@@ -67,7 +67,7 @@ exports.finish = function(callback) {
 }
 
 exports.init = function(callback) {
-	storageListener.addListener(controller);
+	storageListener.addListener(controller, "service.processcontroller");
 	storage.db.collection('configuration').find().toArray(function(err, items) {
 		if (err) {
 			console.warn("Could not get configurations for services ", err);

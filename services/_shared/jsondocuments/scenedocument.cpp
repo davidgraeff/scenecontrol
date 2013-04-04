@@ -140,10 +140,6 @@ bool SceneDocument::correctDataTypes(const QVariantMap& types)
 	return true;
 }
 
-void SceneDocument::checkIfIDneedsGUID() {
-	if (id()==QLatin1String("GENERATEGUID"))
-		setid(QUuid::createUuid().toString().replace(QLatin1String("{"),QString()).replace(QLatin1String("}"),QString()));
-}
 QString SceneDocument::id() const {
     return m_map.value(QLatin1String("id_")).toString();
 }

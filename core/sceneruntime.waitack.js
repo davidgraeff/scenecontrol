@@ -87,18 +87,19 @@ exports.waitForAckSceneItem = function(sceneItemUID, scene, runtime, lastrespons
 		
 		// get successors
 		var successors = [];
-		for (var i =0;i<scene.v.length;++i) {
-			if (scene.v[i].type_==that.item.type_ && scene.v[i].id_ == that.item.id_) {
-				var linked;
-				if (that.item.type_ == "condition" && response==false)
-					linked = scene.v[i].eAlt;
-				else
-					linked = scene.v[i].e;
-				
-				if (linked) {
-					for (var j =0;j<linked.length;++j) {
-						successors.push({type_:linked[j].type_, id_: linked[j].id_});
-					}
+		for (var i in scene.v) {
+			if (scene.v[i].type_!=that.item.type_ || scene.v[i].id_ != that.item.id_)
+				continue;
+
+			var linked;
+			if (that.item.type_ == "condition" && response==false)
+				linked = scene.v[i].eAlt;
+			else
+				linked = scene.v[i].e;
+			
+			if (linked) {
+				for (var e_id in linked) {
+					successors.push({type_:linked[e_id].type_, id_: linked[e_id].id_});
 				}
 			}
 		}

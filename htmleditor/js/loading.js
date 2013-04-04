@@ -1,4 +1,4 @@
-(function (document, websocketInstance, storageInstance) {
+(function (websocketInstance, storageInstance) {
 	"use strict";
 	
 	$.ajaxSetup ({
@@ -33,44 +33,23 @@
 	});
 	
 	$(websocketInstance).on('onerror', function() {
-		$.jGrowl("Keine Verbindung zum Server<br/>Läuft der Websocketproxy?");
+		$.jGrowl("Keine Verbindung zum Server!");
 		$.mobile.loading( 'hide' );
 	});
 
 	$(websocketInstance).on('onidentified', function() {
-		websocketInstance.write(api.consumerAPI.requestDocuments("scene",{}));
-		websocketInstance.write(api.consumerAPI.requestDocuments("event",{}));
-		websocketInstance.write(api.consumerAPI.requestDocuments("condition",{}));
-		websocketInstance.write(api.consumerAPI.requestDocuments("action",{}));
-		websocketInstance.write(api.consumerAPI.requestDocuments("schema",{}));
-		websocketInstance.write(api.consumerAPI.requestDocuments("description",{}));
-		websocketInstance.write(api.consumerAPI.requestDocuments("configuration",{}));
+		websocketInstance.write(api.manipulatorAPI.fetchDocuments("scene",{}));
+		websocketInstance.write(api.manipulatorAPI.fetchDocuments("event",{}));
+		websocketInstance.write(api.manipulatorAPI.fetchDocuments("condition",{}));
+		websocketInstance.write(api.manipulatorAPI.fetchDocuments("action",{}));
+		websocketInstance.write(api.manipulatorAPI.fetchDocuments("schema",{}));
+		websocketInstance.write(api.manipulatorAPI.fetchDocuments("description",{}));
+		websocketInstance.write(api.manipulatorAPI.fetchDocuments("configuration",{}));
 		
 		websocketInstance.write(api.consumerAPI.requestAllProperties());
 		window.loadPage('scenelist');
 		$("header nav").removeClass("hidden");
 		$.mobile.loading( 'hide' );
-	});
-	
-	$(websocketInstance).on('ondocument', function(d, doc) {
-		if (doc.type_=="property") {
-			if (doc.method_)
-				storageInstance.modelChange(doc.method_, doc);
-			else
-				storageInstance.notification(doc);
-		} else if (doc.type_=="ack") {
-// 			console.warn("Server response:" + doc.msg)
-		} else if (doc.type_=="error") {
-			console.warn("Server response:" + doc.msg)
-		} else if (doc.method_=="changed")  {
-			storageInstance.documentChanged(doc.document, {removed:false,reponseid:api.getReponseID(doc)});
-		} else if (doc.method_=="removed")  {
-			storageInstance.documentChanged(doc.document, {removed:true,reponseid:api.getReponseID(doc)});
-		} else if (doc.method_=="batch")  {
-			storageInstance.documentBatch(doc.documents);
-		} else {
-			console.warn("Response type unknown:", doc)
-		}
 	});
 	
 	window.prepareLinks = function() {
@@ -89,7 +68,7 @@
 	// dummies
 	$.mobile = {loading:function(){},hide:function(){},silentScroll:function(){}}
 	
-})(document, websocketInstance, storageInstance);
+})(websocketInstance, storageInstance);
 
 // jquery plugin for handlebars
 (function($) {

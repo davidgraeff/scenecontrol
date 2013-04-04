@@ -244,8 +244,6 @@ void plugin::resendConnectSequence() {
 	m_socket->writeDatagram ( (const char*)&p, sizeof ( p ), QHostAddress::Broadcast, 6454);
     m_socket->flush();
 	
-	qDebug() << "connecting...";
-	
     m_connectTime *= 2;
     if (m_connectTime>60000)
         m_connectTime=60000;

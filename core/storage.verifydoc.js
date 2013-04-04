@@ -17,7 +17,7 @@ function dirName(str)
 
 
 /****** Verifier *********/
-exports.genericverifier = function(doc) {
+exports.genericverifier = function() {
 	this.setIDIfNotExist = function(doc, filename) {
 		if (!doc.componentid_)
 			doc.componentid_ = dirName(filename);
@@ -34,16 +34,22 @@ exports.genericverifier = function(doc) {
 		}
 	}
 	this.isValid = function(doc) {
-		var valid_types = ["event","condition","action","configuration","schema","description"];
+		return (doc.componentid_ && doc.id_ && this.isValidForInsert(doc));
+	}
+	this.isValidForInsert = function(doc) {
+// 		var valid_types = ["event","condition","action","configuration","schema","description"];
+		if ((doc.type_=="event" || doc.type_=="condition" || doc.type_=="action") && (!doc.sceneid_)) {
+			return false;
+		}
 		if (doc.type_=="description" && (!doc.language || !doc.name)) {
 			return false;
 		}
-		if (doc.type_=="scene" && (!doc.name)) {
+		if (doc.type_=="scene" && (!doc.name || !doc.v || !doc.enabled || !doc.categories)) {
 			return false;
 		}
 		if (doc.type_=="configuration" && !doc.instanceid_) {
 			return false;
 		}
-		return (doc.componentid_ && doc.id_);
+		return true;
 	}
 };
