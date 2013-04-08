@@ -1,29 +1,32 @@
-<div class="container"><header class="navbar"><div class="navbar-inner">
-	<a class="brand" title="Mit Server verbinden" href="index.html">SceneControl Editor</a>
-	<div class="btn-group right">
-		<a href="#plugininstances" class="btn autolink"><i class="icon-pencil"></i> Services</a>
-		<a href="#" class="btn btn-info" id="btnAddScene"><i class="icon-plus"></i> Neue Szene</a>
-	</div>
-</div></header></div>
+<div class="container" id="canvascontainer">
+	<header class="navbar"><div class="navbar-inner">
+		<a class="brand" title="Mit Server verbinden" href="index.html">SceneControl Editor</a>
+		<div class="btn-group right">
+			<a href="#plugininstances" class="btn autolink"><i class="icon-pencil"></i> Services</a>
+			<a href="#" class="btn btn-info" id="btnAddScene"><i class="icon-plus"></i> Neue Szene</a>
+		</div>
+			<table class="right"><tr><td class="trash" title="Trash">
+				<a class="btn btn-danger trash"><i class="icon-remove"></i> Hierherziehen zum entfernen</a>
+			</td></tr></table>
+	</div></header>
 
-<div class="container" id="scenelists">
-
+	<table id="scenelists">
+	</table>
 </div>
-<div class="push"></div>
 
 <!-- Template: Scene entry -->
 <script id="sceneitem-template" type="text/x-handlebars-template">
-	<li data-sceneid="{{sceneid}}" data-selected="0" class="sceneListItem {{colorclass}}">
-		<span class="badge badge-inverse" title="Diese Szene hat {{counter}} Element(e)">{{counter}}</span>
-		<a href="#no" class="sceneListItemText btnSetScene">{{name}}</a>
-	</li>
+	<div data-sceneid="{{sceneid}}" data-selected="0" class="sceneListItem drag">
+		<span class="badge" title="Diese Szene hat {{counter}} Element(e)">{{counter}}</span>
+		<span class="label btnSetScene">	
+			{{name}}
+		</span>
+	</div>
 </script>
 <script id="sceneitem-cat-template" type="text/x-handlebars-template">
-	<ul id="{{catid}}" class="sceneList" data-colorclass="{{colorclass}}">
-		<li class="sceneListItem {{colorclass}}" id="{{catid}}_name">
-			<span class="sceneListItemCatText">{{name}}</span>
-		</li>
-	</ul>
+	<div id="{{catid}}" class="sceneCategory">
+		<h4>{{name}}</h3>
+	</div>
 </script>
 
 

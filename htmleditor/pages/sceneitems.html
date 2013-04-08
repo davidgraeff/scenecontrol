@@ -1,25 +1,24 @@
-<div class="container"><header class="navbar"><div class="navbar-inner">
-	<div class="btn-group left">
-		<a id="btnBack" class="btn"><i class="icon-home"></i> Verlasse <strong><span class="currentscene"></span></strong></a>
-	</div>
-	<div class="btn-group right footer-nav-collapse nav-collapse collapse">
-		<a id="btnChangeSceneName" class="btn"><i class="icon-pencil"></i> Namen ändern</a>
-		<a id="btnChangeTags" class="btn"><i class="icon-tag"></i> Kategorien</a>
-		<a id="btnAddSceneItem" class="btn btn-info"><i class="icon-plus"></i> Element hinzufügen</a>
-		<a id="btnExecute" class="btn btn-success"  title="Markierte Elemente ausführen oder ganze Szene ausführen"><i class="icon-play"></i> Ausführen</a>
-	</div>
-	<div class="navbar"><button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".footer-nav-collapse">
-		<span class="icon-bar"></span>
-		<span class="icon-bar"></span>
-		<span class="icon-bar"></span>
-	</button></div>
-</div></header></div>
-
 <div class="container" id="canvascontainer">
+	<header class="navbar"><div class="navbar-inner">
+		<div class="btn-group left">
+			<a id="btnBack" class="btn"><i class="icon-home"></i> Verlasse <strong><span class="currentscene"></span></strong></a>
+		</div>
+		<div class="btn-group right">
+			<a id="btnChangeSceneName" class="btn"><i class="icon-pencil"></i> Namen ändern</a>
+			<a id="btnChangeTags" class="btn"><i class="icon-tag"></i> Kategorien</a>
+			
+			<a id="btnAddSceneItem" class="btn btn-info"><i class="icon-plus"></i> Element hinzufügen</a>
+			<a id="btnExecute" class="btn btn-success"  title="Markierte Elemente ausführen oder ganze Szene ausführen"><i class="icon-play"></i> Ausführen</a>
+		</div>
+		<table class="right"><tr><td class="trash" title="Trash">
+			<a class="btn btn-danger trash"><i class="icon-remove"></i> Hierherziehen zum entfernen</a>
+		</td></tr></table>
+	</div></header>
+
 	<table id="canvas">
 		<tbody>
 			<tr>
-			<td></td><td></td><td></td><td></td><td></td><td class="trash btn-danger" title="Trash"><i class="icon-remove"></i> Hierher ziehen um zu entfernen</td>
+			<td></td><td></td><td></td><td></td><td></td><td></td>
 			</tr>
 			<tr>
 			<td></td><td></td><td></td><td></td><td></td><td></td>
@@ -76,8 +75,7 @@
 	</div>
 	<div class="modal-body">
 <!--		<span class="currentscene"></span>: <span class="newsceneitemtitle"></span>-->
-		<form>
-		<center><div class="btn-group" style="padding-bottom: 10px;" data-toggle="buttons-radio">
+		<form style="text-align: center;"><div class="btn-group" style="padding-bottom: 10px;" data-toggle="buttons-radio">
 				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_event" value="event" >
 				Ereignis</button>
 				<button class="btn newsceneitempopuptype" type="button" id="sceneitem_type_condition" value="condition">
@@ -89,7 +87,6 @@
 				<select name="componentid_" id="sceneitem_componentid" ></select>
 				<select name="method_" id="sceneitem_method" ></select>
 			</div>
-			</center>
 		</form>	<hr>
 		<form class="form-horizontal" id="sceneitemform"></form>
 	</div>
@@ -118,5 +115,4 @@
 	</div>
 </div>
 
-<script src="js/redips-drag-min.js"></script>
 <script src="js/sceneitems.js"></script>

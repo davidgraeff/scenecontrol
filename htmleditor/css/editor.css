@@ -63,9 +63,27 @@ header .left {
 	text-align: left;
 }
 
-.sceneList {
-	list-style: none;
-	clear: both;
+#scenelists {
+	margin: auto;
+}
+
+#scenelists td {
+	background-repeat:no-repeat;
+}
+
+tr.firstcatrow > td{
+	background-position:0 5px;
+	padding-top: 5px;
+}
+
+.sceneCategory {
+	width:130px;
+	height:30px;
+	padding:0;
+	margin-top: 5px;
+	margin-right: 1px;
+	padding-right: 2px;
+	padding-left: 2px;
 }
 
 .sceneListItem {
@@ -73,76 +91,24 @@ header .left {
 	height:30px;
 	position:relative;
 	padding:0;
-	float: left;
 	margin-top: 5px;
-/* 	border-right: 1px solid black; */
 	margin-right: 1px;
 	padding-right: 2px;
 	padding-left: 2px;
 }
 
-@media (max-width: 480px) {
-	.sceneListItem {
-		width:100%;
-		height:30px;
-	}
-}
-
-.selectedSceneListItem {
-	background: #396B9E;
-	background-image: -webkit-linear-gradient( #5F9CC5,#396B9E );
-	background-image: -moz-linear-gradient( #5F9CC5,#396B9E );
-	background-image: -ms-linear-gradient( #5F9CC5,#396B9E );
-	background-image: -o-linear-gradient( #5F9CC5,#396B9E );
-	background-image: linear-gradient( #5F9CC5,#396B9E );
-}
-
-.sceneListItem .sceneListItemText {
-/*	font-size: 13pt;
-	font-weight: bold;*/
-	color: black;
-/*	overflow: hidden;
+.sceneListItem > button {
+/* 	width: 100%; */
 	text-overflow: ellipsis;
 	white-space:nowrap;
-	width:90%;*/
 }
-
-.sceneListItem:first-child {
-	font-family: "Helvetica Narrow","Arial Narrow",Tahoma,Arial,Helvetica,sans-serif;
-	font-size: 18pt;
-	-webkit-border-top-left-radius: 6px;
-	border-top-left-radius: 6px;
-	-webkit-border-bottom-left-radius: 6px;
-	border-bottom-left-radius: 6px;
-}
-
-.sceneListItem:last-child {
-	-webkit-border-top-right-radius: 6px;
-	border-top-right-radius: 6px;
-	-webkit-border-bottom-right-radius: 6px;
-	border-bottom-right-radius: 6px;
- 	margin-right: 5px;
-	padding-right: 0px;
-	padding-left: 0px;
-}
-
-.q0{background-color:rgb(222,119,174)}
-.q1{background-color:rgb(241,182,218)}
-.q2{background-color:rgb(253,224,239)}
-.q3{background-color:rgb(230,245,208)}
-.q4{background-color:rgb(184,225,134)}
-.q5{background-color:rgb(127,188,65)}
-.q6{background-color:rgb(77,146,33)}
-.q7{background-color:rgb(222,119,174)}
-.q8{background-color:rgb(241,182,218)}
-.q9{background-color:rgb(253,224,239)}
 
 .sceneListItem .sceneinfo {
 
 }
 
 .sceneListItem .badge {
-	float:right;
+/* 	float:right; */
 	margin-bottom:5px;
 	margin-left:5px;
 	margin-right:5px;
@@ -171,12 +137,6 @@ header .left {
 	height: calc(100% - 140px);
 }
 
-#canvas table {
-	background-color: #eee;
-	border-collapse: collapse;
-	margin: 7px;	
-}
-
 #canvas td {
 /* 	border: 1px solid navy; */
 	height: 120px;
@@ -185,22 +145,6 @@ header .left {
 	width: 200px;
 	padding: 0px;
 }
-/*
-#canvas .drag{
-	margin: auto;
-	text-align: center;
-	width: 200px;
-	height: 120px;
-	line-height: 35px;
-	border: 2px solid SteelBlue;
-	background-color: white;
-}*/
-
-/*#canvas .drag {
-	width:100%;
-	height:100%;
-	background-color: #f5f5f5;
-}*/
 
 .sceneItem {
 	background-color: #f5f5f5;

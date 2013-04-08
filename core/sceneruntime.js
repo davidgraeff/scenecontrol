@@ -210,7 +210,7 @@ exports.init = function(callback) {
 	}
 	
 	console.log('Starting scenes...');
-	storage.getScenes(function(err, items) {
+	storage.getScenes(null, function(err, items) {
 		if (err) {
 			console.warn("Could not get scenes ", err);
 		}

@@ -3,7 +3,7 @@ var mongo = require('mongoskin');
 var fs = require('fs');
 var fsFile = require('file');
 var configs = require('./config.js');
-var api = require('./com/api.js');
+var api = require('./com/api.js').api;
 var storageListener = require('./storage.listener.js');
 var storageverifier = require('./storage.verifydoc.js');
 var verifier = new storageverifier.genericverifier();
@@ -20,14 +20,66 @@ exports.init = function(callback) {
 exports.db = db;
 
 /****** helper *********/
-exports.getScenes = function(callback) {
-	exports.db.collection('scene').find().toArray(callback);
+exports.getScenes = function(filter, callback) {
+	exports.db.collection('scene').find(filter).toArray(callback);
 }
+
 exports.getEventsForScene = function(sceneid, callback) {
 	exports.db.collection('event').find({sceneid_:sceneid}).toArray(callback);
 }
+
 exports.getSceneItem = function(type, id, callback) {
 	exports.db.collection(type).find({id_:id}).toArray(callback);
+}
+
+exports.getSceneItem = function(type, id, callback) {
+	exports.db.collection(type).find({id_:id}).toArray(callback);
+}
+
+// if this document referenced to a scene, we have to remove the item from the scene, too.
+// 		if (doc.sceneid_) {
+// 			// fetch scene
+// 			exports.db.collection('scene').find({id_:doc.sceneid_}).toArray(function(err, items) {
+// 				if (err || items.length!=1 || !items[0].v) {
+// 					console.warn("Storage remove failed, Scene not found for removed scene item", doc, err);
+// 					if (onStorageErrorCallback)
+// 						onStorageErrorCallback("storage.remove", err);
+// 					return;
+// 				}
+// 				var scenedoc = items[0];
+// 				// remove nodes and edges belonging to the removed element
+// 				for (var i=scenedoc.v.length-1;i>=0;--i) {
+// 					if (api.uidEqual(scenedoc.v[i], doc)) {
+// 						scenedoc.v.splice(i, 1);
+// 					} else {
+// 						//TODO remove edges
+// 					}
+// 				}
+// 				// update scene
+// 				exports.update(scenedoc, storageCode, onStorageErrorCallback);
+// 			}
+// 		}
+
+function removeNotUsedSceneItems(newscene, callback) {
+	exports.getScenes({id_:newscene.id_}, function(err, items) {
+		// compare old/new scene items
+		var oldscene = items[0];
+		// loop though old and new scene items
+		for (var oldI=0;oldI<oldscene.v.length;++oldI) {
+			var found = false;
+			for (var newI=0;newI<newscene.v.length;++newI) {
+				if (api.uidEqual(newscene.v[newI], oldscene.v[oldI])) {
+					found = true;
+					break;
+				}
+			}
+			// remove not used scene items
+			if (!found)
+				exports.remove(oldscene.v[oldI]);
+		}
+		if (callback)
+			callback();
+	});
 }
 
 exports.update = function(doc, storageCode, onStorageErrorCallback) {
@@ -39,14 +91,28 @@ exports.update = function(doc, storageCode, onStorageErrorCallback) {
 	
 	console.log("UPDATE STORE", doc);
 	
-	db.collection(doc.type_).update({id_:doc.id_}, doc, { safe:true, upsert: false, strict:true }, function(err) {
-		if (err) {
-			if (onStorageErrorCallback)
-				onStorageErrorCallback("storage.update", "Storage update failed; "+err);
-			return;
+	controlflow.series([
+		function(callback) {
+			if (doc.type_=="scene") {
+				removeNotUsedSceneItems(doc, callback);
+			} else
+				callback();
+		},
+		function(callback) {
+			db.collection(doc.type_).update({id_:doc.id_}, doc, { safe:true, upsert: false, strict:true }, function(err) {
+				if (err) {
+					if (onStorageErrorCallback)
+						onStorageErrorCallback("storage.update", "Storage update failed; "+err);
+					return;
+				}
+				callback();
+			});
+		}],
+		// do this if everything worked
+		function() {
+			storageListener.change(doc, storageCode);
 		}
-		storageListener.change(doc, storageCode);
-	});
+	);
 }
 
 /**
@@ -63,7 +129,7 @@ exports.insertSceneItem = function(doc, storageCode, onStorageErrorCallback) {
 	console.log("INSERT SCENEITEM STORE", doc);
 	
 
-	exports.db.collection('scene').find({id_:doc.sceneid_}).toArray(function(err, items) {
+	exports.getScenes({id_:doc.sceneid_}, function(err, items) {
 		if (err || items.length!=1 || !items[0].v) {
 			console.warn("Storage insert failed, Scene not found for new scene item", doc, err);
 			if (onStorageErrorCallback)
@@ -107,44 +173,37 @@ exports.insert = function(doc, storageCode, onStorageErrorCallback) {
 }
 
 exports.remove = function(doc, storageCode, onStorageErrorCallback) {
-	if (!doc.id_ || !doc.type_) {
+	// we only allow to remove valid docs (id+type) and no scene items (with sceneid)
+	if (!doc.id_ || !doc.type_ || doc.sceneid_) {
 		if (onStorageErrorCallback)
 			onStorageErrorCallback("storage.remove", "Storage remove failed. Doc invalid!");
 		return;
 	}
 	
 	console.log("REMOVE STORE", doc);
-	db.collection(doc.type_).remove({id_:doc.id_}, function(err) {
-		if (err) {
-			if (onStorageErrorCallback)
-				onStorageErrorCallback("storage.remove", err);
-			return;
-		}
-		storageListener.remove(doc, storageCode);
-		// if this document referenced to a scene, we have to remove the item from the scene, too.
-		if (doc.sceneid_) {
-			// fetch scene
-			exports.db.collection('scene').find({id_:doc.sceneid_}).toArray(function(err, items) {
-				if (err || items.length!=1 || !items[0].v) {
-					console.warn("Storage remove failed, Scene not found for removed scene item", doc, err);
+	
+	controlflow.series([
+		function(callback) {
+			if (doc.type_=="scene") {
+				removeNotUsedSceneItems({id_:doc.id_,v:[]}, callback);
+			} else
+				callback();
+		},
+		function(callback) {
+			db.collection(doc.type_).remove({id_:doc.id_}, function(err) {
+				if (err) {
 					if (onStorageErrorCallback)
 						onStorageErrorCallback("storage.remove", err);
 					return;
 				}
-				var scenedoc = items[0];
-				// remove nodes and edges belonging to the removed element
-				for (var i=scenedoc.v.length-1;i>=0;--i) {
-					if (api.uidEqual(scenedoc.v[i], doc)) {
-						scenedoc.v.splice(i, 1);
-					} else {
-						//TODO remove edges
-					}
-				}
-				// update scene
-				exports.update(scenedoc, storageCode, onStorageErrorCallback);
-			}
+				callback();
+			});
+		}],
+		// do this if everything worked
+		function() {
+			storageListener.remove(doc, storageCode);
 		}
-	});
+	);
 }
 
 exports.showstats = function(callback) {
@@ -155,7 +214,7 @@ exports.showstats = function(callback) {
 			queuecallback();
 		});
 	},1);
-	q.drain = function() { callback(null, null); }
+	q.drain = function() { callback(); }
 	
 	db.collections(function(err, collections) {
 		if (err)

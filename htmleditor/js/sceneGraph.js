@@ -154,6 +154,7 @@
 			});
 
 			// create node elements
+			var sceneNodeIndex = 0;
 			for (var i = 0; i < scene.v.length; i++) {
 				var sceneNodeData = scene.v[i];
 				var sceneItem = storageInstance.getDocument(sceneNodeData.type_, sceneNodeData.id_);
@@ -161,7 +162,7 @@
 					console.warn("Cannot find scene item "+sceneNodeData.type_+ " " + sceneNodeData.id_);
 					continue;
 				}
-				var node = new sceneNode(sceneItem, sceneNodeData , i);
+				var node = new sceneNode(sceneItem, sceneNodeData , sceneNodeIndex++);
 				this.nodes.push(node);
 			}
 			

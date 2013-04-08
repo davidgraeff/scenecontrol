@@ -9,11 +9,11 @@
 		<link rel="stylesheet" type="text/css" href="css/jquery.jgrowl.css" />
 		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" >
 		<script src="http://code.jquery.com/jquery.min.js"></script>
-		<script src="http://d3js.org/d3.v3.min.js"></script>
 		<script src="js/bootstrap.min.js"></script>
 		<script src='js/handlebars.js'></script>
 		<script src="js/jquery.jgrowl.js"></script>
 		<script src="js/jquery.pulse.min.js"></script>
+		<script src="js/redips-drag-min.js"></script>
 		<!-- editor css, websocket connection, storage, scene-manager, gui-logic -->
 		<link rel="stylesheet" type="text/css" href="css/editor.css" />
 		<script src="js/api.js"></script>
@@ -27,11 +27,7 @@
 	<body>
 
 	<div id="maincontent">
-		<div class="container"><header class="navbar"><div class="navbar-inner">
-			<a class="brand">SceneControl Editor</a>
-		</div></header></div>
-		
-		<style type="text/css">
+		<style scoped="scoped" type="text/css">
 			.form-signin {
 				max-width: 300px;
 				padding: 19px 29px 29px;
@@ -56,6 +52,11 @@
 				padding: 7px 9px;
 			}
 		</style>
+		
+		<div class="container"><header class="navbar"><div class="navbar-inner">
+			<a class="brand">SceneControl Editor</a>
+		</div></header></div>
+		
 		<div class="container">
 		<form class="form-signin">
 			<h3 class="form-signin-heading">SceneServer Login</h3>
