@@ -6,7 +6,8 @@ var optimist = require('optimist').usage('Usage: $0	 [options]')
 	.options("d",{alias:"debug"}).describe("d","Activate profiling and debug output")
 	.options("i",{alias:"import"}).describe("i","Import json files from path")
 	.options("o",{alias:"override"}).describe("o","Override existing documents when importing files with the same id+type")
-	.options("e",{alias:"exit"}).describe("e","Do not enter the mainloop and exit after importing")
+	.options("e",{alias:"exit"}).describe("e","Do not enter the mainloop and exit after init")
+	.options("drop",{}).describe("drop","Drop database content. Warning! This can't be undone! Only works with additional -e flag.")
 	.options("dbname",{default:configs.runtimeconfig.databasename}).describe("dbname","Database name")
 	.options("cport",{default:configs.runtimeconfig.controlport}).describe("cport","TCP Controlsocket port")
 	.options("wport",{default:configs.runtimeconfig.websocketport}).describe("wport","Websocket Controlsocket port"),
@@ -30,6 +31,17 @@ console.log(configs.aboutconfig.ABOUT_SERVICENAME+" "+configs.aboutconfig.ABOUT_
 // Storage: add import paths
 var storageImporter = require('./storage.import.js');
 var storage = require('./storage.js');
+
+// Drop database?
+if (argv.drop) {
+	console.log("Dropping database!");
+	storage.init(function(err) {
+		if (!err)
+			storage.drop();
+	});
+	return;
+}
+
 storageImporter.overwrite = argv.o;
 storageImporter.addImportPath(configs.systempaths.path_database_files); // add system import path
 if (configs.userpaths.path_database_files) storageImporter.addImportPath(configs.userpaths.path_database_files); // add command line import path if any
@@ -38,8 +50,10 @@ if (argv.i) storageImporter.addImportPath(argv.i); // add command line import pa
 // Only import: install new database files and exit
 if (argv.e) {
 	console.log("Only import...");
-	storage.init();
-	storageImporter.importNewFiles(function(err, result) {process.exit(0);});
+	storage.init(function(err) {
+		if (!err)
+			storageImporter.importNewFiles(function(err, result) {process.exit(0);});
+	});
 	return;
 }
 

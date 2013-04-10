@@ -4,6 +4,7 @@ var fs = require('fs');
 var fsFile = require('file');
 var configs = require('./config.js');
 var api = require('./com/api.js').api;
+var assert = require('assert');
 var storageListener = require('./storage.listener.js');
 var storageverifier = require('./storage.verifydoc.js');
 var verifier = new storageverifier.genericverifier();
@@ -88,6 +89,13 @@ function removeNotUsedSceneItems(newscene, callback) {
 	});
 }
 
+exports.drop = function() {
+	assert(db);
+	db.dropDatabase(function(err, result) {
+		if (err)
+			console.warn("Dropping the database failed!");
+	});
+}
 
 exports.ensureIndex = function(doc) {
 	if (!doc.id_) {
