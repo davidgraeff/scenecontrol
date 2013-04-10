@@ -1,5 +1,5 @@
 #!/bin/sh
-DIR="$(which sceneserver)"
+DIR="@CONFIG_SERVEREXECUTABLE@"
 if [ $# -ne 1 ]
 then
 # start screen and connect to it
