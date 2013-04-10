@@ -7,6 +7,7 @@ var api = require('./com/api.js').api;
 var storageListener = require('./storage.listener.js');
 var storageverifier = require('./storage.verifydoc.js');
 var verifier = new storageverifier.genericverifier();
+console.log("Database:" + 'localhost:27017/'+configs.runtimeconfig.databasename);
 var db = mongo.db('localhost:27017/'+configs.runtimeconfig.databasename, {w: 1});
 
 

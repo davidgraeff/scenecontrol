@@ -46,7 +46,7 @@ exports.addService = function(obj, uidDoc) {
 	var service = new exports.service(obj, id);
 	servicelist[id] = service;
 	
-	console.log('New Service '+service.info.componentid_);
+	console.log('New Service: '+service.info.componentid_);
 	exports.services.emit("added", service);
 }
 

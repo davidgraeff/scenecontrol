@@ -19,6 +19,8 @@ exports.importNewFiles = function(callback) {
 	var allfiles = [];
 	
 	importpaths.forEach(function(dirname) {
+		if (!fs.existsSync(dirname))
+			return;
 		fsFile.walkSync(dirname, function(dirPath, dirs, files) {
 			if (!files) return;
 			var files = files.filter(function(file) {return file.substr(-5) == '.json'; });

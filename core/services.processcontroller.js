@@ -8,12 +8,15 @@ var storage = require('./storage.js');
 var commandsocket = require("./com/socket.js");
 var storageListener = require('./storage.listener.js');
 var api = require('./com/api.js').api;
+var fs = require('fs');
 var childs = {};
 
 var controller = {
 	startservice: function(config) {
 		var configid = config.componentid_+"."+config.instanceid_;
 		if (!config.autostart || childs[configid]) 
+			return;
+		if (!fs.existsSync(configs.systempaths.path_plugins+"/"+config.componentid_))
 			return;
 		var child = child_process.spawn(configs.systempaths.path_plugins+"/"+config.componentid_,[config.instanceid_,commandsocket.serverip,commandsocket.controlport]);
 		child.name = config.componentid_;
