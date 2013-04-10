@@ -27,19 +27,19 @@ exports.finish = function(callback) {
 
 /****** helper *********/
 exports.getScenes = function(filter, callback) {
-	exports.db.collection('scene').find(filter).toArray(callback);
+	db.collection('scene').find(filter).toArray(callback);
 }
 
 exports.getEventsForScene = function(sceneid, callback) {
-	exports.db.collection('event').find({sceneid_:sceneid}).toArray(callback);
+	db.collection('event').find({sceneid_:sceneid}).toArray(callback);
 }
 
 exports.getSceneItem = function(type, id, callback) {
-	exports.db.collection(type).find({id_:id}).toArray(callback);
+	db.collection(type).find({id_:id}).toArray(callback);
 }
 
 exports.getDocuments = function(type, filter, callback) {
-	exports.db.collection(type).find(filter).toArray(callback);
+	db.collection(type).find(filter).toArray(callback);
 }
 
 // if this document referenced to a scene, we have to remove the item from the scene, too.
