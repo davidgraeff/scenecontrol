@@ -9,19 +9,21 @@ var storageverifier = require('./storage.verifydoc.js');
 var verifier = new storageverifier.genericverifier();
 var db = null;
 
-
-
 /****** init *********/
 exports.init = function(callback) {
 	db = mongo.db('localhost:27017/'+configs.runtimeconfig.databasename, {w: 1});
 	db.open(function (err) {
 		console.log("Database: "+'localhost:27017/'+configs.runtimeconfig.databasename,"State: "+ db.state);
 		callback(err, null);
-	})	
+	})
 }
 
-/****** db *********/
-exports.db = db;
+exports.finish = function(callback) {
+	db.close(function (err) {
+		console.log("Close Database: "+'localhost:27017/'+configs.runtimeconfig.databasename,"State: "+ db.state);
+		callback(err, null);
+	})
+}
 
 /****** helper *********/
 exports.getScenes = function(filter, callback) {
@@ -85,6 +87,30 @@ function removeNotUsedSceneItems(newscene, callback) {
 			callback();
 	});
 }
+
+
+exports.ensureIndex = function(doc) {
+	if (!doc.id_) {
+		return;
+	}
+	db.collection(doc.type_).ensureIndex("id_", {unique: true, strict:true}, function(err,name) {
+		if (err && err.ok!=1)
+			console.error("DB Index error:", err);
+	});
+}
+
+exports.updateRaw = function(doc, callback) {
+	db.collection(doc.type_).update({id_:doc.id_}, doc, { safe:true, upsert: true, strict:true }, function(err, result) {
+		callback(err, result);
+	});
+}
+
+exports.insertRaw = function(doc, callback) {
+	db.collection(doc.type_).insert(doc, { safe:true, strict:true }, function(err, result) {
+		callback(err, result);
+	});
+}
+
 
 exports.update = function(doc, storageCode, onStorageErrorCallback) {
 	if (!verifier.isValidForInsert(doc) || !doc.id_) {

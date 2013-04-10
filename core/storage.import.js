@@ -3,7 +3,6 @@ var fs = require('fs');
 var fsFile = require('file');
 var storage = require('./storage.js');
 var storageverifier = require('./storage.verifydoc.js');
-var db = storage.db;
 var configs = require('./config.js');
 
 var importpaths = [];
@@ -35,34 +34,31 @@ exports.importNewFiles = function(callback) {
 		var doc = task.doc;
 		var docname = doc.type_ + " "+ doc.id_;
 		//console.log('process: ' + docname);
-		db.collection(doc.type_).ensureIndex("id_", {unique: true, strict:true}, function(err,name) {
-			if (err && err.ok!=1)
-				console.error("DB Index error:", err);
-			if (storage.overwrite)
-				db.collection(doc.type_).update({id_:doc.id_}, doc, { upsert: true, strict:true }, function(err, result) {
-					if (err) {
-						console.warn("Could not import invalid file ", err);
-					}
-					if (result) {
-						console.log("Imported/Updated file: ", docname);
-						++processed;
-					}
-					--remaining;
-					queuecallback();
-				});
-			else
-				db.collection(doc.type_).insert(doc, {strict:true }, function(err, result) {
-					if (err && err.code!=11000) {
-						console.warn("Could not import invalid file ", err);
-					}
-					if (result) {
-						console.log("Imported file: ", docname);
-						++processed;
-					}
-					--remaining;
-					queuecallback();
-				});
-		});
+		storage.ensureIndex(doc);
+		if (storage.overwrite)
+			storage.updateRaw(doc, true, function(err, result) {
+				if (err) {
+					console.warn("Could not import invalid file ", err);
+				}
+				if (result) {
+					console.log("Imported/Updated file: ", docname);
+					++processed;
+				}
+				--remaining;
+				queuecallback();
+			});
+		else
+			storage.insertRaw(doc, function(err, result) {
+				if (err && err.code!=11000) {
+					console.warn("Could not import invalid file ", err);
+				}
+				if (result) {
+					console.log("Imported file: ", docname);
+					++processed;
+				}
+				--remaining;
+				queuecallback();
+			});
 	}, 2);
 	
 	// queue processing finished

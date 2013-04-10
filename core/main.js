@@ -54,7 +54,7 @@ var coreservice = require('./core.service.js');
 // exit handling
 process.stdin.resume();
 process.on('SIGINT', function () {
-	controlflow.series([scenes.finish, commandwebsocket.finish, commandsocket.finish,coreservice.finish, startservices.finish], function() {
+	controlflow.series([scenes.finish, commandwebsocket.finish, commandsocket.finish,coreservice.finish, startservices.finish, storage.finish], function() {
 		process.exit(0);
 	});
 });
