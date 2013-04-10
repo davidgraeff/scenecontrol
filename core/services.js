@@ -1,6 +1,7 @@
 var api = require('./com/api.js').api;
 var storage = require('./storage.js');
 var properties = require('./properties.js');
+var assert = require('assert');
 
 // start phase
 var startphase = true;
@@ -93,6 +94,8 @@ exports.servicecall = function(doc, clientcom) {
 }
 
 exports.service = function(com, id) {
+	assert(com, "Service creation failed. No com object!");
+	assert(id, "Service creation failed. No id!");
 	var that = this;
 	that.id = id;
 	that.com = com;
@@ -103,7 +106,7 @@ exports.service = function(com, id) {
 	that.com.send(api.serviceAPI.requestProperties());
 
 	// send all configurations that are for this service instance
-	storage.db.collection('configuration').find({componentid_:that.info.componentid_,instanceid_:that.info.instanceid_}).toArray(function(err, items) {
+	storage.getDocuments('configuration',{componentid_:that.info.componentid_,instanceid_:that.info.instanceid_}, function(err, items) {
 		if (err) {
 			return;
 		}

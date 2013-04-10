@@ -59,19 +59,16 @@ var controller = {
 }
 
 exports.finish = function(callback) {
-	console.log("FIN1");
 	storageListener.removeListener(controller);
-	console.log("FIN2");
 	for (var i in childs)
 		childs[i].kill();
 	childs = {};
-	console.log("FIN3");
 	callback();
 }
 
 exports.init = function(callback) {
 	storageListener.addListener(controller, "service.processcontroller");
-	storage.db.collection('configuration').find().toArray(function(err, items) {
+	storage.getDocuments('configuration', {}, function(err, items) {
 		if (err) {
 			console.warn("Could not get configurations for services ", err);
 		}

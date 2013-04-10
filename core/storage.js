@@ -7,14 +7,17 @@ var api = require('./com/api.js').api;
 var storageListener = require('./storage.listener.js');
 var storageverifier = require('./storage.verifydoc.js');
 var verifier = new storageverifier.genericverifier();
-console.log("Database:" + 'localhost:27017/'+configs.runtimeconfig.databasename);
-var db = mongo.db('localhost:27017/'+configs.runtimeconfig.databasename, {w: 1});
+var db = null;
 
 
 
 /****** init *********/
 exports.init = function(callback) {
-	callback(null, null);
+	db = mongo.db('localhost:27017/'+configs.runtimeconfig.databasename, {w: 1});
+	db.open(function (err) {
+		console.log("Database: "+'localhost:27017/'+configs.runtimeconfig.databasename,"State: "+ db.state);
+		callback(err, null);
+	})	
 }
 
 /****** db *********/
@@ -33,8 +36,8 @@ exports.getSceneItem = function(type, id, callback) {
 	exports.db.collection(type).find({id_:id}).toArray(callback);
 }
 
-exports.getSceneItem = function(type, id, callback) {
-	exports.db.collection(type).find({id_:id}).toArray(callback);
+exports.getDocuments = function(type, filter, callback) {
+	exports.db.collection(type).find(filter).toArray(callback);
 }
 
 // if this document referenced to a scene, we have to remove the item from the scene, too.
@@ -208,7 +211,6 @@ exports.remove = function(doc, storageCode, onStorageErrorCallback) {
 }
 
 exports.showstats = function(callback) {
-	console.log("Database:");
 	var q = controlflow.queue(function (task, queuecallback) {
 		db.collection(task.coll.collectionName).count(function(err, res){
 			console.log("\t"+task.coll.collectionName, res);
@@ -220,6 +222,10 @@ exports.showstats = function(callback) {
 	db.collections(function(err, collections) {
 		if (err)
 			return;
+		if (collections.length)
+			console.log("Database Stats:");
+		else
+			console.log("Datebase is empty!");
 		collections.forEach(function(coll) {
 			q.push({coll:coll});
 		});

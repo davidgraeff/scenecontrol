@@ -57,7 +57,7 @@ function onListenerData(data, from) {
 	}
 	
 	if (api.manipulatorAPI.isFetchDocuments(data)) {
-		storage.db.collection(data.type).find(data.filter).toArray(function(err, items) {
+		storage.getDocuments(data.type, data.filter, function(err, items) {
 			if (err) {
 				return;
 			}

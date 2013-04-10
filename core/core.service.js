@@ -43,6 +43,12 @@ var coreservice = function() {
 		}, waitms);
 	}
 	
+	this.free = function() {
+		if (this.com)
+			this.com.free();
+		this.com = null;
+	}
+	
 	this.abort = function(sceneid) {
 		abortDelay(data.sceneid_);
 		that.com.receive(api.generateAck(data,true));
@@ -125,7 +131,8 @@ exports.init = function(callback) {
 
 exports.finish = function(callback) {
 	try {
-		exports.service.com.free();
+		if (exports.service)
+			exports.service.free();
 	} catch(e) {
 		console.warn(e);
 	}

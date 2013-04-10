@@ -29,6 +29,7 @@ console.log(configs.aboutconfig.ABOUT_SERVICENAME+" "+configs.aboutconfig.ABOUT_
 
 // Storage: add import paths
 var storageImporter = require('./storage.import.js');
+var storage = require('./storage.js');
 storageImporter.overwrite = argv.o;
 storageImporter.addImportPath(configs.systempaths.path_database_files); // add system import path
 if (configs.userpaths.path_database_files) storageImporter.addImportPath(configs.userpaths.path_database_files); // add command line import path if any
@@ -37,6 +38,7 @@ if (argv.i) storageImporter.addImportPath(argv.i); // add command line import pa
 // Only import: install new database files and exit
 if (argv.e) {
 	console.log("Only import...");
+	storage.init();
 	storageImporter.importNewFiles(function(err, result) {process.exit(0);});
 	return;
 }
@@ -48,7 +50,6 @@ var commandsocket = require("./com/socket.js");
 var commandwebsocket = require("./com/websocket.js");
 var scenes = require("./sceneruntime.js");
 var coreservice = require('./core.service.js');
-var storage = require('./storage.js');
 
 // exit handling
 process.stdin.resume();
@@ -69,7 +70,7 @@ process.on('exit', function () {
 // 6) Start scenes (Register events to services)
 
 controlflow.series([commandsocket.start, commandwebsocket.start, storage.init, storageImporter.importNewFiles, storage.showstats,
-				   startservices.init, coreservice.init, scenes.init], 
+				   coreservice.init, startservices.init, scenes.init], 
 	function(err, results){
 		if (err) {
 			console.error("Error on start: " + err);
