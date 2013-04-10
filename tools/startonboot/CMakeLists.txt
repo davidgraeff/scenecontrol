@@ -6,9 +6,9 @@ IF(UNIX)
 					OUTPUT_VARIABLE DIST OUTPUT_STRIP_TRAILING_WHITESPACE)
 	
 	SET(NODEEXEC "node")
-	SET(CONFIG_SERVEREXECUTABLE "${NODEEXEC} ${LIBPATH}/core/main.js")
-	configure_file(sceneserversession.in sceneserversession @ONLY)
-	INSTALL(FILES sceneserversession DESTINATION bin COMPONENT Server)
+	SET(CONFIG_SERVEREXECUTABLE "${NODEEXEC} ${CMAKE_INSTALL_PREFIX}/${LIBPATH}/core/main.js")
+	configure_file(sceneserversession.in sceneserversession @ONLY IMMEDIATE)
+	INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/sceneserversession DESTINATION bin COMPONENT Server)
 	
 	#ubuntu: use upstart script
 	MESSAGE(STATUS "OS: ${DIST}")
