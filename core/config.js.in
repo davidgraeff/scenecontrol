@@ -1,12 +1,21 @@
 exports.runtimeconfig = {
-	"path_system_plugins": "@CONFIG_SERVER_LIBPATH@",
-	"path_certs": "@CONFIG_SERVER_CERTPATH@",
-	"path_certs_clients": "@CONFIG_CLIENT_CERTPATH@",
-	"path_system_database_files": "@CONFIG_SERVER_DATABASEIMPORTPATH@",
-	"controlport": "@CONFIG_SERVER_LISTENPORT@",
-	"websocketport": "@CONFIG_WEBSOCKETPROXY_LISTENPORT@",
+	"controlport": @CONFIG_SERVER_LISTENPORT@,
+	"websocketport": @CONFIG_WEBSOCKETPROXY_LISTENPORT@,
 	"databasename": "@CONFIG_SERVER_DATABASENAME@"
 };
+
+exports.systempaths = {
+	"path_plugins": "@CONFIG_SERVER_LIBPATH@",
+	"path_server_cert": "@CONFIG_SERVER_CERTPATH@",
+	"path_certs_clients": "@CONFIG_CLIENT_CERTPATH@",
+	"path_database_files": "@CONFIG_SERVER_DATABASEIMPORTPATH@"
+};
+
+exports.userpaths = {
+	"path_server_cert": "./certificates",
+	"path_certs_clients": "../services/_shared/certificates"
+};
+
 exports.aboutconfig = {
 	"ABOUT_SERVICENAME": "@CPACK_PACKAGE_NAME@",
 	"ABOUT_AUTHOR": "@CPACK_PACKAGE_VENDOR@",

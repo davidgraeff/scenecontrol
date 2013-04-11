@@ -7,7 +7,7 @@ exports.runtimeconfig = {
 exports.systempaths = {
 	"path_plugins": "/usr/local/lib/scenecontrol_suite",
 	"path_server_cert": "/usr/local/share/scenecontrol_suite/cert",
-	"path_certs_clients": "/usr/local/share/scenecontrol_suite/cert/clients",
+	"path_certs_clients": "/usr/local/share/scenecontrol_suite/cert/services",
 	"path_database_files": "/usr/local/share/scenecontrol_suite/dbimport"
 };
 

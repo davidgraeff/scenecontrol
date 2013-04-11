@@ -10,7 +10,7 @@
 	} 
 	],
 	"bin": {
-		"scenecontrolserver": "./bin/scenecontrol"
+		"scenecontrolserver": "main.js"
 	},
 	"directories" : {
 		"lib" : ".",

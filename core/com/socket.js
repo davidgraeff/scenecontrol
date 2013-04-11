@@ -3,17 +3,38 @@ var configs = require('../config.js');
 var clientcom = require('./clientcom.js').clientcom;
 var api = require('./api.js').api;
 var rl = require('readline');
+var fs = require('fs');
 
 Array.prototype.removeElement = function(elem) { this.splice(this.indexOf(elem), 1); }
 
-var fs = require('fs');
+function readKey() {
+	if (fs.existsSync(configs.userpaths.path_server_cert+'/server.key'))
+		return fs.readFileSync(configs.userpaths.path_server_cert+'/server.key');
+	if (fs.existsSync(configs.systempaths.path_server_cert+'/server.key'))
+		return fs.readFileSync(configs.systempaths.path_server_cert+'/server.key');
+	
+	console.error("No Server socket ssl key file found: "+configs.systempaths.path_server_cert+'/server.key');
+	process.exit(1);
+}
+
+function readCertificate() {
+	if (fs.existsSync(configs.userpaths.path_server_cert+'/server.crt'))
+		return fs.readFileSync(configs.userpaths.path_server_cert+'/server.crt');
+	if (fs.existsSync(configs.systempaths.path_server_cert+'/server.crt'))
+		return fs.readFileSync(configs.systempaths.path_server_cert+'/server.crt');
+	
+	console.error("No Server socket ssl crt file found: "+configs.systempaths.path_server_cert+'/server.crt');
+	process.exit(1);
+}
+
 var options = {
-  key: fs.readFileSync('certificates/server.key'),
-  cert: fs.readFileSync('certificates/server.crt'),
-  passphrase: "1234",
-  // This is necessary only if using the client certificate authentication.
-  requestCert: true
+	key: readKey(),
+	cert: readCertificate(),
+	passphrase: "1234",
+	// This is necessary only if using the client certificate authentication.
+	requestCert: true
 };
+
 var server = require('tls').createServer(options, addRawSocket);
 server.clients = [];
 var connects_count = 0;
