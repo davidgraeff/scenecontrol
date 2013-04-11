@@ -133,9 +133,8 @@ function sceneRuntime(sceneDoc) {
 	 * Start scene either with all root nodes if @sceneItemUIDs is omitted
 	 * or with all referenced scene items of @sceneItemUIDs
 	 */
-	this.startScene = function(sceneItemUIDs) {
-		if (!sceneItemUIDs)
-			sceneItemUIDs = that.determineRootNodes();
+	this.startScene = function(startUID) {
+		var sceneItemUIDs = (startUID ? [startUID] : that.determineRootNodes());
 		if (!sceneItemUIDs) // Empty scene? Abort
 			return;
 		
