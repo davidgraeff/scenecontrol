@@ -1,8 +1,8 @@
 Heimautomatisierung Framework
 =============================
-Eine einfach gehaltenes Kernprogramm führt Szenenabläufe aus. In einer Szene sind
-frei verknüpft Ereignisse, Bedingungen und Aktionen angeordnet. Funktionalität wird durch
-lokale oder entfernte "__Service__" Prozesse bereichgestellt.
+Das Framework führt Szenenabläufe durch. In einer Szene sind
+ Ereignisse, Bedingungen und Aktionen frei verknüpft angeordnet. Funktionalität wird durch
+lokale oder entfernte " __Service__ " Prozesse bereichgestellt.
 
 Alle weiteren Informationen, die Roadmap
 und Downloads befinden sich auf der [Webseite](http://davidgraeff.github.com/scenecontrol)  dieses Projekts.
@@ -17,9 +17,9 @@ Anwendungsgebiete
 Entwicklungsdetails
 ===================
 Das Kernprogramm ist in JavaScript erstellt und läuft als __node js__ Programm. Durch die
-Verwendung von JavaScript können sich der Editor und das Kernprogramm Quellcode teilen.
+Verwendung von JavaScript können der Editor und das Kernprogramm Quellcode gemeinsam nutzen.
 Der Datenaustausch erfolgt über JSON. Szenen, Szenenelemente und alle weiteren Daten werden
-in einer mongoDB Datenbank gehalten.
+in einer mongoDB Datenbank gehalten. Services sind aktuell überwiegend in C++ realisiert.
 
 Scenes Editor
 =============
