@@ -146,7 +146,7 @@ function sceneRuntime(sceneDoc) {
 		if (eventDoc.sceneid_ != that.scene.id_)
 			return;
 		
-		that.startScene([eventDoc]);
+		that.startScene([{id_:eventDoc.id_,type_:"event"}]);
 	}
 	
 	this.registerEvent= function(eventDoc) {
