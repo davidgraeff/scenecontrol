@@ -138,7 +138,7 @@ function sceneRuntime(sceneDoc) {
 		if (!sceneItemUIDs) // Empty scene? Abort
 			return;
 		
-		console.log("Start scene: "+this.scene.name);
+		console.log("Start scene: "+this.scene.name, sceneItemUIDs);
 		that.startItemExecution(sceneItemUIDs);
 	}
 	
