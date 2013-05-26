@@ -1,5 +1,0 @@
-{
-	"type_":"schema", "targettype":"action",
-	"method_":"left", "name":"Nächste Playlist",
-	"parameters": {}
-}
