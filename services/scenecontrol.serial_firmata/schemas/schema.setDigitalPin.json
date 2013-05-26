@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"setDigitalPin", "name":"Dititalpin setzten",
+	"text":"Setze Pin {{channel}} auf {{value}}.",
+	"parameters": {
+		"channel":{"name":"Pin", "type":"modelenum", "readonly":true, "model":"digitalpins","indexproperty":"channel","textproperty":"name", "value":""},
+		"value":{"name":"Wert", "type":"integer", "min":0, "max":255, "value":0, "uicontrol":true}
+	}
+}

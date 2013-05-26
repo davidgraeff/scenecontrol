@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"condition",
+	"method_":"isDigitalPinValue", "name":"DigitalPin Wert?",
+	"text":"Ist Pin {{channel}} auf {{value}}?",
+	"parameters": {
+		"channel":{"name":"Pin", "type":"modelenum", "readonly":true, "model":"digitalpins","indexproperty":"channel","textproperty":"name", "value":""},
+		"value":{"name":"Erwarteter Wert", "type":"boolean", "value":false}
+	}
+}

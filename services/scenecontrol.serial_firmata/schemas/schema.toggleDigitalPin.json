@@ -1,0 +1,8 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"toggleDititalPin", "name":"Dititalpin umschalten",
+	"text":"Schalte Pin {{channel}} um.",
+	"parameters": {
+		"channel":{"name":"Pin", "type":"modelenum", "readonly":true, "model":"digitalpins","indexproperty":"channel","textproperty":"name", "value":""}
+	}
+}

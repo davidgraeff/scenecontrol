@@ -1,0 +1,44 @@
+{
+	"name": "Firmata Geräte",
+	"version": "1.0.0",
+	"author": "David Gräff <david.graeff@web.change2de>",
+	"description": "Service for SceneControl. Support embedded devices (Arduino etc) with firmata firmware",
+	"contributors": [ 
+	{
+		"name": "David Gräff",
+		"email": "david.graeff@web.change2de"
+	} 
+	],
+	"scripts": {
+		"start": "nodejs main.js",
+		"test": "vows --spec --isolate"
+	},
+	"main": "./index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/davidgraeff/scenecontrol.git"
+	},
+	"keywords": [
+	"home",
+	"automation",
+	"firmata",
+	"scenecontrol"
+	],
+	"dependencies" : {
+		"node-uuid"   :  "1.4.x",
+		"optimist" :  "0.3.x",
+		"hashish" :  "0.0.x",
+		"async" : "0.2.x",
+		"firmata": ">=0.2.0"
+	},
+	"analyze": false,
+	"devDependencies": {
+		"vows"    :  "0.5.x",
+		"request" :  "2.1.x"
+	},
+	"bundledDependencies": [],  
+	"license": "GPLv3",
+	"engines": {
+		"node": ">=0.6"
+	}
+}

@@ -1,0 +1,9 @@
+{
+	"type_":"schema", "targettype":"action",
+	"method_":"setPWMRelative", "name":"Led setzten (Relativ)",
+	"text":"Verändere PWM Ausgang {{channel}} um {{value}}.",
+	"parameters": {
+		"channel":{"name":"Kanal", "type":"modelenum", "readonly":true, "model":"pwmpins","indexproperty":"channel","textproperty":"name", "value":""},
+		"value":{"name":"Wert", "type":"integer", "min":-255, "max":255, "value":0}
+	}
+}
