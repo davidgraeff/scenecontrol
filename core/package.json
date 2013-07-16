@@ -39,8 +39,8 @@
 		"optimist" :  "0.3.x",
 		"hashish" :  "0.0.x",
 		"mubsub" :  "0.2.x",
-		"mongoskin" : "0.5.x",
-		"websocket" : "1.0.x",
+		"mongoskin" : "0.6.x",
+		"websocket" : "1.x",
 		"async" : "0.2.x",
 		"file" : "0.1.x"
 	},
@@ -52,6 +52,6 @@
 	"bundledDependencies": [],  
 	"license": "GPLv3",
 	"engines": {
-		"node": ">=0.6"
+		"node": ">=0.8"
 	}
 }
