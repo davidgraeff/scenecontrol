@@ -64,13 +64,13 @@ function addRawSocket(c) { //'connection' listener
 	c.on('end', function() {
 		c.setTimeout(0);
 		server.clients.removeElement(c);
-		console.log('Client disconnected: '+c.com.name);
+		console.log('Client disconnected: '+c.remoteAddress);
 		c.com.free();
 		delete c.com;
 	});
 	
 	// send identify message
-	console.log('Client connected. Wait for identity: '+c.com.name);
+	console.log('Client connected. Wait for identity: '+c.remoteAddress);
 	c.writeDoc(api.methodIdentify("first"));
 };
 
