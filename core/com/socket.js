@@ -47,14 +47,18 @@ function addRawSocket(c) { //'connection' listener
 	c.writeDoc = function(doc) {this.write(JSON.stringify(doc)+"\n");}
 	server.clients.push(c);
 
-	c.com = new clientcom("r"+connects_count++);
-	c.com.socket = c;
+	c.com = new clientcom("r"+connects_count++, c);
+	// Override send method and remoteAddress
 	c.com.send = function(obj) {
 		c.writeDoc(obj);
 	}
+	c.com.remoteAddress = c.remoteAddress;
 	
 	c.com.once("identified", function(com) { com.socket.setTimeout(0); });
-	c.com.once("failed", function(com) { com.socket.destroy(); });
+	c.com.once("failed", function(com) {
+		console.log('Client failed: '+ (c.com.isservice ? c.com.name : c.com.remoteAddress));
+		com.socket.destroy();
+	});
 	
 	// receive event
 	var rlInterface = rl.createInterface(c, c);
@@ -64,13 +68,13 @@ function addRawSocket(c) { //'connection' listener
 	c.on('end', function() {
 		c.setTimeout(0);
 		server.clients.removeElement(c);
-		console.log('Client disconnected: '+c.remoteAddress);
+		console.log('Client disconnected: '+ (c.com.isservice ? c.com.name : c.com.remoteAddress));
 		c.com.free();
 		delete c.com;
 	});
 	
 	// send identify message
-	console.log('Client connected. Wait for identity: '+c.remoteAddress);
+	console.log('Client connected. Wait for identity: '+c.com.remoteAddress);
 	c.writeDoc(api.methodIdentify("first"));
 };
 

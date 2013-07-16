@@ -4,10 +4,15 @@ var propertyListener = require('../properties.listener.js');
 var storageListener = require('../storage.listener.js');
 var assert = require('assert');
 
-exports.clientcom = function(uniqueid) {
+exports.clientcom = function(uniqueid, socket) {
+	// Public API
 	this.name ="No name";
+	this.remoteAddress = "";
 	this.info = null;
+	this.isservice = false;
 	this.state = 1;
+	this.socket = socket; 
+	// Private
 	var that = this;
 	
 	assert(uniqueid, "Unique ID of clientcom not set!");
@@ -19,6 +24,7 @@ exports.clientcom = function(uniqueid) {
 	this.send = function(obj) {}
 
 	this.free = function(obj) {
+		that.socket = null; // remove socket reference
 		if (!that.info.provides)
 			return;
 		if (that.info.provides.indexOf("service")!=-1)
@@ -39,12 +45,18 @@ exports.clientcom = function(uniqueid) {
 			return;
 		}
 		
-		if (that.info.provides.indexOf("service")!=-1)
+		if (that.info.provides.indexOf("service")!=-1) {
 			services.addService(that, that.info);
-		if (that.info.provides.indexOf("consumer")!=-1)
+			that.isservice = true;
+		}
+		if (that.info.provides.indexOf("consumer")!=-1) {
 			propertyListener.addListener(that, that.info.sessionid);
-		if (that.info.provides.indexOf("manipulator")!=-1)
+			that.isservice = true;
+		}
+		if (that.info.provides.indexOf("manipulator")!=-1) {
 			storageListener.addListener(that, that.info.sessionid);
+			that.isservice = true;
+		}
 	};
 	
 	this.receive = function(data) {
