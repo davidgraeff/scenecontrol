@@ -25,7 +25,7 @@ exports.clientcom = function(uniqueid, socket) {
 
 	this.free = function(obj) {
 		that.socket = null; // remove socket reference
-		if (!that.info.provides)
+		if (!that.info || !that.info.provides)
 			return;
 		if (that.info.provides.indexOf("service")!=-1)
 			services.removeService(that.info);
