@@ -16,6 +16,12 @@ function sceneRuntime(sceneDoc) {
 	// scene-runtime handling
 	this.waitForAckSceneItems = [];
 	
+	/**
+	 * If an event could not be registered by its referencing service
+	 * it will be put in a wait-list ("eventsToBeRegistered").
+	 * Each time a new service appears, we will check the wait-list
+	 * and register fitting events
+	 */
 	services.services.on("added", function(service) {
 		// copy object
 		var eventids = [];
@@ -31,6 +37,10 @@ function sceneRuntime(sceneDoc) {
 		});
 	});
 	
+	/**
+	 * fetch events from datastorage and register them on their corresponding
+	 * service. This will also be called if this scene in the datastorage changes
+	 */
 	this.reload = function(sceneDoc) {
 		this.sceneDoc = sceneDoc;
 		this.stopScene();
@@ -42,7 +52,7 @@ function sceneRuntime(sceneDoc) {
 				that.eventsToBeRegistered = {};
 				// set counter for this reload iteration
 				++that.eventsreloadCounter;
-				console.log("Scene: ", sceneDoc.name);
+				console.log("Scene events loaded: ", sceneDoc.name);
 				// register events on services
 				eventDocs.forEach(function(eventDoc) {
 					if (that.eventsBeforeReload[eventDoc.id_]) {

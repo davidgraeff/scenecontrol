@@ -70,6 +70,7 @@ function addRawSocket(c) { //'connection' listener
 	});
 	
 	// send identify message
+	console.log('Client connected. Wait for identity: '+c.com.name);
 	c.writeDoc(api.methodIdentify("first"));
 };
 

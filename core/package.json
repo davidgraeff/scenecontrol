@@ -10,7 +10,7 @@
 	} 
 	],
 	"bin": {
-		"scenecontrolserver": "main.js"
+		"scenecontrolserver": "index.js"
 	},
 	"directories" : {
 		"lib" : ".",
@@ -18,12 +18,12 @@
 		"example" : "example"
 	},
 	"scripts": {
-		"start": "nodejs main.js",
+		"start": "nodejs index.js",
 		"test": "vows --spec --isolate",
 		"predeploy": "echo This will be run before deploying the app",
 		"postdeploy": "echo This will be run after deploying the app"
 	},
-	"main": "./main.js",
+	"main": "./index.js",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/davidgraeff/scenecontrol.git"

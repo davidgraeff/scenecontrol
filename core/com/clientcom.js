@@ -19,6 +19,8 @@ exports.clientcom = function(uniqueid) {
 	this.send = function(obj) {}
 
 	this.free = function(obj) {
+		if (!that.info.provides)
+			return;
 		if (that.info.provides.indexOf("service")!=-1)
 			services.removeService(that.info);
 		if (that.info.provides.indexOf("consumer")!=-1)
@@ -32,6 +34,10 @@ exports.clientcom = function(uniqueid) {
 		that.info.sessionid = uniqueid;
 		that.name = doc.componentid_;
 		that.state = 3;
+		if (!that.info.provides) {
+			console.warn("Identify: Missing provides", that.info);
+			return;
+		}
 		
 		if (that.info.provides.indexOf("service")!=-1)
 			services.addService(that, that.info);

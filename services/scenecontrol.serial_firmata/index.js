@@ -7,7 +7,7 @@ var servicelib = require('../_shared/servicelib.js'), models = servicelib.models
 var firmata = require('firmata');
 var board = null;
 
-firmatamethods = function() {
+servicemethods = function() {
 	isDigitalPinValue = function(request, args) {
 		// first try the outputPins model and use as default/not-found value the inputPins model
 		var v = models.outputPins.getValue(args.channel, models.inputPins.getValue(args.channel, false));
@@ -69,7 +69,7 @@ servicelib.gotconfiguration = function(config) {
 		//arduino is ready to communicate
 		console.log("Serial Firmata ready!");
 		// setup methods
-		servicelib.methods = firmatamethods;
+		servicelib.methods = servicemethods;
 		
 		for (var i = 0;i<firmata.Board.pins;++i) {
 			// current element with the form
