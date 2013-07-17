@@ -75,7 +75,7 @@ exports.clientcom = function(uniqueid, socket) {
 		switch (that.state) {
 			case 1:
 				if (!api.isAck(doc, "first")) {
-					that.emit("failed", that);
+					that.emit("failed", that, "first ack missing");
 					return;
 				}
 				that.state = 2;
@@ -83,7 +83,7 @@ exports.clientcom = function(uniqueid, socket) {
 			case 2:
 				// check for identity
 				if (doc.method_ != "identify") {
-					that.emit("failed", that);
+					that.emit("failed", that, "method!=identify");
 					return;
 				}
 				

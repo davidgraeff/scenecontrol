@@ -1,5 +1,5 @@
 {
-	"name": "Firmata Geräte",
+	"name": "FirmataDevices",
 	"version": "1.0.0",
 	"author": "David Gräff <david.graeff@web.change2de>",
 	"description": "Service for SceneControl. Support embedded devices (Arduino etc) with firmata firmware",
@@ -39,6 +39,6 @@
 	"bundledDependencies": [],  
 	"license": "GPLv3",
 	"engines": {
-		"node": ">=0.6"
+		"node": ">=0.8"
 	}
 }

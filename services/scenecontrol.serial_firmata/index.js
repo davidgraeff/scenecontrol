@@ -3,7 +3,13 @@
   * for a standard way of setting digital and analog/pwm output pins and read input pins.
   */
 
-var servicelib = require('../_shared/servicelib.js'), models = servicelib.models;
+// Add command line arguments
+var optimist = require('optimist');
+
+var servicelib = require('../../core/servicelib.js'), models = servicelib.models;
+optimist.options("serial",{default:"/dev/ttyUSB0"}).describe("serial","Serial port for testing");
+argv = optimist.argv;
+
 var firmata = require('firmata');
 var board = null;
 
@@ -20,7 +26,7 @@ servicemethods = function() {
 		return servicelib.respond(request.id);
 	}
 
-	toggleDititalPin = function(request, args) {
+	toggleDigitalPin = function(request, args) {
 		var value = !models.outputPins.getValue(args.channel, false);
 		
 		board.digitalWrite(args.channel, value);
@@ -51,7 +57,7 @@ servicemethods = function() {
 }
 
 servicelib.ready = function() {
-	// register to properties
+	// register to property changes
 	
 	// setup models
 	servicelib.addModel("outputPins","channel", {"getValue":"value"},{"setValue":"value"});
@@ -65,13 +71,17 @@ servicelib.gotconfiguration = function(config) {
 	servicelib.resetModels();
 
 	// init firmata device
-	var board = new firmata.Board(config.serialport,function(){
+	var board = new firmata.Board(config.serialport,function(err){
+		if (err) {
+			console.log(err);
+			return;
+		}
 		//arduino is ready to communicate
-		console.log("Serial Firmata ready!");
+		 console.log('Firmware: ' + board.firmware.name + ' - ' + board.firmware.version.major + '.' + board.firmware.version.minor +" ; Pins: "+board.pins.length);
 		// setup methods
 		servicelib.methods = servicemethods;
 		
-		for (var i = 0;i<firmata.Board.pins;++i) {
+		for (var i = 0;i<board.pins.length;++i) {
 			// current element with the form
 			/* {
 			 mode://current mode of pin which is on the the board.MODES.
@@ -82,16 +92,28 @@ servicelib.gotconfiguration = function(config) {
 			*/
 			var c = board.pins[i];
 			// Sync firmata pin data with models
-			if (c.mode == firmata.Board.MODES.OUTPUT) {
+			if (c.mode == board.MODES.OUTPUT) {
+				console.log("OUTPUT: ",i,c.value);
 				models.outputPins.setValue(i, c.value);
-			} else if (c.mode == firmata.Board.MODES.INPUT) {
+			} else if (c.mode == board.MODES.INPUT) {
+				console.log("INPUT: ",i,c.value);
 				models.inputPins.setValue(i, c.value);
 				// Model update: input pins get updated by using digitalRead
 				board.digitalRead(i,function(newvalue) { models.inputPins.setValue(i, newvalue); } )
-			} else if (c.mode == firmata.Board.MODES.PWM) {
+			} else if (c.mode == board.MODES.PWM || c.mode == board.MODES.ANALOG) {
+				console.log("PWM: ",c.analogChannel,c.value);
 				models.pwmpins.setValue(i, c.value);
+			} else if (c.mode == board.MODES.SERVO) {
+				console.log("SERVO: ",i,c.value);
+			} else {
+				console.log("UNKNOWN: "+c.mode,i,c.value);
 			}
 		}
-		console.log("board.pins", board.pins);
 	});  
+}
+
+// Run directly?
+if (argv.serial) {
+	servicelib.ready();
+	servicelib.gotconfiguration({serialport:argv.serial});
 }

@@ -55,8 +55,8 @@ function addRawSocket(c) { //'connection' listener
 	c.com.remoteAddress = c.remoteAddress;
 	
 	c.com.once("identified", function(com) { com.socket.setTimeout(0); });
-	c.com.once("failed", function(com) {
-		console.log('Client failed: '+ (c.com.isservice ? c.com.name : c.com.remoteAddress));
+	c.com.once("failed", function(com, reason) {
+		console.log('Client failed: '+ (c.com.isservice ? c.com.name : c.com.remoteAddress) + "; "+reason);
 		com.socket.destroy();
 	});
 	
