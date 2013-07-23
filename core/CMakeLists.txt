@@ -12,6 +12,7 @@ PATTERN "certificates" EXCLUDE
 PATTERN "node_modules" EXCLUDE
 PATTERN "test" EXCLUDE
 PATTERN "config.js.in" EXCLUDE
+PATTERN "CMakeLists.txt" EXCLUDE
 )
 
 # Create config file

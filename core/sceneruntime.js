@@ -52,7 +52,7 @@ function sceneRuntime(sceneDoc) {
 				that.eventsToBeRegistered = {};
 				// set counter for this reload iteration
 				++that.eventsreloadCounter;
-				console.log("Scene events loaded: ", sceneDoc.name);
+				//console.log("Scene events loaded: ", sceneDoc.name);
 				// register events on services
 				eventDocs.forEach(function(eventDoc) {
 					if (that.eventsBeforeReload[eventDoc.id_]) {
@@ -218,7 +218,7 @@ exports.init = function(callback) {
 			scenes[sceneDoc.id_].reload(sceneDoc);
 	}
 	
-	console.log('Starting scenes...');
+	//console.log('Starting scenes...');
 	storage.getScenes(null, function(err, items) {
 		if (err) {
 			console.warn("Could not get scenes ", err);

@@ -1,3 +1,5 @@
+require('./logging.js').init("Core");
+
 // Print usage information, command line parameters
 var configs = require('./config.js');
 var optimist = require('optimist').usage('Usage: $0	 [options]')

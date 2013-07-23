@@ -146,9 +146,14 @@ bool AbstractPlugin::createCommunicationSockets(const QByteArray& serverip, int 
 		qWarning() << "Server does not respond!"<<serverip<< port;
 		return false;
 	}
-	// The core will send a version identifier
+	// The core will send a version identifier. If it doesn't in time
+	// we exit here. If the socket is no longer connected at this stage,
+	// the core closed the connection (wrong certificate for example).
 	if (!socket.waitForReadyRead()) {
-		qWarning() << "Server didn't send an identify message!";
+		// We do not print a message if no longer connected. The core
+		// will probably output the problem.
+		if (socket.state() == QAbstractSocket::ConnectedState)
+			qWarning() << "Server didn't send an identify message!";
 		return false;
 	}
 	{

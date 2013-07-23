@@ -2,44 +2,20 @@ var controlflow = require('async');
 var configs = require('../config.js');
 var clientcom = require('./clientcom.js').clientcom;
 var api = require('./api.js').api;
+var socketCert = require('./socket.certificate.js');
 var rl = require('readline');
 var fs = require('fs');
 
 Array.prototype.removeElement = function(elem) { this.splice(this.indexOf(elem), 1); }
 
-function readKey() {
-	if (fs.existsSync(configs.userpaths.path_server_cert+'/server.key'))
-		return fs.readFileSync(configs.userpaths.path_server_cert+'/server.key');
-	if (fs.existsSync(configs.systempaths.path_server_cert+'/server.key'))
-		return fs.readFileSync(configs.systempaths.path_server_cert+'/server.key');
-	
-	console.error("No Server socket ssl key file found: "+configs.systempaths.path_server_cert+'/server.key');
-	process.exit(1);
-}
-
-function readCertificate() {
-	if (fs.existsSync(configs.userpaths.path_server_cert+'/server.crt'))
-		return fs.readFileSync(configs.userpaths.path_server_cert+'/server.crt');
-	if (fs.existsSync(configs.systempaths.path_server_cert+'/server.crt'))
-		return fs.readFileSync(configs.systempaths.path_server_cert+'/server.crt');
-	
-	console.error("No Server socket ssl crt file found: "+configs.systempaths.path_server_cert+'/server.crt');
-	process.exit(1);
-}
-
-var options = {
-	key: readKey(),
-	cert: readCertificate(),
-	passphrase: "1234",
-	// This is necessary only if using the client certificate authentication.
-	requestCert: true
-};
-
-var server = require('tls').createServer(options, addRawSocket);
-server.clients = [];
+var server;
 var connects_count = 0;
-
 function addRawSocket(c) { //'connection' listener
+	if (!c.authorized) {
+		console.log("Connection "+c.remoteAddress+" not authorized: " + c.authorizationError);
+		c.end();
+		return;
+	}
 	c.setNoDelay(true);
 	c.setEncoding('utf8');
 	// close socket if no identify message after 1,5s
@@ -74,7 +50,7 @@ function addRawSocket(c) { //'connection' listener
 	});
 	
 	// send identify message
-	console.log('Client connected. Wait for identity: '+c.com.remoteAddress);
+	//console.log('Client connected. Wait for identity: '+c.com.remoteAddress);
 	c.writeDoc(api.methodIdentify("first"));
 };
 
@@ -82,6 +58,21 @@ exports.controlport = configs.runtimeconfig.controlport;
 exports.serverip = "127.0.0.1"; // ipv4 only?
 
 exports.start = function(callback_out) {
+	var options = {
+		key: socketCert.readFromCertificatePaths(['server.key'], [configs.systempaths.path_cert_server,configs.userpaths.path_cert_server]),
+		cert: socketCert.readFromCertificatePaths(['server.crt'], [configs.systempaths.path_cert_server,configs.userpaths.path_cert_server]),
+		ca: socketCert.readAllowedCertificates([configs.userpaths.path_certs_clients, configs.systempaths.path_certs_clients]),
+		passphrase: configs.runtimeconfig.sslcertificatekey,
+		// This is necessary only if using the client certificate authentication.
+		requestCert: true,
+		rejectUnauthorized: false, // we reject ourselfs
+		handshakeTimeout: 10
+	};
+	/**
+	* Create listener socket with above options
+	*/
+	server = require('tls').createServer(options, addRawSocket);
+	server.clients = [];
 	server.on("error", function() {
 		callback("Cannot bind to controlsocket port "+configs.runtimeconfig.controlport,"");
 		

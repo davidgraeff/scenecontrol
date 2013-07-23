@@ -1,8 +1,46 @@
-var api = require('./com/api.js').api;
-var storage = require('./storage.js');
-var assert = require('assert');
+/**
+ * Storage Listener Management
+ * If a connected client or internal objects want to be notified of
+ * storage changes, they have to register to this storage lister via
+ * addListener. The listener is updated by the storage object via the change/remove methods.
+ */
 
+var assert = require('assert');
 var listener = {};
+
+exports.addListener = function(obj, id) {
+	assert(id, "storage.addListener: ID not set!");
+	var d = listener[id];
+	if (d)
+		return;
+	listener[id] = obj;
+	
+	// if obj sends document changes, we listen to them
+	if (obj.on)
+		obj.on("data", onListenerData);
+	
+// 	console.log('Add Storage listener:', id);
+}
+
+exports.removeListener = function(id) {
+	assert(id, "storage.removeListener: ID not set!");
+
+	var d = listener[id];
+	if (!d)
+		return;
+	
+	//console.log('Remove Storage listener:', id);
+	if (d.removeListener)
+		d.removeListener("data", onListenerData);
+	delete listener[id];
+}
+
+/**
+ * PRIVAT METHODS OR NON PUBLIC API *
+ */
+
+var storage = require('./storage.js');
+var api = require('./com/api.js').api;
 
 exports.change = function(doc, storageCode) {
 	for (var i in listener) {
@@ -16,33 +54,6 @@ exports.remove = function(doc, storageCode) {
 		console.log('Storage propagate:', i);
 		listener[i].send(api.manipulatorAPI.methodDocumentRemoved(doc, storageCode));
 	}
-}
-
-exports.addListener = function(obj, id) {
-	assert(id, "storage.addListener: ID not set!");
-	var d = listener[id];
-	if (d)
-		return;
-	listener[id] = obj;
-	
-	// if obj sends document changes, we listen to them
-	if (obj.on)
-		obj.on("data", onListenerData);
-	
-	console.log('Add Storage listener:', id);
-}
-
-exports.removeListener = function(id) {
-	assert(id, "storage.removeListener: ID not set!");
-
-	var d = listener[id];
-	if (!d)
-		return;
-	
-	console.log('Remove Storage listener:', id);
-	if (d.removeListener)
-		d.removeListener("data", onListenerData);
-	delete listener[id];
 }
 
 function onListenerData(data, from) {

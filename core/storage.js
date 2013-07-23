@@ -14,14 +14,14 @@ var db = null;
 exports.init = function(callback) {
 	db = mongo.db('localhost:27017/'+configs.runtimeconfig.databasename, {w: 1});
 	db.open(function (err) {
-		console.log("Database: "+'localhost:27017/'+configs.runtimeconfig.databasename,"State: "+ db.state);
+		console.log("Database: "+'localhost:27017/'+configs.runtimeconfig.databasename);
 		callback(err, null);
 	})
 }
 
 exports.finish = function(callback) {
 	db.close(function (err) {
-		console.log("Close Database: "+'localhost:27017/'+configs.runtimeconfig.databasename,"State: "+ db.state);
+		console.log("Close Database: "+'localhost:27017/'+configs.runtimeconfig.databasename);
 		callback(err, null);
 	})
 }

@@ -86,6 +86,10 @@ exports.clientcom = function(uniqueid, socket) {
 					that.emit("failed", that, "method!=identify");
 					return;
 				}
+				if (!doc.componentid_ || !doc.instanceid_) {
+					that.emit("failed", that, "No componentid_ or instanceid_");
+					return;
+				}
 				
 				if (api.needAck(doc))
 					that.send(api.generateAck(doc));

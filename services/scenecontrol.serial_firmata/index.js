@@ -5,11 +5,21 @@
 
 // Add command line arguments
 var optimist = require('optimist');
+optimist.usage('Usage: $0	 [options]').options("serial",{default:"/dev/ttyUSB0"}).describe("serial","Serial port for testing");
 
-var servicelib = require('../../core/servicelib.js'), models = servicelib.models;
-optimist.options("serial",{default:"/dev/ttyUSB0"}).describe("serial","Serial port for testing");
+// The servicelib.js is located in the core directly. This is
+// either in the repository structure two directories up or in
+// the installion one directory up.
+var servicelib;
+if (require('fs').existsSync('../../core/servicelib.js'))
+	servicelib = require('../../core/servicelib.js');
+else
+	servicelib = require('../core/servicelib.js');
+
+servicelib.init(optimist);
 argv = optimist.argv;
 
+var models = servicelib.models;
 var firmata = require('firmata');
 var board = null;
 
@@ -57,8 +67,6 @@ servicemethods = function() {
 }
 
 servicelib.ready = function() {
-	// register to property changes
-	
 	// setup models
 	servicelib.addModel("outputPins","channel", {"getValue":"value"},{"setValue":"value"});
 	servicelib.addModel("inputPins","channel", {"getValue":"value"},{"setValue":"value"});
@@ -66,12 +74,14 @@ servicelib.ready = function() {
 }
 
 servicelib.gotconfiguration = function(config) {
+ 	console.log("Connect to", config.serialport);
+			
 	// full reset
 	servicelib.methods = null;
 	servicelib.resetModels();
 
 	// init firmata device
-	var board = new firmata.Board(config.serialport,function(err){
+	board = new firmata.Board(config.serialport,function(err){
 		if (err) {
 			console.log(err);
 			return;
@@ -112,8 +122,17 @@ servicelib.gotconfiguration = function(config) {
 	});  
 }
 
+process.on('exit', function () {
+	if (board && board.sp) {
+		console.log("close serial port");
+		board.sp.close();
+	}
+});
+
 // Run directly?
 if (argv.serial) {
 	servicelib.ready();
 	servicelib.gotconfiguration({serialport:argv.serial});
 }
+
+servicelib.initCommunication("1234");

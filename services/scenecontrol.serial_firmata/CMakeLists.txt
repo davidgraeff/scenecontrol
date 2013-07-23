@@ -3,3 +3,4 @@ SET(PLUGIN_DEPENDENCIES_FOUND TRUE)
 find_package(RoomPlugin REQUIRED)
 
 install_schemas()
+install_nodelib()

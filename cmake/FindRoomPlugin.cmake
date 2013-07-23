@@ -35,10 +35,30 @@ function(install_exampleconfig)
 endfunction()
 
 macro(install_lib)
-SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${targetname})
+	SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${targetname})
 	install_exampleconfig()
 	INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${LIBPATH} COMPONENT ServerPlugins)
 	SET(CPACK_PACKAGE_EXECUTABLES ${CPACK_PACKAGE_EXECUTABLES} ${PROJECT_NAME} CACHE INTERNAL "")
+endmacro()
+
+macro(install_nodelib)
+	install_exampleconfig()
+	#INSTALL(FILES ${CONFFILES} DESTINATION ${LIBPATH}/${targetname} COMPONENT ServerPlugins)
+	# Install js files
+	INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION "${LIBPATH}" COMPONENT ServerPlugins
+	USE_SOURCE_PERMISSIONS
+	PATTERN "certificates" EXCLUDE
+	PATTERN "node_modules" EXCLUDE
+	PATTERN "test" EXCLUDE
+	PATTERN "config.js.in" EXCLUDE
+	PATTERN "CMakeLists.txt" EXCLUDE
+	)
+	# execute npm to install node js app dependencies
+	INSTALL(CODE "MESSAGE(Execute in \"${CMAKE_INSTALL_PREFIX}/${LIBPATH}/${targetname}\")")
+
+	INSTALL(CODE "execute_process(COMMAND npm install
+	WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/${LIBPATH}/${targetname}\"
+	OUTPUT_VARIABLE DIST OUTPUT_STRIP_TRAILING_WHITESPACE)")
 endmacro()
 
 # definitions
